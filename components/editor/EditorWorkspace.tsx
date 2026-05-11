@@ -236,6 +236,16 @@ export default function EditorWorkspace({ template }: EditorWorkspaceProps) {
         event.target.value = "";
     };
 
+    const saveDesign = () => {
+        const canvas = fabricCanvasRef.current;
+        if (!canvas) return;
+
+        const json = canvas.toJSON();
+
+        console.log("Diseño guardado:", json);
+
+        alert("Diseño preparado para guardar. Revisa la consola.");
+    };
     const exportPng = () => {
         const canvas = fabricCanvasRef.current;
         if (!canvas) return;
@@ -369,8 +379,10 @@ export default function EditorWorkspace({ template }: EditorWorkspaceProps) {
                                     className="h-11 w-full rounded-xl border border-white/10 bg-black/40"
                                 />
                             </div>
-
-                            <button className="w-full rounded-xl bg-purple-600 px-4 py-3 text-sm font-semibold hover:bg-purple-500">
+                            <button
+                                onClick={saveDesign}
+                                className="w-full rounded-xl bg-purple-600 px-4 py-3 text-sm font-semibold hover:bg-purple-500"
+                            >
                                 Guardar cambios
                             </button>
                         </div>
