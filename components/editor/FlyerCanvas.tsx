@@ -1,14 +1,16 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { Canvas, Textbox, Rect } from "fabric";
+import { Canvas, Rect, Textbox, Circle } from "fabric";
+import type { TemplateLayer } from "@/data/templates";
 
 type FlyerCanvasProps = {
-    title: string;
-    category: string;
+    width: number;
+    height: number;
+    layers: TemplateLayer[];
 };
 
-export default function FlyerCanvas({ title, category }: FlyerCanvasProps) {
+export default function FlyerCanvas({ width, height, layers }: FlyerCanvasProps) {
     const canvasElementRef = useRef<HTMLCanvasElement | null>(null);
     const fabricCanvasRef = useRef<Canvas | null>(null);
 
@@ -16,91 +18,68 @@ export default function FlyerCanvas({ title, category }: FlyerCanvasProps) {
         if (!canvasElementRef.current) return;
 
         const canvas = new Canvas(canvasElementRef.current, {
-            width: 430,
-            height: 540,
+            width,
+            height,
             backgroundColor: "#080812",
             preserveObjectStacking: true,
         });
 
         fabricCanvasRef.current = canvas;
 
-        const bg = new Rect({
-            left: 0,
-            top: 0,
-            width: 430,
-            height: 540,
-            fill: "#080812",
-            selectable: false,
-        });
+        layers.forEach((layer) => {
+            if (layer.type === "shape") {
+                if (layer.shape === "rect") {
+                    const rect = new Rect({
+                        left: layer.x,
+                        top: layer.y,
+                        width: layer.width,
+                        height: layer.height,
+                        fill: layer.fill,
+                        opacity: layer.opacity ?? 1,
+                        rx: layer.radius ?? 0,
+                        ry: layer.radius ?? 0,
+                        selectable: layer.selectable ?? true,
+                    });
 
-        const glow = new Rect({
-            left: 40,
-            top: 40,
-            width: 350,
-            height: 460,
-            fill: "rgba(124, 45, 255, 0.18)",
-            rx: 40,
-            ry: 40,
-            selectable: false,
-        });
+                    canvas.add(rect);
+                }
 
-        const titleText = new Textbox(title.toUpperCase(), {
-            left: 35,
-            top: 190,
-            width: 360,
-            fontSize: 42,
-            fill: "#facc15",
-            fontFamily: "Arial",
-            fontWeight: "bold",
-            textAlign: "center",
-        });
+                if (layer.shape === "circle") {
+                    const circle = new Circle({
+                        left: layer.x,
+                        top: layer.y,
+                        radius: layer.width / 2,
+                        fill: layer.fill,
+                        opacity: layer.opacity ?? 1,
+                        selectable: layer.selectable ?? true,
+                    });
 
-        const categoryText = new Textbox(category, {
-            left: 55,
-            top: 270,
-            width: 320,
-            fontSize: 24,
-            fill: "#ffffff",
-            fontFamily: "Arial",
-            textAlign: "center",
-        });
+                    canvas.add(circle);
+                }
+            }
 
-        const dateText = new Textbox("SÁBADO 21 JUNIO", {
-            left: 70,
-            top: 340,
-            width: 290,
-            fontSize: 22,
-            fill: "#ffffff",
-            fontFamily: "Arial",
-            fontWeight: "bold",
-            textAlign: "center",
-        });
+            if (layer.type === "text") {
+                const text = new Textbox(layer.text, {
+                    left: layer.x,
+                    top: layer.y,
+                    width: layer.width,
+                    fontSize: layer.fontSize,
+                    fontFamily: layer.fontFamily,
+                    fill: layer.color,
+                    fontWeight: layer.fontWeight ?? "normal",
+                    textAlign: layer.textAlign ?? "left",
+                });
 
-        const priceText = new Textbox("ENTRADA ANTICIPADA 25€", {
-            left: 55,
-            top: 440,
-            width: 320,
-            fontSize: 18,
-            fill: "#111111",
-            fontFamily: "Arial",
-            fontWeight: "bold",
-            textAlign: "center",
-            backgroundColor: "#facc15",
+                canvas.add(text);
+            }
         });
-
-        canvas.add(bg);
-        canvas.add(glow);
-        canvas.add(titleText);
-        canvas.add(categoryText);
-        canvas.add(dateText);
-        canvas.add(priceText);
 
         canvas.renderAll();
 
         return () => {
             canvas.dispose();
         };
-    }, [title, category]);
+    }, [width, height, layers]);
 
     const exportPng = () => {
         const canvas = fabricCanvasRef.current;

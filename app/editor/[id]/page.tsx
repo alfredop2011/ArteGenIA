@@ -70,8 +70,11 @@ export default async function EditorPage({ params }: EditorPageProps) {
                             <h1 className="text-2xl font-bold">{template.title}</h1>
                             <p className="text-sm text-gray-400">{template.category}</p>
                         </div>
-
-                        <FlyerCanvas title={template.title} category={template.category} />
+                        <FlyerCanvas
+                            width={template.width}
+                            height={template.height}
+                            layers={template.layers}
+                        />
                     </div>
                 </div>
 
