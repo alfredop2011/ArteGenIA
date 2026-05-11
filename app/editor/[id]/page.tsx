@@ -1,6 +1,7 @@
-import AppShell from "@/components/layout/AppShell";
-import { templates } from "@/data/templates";
 import Link from "next/link";
+import AppShell from "@/components/layout/AppShell";
+import FlyerCanvas from "@/components/editor/FlyerCanvas";
+import { templates } from "@/data/templates";
 
 type EditorPageProps = {
     params: Promise<{
@@ -17,6 +18,7 @@ export default async function EditorPage({ params }: EditorPageProps) {
             <AppShell>
                 <section className="mx-auto max-w-7xl px-6 py-8">
                     <h1 className="text-3xl font-bold">Plantilla no encontrada</h1>
+
                     <p className="mt-2 text-gray-400">
                         La plantilla que intentas editar no existe.
                     </p>
@@ -62,35 +64,14 @@ export default async function EditorPage({ params }: EditorPageProps) {
                 </aside>
 
                 <div className="flex items-center justify-center rounded-2xl border border-white/10 bg-[#0b0c14] p-6">
-                    <div className="w-full max-w-[430px]">
+                    <div className="w-full max-w-[520px]">
                         <div className="mb-4">
                             <p className="text-sm text-purple-300">Editando plantilla</p>
                             <h1 className="text-2xl font-bold">{template.title}</h1>
                             <p className="text-sm text-gray-400">{template.category}</p>
                         </div>
 
-                        <div className="relative aspect-[4/5] overflow-hidden rounded-xl border border-white/10 bg-black shadow-2xl">
-                            <img
-                                src={template.image}
-                                alt={template.title}
-                                className="h-full w-full object-cover opacity-80"
-                            />
-
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
-
-                            <div className="absolute inset-x-8 bottom-24 text-center">
-                                <p className="text-4xl font-black text-white">
-                                    {template.title}
-                                </p>
-                                <p className="mt-2 text-lg font-bold text-yellow-300">
-                                    {template.category}
-                                </p>
-                            </div>
-
-                            <div className="absolute inset-x-8 bottom-8 rounded-xl bg-yellow-400 px-4 py-3 text-center text-sm font-black text-black">
-                                EDITABLE POR CAPAS
-                            </div>
-                        </div>
+                        <FlyerCanvas title={template.title} category={template.category} />
                     </div>
                 </div>
 
@@ -133,10 +114,6 @@ export default async function EditorPage({ params }: EditorPageProps) {
 
                         <button className="w-full rounded-xl bg-purple-600 px-4 py-3 text-sm font-semibold hover:bg-purple-500">
                             Guardar cambios
-                        </button>
-
-                        <button className="w-full rounded-xl bg-yellow-400 px-4 py-3 text-sm font-black text-black hover:bg-yellow-300">
-                            Exportar PNG
                         </button>
                     </div>
                 </aside>
