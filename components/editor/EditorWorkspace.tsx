@@ -28,6 +28,7 @@ export default function EditorWorkspace({ template }: EditorWorkspaceProps) {
     const [savedAt, setSavedAt] = useState<string | null>(null);
     const [saveFlash, setSaveFlash] = useState(false);
     const [isMounted, setIsMounted] = useState(false);
+    const [removingBg, setRemovingBg] = useState(false);
     const [selectedText, setSelectedText] = useState<SelectedTextState>({
         text: "", color: "#ffffff", fontFamily: "Arial", fontSize: 32,
     });
@@ -248,33 +249,79 @@ export default function EditorWorkspace({ template }: EditorWorkspaceProps) {
         const canvas = fabricCanvasRef.current;
         if (!file || !canvas || !selectedObject) return;
 
-        // Guardar posición y tamaño del objeto actual
         const oldLeft = selectedObject.left ?? 0;
         const oldTop = selectedObject.top ?? 0;
         const oldScaleX = selectedObject.scaleX ?? 1;
         const oldScaleY = selectedObject.scaleY ?? 1;
         const oldAngle = selectedObject.angle ?? 0;
 
-        // Eliminar imagen anterior
         canvas.remove(selectedObject);
 
-        // Cargar nueva imagen en la misma posición
         const imageUrl = URL.createObjectURL(file);
         const image = await FabricImage.fromURL(imageUrl);
         image.set({
-            left: oldLeft,
-            top: oldTop,
-            scaleX: oldScaleX,
-            scaleY: oldScaleY,
+            left: oldLeft, top: oldTop,
+            scaleX: oldScaleX, scaleY: oldScaleY,
             angle: oldAngle,
-            cornerStyle: "circle",
-            transparentCorners: false,
+            cornerStyle: "circle", transparentCorners: false,
         });
         canvas.add(image);
         canvas.setActiveObject(image);
         canvas.renderAll();
         setSelectedObject(image);
         event.target.value = "";
+    }, [selectedObject]);
+
+    const handleRemoveBg = useCallback(async () => {
+        const canvas = fabricCanvasRef.current;
+        if (!canvas || !selectedObject || selectedObject.type !== "image") return;
+
+        setRemovingBg(true);
+        try {
+            // Obtener base64 de la imagen seleccionada
+            const imgEl = (selectedObject as FabricImage).getElement() as HTMLImageElement;
+            const tmpCanvas = document.createElement("canvas");
+            tmpCanvas.width = imgEl.naturalWidth || imgEl.width;
+            tmpCanvas.height = imgEl.naturalHeight || imgEl.height;
+            const ctx = tmpCanvas.getContext("2d");
+            ctx?.drawImage(imgEl, 0, 0);
+            const imageBase64 = tmpCanvas.toDataURL("image/png");
+
+            const res = await fetch("/api/remove-bg", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ imageBase64 }),
+            });
+
+            const data = await res.json();
+            if (!res.ok || !data.result) throw new Error(data.error || "Error");
+
+            // Guardar posición/escala actual
+            const oldLeft = selectedObject.left ?? 0;
+            const oldTop = selectedObject.top ?? 0;
+            const oldScaleX = selectedObject.scaleX ?? 1;
+            const oldScaleY = selectedObject.scaleY ?? 1;
+            const oldAngle = selectedObject.angle ?? 0;
+
+            // Reemplazar con imagen sin fondo
+            canvas.remove(selectedObject);
+            const newImage = await FabricImage.fromURL(data.result);
+            newImage.set({
+                left: oldLeft, top: oldTop,
+                scaleX: oldScaleX, scaleY: oldScaleY,
+                angle: oldAngle,
+                cornerStyle: "circle", transparentCorners: false,
+            });
+            canvas.add(newImage);
+            canvas.setActiveObject(newImage);
+            canvas.renderAll();
+            setSelectedObject(newImage);
+        } catch (e) {
+            console.error("Error quitando fondo:", e);
+            alert("Error al quitar el fondo. Inténtalo de nuevo.");
+        } finally {
+            setRemovingBg(false);
+        }
     }, [selectedObject]);
 
     const exportPng = useCallback(() => {
@@ -296,7 +343,6 @@ export default function EditorWorkspace({ template }: EditorWorkspaceProps) {
             <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
             <input ref={replaceInputRef} type="file" accept="image/*" onChange={handleReplaceImage} className="hidden" />
 
-            {/* Barra superior */}
             <div className="flex items-center justify-between px-4 py-2 bg-black/60 border-b border-white/10 gap-4">
                 <div className="flex items-center gap-3">
                     <span className="text-sm font-bold text-white">{template.title}</span>
@@ -322,17 +368,12 @@ export default function EditorWorkspace({ template }: EditorWorkspaceProps) {
             </div>
 
             <section className="grid min-h-[calc(100vh-120px)] grid-cols-1 gap-4 px-4 py-4 lg:grid-cols-[280px_1fr_320px]">
-
-                {/* Panel izquierdo */}
                 <aside className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
                     <h2 className="text-lg font-bold mb-5">Herramientas</h2>
                     <div className="space-y-3">
                         <button onClick={addText} className="w-full rounded-xl bg-white/10 px-4 py-3 text-left text-sm hover:bg-white/15">✏️ Añadir texto</button>
                         <button onClick={openImagePicker} className="w-full rounded-xl bg-white/10 px-4 py-3 text-left text-sm hover:bg-white/15">🖼️ Subir artista</button>
-                        <button className="w-full rounded-xl bg-white/10 px-4 py-3 text-left text-sm opacity-50 cursor-not-allowed">✂️ Quitar fondo (próximo)</button>
-                        <button className="w-full rounded-xl bg-white/10 px-4 py-3 text-left text-sm opacity-50 cursor-not-allowed">🎨 Cambiar fondo (próximo)</button>
                     </div>
-
                     {isObject && (
                         <div className="mt-6 pt-5 border-t border-white/10">
                             <h3 className="text-xs uppercase tracking-widest text-gray-500 mb-3">Capa seleccionada</h3>
@@ -349,7 +390,6 @@ export default function EditorWorkspace({ template }: EditorWorkspaceProps) {
                     )}
                 </aside>
 
-                {/* Canvas */}
                 <div className="flex items-center justify-center rounded-2xl border border-white/10 bg-[#0b0c14] p-6">
                     <div className="w-full max-w-[520px]">
                         <div className="mb-4">
@@ -365,15 +405,11 @@ export default function EditorWorkspace({ template }: EditorWorkspaceProps) {
                     </div>
                 </div>
 
-                {/* Panel derecho */}
                 <aside className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
                     <h2 className="text-lg font-bold mb-5">Propiedades</h2>
 
-                    {!selectedObject && (
-                        <p className="text-sm text-gray-400">Selecciona un elemento del flyer para editarlo.</p>
-                    )}
+                    {!selectedObject && <p className="text-sm text-gray-400">Selecciona un elemento del flyer para editarlo.</p>}
 
-                    {/* Propiedades de texto */}
                     {isText && (
                         <div className="space-y-4">
                             <div>
@@ -415,32 +451,33 @@ export default function EditorWorkspace({ template }: EditorWorkspaceProps) {
                         </div>
                     )}
 
-                    {/* Propiedades de imagen */}
                     {isImage && (
                         <div className="space-y-3">
-                            <p className="text-xs text-gray-400 mb-4">Imagen seleccionada. Puedes moverla, escalarla y rotarla directamente en el canvas.</p>
+                            <p className="text-xs text-gray-400 mb-4">Puedes mover, escalar y rotar la imagen directamente en el canvas.</p>
 
                             <button onClick={openReplacePicker}
                                 className="w-full rounded-xl bg-white/10 border border-white/10 px-4 py-3 text-sm text-white hover:bg-white/15 transition-colors">
                                 🔄 Reemplazar imagen
                             </button>
 
+                            <button
+                                onClick={handleRemoveBg}
+                                disabled={removingBg}
+                                className={`w-full rounded-xl px-4 py-3 text-sm font-semibold transition-all ${
+                                    removingBg
+                                        ? "bg-white/5 text-gray-500 cursor-not-allowed"
+                                        : "bg-emerald-900/40 border border-emerald-700/50 text-emerald-400 hover:bg-emerald-900/60"
+                                }`}>
+                                {removingBg ? "⏳ Quitando fondo..." : "✂️ Quitar fondo"}
+                            </button>
+
                             <button onClick={deleteSelected}
                                 className="w-full rounded-xl bg-red-900/40 border border-red-800/50 px-4 py-3 text-sm text-red-400 hover:bg-red-900/60 transition-colors">
                                 🗑️ Eliminar imagen
                             </button>
-
-                            <div className="pt-3 border-t border-white/10">
-                                <button
-                                    className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm text-gray-500 cursor-not-allowed"
-                                    disabled>
-                                    ✂️ Quitar fondo (próximo)
-                                </button>
-                            </div>
                         </div>
                     )}
 
-                    {/* Forma seleccionada */}
                     {isObject && !isText && !isImage && (
                         <div className="space-y-3">
                             <p className="text-sm text-gray-400">Forma seleccionada.</p>
