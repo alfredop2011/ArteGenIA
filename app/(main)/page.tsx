@@ -3,22 +3,38 @@ import Link from "next/link";
 export default function Home() {
     return (
         <div className="min-h-screen bg-[#07070f] text-white overflow-x-hidden">
+<<<<<<< Updated upstream
             <section className="relative flex flex-col items-center justify-center min-h-screen px-6 text-center">
+=======
+
+            {/* Hero */}
+            <section className="relative flex flex-col items-center justify-center min-h-screen px-6 text-center">
+                {/* Background glow */}
+>>>>>>> Stashed changes
                 <div className="absolute inset-0 overflow-hidden pointer-events-none">
                     <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-purple-600/20 rounded-full blur-[120px]" />
                     <div className="absolute top-1/3 left-1/4 w-[300px] h-[300px] bg-pink-600/10 rounded-full blur-[80px]" />
                     <div className="absolute top-1/3 right-1/4 w-[300px] h-[300px] bg-blue-600/10 rounded-full blur-[80px]" />
                 </div>
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
                 <div className="relative z-10 max-w-4xl mx-auto">
                     <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-300 text-sm font-medium mb-8">
                         ⚡ Crea flyers profesionales en segundos
                     </div>
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
                     <h1 className="text-5xl md:text-7xl font-black mb-6 leading-tight tracking-tight">
                         Diseña flyers que{" "}
                         <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-yellow-400 bg-clip-text text-transparent">
                             impactan
                         </span>
                     </h1>
+<<<<<<< Updated upstream
                     <p className="text-xl md:text-2xl text-gray-400 mb-10 max-w-2xl mx-auto leading-relaxed">
                         Plantillas profesionales para eventos, conciertos y festivales. Edita, personaliza y descarga en segundos.
                     </p>
@@ -37,11 +53,58 @@ export default function Home() {
             <section className="px-6 py-24 max-w-6xl mx-auto">
                 <h2 className="text-3xl md:text-4xl font-black text-center mb-4">Todo lo que necesitas</h2>
                 <p className="text-gray-400 text-center mb-16 text-lg">Para crear flyers profesionales sin ser diseñador</p>
+=======
+
+                    <p className="text-xl md:text-2xl text-gray-400 mb-10 max-w-2xl mx-auto leading-relaxed">
+                        Plantillas profesionales para eventos, conciertos y festivales. Edita, personaliza y descarga en segundos.
+                    </p>
+
+                    <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                        <Link href="/templates"
+                            className="px-8 py-4 rounded-2xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-lg transition-all hover:scale-105 hover:shadow-lg hover:shadow-purple-500/25">
+                            🎨 Ver plantillas gratis
+                        </Link>
+                        <Link href="/templates"
+                            className="px-8 py-4 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold text-lg transition-all">
+                            Ver ejemplos →
+                        </Link>
+                    </div>
+
+                    <p className="mt-6 text-sm text-gray-600">Sin registro · Gratis para empezar · Descarga en PNG</p>
+                </div>
+
+                {/* Floating flyer previews */}
+                <div className="relative z-10 mt-20 grid grid-cols-3 md:grid-cols-4 gap-4 max-w-3xl mx-auto opacity-80">
+                    {[
+                        { bg: "from-purple-900 to-blue-900", title: "URBAN PARTY", sub: "Live Experience", color: "text-yellow-400" },
+                        { bg: "from-red-900 to-orange-900", title: "SALSA", sub: "Noche Caliente", color: "text-orange-300" },
+                        { bg: "from-green-900 to-teal-900", title: "FESTIVAL", sub: "Aurora 2025", color: "text-green-300" },
+                        { bg: "from-pink-900 to-purple-900", title: "BACHATA", sub: "Nights", color: "text-pink-300" },
+                    ].map((item, i) => (
+                        <div key={i} className={`hidden md:flex flex-col justify-end bg-gradient-to-b ${item.bg} rounded-2xl p-3 aspect-[3/4] border border-white/10`}
+                            style={{ transform: i % 2 === 0 ? "rotate(-2deg)" : "rotate(2deg)" }}>
+                            <p className={`text-xs font-black ${item.color}`}>{item.title}</p>
+                            <p className="text-white/60 text-xs">{item.sub}</p>
+                        </div>
+                    ))}
+                </div>
+            </section>
+
+            {/* Features */}
+            <section className="px-6 py-24 max-w-6xl mx-auto">
+                <h2 className="text-3xl md:text-4xl font-black text-center mb-4">Todo lo que necesitas</h2>
+                <p className="text-gray-400 text-center mb-16 text-lg">Para crear flyers profesionales sin ser diseñador</p>
+
+>>>>>>> Stashed changes
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {[
                         { icon: "🎨", title: "Plantillas profesionales", desc: "Más de 8 plantillas diseñadas para eventos reales. Conciertos, festivales, discotecas y más." },
                         { icon: "✏️", title: "Editor fácil", desc: "Edita textos, colores y posición de imágenes con un editor visual intuitivo. Sin experiencia necesaria." },
+<<<<<<< Updated upstream
                         { icon: "⚡", title: "Descarga instantánea", desc: "Exporta tu flyer en alta resolución listo para redes sociales o impresión." },
+=======
+                        { icon: "⚡", title: "Descarga instantánea", desc: "Exporta tu flyer en alta resolución (PNG) listo para redes sociales o impresión." },
+>>>>>>> Stashed changes
                         { icon: "📱", title: "Múltiples formatos", desc: "Post cuadrado, historia vertical o flyer tradicional. Adapta tu diseño a cada plataforma." },
                         { icon: "🖼️", title: "Sube tu foto", desc: "Añade la foto del artista directamente en el editor. Recorta, escala y posiciona como quieras." },
                         { icon: "✂️", title: "Quita el fondo", desc: "Elimina el fondo de cualquier imagen con un solo clic usando inteligencia artificial." },
@@ -55,16 +118,29 @@ export default function Home() {
                 </div>
             </section>
 
+<<<<<<< Updated upstream
+=======
+            {/* CTA */}
+>>>>>>> Stashed changes
             <section className="px-6 py-24">
                 <div className="max-w-3xl mx-auto text-center rounded-3xl bg-gradient-to-br from-purple-900/40 to-pink-900/20 border border-purple-500/20 p-12">
                     <h2 className="text-3xl md:text-5xl font-black mb-4">Empieza a crear ahora</h2>
                     <p className="text-gray-400 text-lg mb-8">Gratis, sin registro, en segundos.</p>
+<<<<<<< Updated upstream
                     <Link href="/templates" className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-lg transition-all hover:scale-105">
+=======
+                    <Link href="/templates"
+                        className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-lg transition-all hover:scale-105">
+>>>>>>> Stashed changes
                         🎨 Explorar plantillas
                     </Link>
                 </div>
             </section>
 
+<<<<<<< Updated upstream
+=======
+            {/* Footer */}
+>>>>>>> Stashed changes
             <footer className="border-t border-white/[0.06] px-6 py-8 text-center text-gray-600 text-sm">
                 <p>© 2025 ArteGenIA · Creado con ❤️ para artistas y organizadores de eventos</p>
             </footer>
