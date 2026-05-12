@@ -1,78 +1,135 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import { Canvas, Textbox, FabricObject, FabricImage } from "fabric";
+import {
+    Canvas,
+    Rect,
+    Textbox,
+    Circle,
+    FabricObject,
+    FabricImage,
+} from "fabric";
 import type { Template } from "@/data/templates";
-import { applyTemplateLayers } from "@/lib/fabricApplyTemplateLayers";
 import { useEditorStorage } from "@/hooks/useEditorStorage";
 
-type EditorWorkspaceProps = { template: Template };
-type SelectedTextState = { text: string; color: string; fontFamily: string; fontSize: number };
+type EditorWorkspaceProps = {
+    template: Template;
+};
 
-const FONTS = ["Arial","Bebas Neue","Anton","Montserrat","Playfair Display","Great Vibes","Oswald","Georgia"];
-const IDENTITY: [number,number,number,number,number,number] = [1,0,0,1,0,0];
+type SelectedTextState = {
+    text: string;
+    color: string;
+    fontFamily: string;
+    fontSize: number;
+};
+
+const FONTS = [
+    "Arial",
+    "Bebas Neue",
+    "Anton",
+    "Montserrat",
+    "Playfair Display",
+    "Great Vibes",
+    "Oswald",
+    "Georgia",
+];
 
 export default function EditorWorkspace({ template }: EditorWorkspaceProps) {
-    const canvasElRef = useRef<HTMLCanvasElement | null>(null);
-    const canvasScrollRef = useRef<HTMLDivElement | null>(null);
-    const fabricRef = useRef<Canvas | null>(null);
+    const canvasElementRef = useRef<HTMLCanvasElement | null>(null);
+    const fabricCanvasRef = useRef<Canvas | null>(null);
     const fileInputRef = useRef<HTMLInputElement | null>(null);
-    const replaceInputRef = useRef<HTMLInputElement | null>(null);
 
     const [selectedObject, setSelectedObject] = useState<FabricObject | null>(null);
     const [savedAt, setSavedAt] = useState<string | null>(null);
     const [saveFlash, setSaveFlash] = useState(false);
-    const [isMounted, setIsMounted] = useState(false);
-    const [removingBg, setRemovingBg] = useState(false);
+
     const [selectedText, setSelectedText] = useState<SelectedTextState>({
-        text: "", color: "#ffffff", fontFamily: "Arial", fontSize: 32,
+        text: "",
+        color: "#ffffff",
+        fontFamily: "Arial",
+        fontSize: 32,
     });
 
     const { saveDesign, loadDesign, hasSavedDesign } = useEditorStorage();
 
-useEffect(() => {
-        const el = canvasElRef.current;
-        if (!el) return;
+    // Inicializar canvas y cargar diseño guardado
+    useEffect(() => {
+        if (!canvasElementRef.current) return;
 
-        let cancelled = false;
-
-        const canvas = new Canvas(el, {
+        const canvas = new Canvas(canvasElementRef.current, {
             width: template.width,
             height: template.height,
             backgroundColor: "#080812",
             preserveObjectStacking: true,
-            enableRetinaScaling: false,
         });
-        fabricRef.current = canvas;
-        setIsMounted(true);
-        canvas.setViewportTransform(IDENTITY);
 
+        fabricCanvasRef.current = canvas;
+
+        // Intentar cargar diseño guardado
         const saved = loadDesign(template.id);
         if (saved) {
             canvas.loadFromJSON(saved.fabricJson).then(() => {
-                if (cancelled || canvas.disposed) return;
-                canvas.setViewportTransform(IDENTITY);
                 canvas.renderAll();
-                canvas.calcOffset();
                 setSavedAt(saved.savedAt);
             });
         } else {
-            applyTemplateLayers(canvas, template.layers).then(() => {
-                if (cancelled || canvas.disposed) return;
-                canvas.calcOffset();
+            // Cargar capas de la plantilla
+            template.layers.forEach((layer) => {
+                if (layer.type === "shape") {
+                    if (layer.shape === "rect") {
+                        const rect = new Rect({
+                            left: layer.x,
+                            top: layer.y,
+                            width: layer.width,
+                            height: layer.height,
+                            fill: layer.fill,
+                            opacity: layer.opacity ?? 1,
+                            rx: layer.radius ?? 0,
+                            ry: layer.radius ?? 0,
+                            selectable: layer.selectable ?? true,
+                        });
+                        canvas.add(rect);
+                    }
+                    if (layer.shape === "circle") {
+                        const circle = new Circle({
+                            left: layer.x,
+                            top: layer.y,
+                            radius: layer.width / 2,
+                            fill: layer.fill,
+                            opacity: layer.opacity ?? 1,
+                            selectable: layer.selectable ?? true,
+                        });
+                        canvas.add(circle);
+                    }
+                }
+                if (layer.type === "text") {
+                    const text = new Textbox(layer.text, {
+                        left: layer.x,
+                        top: layer.y,
+                        width: layer.width,
+                        fontSize: layer.fontSize,
+                        fontFamily: layer.fontFamily,
+                        fill: layer.color,
+                        fontWeight: layer.fontWeight ?? "normal",
+                        textAlign: layer.textAlign ?? "left",
+                    });
+                    canvas.add(text);
+                }
             });
+            canvas.renderAll();
         }
 
-        const onSelect = () => {
-            const active = canvas.getActiveObject();
-            if (!active) {
+        // Manejadores de selección
+        const handleSelection = () => {
+            const activeObject = canvas.getActiveObject();
+            if (!activeObject) {
                 setSelectedObject(null);
                 setSelectedText({ text: "", color: "#ffffff", fontFamily: "Arial", fontSize: 32 });
                 return;
             }
-            setSelectedObject(active);
-            if (active.type === "textbox") {
-                const tb = active as Textbox;
+            setSelectedObject(activeObject);
+            if (activeObject.type === "textbox") {
+                const tb = activeObject as Textbox;
                 setSelectedText({
                     text: tb.text ?? "",
                     color: String(tb.fill ?? "#ffffff"),
@@ -81,235 +138,407 @@ useEffect(() => {
                 });
             }
         };
-        canvas.on("selection:created", onSelect);
-        canvas.on("selection:updated", onSelect);
-        canvas.on("selection:cleared", onSelect);
 
-        const onKey = (e: KeyboardEvent) => {
+        canvas.on("selection:created", handleSelection);
+        canvas.on("selection:updated", handleSelection);
+        canvas.on("selection:cleared", handleSelection);
+
+        // Atajos de teclado
+        const handleKeyDown = (e: KeyboardEvent) => {
             const tag = (e.target as HTMLElement).tagName;
             if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+
             if (e.key === "Delete" || e.key === "Backspace") {
                 const active = canvas.getActiveObject();
-                if (active) { canvas.remove(active); canvas.discardActiveObject(); canvas.renderAll(); setSelectedObject(null); }
+                if (active) {
+                    canvas.remove(active);
+                    canvas.discardActiveObject();
+                    canvas.renderAll();
+                    setSelectedObject(null);
+                }
             }
         };
-        window.addEventListener("keydown", onKey);
-
-        const scrollEl = canvasScrollRef.current;
-        const onScroll = () => { if (!canvas.disposed) canvas.calcOffset(); };
-        scrollEl?.addEventListener("scroll", onScroll, { passive: true });
+        window.addEventListener("keydown", handleKeyDown);
 
         return () => {
-            cancelled = true;
-            setSelectedObject(null);
-            window.removeEventListener("keydown", onKey);
-            scrollEl?.removeEventListener("scroll", onScroll);
-            fabricRef.current = null;
-            void canvas.dispose();
+            window.removeEventListener("keydown", handleKeyDown);
+            canvas.dispose();
         };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [template.id]);
+    }, [template, loadDesign]);
 
+    // --- Guardar en localStorage ---
     const handleSave = useCallback(() => {
-        const c = fabricRef.current; if (!c) return;
-        const ok = saveDesign(template.id, template.title, c.toJSON());
-        if (ok) { setSavedAt(new Date().toISOString()); setSaveFlash(true); setTimeout(() => setSaveFlash(false), 1500); }
+        const canvas = fabricCanvasRef.current;
+        if (!canvas) return;
+        const json = canvas.toJSON();
+        const ok = saveDesign(template.id, template.title, json);
+        if (ok) {
+            const now = new Date().toISOString();
+            setSavedAt(now);
+            setSaveFlash(true);
+            setTimeout(() => setSaveFlash(false), 1500);
+        }
     }, [saveDesign, template]);
 
-    const updateText = useCallback((v: string) => {
-        const c = fabricRef.current; if (!c || !selectedObject) return;
-        (selectedObject as Textbox).set("text", v); setSelectedText(p => ({ ...p, text: v })); c.renderAll();
+    // --- Actualizar texto ---
+    const updateSelectedText = useCallback((value: string) => {
+        const canvas = fabricCanvasRef.current;
+        if (!canvas || !selectedObject || selectedObject.type !== "textbox") return;
+        (selectedObject as Textbox).set("text", value);
+        setSelectedText((c) => ({ ...c, text: value }));
+        canvas.renderAll();
     }, [selectedObject]);
 
-    const updateColor = useCallback((v: string) => {
-        const c = fabricRef.current; if (!c || !selectedObject) return;
-        (selectedObject as Textbox).set("fill", v); setSelectedText(p => ({ ...p, color: v })); c.renderAll();
+    // --- Actualizar color ---
+    const updateSelectedColor = useCallback((value: string) => {
+        const canvas = fabricCanvasRef.current;
+        if (!canvas || !selectedObject || selectedObject.type !== "textbox") return;
+        (selectedObject as Textbox).set("fill", value);
+        setSelectedText((c) => ({ ...c, color: value }));
+        canvas.renderAll();
     }, [selectedObject]);
 
-    const updateFont = useCallback((v: string) => {
-        const c = fabricRef.current; if (!c || !selectedObject) return;
-        (selectedObject as Textbox).set("fontFamily", v); setSelectedText(p => ({ ...p, fontFamily: v })); c.renderAll();
+    // --- Actualizar fuente ---
+    const updateSelectedFont = useCallback((value: string) => {
+        const canvas = fabricCanvasRef.current;
+        if (!canvas || !selectedObject || selectedObject.type !== "textbox") return;
+        (selectedObject as Textbox).set("fontFamily", value);
+        setSelectedText((c) => ({ ...c, fontFamily: value }));
+        canvas.renderAll();
     }, [selectedObject]);
 
-    const updateFontSize = useCallback((v: number) => {
-        const c = fabricRef.current; if (!c || !selectedObject) return;
-        const size = Math.max(8, Math.min(200, v));
+    // --- Actualizar tamaño de fuente ---
+    const updateFontSize = useCallback((value: number) => {
+        const canvas = fabricCanvasRef.current;
+        if (!canvas || !selectedObject || selectedObject.type !== "textbox") return;
+        const size = Math.max(8, Math.min(200, value));
         (selectedObject as Textbox).set("fontSize", size);
-        setSelectedText(p => ({ ...p, fontSize: size })); c.renderAll();
+        setSelectedText((c) => ({ ...c, fontSize: size }));
+        canvas.renderAll();
     }, [selectedObject]);
 
+    // --- Eliminar capa seleccionada ---
     const deleteSelected = useCallback(() => {
-        const c = fabricRef.current; if (!c || !selectedObject) return;
-        c.remove(selectedObject); c.discardActiveObject(); c.renderAll(); setSelectedObject(null);
+        const canvas = fabricCanvasRef.current;
+        if (!canvas || !selectedObject) return;
+        canvas.remove(selectedObject);
+        canvas.discardActiveObject();
+        canvas.renderAll();
+        setSelectedObject(null);
     }, [selectedObject]);
 
+    // --- Mover capa adelante ---
     const bringForward = useCallback(() => {
-        const c = fabricRef.current; if (!c || !selectedObject) return;
-        c.bringObjectForward(selectedObject); c.renderAll();
+        const canvas = fabricCanvasRef.current;
+        if (!canvas || !selectedObject) return;
+        canvas.bringObjectForward(selectedObject);
+        canvas.renderAll();
     }, [selectedObject]);
 
+    // --- Mover capa atrás ---
     const sendBackward = useCallback(() => {
-        const c = fabricRef.current; if (!c || !selectedObject) return;
-        c.sendObjectBackwards(selectedObject); c.renderAll();
+        const canvas = fabricCanvasRef.current;
+        if (!canvas || !selectedObject) return;
+        canvas.sendObjectBackwards(selectedObject);
+        canvas.renderAll();
     }, [selectedObject]);
 
+    // --- Añadir texto ---
     const addText = useCallback(() => {
-        const c = fabricRef.current; if (!c) return;
-        const t = new Textbox("Nuevo texto", {
-            left: 40, top: 40, width: Math.min(350, template.width - 80),
-            fontSize: 32, fontFamily: "Arial", fill: "#ffffff", fontWeight: "bold", textAlign: "center",
+        const canvas = fabricCanvasRef.current;
+        if (!canvas) return;
+        const text = new Textbox("Nuevo texto", {
+            left: 80,
+            top: 80,
+            width: 270,
+            fontSize: 32,
+            fontFamily: "Arial",
+            fill: "#ffffff",
+            fontWeight: "bold",
+            textAlign: "center",
         });
-        c.add(t); c.setActiveObject(t); c.renderAll();
-        setSelectedObject(t); setSelectedText({ text: "Nuevo texto", color: "#ffffff", fontFamily: "Arial", fontSize: 32 });
+        canvas.add(text);
+        canvas.setActiveObject(text);
+        canvas.renderAll();
+        setSelectedObject(text);
+        setSelectedText({ text: "Nuevo texto", color: "#ffffff", fontFamily: "Arial", fontSize: 32 });
     }, []);
 
-    const addImageToCanvas = useCallback(async (file: File, replacing?: FabricObject) => {
-        const c = fabricRef.current; if (!c) return;
-        const dataUrl = await new Promise<string>(res => { const r = new FileReader(); r.onload = e => res(e.target?.result as string); r.readAsDataURL(file); });
-        const img = await FabricImage.fromURL(dataUrl);
-        const maxW = c.width! * 0.7, maxH = c.height! * 0.7;
-        const s = Math.min(maxW / (img.width ?? maxW), maxH / (img.height ?? maxH), 1);
-        if (replacing) {
-            img.set({ left: replacing.left, top: replacing.top, scaleX: s, scaleY: s, cornerStyle: "circle", transparentCorners: false });
-            c.remove(replacing);
-        } else {
-            img.set({ left: (c.width! - (img.width ?? 0) * s) / 2, top: (c.height! - (img.height ?? 0) * s) / 2, scaleX: s, scaleY: s, cornerStyle: "circle", transparentCorners: false });
-        }
-        c.add(img); c.setActiveObject(img); c.renderAll(); setSelectedObject(img);
+    // --- Subir imagen ---
+    const openImagePicker = useCallback(() => {
+        fileInputRef.current?.click();
     }, []);
 
-    const handleRemoveBg = useCallback(async () => {
-        const c = fabricRef.current;
-        if (!c || !selectedObject || selectedObject.type !== "image") return;
-        setRemovingBg(true);
-        try {
-            const imgEl = (selectedObject as FabricImage).getElement() as HTMLImageElement;
-            const tmp = document.createElement("canvas");
-            tmp.width = imgEl.naturalWidth || imgEl.width || 800;
-            tmp.height = imgEl.naturalHeight || imgEl.height || 800;
-            const ctx = tmp.getContext("2d"); if (!ctx) throw new Error("no ctx");
-            ctx.drawImage(imgEl, 0, 0, tmp.width, tmp.height);
-            const res = await fetch("/api/remove-bg", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ imageBase64: tmp.toDataURL("image/png") }) });
-            const data = await res.json();
-            if (!res.ok || !data.result) throw new Error(data.error);
-            const old = selectedObject;
-            const newImg = await FabricImage.fromURL(data.result);
-            newImg.set({ left: old.left, top: old.top, scaleX: old.scaleX, scaleY: old.scaleY, angle: old.angle, cornerStyle: "circle", transparentCorners: false });
-            c.remove(old); c.add(newImg); c.setActiveObject(newImg); c.renderAll(); setSelectedObject(newImg);
-        } catch (e) { console.error(e); alert("Error al quitar el fondo."); }
-        finally { setRemovingBg(false); }
-    }, [selectedObject]);
+    const handleImageUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        const canvas = fabricCanvasRef.current;
+        if (!file || !canvas) return;
 
+        const imageUrl = URL.createObjectURL(file);
+        const image = await FabricImage.fromURL(imageUrl);
+
+        // Ajustar tamaño automático al canvas
+        const maxW = canvas.width! * 0.6;
+        const maxH = canvas.height! * 0.6;
+        const scaleX = maxW / (image.width ?? maxW);
+        const scaleY = maxH / (image.height ?? maxH);
+        const scale = Math.min(scaleX, scaleY, 1);
+
+        image.set({
+            left: (canvas.width! - (image.width ?? 0) * scale) / 2,
+            top: (canvas.height! - (image.height ?? 0) * scale) / 2,
+            scaleX: scale,
+            scaleY: scale,
+            cornerStyle: "circle",
+            transparentCorners: false,
+        });
+
+        canvas.add(image);
+        canvas.setActiveObject(image);
+        canvas.renderAll();
+        event.target.value = "";
+    }, []);
+
+    // --- Exportar PNG ---
     const exportPng = useCallback(() => {
-        const c = fabricRef.current; if (!c) return;
-        const url = c.toDataURL({ format: "png", quality: 1, multiplier: 1 });
-        const a = document.createElement("a"); a.href = url; a.download = `${template.title.replace(/\s+/g, "_")}.png`; a.click();
-    }, [template]);
+        const canvas = fabricCanvasRef.current;
+        if (!canvas) return;
+        const dataUrl = canvas.toDataURL({ format: "png", quality: 1, multiplier: 3 });
+        const link = document.createElement("a");
+        link.href = dataUrl;
+        link.download = `${template.title.replace(/\s+/g, "_")}.png`;
+        link.click();
+    }, [template.title]);
+
+    // Formatear hora guardado
+    const formatSavedAt = (iso: string) => {
+        const d = new Date(iso);
+        return `Guardado ${d.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}`;
+    };
 
     const isText = selectedObject?.type === "textbox";
-    const isImage = selectedObject?.type === "image";
     const isObject = !!selectedObject;
 
     return (
         <>
-<input ref={fileInputRef} type="file" accept="image/*" onChange={e => { const f = e.target.files?.[0]; if (f) addImageToCanvas(f); e.target.value = ""; }} className="hidden" />
-            <input ref={replaceInputRef} type="file" accept="image/*" onChange={e => { const f = e.target.files?.[0]; if (f && selectedObject) addImageToCanvas(f, selectedObject); e.target.value = ""; }} className="hidden" />
+            <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="hidden"
+            />
 
+            {/* Barra superior */}
             <div className="flex items-center justify-between px-4 py-2 bg-black/60 border-b border-white/10 gap-4">
                 <div className="flex items-center gap-3">
-                    <a href="/templates" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-sm text-white transition-colors">← Plantillas</a>
                     <span className="text-sm font-bold text-white">{template.title}</span>
-                    {savedAt && <span className="text-xs text-gray-500">Guardado {new Date(savedAt).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}</span>}
-                    {isMounted && hasSavedDesign(template.id) && !savedAt && <span className="text-xs text-yellow-500">Diseño guardado disponible</span>}
+                    {savedAt && (
+                        <span className="text-xs text-gray-500">{formatSavedAt(savedAt)}</span>
+                    )}
+                    {hasSavedDesign(template.id) && !savedAt && (
+                        <span className="text-xs text-yellow-500">Diseño guardado disponible</span>
+                    )}
                 </div>
                 <div className="flex items-center gap-2">
-                    <button onClick={handleSave} className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${saveFlash ? "bg-green-600 text-white" : "bg-purple-600 hover:bg-purple-500 text-white"}`}>
+                    <button
+                        onClick={handleSave}
+                        className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
+                            saveFlash
+                                ? "bg-green-600 text-white"
+                                : "bg-purple-600 hover:bg-purple-500 text-white"
+                        }`}
+                    >
                         {saveFlash ? "✓ Guardado" : "💾 Guardar"}
                     </button>
-                    <button onClick={exportPng} className="px-4 py-2 rounded-xl bg-yellow-400 text-black text-sm font-black hover:bg-yellow-300">↓ PNG</button>
+                    <button
+                        onClick={exportPng}
+                        className="px-4 py-2 rounded-xl bg-yellow-400 text-black text-sm font-black hover:bg-yellow-300"
+                    >
+                        ↓ PNG
+                    </button>
                 </div>
             </div>
 
-            <section className="grid min-h-[calc(100vh-120px)] grid-cols-1 gap-4 px-4 py-4 lg:grid-cols-[280px_1fr_320px] lg:grid-rows-[minmax(0,1fr)]">
+            <section className="grid min-h-[calc(100vh-120px)] grid-cols-1 gap-4 px-4 py-4 lg:grid-cols-[280px_1fr_320px]">
+                {/* Panel izquierdo: Herramientas */}
                 <aside className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
                     <h2 className="text-lg font-bold mb-5">Herramientas</h2>
+
                     <div className="space-y-3">
-                        <button onClick={addText} className="w-full rounded-xl bg-white/10 px-4 py-3 text-left text-sm hover:bg-white/15">✏️ Añadir texto</button>
-                        <button onClick={() => fileInputRef.current?.click()} className="w-full rounded-xl bg-white/10 px-4 py-3 text-left text-sm hover:bg-white/15">🖼️ Subir artista</button>
+                        <button
+                            onClick={addText}
+                            className="w-full rounded-xl bg-white/10 px-4 py-3 text-left text-sm hover:bg-white/15 transition-colors"
+                        >
+                            ✏️ Añadir texto
+                        </button>
+                        <button
+                            onClick={openImagePicker}
+                            className="w-full rounded-xl bg-white/10 px-4 py-3 text-left text-sm hover:bg-white/15 transition-colors"
+                        >
+                            🖼️ Subir artista
+                        </button>
+                        <button className="w-full rounded-xl bg-white/10 px-4 py-3 text-left text-sm hover:bg-white/15 transition-colors opacity-50 cursor-not-allowed">
+                            ✂️ Quitar fondo (próximo)
+                        </button>
+                        <button className="w-full rounded-xl bg-white/10 px-4 py-3 text-left text-sm hover:bg-white/15 transition-colors opacity-50 cursor-not-allowed">
+                            🎨 Cambiar fondo (próximo)
+                        </button>
                     </div>
+
+                    {/* Acciones de capa */}
                     {isObject && (
                         <div className="mt-6 pt-5 border-t border-white/10">
                             <h3 className="text-xs uppercase tracking-widest text-gray-500 mb-3">Capa seleccionada</h3>
                             <div className="space-y-2">
                                 <div className="flex gap-2">
-                                    <button onClick={bringForward} className="flex-1 rounded-xl bg-white/10 px-3 py-2 text-sm hover:bg-white/15">↑ Adelante</button>
-                                    <button onClick={sendBackward} className="flex-1 rounded-xl bg-white/10 px-3 py-2 text-sm hover:bg-white/15">↓ Atrás</button>
+                                    <button
+                                        onClick={bringForward}
+                                        className="flex-1 rounded-xl bg-white/10 px-3 py-2 text-sm hover:bg-white/15 transition-colors"
+                                        title="Mover adelante"
+                                    >
+                                        ↑ Adelante
+                                    </button>
+                                    <button
+                                        onClick={sendBackward}
+                                        className="flex-1 rounded-xl bg-white/10 px-3 py-2 text-sm hover:bg-white/15 transition-colors"
+                                        title="Mover atrás"
+                                    >
+                                        ↓ Atrás
+                                    </button>
                                 </div>
-                                <button onClick={deleteSelected} className="w-full rounded-xl bg-red-900/40 border border-red-800/50 px-4 py-2 text-sm text-red-400 hover:bg-red-900/60">🗑️ Eliminar capa</button>
+                                <button
+                                    onClick={deleteSelected}
+                                    className="w-full rounded-xl bg-red-900/40 border border-red-800/50 px-4 py-2 text-sm text-red-400 hover:bg-red-900/60 transition-colors"
+                                >
+                                    🗑️ Eliminar capa
+                                </button>
                             </div>
                         </div>
                     )}
+
+                    {/* Info atajos */}
+                    <div className="mt-6 pt-5 border-t border-white/10">
+                        <p className="text-xs text-gray-600">
+                            <span className="text-gray-500">Atajos:</span><br />
+                            <kbd className="bg-white/10 px-1 rounded text-xs">Del</kbd> eliminar selección
+                        </p>
+                    </div>
                 </aside>
 
-                <div className="flex min-h-0 min-w-0 flex-col rounded-2xl border border-white/10 bg-[#0b0c14] p-6">
-                    <div className="mx-auto mb-4 w-full max-w-[520px] shrink-0">
-                        <p className="text-sm text-purple-300">Editando plantilla</p>
-                        <h1 className="text-2xl font-bold">{template.title}</h1>
-                        <p className="text-sm text-gray-400">{template.category}</p>
-                    </div>
-                    <div ref={canvasScrollRef} className="min-h-0 w-full flex-1 overflow-auto overscroll-contain flex justify-center items-start">
-                        <div className="relative mx-auto w-fit shrink-0 rounded-2xl border border-white/10 bg-black p-4 shadow-2xl">
-                            <canvas ref={canvasElRef} />
+                {/* Canvas central */}
+                <div className="flex items-center justify-center rounded-2xl border border-white/10 bg-[#0b0c14] p-6">
+                    <div className="w-full max-w-[520px]">
+                        <div className="mb-4">
+                            <p className="text-sm text-purple-300">Editando plantilla</p>
+                            <h1 className="text-2xl font-bold">{template.title}</h1>
+                            <p className="text-sm text-gray-400">{template.category}</p>
+                        </div>
+                        <div className="flex flex-col items-center gap-4">
+                            <div className="rounded-2xl border border-white/10 bg-black p-4 shadow-2xl">
+                                <canvas ref={canvasElementRef} />
+                            </div>
                         </div>
                     </div>
                 </div>
 
+                {/* Panel derecho: Propiedades */}
                 <aside className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
                     <h2 className="text-lg font-bold mb-5">Propiedades</h2>
-                    {!selectedObject && <p className="text-sm text-gray-400">Selecciona un elemento del flyer para editarlo.</p>}
+
+                    {!selectedObject && (
+                        <p className="text-sm text-gray-400">
+                            Selecciona un elemento del flyer para editarlo.
+                        </p>
+                    )}
+
                     {isText && (
                         <div className="space-y-4">
+                            {/* Texto */}
                             <div>
                                 <label className="mb-1 block text-xs text-gray-400">Texto</label>
-                                <textarea value={selectedText.text} onChange={e => updateText(e.target.value)} className="min-h-24 w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-sm text-white outline-none resize-none" />
+                                <textarea
+                                    value={selectedText.text}
+                                    onChange={(e) => updateSelectedText(e.target.value)}
+                                    className="min-h-24 w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-sm text-white outline-none resize-none"
+                                />
                             </div>
+
+                            {/* Fuente */}
                             <div>
                                 <label className="mb-1 block text-xs text-gray-400">Fuente</label>
-                                <select value={selectedText.fontFamily} onChange={e => updateFont(e.target.value)} className="w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-sm text-white outline-none">
-                                    {FONTS.map(f => <option key={f} value={f}>{f}</option>)}
+                                <select
+                                    value={selectedText.fontFamily}
+                                    onChange={(e) => updateSelectedFont(e.target.value)}
+                                    className="w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-sm text-white outline-none"
+                                >
+                                    {FONTS.map((f) => (
+                                        <option key={f} value={f}>{f}</option>
+                                    ))}
                                 </select>
                             </div>
+
+                            {/* Tamaño de fuente */}
                             <div>
-                                <label className="mb-1 block text-xs text-gray-400">Tamaño: <span className="text-white font-semibold">{selectedText.fontSize}px</span></label>
+                                <label className="mb-1 block text-xs text-gray-400">
+                                    Tamaño: <span className="text-white font-semibold">{selectedText.fontSize}px</span>
+                                </label>
                                 <div className="flex items-center gap-2">
-                                    <input type="range" min={8} max={200} value={selectedText.fontSize} onChange={e => updateFontSize(Number(e.target.value))} className="flex-1 accent-purple-500" />
-                                    <input type="number" min={8} max={200} value={selectedText.fontSize} onChange={e => updateFontSize(Number(e.target.value))} className="w-16 rounded-xl border border-white/10 bg-black/40 px-2 py-1 text-sm text-white outline-none text-center" />
+                                    <input
+                                        type="range"
+                                        min={8}
+                                        max={120}
+                                        value={selectedText.fontSize}
+                                        onChange={(e) => updateFontSize(Number(e.target.value))}
+                                        className="flex-1 accent-purple-500"
+                                    />
+                                    <input
+                                        type="number"
+                                        min={8}
+                                        max={200}
+                                        value={selectedText.fontSize}
+                                        onChange={(e) => updateFontSize(Number(e.target.value))}
+                                        className="w-16 rounded-xl border border-white/10 bg-black/40 px-2 py-1 text-sm text-white outline-none text-center"
+                                    />
                                 </div>
                             </div>
+
+                            {/* Color */}
                             <div>
                                 <label className="mb-1 block text-xs text-gray-400">Color</label>
                                 <div className="flex items-center gap-3">
-                                    <input type="color" value={selectedText.color} onChange={e => updateColor(e.target.value)} className="h-11 w-16 rounded-xl border border-white/10 bg-black/40 cursor-pointer" />
-                                    <span className="text-sm text-gray-400 font-mono">{selectedText.color}</span>
+                                    <input
+                                        type="color"
+                                        value={selectedText.color}
+                                        onChange={(e) => updateSelectedColor(e.target.value)}
+                                        className="h-11 w-16 rounded-xl border border-white/10 bg-black/40 cursor-pointer"
+                                    />
+                                    <span className="text-sm text-gray-400 font-mono">
+                                        {selectedText.color}
+                                    </span>
                                 </div>
                             </div>
-                            <button onClick={handleSave} className="w-full rounded-xl bg-purple-600 px-4 py-3 text-sm font-semibold hover:bg-purple-500">💾 Guardar cambios</button>
-                        </div>
-                    )}
-                    {isImage && (
-                        <div className="space-y-3">
-                            <p className="text-xs text-gray-400 mb-4">Mueve, escala y rota la imagen en el canvas.</p>
-                            <button onClick={() => replaceInputRef.current?.click()} className="w-full rounded-xl bg-white/10 border border-white/10 px-4 py-3 text-sm text-white hover:bg-white/15">🔄 Reemplazar imagen</button>
-                            <button onClick={handleRemoveBg} disabled={removingBg} className={`w-full rounded-xl px-4 py-3 text-sm font-semibold transition-all ${removingBg ? "bg-white/5 text-gray-500 cursor-not-allowed" : "bg-emerald-900/40 border border-emerald-700/50 text-emerald-400 hover:bg-emerald-900/60"}`}>
-                                {removingBg ? "⏳ Quitando fondo..." : "✂️ Quitar fondo"}
+
+                            <button
+                                onClick={handleSave}
+                                className="w-full rounded-xl bg-purple-600 px-4 py-3 text-sm font-semibold hover:bg-purple-500 transition-colors"
+                            >
+                                💾 Guardar cambios
                             </button>
-                            <button onClick={deleteSelected} className="w-full rounded-xl bg-red-900/40 border border-red-800/50 px-4 py-3 text-sm text-red-400 hover:bg-red-900/60">🗑️ Eliminar imagen</button>
                         </div>
                     )}
-                    {isObject && !isText && !isImage && (
-                        <div className="space-y-3">
-                            <p className="text-sm text-gray-400">Forma seleccionada.</p>
-                            <button onClick={deleteSelected} className="w-full rounded-xl bg-red-900/40 border border-red-800/50 px-4 py-3 text-sm text-red-400 hover:bg-red-900/60">🗑️ Eliminar forma</button>
+
+                    {selectedObject && selectedObject.type !== "textbox" && (
+                        <div className="space-y-4">
+                            <p className="text-sm text-gray-400">
+                                Imagen seleccionada. Usa los botones del panel izquierdo para moverla o eliminarla.
+                            </p>
+                            <button
+                                onClick={deleteSelected}
+                                className="w-full rounded-xl bg-red-900/40 border border-red-800/50 px-4 py-3 text-sm text-red-400 hover:bg-red-900/60 transition-colors"
+                            >
+                                🗑️ Eliminar imagen
+                            </button>
                         </div>
                     )}
                 </aside>
