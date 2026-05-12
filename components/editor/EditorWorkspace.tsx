@@ -3,13 +3,12 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import {
     Canvas,
-    Rect,
     Textbox,
-    Circle,
     FabricObject,
     FabricImage,
 } from "fabric";
 import type { Template } from "@/data/templates";
+import { applyTemplateLayers } from "@/lib/fabricApplyTemplateLayers";
 import { useEditorStorage } from "@/hooks/useEditorStorage";
 
 type EditorWorkspaceProps = { template: Template };
@@ -17,12 +16,14 @@ type SelectedTextState = { text: string; color: string; fontFamily: string; font
 
 const FONTS = ["Arial","Bebas Neue","Anton","Montserrat","Playfair Display","Great Vibes","Oswald","Georgia"];
 
+const FABRIC_VIEWPORT_IDENTITY: [number, number, number, number, number, number] = [1, 0, 0, 1, 0, 0];
+
 export default function EditorWorkspace({ template }: EditorWorkspaceProps) {
     const canvasElementRef = useRef<HTMLCanvasElement | null>(null);
+    const canvasScrollRef = useRef<HTMLDivElement | null>(null);
     const fabricCanvasRef = useRef<Canvas | null>(null);
     const fileInputRef = useRef<HTMLInputElement | null>(null);
     const replaceInputRef = useRef<HTMLInputElement | null>(null);
-    const initializedRef = useRef(false);
 
     const [selectedObject, setSelectedObject] = useState<FabricObject | null>(null);
     const [savedAt, setSavedAt] = useState<string | null>(null);
@@ -36,56 +37,35 @@ export default function EditorWorkspace({ template }: EditorWorkspaceProps) {
     const { saveDesign, loadDesign, hasSavedDesign } = useEditorStorage();
 
     useEffect(() => {
-        if (!canvasElementRef.current) return;
-        if (initializedRef.current) return;
-        initializedRef.current = true;
-        setIsMounted(true);
+        const el = canvasElementRef.current;
+        if (!el) return;
 
-        const canvas = new Canvas(canvasElementRef.current, {
+        let cancelled = false;
+
+        const canvas = new Canvas(el, {
             width: template.width,
             height: template.height,
             backgroundColor: "#080812",
             preserveObjectStacking: true,
         });
         fabricCanvasRef.current = canvas;
+        setIsMounted(true);
+        canvas.setViewportTransform(FABRIC_VIEWPORT_IDENTITY);
 
         const saved = loadDesign(template.id);
         if (saved) {
             canvas.loadFromJSON(saved.fabricJson).then(() => {
+                if (cancelled || canvas.disposed) return;
+                canvas.setViewportTransform(FABRIC_VIEWPORT_IDENTITY);
+                canvas.setDimensions({ width: template.width, height: template.height });
                 canvas.renderAll();
+                canvas.calcOffset();
                 setSavedAt(saved.savedAt);
             });
         } else {
-            template.layers.forEach((layer) => {
-                if (layer.type === "shape") {
-                    if (layer.shape === "rect") {
-                        canvas.add(new Rect({
-                            left: layer.x, top: layer.y,
-                            width: layer.width, height: layer.height,
-                            fill: layer.fill, opacity: layer.opacity ?? 1,
-                            rx: layer.radius ?? 0, ry: layer.radius ?? 0,
-                            selectable: layer.selectable ?? true,
-                        }));
-                    }
-                    if (layer.shape === "circle") {
-                        canvas.add(new Circle({
-                            left: layer.x, top: layer.y,
-                            radius: layer.width / 2,
-                            fill: layer.fill, opacity: layer.opacity ?? 1,
-                            selectable: layer.selectable ?? true,
-                        }));
-                    }
-                }
-                if (layer.type === "text") {
-                    canvas.add(new Textbox(layer.text, {
-                        left: layer.x, top: layer.y, width: layer.width,
-                        fontSize: layer.fontSize, fontFamily: layer.fontFamily,
-                        fill: layer.color, fontWeight: layer.fontWeight ?? "normal",
-                        textAlign: layer.textAlign ?? "left",
-                    }));
-                }
-            });
+            applyTemplateLayers(canvas, template.layers);
             canvas.renderAll();
+            canvas.calcOffset();
         }
 
         const handleSelection = () => {
@@ -126,11 +106,22 @@ export default function EditorWorkspace({ template }: EditorWorkspaceProps) {
         };
         window.addEventListener("keydown", handleKeyDown);
 
-        return () => {
-            window.removeEventListener("keydown", handleKeyDown);
+        const scrollEl = canvasScrollRef.current;
+        const onScroll = () => {
+            if (fabricCanvasRef.current === canvas && !canvas.disposed) canvas.calcOffset();
         };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+        scrollEl?.addEventListener("scroll", onScroll, { passive: true });
+
+        return () => {
+            cancelled = true;
+            setSelectedObject(null);
+            window.removeEventListener("keydown", handleKeyDown);
+            scrollEl?.removeEventListener("scroll", onScroll);
+            fabricCanvasRef.current = null;
+            void canvas.dispose();
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- capas definidas por template.id; `layers` cambia de referencia cada render
+    }, [template.id, template.width, template.height, loadDesign]);
 
     const handleSave = useCallback(() => {
         const canvas = fabricCanvasRef.current;
@@ -384,7 +375,7 @@ export default function EditorWorkspace({ template }: EditorWorkspaceProps) {
                 </div>
             </div>
 
-            <section className="grid min-h-[calc(100vh-120px)] grid-cols-1 gap-4 px-4 py-4 lg:grid-cols-[280px_1fr_320px]">
+            <section className="grid min-h-[calc(100vh-120px)] grid-cols-1 gap-4 px-4 py-4 lg:grid-cols-[280px_1fr_320px] lg:grid-rows-[minmax(0,1fr)]">
                 <aside className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
                     <h2 className="text-lg font-bold mb-5">Herramientas</h2>
                     <div className="space-y-3">
@@ -407,17 +398,15 @@ export default function EditorWorkspace({ template }: EditorWorkspaceProps) {
                     )}
                 </aside>
 
-                <div className="flex items-center justify-center rounded-2xl border border-white/10 bg-[#0b0c14] p-6">
-                    <div className="w-full max-w-[520px]">
-                        <div className="mb-4">
-                            <p className="text-sm text-purple-300">Editando plantilla</p>
-                            <h1 className="text-2xl font-bold">{template.title}</h1>
-                            <p className="text-sm text-gray-400">{template.category}</p>
-                        </div>
-                        <div className="flex flex-col items-center gap-4">
-                            <div className="rounded-2xl border border-white/10 bg-black p-4 shadow-2xl">
-                                <canvas ref={canvasElementRef} />
-                            </div>
+                <div className="flex min-h-0 min-w-0 flex-col rounded-2xl border border-white/10 bg-[#0b0c14] p-6">
+                    <div className="mx-auto mb-4 w-full max-w-[520px] shrink-0">
+                        <p className="text-sm text-purple-300">Editando plantilla</p>
+                        <h1 className="text-2xl font-bold">{template.title}</h1>
+                        <p className="text-sm text-gray-400">{template.category}</p>
+                    </div>
+                    <div ref={canvasScrollRef} className="min-h-0 w-full flex-1 overflow-auto overscroll-contain">
+                        <div className="relative mx-auto w-fit shrink-0 rounded-2xl border border-white/10 bg-black p-4 shadow-2xl">
+                            <canvas ref={canvasElementRef} />
                         </div>
                     </div>
                 </div>

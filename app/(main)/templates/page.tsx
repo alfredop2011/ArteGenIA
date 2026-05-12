@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import { templates } from "@/data/templates";
+import TemplateFabricThumbnail from "@/components/templates/TemplateFabricThumbnail";
 
 const CATEGORIES = [
     { id: "todas", label: "Todas", icon: "⊞" },
@@ -183,12 +184,11 @@ export default function TemplatesPage() {
                                     className="group overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.03] hover:border-white/20 transition-all hover:shadow-2xl hover:shadow-purple-900/20"
                                 >
                                     <div className="relative aspect-[4/5] overflow-hidden">
-                                        <img
-                                            src={template.image}
-                                            alt={template.title}
-                                            className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                                        <TemplateFabricThumbnail
+                                            template={template}
+                                            className="absolute inset-0 h-full w-full transition duration-500 group-hover:scale-[1.02]"
                                         />
-                                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
+                                        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
 
                                         <span className="absolute left-3 top-3 rounded-full bg-black/60 border border-white/20 px-2.5 py-1 text-xs font-medium text-white backdrop-blur-sm">
                                             {template.category}

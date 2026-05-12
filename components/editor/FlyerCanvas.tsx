@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { Canvas, Rect, Textbox, Circle } from "fabric";
+import { Canvas } from "fabric";
 import type { TemplateLayer } from "@/data/templates";
+import { applyTemplateLayers } from "@/lib/fabricApplyTemplateLayers";
 
 type FlyerCanvasProps = {
     width: number;
@@ -15,9 +16,10 @@ export default function FlyerCanvas({ width, height, layers }: FlyerCanvasProps)
     const fabricCanvasRef = useRef<Canvas | null>(null);
 
     useEffect(() => {
-        if (!canvasElementRef.current) return;
+        const el = canvasElementRef.current;
+        if (!el) return;
 
-        const canvas = new Canvas(canvasElementRef.current, {
+        const canvas = new Canvas(el, {
             width,
             height,
             backgroundColor: "#080812",
@@ -26,60 +28,15 @@ export default function FlyerCanvas({ width, height, layers }: FlyerCanvasProps)
 
         fabricCanvasRef.current = canvas;
 
-        layers.forEach((layer) => {
-            if (layer.type === "shape") {
-                if (layer.shape === "rect") {
-                    const rect = new Rect({
-                        left: layer.x,
-                        top: layer.y,
-                        width: layer.width,
-                        height: layer.height,
-                        fill: layer.fill,
-                        opacity: layer.opacity ?? 1,
-                        rx: layer.radius ?? 0,
-                        ry: layer.radius ?? 0,
-                        selectable: layer.selectable ?? true,
-                    });
-
-                    canvas.add(rect);
-                }
-
-                if (layer.shape === "circle") {
-                    const circle = new Circle({
-                        left: layer.x,
-                        top: layer.y,
-                        radius: layer.width / 2,
-                        fill: layer.fill,
-                        opacity: layer.opacity ?? 1,
-                        selectable: layer.selectable ?? true,
-                    });
-
-                    canvas.add(circle);
-                }
-            }
-
-            if (layer.type === "text") {
-                const text = new Textbox(layer.text, {
-                    left: layer.x,
-                    top: layer.y,
-                    width: layer.width,
-                    fontSize: layer.fontSize,
-                    fontFamily: layer.fontFamily,
-                    fill: layer.color,
-                    fontWeight: layer.fontWeight ?? "normal",
-                    textAlign: layer.textAlign ?? "left",
-                });
-
-                canvas.add(text);
-            }
-        });
-
+        applyTemplateLayers(canvas, layers);
         canvas.renderAll();
 
         return () => {
-            canvas.dispose();
+            fabricCanvasRef.current = null;
+            void canvas.dispose();
         };
-    }, [width, height, layers]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- `layers` suele ser un array nuevo cada render
+    }, [width, height]);
 
     const exportPng = () => {
         const canvas = fabricCanvasRef.current;
