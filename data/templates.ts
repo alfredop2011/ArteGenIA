@@ -24,6 +24,20 @@ export type TemplateLayer =
     opacity?: number;
     radius?: number;
     selectable?: boolean;
+}
+    | {
+    id: string;
+    type: "image";
+    src: string;
+    x?: number;
+    y?: number;
+    scaleX?: number;
+    scaleY?: number;
+    opacity?: number;
+    cropX?: number;
+    cropY?: number;
+    cropWidth?: number;
+    cropHeight?: number;
 };
 
 export type Template = {

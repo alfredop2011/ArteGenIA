@@ -71,7 +71,7 @@ export async function applyTemplateLayers(
                     });
                 } else {
                     img.set({
-                        left: layer.x * scale, top: layer.y * scale,
+                        left: (layer.x ?? 0) * scale, top: (layer.y ?? 0) * scale,
                         scaleX: (layer.scaleX ?? 1) * scale,
                         scaleY: (layer.scaleY ?? 1) * scale,
                         opacity: layer.opacity ?? 1,
