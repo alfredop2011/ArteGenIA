@@ -21,6 +21,7 @@ export default function EditorWorkspace({ template }: EditorWorkspaceProps) {
     const canvasElementRef = useRef<HTMLCanvasElement | null>(null);
     const fabricCanvasRef = useRef<Canvas | null>(null);
     const fileInputRef = useRef<HTMLInputElement | null>(null);
+    const replaceInputRef = useRef<HTMLInputElement | null>(null);
     const initializedRef = useRef(false);
 
     const [selectedObject, setSelectedObject] = useState<FabricObject | null>(null);
@@ -127,7 +128,7 @@ export default function EditorWorkspace({ template }: EditorWorkspaceProps) {
         return () => {
             window.removeEventListener("keydown", handleKeyDown);
         };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const handleSave = useCallback(() => {
@@ -213,11 +214,11 @@ export default function EditorWorkspace({ template }: EditorWorkspaceProps) {
     }, []);
 
     const openImagePicker = useCallback(() => fileInputRef.current?.click(), []);
+    const openReplacePicker = useCallback(() => replaceInputRef.current?.click(), []);
 
-    const handleImageUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
+    const addImageToCanvas = useCallback(async (file: File) => {
         const canvas = fabricCanvasRef.current;
-        if (!file || !canvas) return;
+        if (!canvas) return;
         const imageUrl = URL.createObjectURL(file);
         const image = await FabricImage.fromURL(imageUrl);
         const maxW = canvas.width! * 0.6;
@@ -232,8 +233,49 @@ export default function EditorWorkspace({ template }: EditorWorkspaceProps) {
         canvas.add(image);
         canvas.setActiveObject(image);
         canvas.renderAll();
-        event.target.value = "";
+        setSelectedObject(image);
     }, []);
+
+    const handleImageUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+        await addImageToCanvas(file);
+        event.target.value = "";
+    }, [addImageToCanvas]);
+
+    const handleReplaceImage = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        const canvas = fabricCanvasRef.current;
+        if (!file || !canvas || !selectedObject) return;
+
+        // Guardar posición y tamaño del objeto actual
+        const oldLeft = selectedObject.left ?? 0;
+        const oldTop = selectedObject.top ?? 0;
+        const oldScaleX = selectedObject.scaleX ?? 1;
+        const oldScaleY = selectedObject.scaleY ?? 1;
+        const oldAngle = selectedObject.angle ?? 0;
+
+        // Eliminar imagen anterior
+        canvas.remove(selectedObject);
+
+        // Cargar nueva imagen en la misma posición
+        const imageUrl = URL.createObjectURL(file);
+        const image = await FabricImage.fromURL(imageUrl);
+        image.set({
+            left: oldLeft,
+            top: oldTop,
+            scaleX: oldScaleX,
+            scaleY: oldScaleY,
+            angle: oldAngle,
+            cornerStyle: "circle",
+            transparentCorners: false,
+        });
+        canvas.add(image);
+        canvas.setActiveObject(image);
+        canvas.renderAll();
+        setSelectedObject(image);
+        event.target.value = "";
+    }, [selectedObject]);
 
     const exportPng = useCallback(() => {
         const canvas = fabricCanvasRef.current;
@@ -246,12 +288,15 @@ export default function EditorWorkspace({ template }: EditorWorkspaceProps) {
     }, [template.title]);
 
     const isText = selectedObject?.type === "textbox";
+    const isImage = selectedObject?.type === "image";
     const isObject = !!selectedObject;
 
     return (
         <>
             <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+            <input ref={replaceInputRef} type="file" accept="image/*" onChange={handleReplaceImage} className="hidden" />
 
+            {/* Barra superior */}
             <div className="flex items-center justify-between px-4 py-2 bg-black/60 border-b border-white/10 gap-4">
                 <div className="flex items-center gap-3">
                     <span className="text-sm font-bold text-white">{template.title}</span>
@@ -266,17 +311,19 @@ export default function EditorWorkspace({ template }: EditorWorkspaceProps) {
                 </div>
                 <div className="flex items-center gap-2">
                     <button onClick={handleSave}
-                            className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${saveFlash ? "bg-green-600 text-white" : "bg-purple-600 hover:bg-purple-500 text-white"}`}>
+                        className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${saveFlash ? "bg-green-600 text-white" : "bg-purple-600 hover:bg-purple-500 text-white"}`}>
                         {saveFlash ? "✓ Guardado" : "💾 Guardar"}
                     </button>
                     <button onClick={exportPng}
-                            className="px-4 py-2 rounded-xl bg-yellow-400 text-black text-sm font-black hover:bg-yellow-300">
+                        className="px-4 py-2 rounded-xl bg-yellow-400 text-black text-sm font-black hover:bg-yellow-300">
                         ↓ PNG
                     </button>
                 </div>
             </div>
 
             <section className="grid min-h-[calc(100vh-120px)] grid-cols-1 gap-4 px-4 py-4 lg:grid-cols-[280px_1fr_320px]">
+
+                {/* Panel izquierdo */}
                 <aside className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
                     <h2 className="text-lg font-bold mb-5">Herramientas</h2>
                     <div className="space-y-3">
@@ -285,6 +332,7 @@ export default function EditorWorkspace({ template }: EditorWorkspaceProps) {
                         <button className="w-full rounded-xl bg-white/10 px-4 py-3 text-left text-sm opacity-50 cursor-not-allowed">✂️ Quitar fondo (próximo)</button>
                         <button className="w-full rounded-xl bg-white/10 px-4 py-3 text-left text-sm opacity-50 cursor-not-allowed">🎨 Cambiar fondo (próximo)</button>
                     </div>
+
                     {isObject && (
                         <div className="mt-6 pt-5 border-t border-white/10">
                             <h3 className="text-xs uppercase tracking-widest text-gray-500 mb-3">Capa seleccionada</h3>
@@ -301,6 +349,7 @@ export default function EditorWorkspace({ template }: EditorWorkspaceProps) {
                     )}
                 </aside>
 
+                {/* Canvas */}
                 <div className="flex items-center justify-center rounded-2xl border border-white/10 bg-[#0b0c14] p-6">
                     <div className="w-full max-w-[520px]">
                         <div className="mb-4">
@@ -316,20 +365,26 @@ export default function EditorWorkspace({ template }: EditorWorkspaceProps) {
                     </div>
                 </div>
 
+                {/* Panel derecho */}
                 <aside className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
                     <h2 className="text-lg font-bold mb-5">Propiedades</h2>
-                    {!selectedObject && <p className="text-sm text-gray-400">Selecciona un elemento del flyer para editarlo.</p>}
+
+                    {!selectedObject && (
+                        <p className="text-sm text-gray-400">Selecciona un elemento del flyer para editarlo.</p>
+                    )}
+
+                    {/* Propiedades de texto */}
                     {isText && (
                         <div className="space-y-4">
                             <div>
                                 <label className="mb-1 block text-xs text-gray-400">Texto</label>
                                 <textarea value={selectedText.text} onChange={(e) => updateSelectedText(e.target.value)}
-                                          className="min-h-24 w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-sm text-white outline-none resize-none" />
+                                    className="min-h-24 w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-sm text-white outline-none resize-none" />
                             </div>
                             <div>
                                 <label className="mb-1 block text-xs text-gray-400">Fuente</label>
                                 <select value={selectedText.fontFamily} onChange={(e) => updateSelectedFont(e.target.value)}
-                                        className="w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-sm text-white outline-none">
+                                    className="w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-sm text-white outline-none">
                                     {FONTS.map((f) => <option key={f} value={f}>{f}</option>)}
                                 </select>
                             </div>
@@ -339,18 +394,18 @@ export default function EditorWorkspace({ template }: EditorWorkspaceProps) {
                                 </label>
                                 <div className="flex items-center gap-2">
                                     <input type="range" min={8} max={120} value={selectedText.fontSize}
-                                           onChange={(e) => updateFontSize(Number(e.target.value))}
-                                           className="flex-1 accent-purple-500" />
+                                        onChange={(e) => updateFontSize(Number(e.target.value))}
+                                        className="flex-1 accent-purple-500" />
                                     <input type="number" min={8} max={200} value={selectedText.fontSize}
-                                           onChange={(e) => updateFontSize(Number(e.target.value))}
-                                           className="w-16 rounded-xl border border-white/10 bg-black/40 px-2 py-1 text-sm text-white outline-none text-center" />
+                                        onChange={(e) => updateFontSize(Number(e.target.value))}
+                                        className="w-16 rounded-xl border border-white/10 bg-black/40 px-2 py-1 text-sm text-white outline-none text-center" />
                                 </div>
                             </div>
                             <div>
                                 <label className="mb-1 block text-xs text-gray-400">Color</label>
                                 <div className="flex items-center gap-3">
                                     <input type="color" value={selectedText.color} onChange={(e) => updateSelectedColor(e.target.value)}
-                                           className="h-11 w-16 rounded-xl border border-white/10 bg-black/40 cursor-pointer" />
+                                        className="h-11 w-16 rounded-xl border border-white/10 bg-black/40 cursor-pointer" />
                                     <span className="text-sm text-gray-400 font-mono">{selectedText.color}</span>
                                 </div>
                             </div>
@@ -359,11 +414,39 @@ export default function EditorWorkspace({ template }: EditorWorkspaceProps) {
                             </button>
                         </div>
                     )}
-                    {isObject && !isText && (
-                        <div className="space-y-4">
-                            <p className="text-sm text-gray-400">Imagen seleccionada.</p>
-                            <button onClick={deleteSelected} className="w-full rounded-xl bg-red-900/40 border border-red-800/50 px-4 py-3 text-sm text-red-400 hover:bg-red-900/60">
+
+                    {/* Propiedades de imagen */}
+                    {isImage && (
+                        <div className="space-y-3">
+                            <p className="text-xs text-gray-400 mb-4">Imagen seleccionada. Puedes moverla, escalarla y rotarla directamente en el canvas.</p>
+
+                            <button onClick={openReplacePicker}
+                                className="w-full rounded-xl bg-white/10 border border-white/10 px-4 py-3 text-sm text-white hover:bg-white/15 transition-colors">
+                                🔄 Reemplazar imagen
+                            </button>
+
+                            <button onClick={deleteSelected}
+                                className="w-full rounded-xl bg-red-900/40 border border-red-800/50 px-4 py-3 text-sm text-red-400 hover:bg-red-900/60 transition-colors">
                                 🗑️ Eliminar imagen
+                            </button>
+
+                            <div className="pt-3 border-t border-white/10">
+                                <button
+                                    className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm text-gray-500 cursor-not-allowed"
+                                    disabled>
+                                    ✂️ Quitar fondo (próximo)
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Forma seleccionada */}
+                    {isObject && !isText && !isImage && (
+                        <div className="space-y-3">
+                            <p className="text-sm text-gray-400">Forma seleccionada.</p>
+                            <button onClick={deleteSelected}
+                                className="w-full rounded-xl bg-red-900/40 border border-red-800/50 px-4 py-3 text-sm text-red-400 hover:bg-red-900/60">
+                                🗑️ Eliminar forma
                             </button>
                         </div>
                     )}
