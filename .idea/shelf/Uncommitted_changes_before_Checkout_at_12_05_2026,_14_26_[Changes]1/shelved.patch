@@ -1,0 +1,595 @@
+Index: ../artegenia/data/templates.ts
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>export type TemplateLayer =\n    | {\n    id: string;\n    type: \"text\";\n    text: string;\n    x: number;\n    y: number;\n    width: number;\n    fontSize: number;\n    fontFamily: string;\n    color: string;\n    fontWeight?: \"normal\" | \"bold\" | \"black\";\n    textAlign?: \"left\" | \"center\" | \"right\";\n}\n    | {\n    id: string;\n    type: \"shape\";\n    shape: \"rect\" | \"circle\";\n    x: number;\n    y: number;\n    width: number;\n    height: number;\n    fill: string;\n    opacity?: number;\n    radius?: number;\n    selectable?: boolean;\n};\n\nexport type Template = {\n    id: number;\n    title: string;\n    category: string;\n    image: string;\n    premium: boolean;\n    width: number;\n    height: number;\n    layers: TemplateLayer[];\n};\n\nexport const templates: Template[] = [\n    // 1 — Noche Magnética (Fiesta / Club)\n    {\n        id: 1,\n        title: \"Noche Magnética\",\n        category: \"Fiesta\",\n        image: \"https://images.unsplash.com/photo-1492684223066-81342ee5ff30?q=80&w=800\",\n        premium: true,\n        width: 430,\n        height: 540,\n        layers: [\n            { id: \"bg\", type: \"shape\", shape: \"rect\", x: 0, y: 0, width: 430, height: 540, fill: \"#080812\", selectable: false },\n            { id: \"glow\", type: \"shape\", shape: \"rect\", x: 40, y: 40, width: 350, height: 460, fill: \"rgba(168,85,247,0.22)\", opacity: 1, radius: 42, selectable: false },\n            { id: \"line-top\", type: \"shape\", shape: \"rect\", x: 60, y: 90, width: 310, height: 2, fill: \"#facc15\", opacity: 0.6, selectable: false },\n            { id: \"line-bot\", type: \"shape\", shape: \"rect\", x: 60, y: 430, width: 310, height: 2, fill: \"#facc15\", opacity: 0.6, selectable: false },\n            { id: \"title\", type: \"text\", text: \"NOCHE MAGNÉTICA\", x: 35, y: 160, width: 360, fontSize: 42, fontFamily: \"Arial\", color: \"#facc15\", fontWeight: \"black\", textAlign: \"center\" },\n            { id: \"subtitle\", type: \"text\", text: \"Fiesta Latina\", x: 55, y: 240, width: 320, fontSize: 26, fontFamily: \"Arial\", color: \"#ffffff\", fontWeight: \"bold\", textAlign: \"center\" },\n            { id: \"date\", type: \"text\", text: \"SÁBADO 21 JUNIO · 23:00 HRS\", x: 55, y: 300, width: 320, fontSize: 18, fontFamily: \"Arial\", color: \"#e0e0e0\", fontWeight: \"bold\", textAlign: \"center\" },\n            { id: \"venue\", type: \"text\", text: \"Club Metrópolis\", x: 55, y: 340, width: 320, fontSize: 16, fontFamily: \"Arial\", color: \"#a78bfa\", textAlign: \"center\" },\n            { id: \"djs\", type: \"text\", text: \"DJ LUXO · MARCOS VEGA\", x: 55, y: 375, width: 320, fontSize: 14, fontFamily: \"Arial\", color: \"#d1d5db\", textAlign: \"center\" },\n            { id: \"price\", type: \"text\", text: \"ENTRADA ANTICIPADA 15€\", x: 80, y: 445, width: 270, fontSize: 16, fontFamily: \"Arial\", color: \"#111111\", fontWeight: \"black\", textAlign: \"center\" },\n        ],\n    },\n\n    // 2 — Urban Party (Concierto)\n    {\n        id: 2,\n        title: \"Urban Party\",\n        category: \"Concierto\",\n        image: \"https://images.unsplash.com/photo-1501386761578-eac5c94b800a?q=80&w=800\",\n        premium: false,\n        width: 430,\n        height: 540,\n        layers: [\n            { id: \"bg\", type: \"shape\", shape: \"rect\", x: 0, y: 0, width: 430, height: 540, fill: \"#070711\", selectable: false },\n            { id: \"accent\", type: \"shape\", shape: \"rect\", x: 0, y: 0, width: 220, height: 270, fill: \"#3b0764\", opacity: 0.72, radius: 45, selectable: false },\n            { id: \"accent2\", type: \"shape\", shape: \"rect\", x: 210, y: 270, width: 220, height: 270, fill: \"#1e1b4b\", opacity: 0.72, radius: 45, selectable: false },\n            { id: \"title\", type: \"text\", text: \"URBAN PARTY\", x: 35, y: 155, width: 360, fontSize: 40, fontFamily: \"Arial\", color: \"#facc15\", fontWeight: \"black\", textAlign: \"center\" },\n            { id: \"subtitle\", type: \"text\", text: \"Live Experience\", x: 55, y: 220, width: 320, fontSize: 22, fontFamily: \"Arial\", color: \"#ffffff\", textAlign: \"center\" },\n            { id: \"artist\", type: \"text\", text: \"ARTISTA PRINCIPAL\", x: 55, y: 265, width: 320, fontSize: 18, fontFamily: \"Arial\", color: \"#a78bfa\", fontWeight: \"bold\", textAlign: \"center\" },\n            { id: \"date\", type: \"text\", text: \"SÁBADO 21 JUNIO\", x: 70, y: 320, width: 290, fontSize: 20, fontFamily: \"Arial\", color: \"#ffffff\", fontWeight: \"bold\", textAlign: \"center\" },\n            { id: \"time\", type: \"text\", text: \"21:00 HRS · Puertas 20:00\", x: 70, y: 355, width: 290, fontSize: 14, fontFamily: \"Arial\", color: \"#9ca3af\", textAlign: \"center\" },\n            { id: \"venue\", type: \"text\", text: \"Teatro del Río\", x: 55, y: 390, width: 320, fontSize: 16, fontFamily: \"Arial\", color: \"#fbbf24\", textAlign: \"center\" },\n            { id: \"price\", type: \"text\", text: \"ENTRADA ANTICIPADA 25€\", x: 55, y: 460, width: 320, fontSize: 16, fontFamily: \"Arial\", color: \"#111111\", fontWeight: \"black\", textAlign: \"center\" },\n        ],\n    },\n\n    // 3 — DJ Neon (Discoteca)\n    {\n        id: 3,\n        title: \"DJ Neon\",\n        category: \"Discoteca\",\n        image: \"https://images.unsplash.com/photo-1514525253161-7a46d19cd819?q=80&w=800\",\n        premium: true,\n        width: 430,\n        height: 540,\n        layers: [\n            { id: \"bg\", type: \"shape\", shape: \"rect\", x: 0, y: 0, width: 430, height: 540, fill: \"#020617\", selectable: false },\n            { id: \"neon-box\", type: \"shape\", shape: \"rect\", x: 35, y: 60, width: 360, height: 420, fill: \"rgba(236,72,153,0.12)\", radius: 35, selectable: false },\n            { id: \"circle\", type: \"shape\", shape: \"circle\", x: 155, y: 60, width: 120, height: 120, fill: \"rgba(34,211,238,0.1)\", selectable: false },\n            { id: \"dj-label\", type: \"text\", text: \"DJ SET\", x: 35, y: 110, width: 360, fontSize: 14, fontFamily: \"Arial\", color: \"#22d3ee\", fontWeight: \"bold\", textAlign: \"center\" },\n            { id: \"title\", type: \"text\", text: \"DJ NEON\", x: 35, y: 150, width: 360, fontSize: 56, fontFamily: \"Arial\", color: \"#22d3ee\", fontWeight: \"black\", textAlign: \"center\" },\n            { id: \"subtitle\", type: \"text\", text: \"Live Experience\", x: 55, y: 230, width: 320, fontSize: 24, fontFamily: \"Arial\", color: \"#ffffff\", textAlign: \"center\" },\n            { id: \"genres\", type: \"text\", text: \"TECHNO · HOUSE · ELECTRO\", x: 55, y: 275, width: 320, fontSize: 13, fontFamily: \"Arial\", color: \"#ec4899\", textAlign: \"center\" },\n            { id: \"date\", type: \"text\", text: \"VIERNES 28 JUNIO\", x: 70, y: 330, width: 290, fontSize: 22, fontFamily: \"Arial\", color: \"#facc15\", fontWeight: \"bold\", textAlign: \"center\" },\n            { id: \"time\", type: \"text\", text: \"00:00 — 06:00 HRS\", x: 70, y: 365, width: 290, fontSize: 15, fontFamily: \"Arial\", color: \"#9ca3af\", textAlign: \"center\" },\n            { id: \"venue\", type: \"text\", text: \"Club Espacio · Madrid\", x: 55, y: 400, width: 320, fontSize: 15, fontFamily: \"Arial\", color: \"#22d3ee\", textAlign: \"center\" },\n            { id: \"price\", type: \"text\", text: \"ENTRADA 20€ · LISTA HASTA 01:00\", x: 55, y: 450, width: 320, fontSize: 13, fontFamily: \"Arial\", color: \"#d1d5db\", textAlign: \"center\" },\n        ],\n    },\n\n    // 4 — Evento Premium (Gala)\n    {\n        id: 4,\n        title: \"Evento Premium\",\n        category: \"Gala\",\n        image: \"https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?q=80&w=800\",\n        premium: false,\n        width: 430,\n        height: 540,\n        layers: [\n            { id: \"bg\", type: \"shape\", shape: \"rect\", x: 0, y: 0, width: 430, height: 540, fill: \"#111827\", selectable: false },\n            { id: \"gold-card\", type: \"shape\", shape: \"rect\", x: 45, y: 70, width: 340, height: 400, fill: \"rgba(250,204,21,0.08)\", radius: 30, selectable: false },\n            { id: \"gold-line-t\", type: \"shape\", shape: \"rect\", x: 65, y: 100, width: 300, height: 1, fill: \"#facc15\", opacity: 0.5, selectable: false },\n            { id: \"gold-line-b\", type: \"shape\", shape: \"rect\", x: 65, y: 440, width: 300, height: 1, fill: \"#facc15\", opacity: 0.5, selectable: false },\n            { id: \"label\", type: \"text\", text: \"GALA ESPECIAL\", x: 55, y: 120, width: 320, fontSize: 12, fontFamily: \"Arial\", color: \"#facc15\", fontWeight: \"bold\", textAlign: \"center\" },\n            { id: \"title\", type: \"text\", text: \"EVENTO PREMIUM\", x: 35, y: 165, width: 360, fontSize: 38, fontFamily: \"Arial\", color: \"#facc15\", fontWeight: \"black\", textAlign: \"center\" },\n            { id: \"subtitle\", type: \"text\", text: \"Una noche inolvidable\", x: 55, y: 235, width: 320, fontSize: 20, fontFamily: \"Arial\", color: \"#ffffff\", textAlign: \"center\" },\n            { id: \"artists\", type: \"text\", text: \"ARTISTA 1 · ARTISTA 2\", x: 55, y: 275, width: 320, fontSize: 16, fontFamily: \"Arial\", color: \"#fbbf24\", fontWeight: \"bold\", textAlign: \"center\" },\n            { id: \"date\", type: \"text\", text: \"SÁBADO 5 JULIO · 21:00 HRS\", x: 55, y: 325, width: 320, fontSize: 17, fontFamily: \"Arial\", color: \"#e5e7eb\", fontWeight: \"bold\", textAlign: \"center\" },\n            { id: \"venue\", type: \"text\", text: \"Gran Salón · Hotel Palace\", x: 55, y: 360, width: 320, fontSize: 14, fontFamily: \"Arial\", color: \"#9ca3af\", textAlign: \"center\" },\n            { id: \"footer\", type: \"text\", text: \"ArteGenIA\", x: 80, y: 450, width: 270, fontSize: 18, fontFamily: \"Arial\", color: \"#facc15\", textAlign: \"center\" },\n        ],\n    },\n\n    // 5 — Salsa Caliente (Salsa / Bachata)\n    {\n        id: 5,\n        title: \"Salsa Caliente\",\n        category: \"Salsa\",\n        image: \"https://images.unsplash.com/photo-1504609813442-a8924e83f76e?q=80&w=800\",\n        premium: false,\n        width: 430,\n        height: 540,\n        layers: [\n            { id: \"bg\", type: \"shape\", shape: \"rect\", x: 0, y: 0, width: 430, height: 540, fill: \"#1a0500\", selectable: false },\n            { id: \"glow-red\", type: \"shape\", shape: \"rect\", x: 0, y: 0, width: 430, height: 540, fill: \"rgba(220,38,38,0.18)\", selectable: false },\n            { id: \"circle1\", type: \"shape\", shape: \"circle\", x: 280, y: 20, width: 200, height: 200, fill: \"rgba(251,146,60,0.15)\", selectable: false },\n            { id: \"label\", type: \"text\", text: \"NOCHE DE\", x: 35, y: 100, width: 360, fontSize: 20, fontFamily: \"Arial\", color: \"#fb923c\", fontWeight: \"bold\", textAlign: \"center\" },\n            { id: \"title\", type: \"text\", text: \"SALSA CALIENTE\", x: 35, y: 135, width: 360, fontSize: 44, fontFamily: \"Arial\", color: \"#fef2f2\", fontWeight: \"black\", textAlign: \"center\" },\n            { id: \"line\", type: \"shape\", shape: \"rect\", x: 80, y: 205, width: 270, height: 3, fill: \"#ef4444\", selectable: false },\n            { id: \"artist\", type: \"text\", text: \"ARTISTA PRINCIPAL\", x: 35, y: 225, width: 360, fontSize: 22, fontFamily: \"Arial\", color: \"#fb923c\", fontWeight: \"bold\", textAlign: \"center\" },\n            { id: \"genres\", type: \"text\", text: \"SALSA · BACHATA · MERENGUE\", x: 55, y: 270, width: 320, fontSize: 13, fontFamily: \"Arial\", color: \"#fca5a5\", textAlign: \"center\" },\n            { id: \"date\", type: \"text\", text: \"VIERNES 18 JULIO\", x: 55, y: 320, width: 320, fontSize: 22, fontFamily: \"Arial\", color: \"#ffffff\", fontWeight: \"bold\", textAlign: \"center\" },\n            { id: \"time\", type: \"text\", text: \"22:30 HRS · Hasta las 04:00\", x: 55, y: 355, width: 320, fontSize: 14, fontFamily: \"Arial\", color: \"#9ca3af\", textAlign: \"center\" },\n            { id: \"venue\", type: \"text\", text: \"Puerto Sol Club · Madrid\", x: 55, y: 390, width: 320, fontSize: 15, fontFamily: \"Arial\", color: \"#fb923c\", textAlign: \"center\" },\n            { id: \"price\", type: \"text\", text: \"ANTICIPADA 20€ · PUERTA 25€\", x: 55, y: 460, width: 320, fontSize: 14, fontFamily: \"Arial\", color: \"#fef2f2\", fontWeight: \"bold\", textAlign: \"center\" },\n        ],\n    },\n\n    // 6 — Festival Aurora (Festival)\n    {\n        id: 6,\n        title: \"Festival Aurora\",\n        category: \"Festival\",\n        image: \"https://images.unsplash.com/photo-1506157786151-b8491531f063?q=80&w=800\",\n        premium: true,\n        width: 430,\n        height: 540,\n        layers: [\n            { id: \"bg\", type: \"shape\", shape: \"rect\", x: 0, y: 0, width: 430, height: 540, fill: \"#0a0a1a\", selectable: false },\n            { id: \"aurora1\", type: \"shape\", shape: \"rect\", x: 0, y: 0, width: 430, height: 200, fill: \"rgba(16,185,129,0.15)\", selectable: false },\n            { id: \"aurora2\", type: \"shape\", shape: \"rect\", x: 0, y: 100, width: 430, height: 200, fill: \"rgba(99,102,241,0.12)\", selectable: false },\n            { id: \"days\", type: \"text\", text: \"18 · 19 · 20 JULIO\", x: 35, y: 80, width: 360, fontSize: 18, fontFamily: \"Arial\", color: \"#34d399\", fontWeight: \"bold\", textAlign: \"center\" },\n            { id: \"title\", type: \"text\", text: \"FESTIVAL\", x: 35, y: 120, width: 360, fontSize: 52, fontFamily: \"Arial\", color: \"#ffffff\", fontWeight: \"black\", textAlign: \"center\" },\n            { id: \"title2\", type: \"text\", text: \"AURORA\", x: 35, y: 178, width: 360, fontSize: 52, fontFamily: \"Arial\", color: \"#34d399\", fontWeight: \"black\", textAlign: \"center\" },\n            { id: \"subtitle\", type: \"text\", text: \"MÚSICA SIN LÍMITES\", x: 55, y: 242, width: 320, fontSize: 14, fontFamily: \"Arial\", color: \"#a7f3d0\", textAlign: \"center\" },\n            { id: \"line\", type: \"shape\", shape: \"rect\", x: 80, y: 268, width: 270, height: 1, fill: \"#34d399\", opacity: 0.5, selectable: false },\n            { id: \"artists\", type: \"text\", text: \"+20 ARTISTAS · 4 ESCENARIOS\", x: 35, y: 285, width: 360, fontSize: 14, fontFamily: \"Arial\", color: \"#d1fae5\", textAlign: \"center\" },\n            { id: \"genres\", type: \"text\", text: \"SALSA · BACHATA · URBANO · TROPICAL\", x: 35, y: 315, width: 360, fontSize: 12, fontFamily: \"Arial\", color: \"#6ee7b7\", textAlign: \"center\" },\n            { id: \"venue\", type: \"text\", text: \"Parque Costa Azul · Barcelona\", x: 55, y: 360, width: 320, fontSize: 15, fontFamily: \"Arial\", color: \"#ffffff\", textAlign: \"center\" },\n            { id: \"tickets\", type: \"text\", text: \"ENTRADAS EN ARTEGENIA.COM\", x: 55, y: 395, width: 320, fontSize: 12, fontFamily: \"Arial\", color: \"#34d399\", textAlign: \"center\" },\n            { id: \"price\", type: \"text\", text: \"ABONO 3 DÍAS · DESDE 45€\", x: 55, y: 460, width: 320, fontSize: 16, fontFamily: \"Arial\", color: \"#ffffff\", fontWeight: \"bold\", textAlign: \"center\" },\n        ],\n    },\n\n    // 7 — Bachata Nights (Bachata)\n    {\n        id: 7,\n        title: \"Bachata Nights\",\n        category: \"Bachata\",\n        image: \"https://images.unsplash.com/photo-1545128485-c400e7702796?q=80&w=800\",\n        premium: false,\n        width: 430,\n        height: 540,\n        layers: [\n            { id: \"bg\", type: \"shape\", shape: \"rect\", x: 0, y: 0, width: 430, height: 540, fill: \"#0d0005\", selectable: false },\n            { id: \"glow-pink\", type: \"shape\", shape: \"rect\", x: 0, y: 0, width: 430, height: 540, fill: \"rgba(219,39,119,0.12)\", selectable: false },\n            { id: \"circle-big\", type: \"shape\", shape: \"circle\", x: 65, y: 100, width: 300, height: 300, fill: \"rgba(219,39,119,0.08)\", selectable: false },\n            { id: \"label\", type: \"text\", text: \"UNA NOCHE DE\", x: 35, y: 100, width: 360, fontSize: 14, fontFamily: \"Arial\", color: \"#f9a8d4\", fontWeight: \"bold\", textAlign: \"center\" },\n            { id: \"title\", type: \"text\", text: \"BACHATA\", x: 35, y: 130, width: 360, fontSize: 58, fontFamily: \"Arial\", color: \"#fce7f3\", fontWeight: \"black\", textAlign: \"center\" },\n            { id: \"title2\", type: \"text\", text: \"NIGHTS\", x: 35, y: 193, width: 360, fontSize: 58, fontFamily: \"Arial\", color: \"#ec4899\", fontWeight: \"black\", textAlign: \"center\" },\n            { id: \"artists\", type: \"text\", text: \"CORA & NIKO\", x: 35, y: 268, width: 360, fontSize: 24, fontFamily: \"Arial\", color: \"#ffffff\", fontWeight: \"bold\", textAlign: \"center\" },\n            { id: \"genre\", type: \"text\", text: \"BACHATA · AMOR · CONEXIÓN\", x: 55, y: 305, width: 320, fontSize: 12, fontFamily: \"Arial\", color: \"#f9a8d4\", textAlign: \"center\" },\n            { id: \"date\", type: \"text\", text: \"DOMINGO 29 JUNIO\", x: 55, y: 350, width: 320, fontSize: 20, fontFamily: \"Arial\", color: \"#ffffff\", fontWeight: \"bold\", textAlign: \"center\" },\n            { id: \"time\", type: \"text\", text: \"20:00 HRS · La Terraza\", x: 55, y: 385, width: 320, fontSize: 15, fontFamily: \"Arial\", color: \"#f9a8d4\", textAlign: \"center\" },\n            { id: \"price\", type: \"text\", text: \"ENTRADA 18€\", x: 55, y: 460, width: 320, fontSize: 18, fontFamily: \"Arial\", color: \"#fce7f3\", fontWeight: \"bold\", textAlign: \"center\" },\n        ],\n    },\n\n    // 8 — Vibra Fest (Festival Urbano)\n    {\n        id: 8,\n        title: \"Vibra Fest\",\n        category: \"Urbano\",\n        image: \"https://images.unsplash.com/photo-1429962714451-bb934ecdc4ec?q=80&w=800\",\n        premium: true,\n        width: 430,\n        height: 540,\n        layers: [\n            { id: \"bg\", type: \"shape\", shape: \"rect\", x: 0, y: 0, width: 430, height: 540, fill: \"#050014\", selectable: false },\n            { id: \"glow-v\", type: \"shape\", shape: \"rect\", x: 0, y: 0, width: 430, height: 540, fill: \"rgba(124,58,237,0.15)\", selectable: false },\n            { id: \"glow-c\", type: \"shape\", shape: \"circle\", x: 65, y: 200, width: 300, height: 300, fill: \"rgba(6,182,212,0.08)\", selectable: false },\n            { id: \"dates\", type: \"text\", text: \"25 · 26 · 27 JULIO\", x: 35, y: 80, width: 360, fontSize: 16, fontFamily: \"Arial\", color: \"#c4b5fd\", fontWeight: \"bold\", textAlign: \"center\" },\n            { id: \"title\", type: \"text\", text: \"VIBRA\", x: 35, y: 115, width: 360, fontSize: 72, fontFamily: \"Arial\", color: \"#a855f7\", fontWeight: \"black\", textAlign: \"center\" },\n            { id: \"title2\", type: \"text\", text: \"FEST 2025\", x: 35, y: 190, width: 360, fontSize: 36, fontFamily: \"Arial\", color: \"#06b6d4\", fontWeight: \"black\", textAlign: \"center\" },\n            { id: \"subtitle\", type: \"text\", text: \"MÚSICA · ARTE · CULTURA · DIVERSIÓN\", x: 35, y: 245, width: 360, fontSize: 11, fontFamily: \"Arial\", color: \"#e0e7ff\", textAlign: \"center\" },\n            { id: \"line\", type: \"shape\", shape: \"rect\", x: 80, y: 268, width: 270, height: 1, fill: \"#a855f7\", opacity: 0.6, selectable: false },\n            { id: \"artists\", type: \"text\", text: \"+30 ARTISTAS\", x: 35, y: 285, width: 360, fontSize: 20, fontFamily: \"Arial\", color: \"#ffffff\", fontWeight: \"bold\", textAlign: \"center\" },\n            { id: \"genres\", type: \"text\", text: \"REGGAETON · TRAP · AFROBEAT · ELECTRO\", x: 35, y: 320, width: 360, fontSize: 11, fontFamily: \"Arial\", color: \"#c4b5fd\", textAlign: \"center\" },\n            { id: \"venue\", type: \"text\", text: \"Arena Metrópolis · Valencia\", x: 55, y: 365, width: 320, fontSize: 15, fontFamily: \"Arial\", color: \"#ffffff\", textAlign: \"center\" },\n            { id: \"tickets\", type: \"text\", text: \"ENTRADA GENERAL DESDE 35€\", x: 55, y: 460, width: 320, fontSize: 15, fontFamily: \"Arial\", color: \"#c4b5fd\", fontWeight: \"bold\", textAlign: \"center\" },\n        ],\n    },\n];
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/../artegenia/data/templates.ts b/../artegenia/data/templates.ts
+--- a/../artegenia/data/templates.ts	
++++ b/../artegenia/data/templates.ts	
+@@ -1,36 +1,50 @@
+ export type TemplateLayer =
+     | {
+-    id: string;
+-    type: "text";
+-    text: string;
+-    x: number;
+-    y: number;
+-    width: number;
+-    fontSize: number;
+-    fontFamily: string;
+-    color: string;
+-    fontWeight?: "normal" | "bold" | "black";
+-    textAlign?: "left" | "center" | "right";
+-}
++          id: string;
++          type: "text";
++          text: string;
++          x: number;
++          y: number;
++          width: number;
++          fontSize: number;
++          fontFamily: string;
++          color: string;
++          fontWeight?: "normal" | "bold" | "black";
++          textAlign?: "left" | "center" | "right";
++      }
+     | {
+-    id: string;
+-    type: "shape";
+-    shape: "rect" | "circle";
+-    x: number;
+-    y: number;
+-    width: number;
+-    height: number;
+-    fill: string;
+-    opacity?: number;
+-    radius?: number;
+-    selectable?: boolean;
+-};
++          id: string;
++          type: "shape";
++          shape: "rect" | "circle";
++          x: number;
++          y: number;
++          width: number;
++          height: number;
++          fill: string;
++          opacity?: number;
++          radius?: number;
++          selectable?: boolean;
++      }
++    | {
++          id: string;
++          type: "image";
++          src: string;
++          x: number;
++          y: number;
++          scaleX?: number;
++          scaleY?: number;
++          opacity?: number;
++          cropX?: number;
++          cropY?: number;
++          cropWidth?: number;
++          cropHeight?: number;
++      };
+ 
+ export type Template = {
+     id: number;
+     title: string;
+     category: string;
+-    image: string;
++    image: string; // preview fallback
+     premium: boolean;
+     width: number;
+     height: number;
+@@ -38,26 +52,117 @@
+ };
+ 
+ export const templates: Template[] = [
+-    // 1 — Noche Magnética (Fiesta / Club)
++    // 1 — Don Filosofín Live (Podcast / Show)
+     {
+         id: 1,
+-        title: "Noche Magnética",
+-        category: "Fiesta",
+-        image: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?q=80&w=800",
++        title: "Don Filosofín Live",
++        category: "Concierto",
++        image: "https://images.unsplash.com/photo-1478737270239-2f02b77fc618?q=80&w=800",
+         premium: true,
+         width: 430,
+         height: 540,
+         layers: [
+-            { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 430, height: 540, fill: "#080812", selectable: false },
+-            { id: "glow", type: "shape", shape: "rect", x: 40, y: 40, width: 350, height: 460, fill: "rgba(168,85,247,0.22)", opacity: 1, radius: 42, selectable: false },
+-            { id: "line-top", type: "shape", shape: "rect", x: 60, y: 90, width: 310, height: 2, fill: "#facc15", opacity: 0.6, selectable: false },
+-            { id: "line-bot", type: "shape", shape: "rect", x: 60, y: 430, width: 310, height: 2, fill: "#facc15", opacity: 0.6, selectable: false },
+-            { id: "title", type: "text", text: "NOCHE MAGNÉTICA", x: 35, y: 160, width: 360, fontSize: 42, fontFamily: "Arial", color: "#facc15", fontWeight: "black", textAlign: "center" },
+-            { id: "subtitle", type: "text", text: "Fiesta Latina", x: 55, y: 240, width: 320, fontSize: 26, fontFamily: "Arial", color: "#ffffff", fontWeight: "bold", textAlign: "center" },
+-            { id: "date", type: "text", text: "SÁBADO 21 JUNIO · 23:00 HRS", x: 55, y: 300, width: 320, fontSize: 18, fontFamily: "Arial", color: "#e0e0e0", fontWeight: "bold", textAlign: "center" },
+-            { id: "venue", type: "text", text: "Club Metrópolis", x: 55, y: 340, width: 320, fontSize: 16, fontFamily: "Arial", color: "#a78bfa", textAlign: "center" },
+-            { id: "djs", type: "text", text: "DJ LUXO · MARCOS VEGA", x: 55, y: 375, width: 320, fontSize: 14, fontFamily: "Arial", color: "#d1d5db", textAlign: "center" },
+-            { id: "price", type: "text", text: "ENTRADA ANTICIPADA 15€", x: 80, y: 445, width: 270, fontSize: 16, fontFamily: "Arial", color: "#111111", fontWeight: "black", textAlign: "center" },
++            // Foto artista de fondo completo
++            {
++                id: "artist-photo",
++                type: "image",
++                src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/Filosofin-.png",
++                x: -25, y: 0,
++                scaleX: 0.478,
++                scaleY: 0.478,
++                opacity: 1,
++            },
++            // Overlay oscuro inferior
++            {
++                id: "overlay-bottom",
++                type: "shape", shape: "rect",
++                x: 0, y: 300, width: 430, height: 240,
++                fill: "rgba(10,6,2,0.92)", selectable: false,
++            },
++            // Overlay superior sutil
++            {
++                id: "overlay-top",
++                type: "shape", shape: "rect",
++                x: 0, y: 0, width: 430, height: 90,
++                fill: "rgba(10,6,2,0.65)", selectable: false,
++            },
++            // Línea dorada arriba
++            {
++                id: "line-top",
++                type: "shape", shape: "rect",
++                x: 25, y: 28, width: 380, height: 1,
++                fill: "#b8860b", opacity: 0.8, selectable: false,
++            },
++            // Línea dorada abajo
++            {
++                id: "line-bottom",
++                type: "shape", shape: "rect",
++                x: 25, y: 512, width: 380, height: 1,
++                fill: "#b8860b", opacity: 0.8, selectable: false,
++            },
++            // LIVE SHOW
++            {
++                id: "label",
++                type: "text",
++                text: "LIVE SHOW",
++                x: 0, y: 36, width: 430,
++                fontSize: 12, fontFamily: "Montserrat",
++                color: "#b8860b", fontWeight: "bold", textAlign: "center",
++            },
++            // DON
++            {
++                id: "title-1",
++                type: "text",
++                text: "DON",
++                x: 0, y: 308, width: 430,
++                fontSize: 80, fontFamily: "Bebas Neue",
++                color: "#ffffff", textAlign: "center",
++            },
++            // FILOSOFÍN
++            {
++                id: "title-2",
++                type: "text",
++                text: "FILOSOFÍN",
++                x: 0, y: 374, width: 430,
++                fontSize: 68, fontFamily: "Bebas Neue",
++                color: "#b8860b", textAlign: "center",
++            },
++            // Subtítulo
++            {
++                id: "subtitle",
++                type: "text",
++                text: "Una noche de conversación y música",
++                x: 20, y: 445, width: 390,
++                fontSize: 13, fontFamily: "Montserrat",
++                color: "#e0d0b0", textAlign: "center",
++            },
++            // Fecha
++            {
++                id: "date",
++                type: "text",
++                text: "VIERNES 20 JUNIO · 21:00 HRS",
++                x: 0, y: 472, width: 430,
++                fontSize: 12, fontFamily: "Montserrat",
++                color: "#ffffff", fontWeight: "bold", textAlign: "center",
++            },
++            // Lugar
++            {
++                id: "venue",
++                type: "text",
++                text: "SALA APOLO · BARCELONA",
++                x: 0, y: 493, width: 430,
++                fontSize: 11, fontFamily: "Montserrat",
++                color: "#b8860b", textAlign: "center",
++            },
++            // Entrada
++            {
++                id: "price",
++                type: "text",
++                text: "ENTRADA LIBRE · AFORO LIMITADO",
++                x: 0, y: 518, width: 430,
++                fontSize: 10, fontFamily: "Montserrat",
++                color: "#888888", textAlign: "center",
++            },
+         ],
+     },
+ 
+@@ -71,16 +176,39 @@
+         width: 430,
+         height: 540,
+         layers: [
+-            { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 430, height: 540, fill: "#070711", selectable: false },
++            // Foto de fondo
++            {
++                id: "bg-photo",
++                type: "image",
++                src: "https://images.unsplash.com/photo-1501386761578-eac5c94b800a?q=80&w=430&h=540&fit=crop",
++                x: 0, y: 0,
++                scaleX: 1,
++                scaleY: 1,
++                opacity: 1,
++            },
++            // Overlay gradiente inferior
++            {
++                id: "bg-overlay",
++                type: "shape", shape: "rect",
++                x: 0, y: 250, width: 430, height: 290,
++                fill: "rgba(7,7,17,0.95)", selectable: false,
++            },
++            // Overlay superior sutil
++            {
++                id: "bg-overlay-top",
++                type: "shape", shape: "rect",
++                x: 0, y: 0, width: 430, height: 120,
++                fill: "rgba(30,11,64,0.5)", selectable: false,
++            },
+             { id: "accent", type: "shape", shape: "rect", x: 0, y: 0, width: 220, height: 270, fill: "#3b0764", opacity: 0.72, radius: 45, selectable: false },
+             { id: "accent2", type: "shape", shape: "rect", x: 210, y: 270, width: 220, height: 270, fill: "#1e1b4b", opacity: 0.72, radius: 45, selectable: false },
+-            { id: "title", type: "text", text: "URBAN PARTY", x: 35, y: 155, width: 360, fontSize: 40, fontFamily: "Arial", color: "#facc15", fontWeight: "black", textAlign: "center" },
+-            { id: "subtitle", type: "text", text: "Live Experience", x: 55, y: 220, width: 320, fontSize: 22, fontFamily: "Arial", color: "#ffffff", textAlign: "center" },
+-            { id: "artist", type: "text", text: "ARTISTA PRINCIPAL", x: 55, y: 265, width: 320, fontSize: 18, fontFamily: "Arial", color: "#a78bfa", fontWeight: "bold", textAlign: "center" },
+-            { id: "date", type: "text", text: "SÁBADO 21 JUNIO", x: 70, y: 320, width: 290, fontSize: 20, fontFamily: "Arial", color: "#ffffff", fontWeight: "bold", textAlign: "center" },
+-            { id: "time", type: "text", text: "21:00 HRS · Puertas 20:00", x: 70, y: 355, width: 290, fontSize: 14, fontFamily: "Arial", color: "#9ca3af", textAlign: "center" },
+-            { id: "venue", type: "text", text: "Teatro del Río", x: 55, y: 390, width: 320, fontSize: 16, fontFamily: "Arial", color: "#fbbf24", textAlign: "center" },
+-            { id: "price", type: "text", text: "ENTRADA ANTICIPADA 25€", x: 55, y: 460, width: 320, fontSize: 16, fontFamily: "Arial", color: "#111111", fontWeight: "black", textAlign: "center" },
++            { id: "title", type: "text", text: "URBAN PARTY", x: 35, y: 155, width: 360, fontSize: 40, fontFamily: "Bebas Neue", color: "#facc15", fontWeight: "normal", textAlign: "center" },
++            { id: "subtitle", type: "text", text: "Live Experience", x: 55, y: 215, width: 320, fontSize: 22, fontFamily: "Great Vibes", color: "#ffffff", textAlign: "center" },
++            { id: "artist", type: "text", text: "ARTISTA PRINCIPAL", x: 55, y: 260, width: 320, fontSize: 18, fontFamily: "Montserrat", color: "#a78bfa", fontWeight: "bold", textAlign: "center" },
++            { id: "date", type: "text", text: "SÁBADO 21 JUNIO", x: 70, y: 320, width: 290, fontSize: 20, fontFamily: "Bebas Neue", color: "#ffffff", textAlign: "center" },
++            { id: "time", type: "text", text: "21:00 HRS · Puertas 20:00", x: 70, y: 350, width: 290, fontSize: 13, fontFamily: "Montserrat", color: "#9ca3af", textAlign: "center" },
++            { id: "venue", type: "text", text: "Teatro del Río", x: 55, y: 385, width: 320, fontSize: 15, fontFamily: "Montserrat", color: "#fbbf24", textAlign: "center" },
++            { id: "price", type: "text", text: "ENTRADA ANTICIPADA 25€", x: 55, y: 460, width: 320, fontSize: 15, fontFamily: "Montserrat", color: "#ffffff", fontWeight: "bold", textAlign: "center" },
+         ],
+     },
+ 
+@@ -94,17 +222,40 @@
+         width: 430,
+         height: 540,
+         layers: [
+-            { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 430, height: 540, fill: "#020617", selectable: false },
++            // Foto de fondo
++            {
++                id: "bg-photo",
++                type: "image",
++                src: "https://images.unsplash.com/photo-1571266028243-e4733b0f0bb0?q=80&w=430&h=540&fit=crop",
++                x: 0, y: 0,
++                scaleX: 1,
++                scaleY: 1,
++                opacity: 1,
++            },
++            // Overlay gradiente inferior
++            {
++                id: "bg-overlay",
++                type: "shape", shape: "rect",
++                x: 0, y: 250, width: 430, height: 290,
++                fill: "rgba(2,6,23,0.97)", selectable: false,
++            },
++            // Overlay superior sutil
++            {
++                id: "bg-overlay-top",
++                type: "shape", shape: "rect",
++                x: 0, y: 0, width: 430, height: 120,
++                fill: "rgba(15,26,58,0.6)", selectable: false,
++            },
+             { id: "neon-box", type: "shape", shape: "rect", x: 35, y: 60, width: 360, height: 420, fill: "rgba(236,72,153,0.12)", radius: 35, selectable: false },
+             { id: "circle", type: "shape", shape: "circle", x: 155, y: 60, width: 120, height: 120, fill: "rgba(34,211,238,0.1)", selectable: false },
+-            { id: "dj-label", type: "text", text: "DJ SET", x: 35, y: 110, width: 360, fontSize: 14, fontFamily: "Arial", color: "#22d3ee", fontWeight: "bold", textAlign: "center" },
+-            { id: "title", type: "text", text: "DJ NEON", x: 35, y: 150, width: 360, fontSize: 56, fontFamily: "Arial", color: "#22d3ee", fontWeight: "black", textAlign: "center" },
+-            { id: "subtitle", type: "text", text: "Live Experience", x: 55, y: 230, width: 320, fontSize: 24, fontFamily: "Arial", color: "#ffffff", textAlign: "center" },
+-            { id: "genres", type: "text", text: "TECHNO · HOUSE · ELECTRO", x: 55, y: 275, width: 320, fontSize: 13, fontFamily: "Arial", color: "#ec4899", textAlign: "center" },
+-            { id: "date", type: "text", text: "VIERNES 28 JUNIO", x: 70, y: 330, width: 290, fontSize: 22, fontFamily: "Arial", color: "#facc15", fontWeight: "bold", textAlign: "center" },
+-            { id: "time", type: "text", text: "00:00 — 06:00 HRS", x: 70, y: 365, width: 290, fontSize: 15, fontFamily: "Arial", color: "#9ca3af", textAlign: "center" },
+-            { id: "venue", type: "text", text: "Club Espacio · Madrid", x: 55, y: 400, width: 320, fontSize: 15, fontFamily: "Arial", color: "#22d3ee", textAlign: "center" },
+-            { id: "price", type: "text", text: "ENTRADA 20€ · LISTA HASTA 01:00", x: 55, y: 450, width: 320, fontSize: 13, fontFamily: "Arial", color: "#d1d5db", textAlign: "center" },
++            { id: "dj-label", type: "text", text: "DJ SET", x: 35, y: 110, width: 360, fontSize: 14, fontFamily: "Montserrat", color: "#22d3ee", fontWeight: "bold", textAlign: "center" },
++            { id: "title", type: "text", text: "DJ NEON", x: 35, y: 150, width: 360, fontSize: 56, fontFamily: "Bebas Neue", color: "#22d3ee", textAlign: "center" },
++            { id: "subtitle", type: "text", text: "Live Experience", x: 55, y: 225, width: 320, fontSize: 24, fontFamily: "Great Vibes", color: "#ffffff", textAlign: "center" },
++            { id: "genres", type: "text", text: "TECHNO · HOUSE · ELECTRO", x: 55, y: 270, width: 320, fontSize: 12, fontFamily: "Montserrat", color: "#ec4899", textAlign: "center" },
++            { id: "date", type: "text", text: "VIERNES 28 JUNIO", x: 70, y: 330, width: 290, fontSize: 22, fontFamily: "Bebas Neue", color: "#facc15", textAlign: "center" },
++            { id: "time", type: "text", text: "00:00 — 06:00 HRS", x: 70, y: 360, width: 290, fontSize: 14, fontFamily: "Montserrat", color: "#9ca3af", textAlign: "center" },
++            { id: "venue", type: "text", text: "Club Espacio · Madrid", x: 55, y: 395, width: 320, fontSize: 14, fontFamily: "Montserrat", color: "#22d3ee", textAlign: "center" },
++            { id: "price", type: "text", text: "ENTRADA 20€ · LISTA HASTA 01:00", x: 55, y: 450, width: 320, fontSize: 12, fontFamily: "Montserrat", color: "#d1d5db", textAlign: "center" },
+         ],
+     },
+ 
+@@ -118,21 +269,44 @@
+         width: 430,
+         height: 540,
+         layers: [
+-            { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 430, height: 540, fill: "#111827", selectable: false },
++            // Foto de fondo
++            {
++                id: "bg-photo",
++                type: "image",
++                src: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?q=80&w=430&h=540&fit=crop",
++                x: 0, y: 0,
++                scaleX: 1,
++                scaleY: 1,
++                opacity: 1,
++            },
++            // Overlay gradiente inferior
++            {
++                id: "bg-overlay",
++                type: "shape", shape: "rect",
++                x: 0, y: 250, width: 430, height: 290,
++                fill: "rgba(17,24,39,0.97)", selectable: false,
++            },
++            // Overlay superior sutil
++            {
++                id: "bg-overlay-top",
++                type: "shape", shape: "rect",
++                x: 0, y: 0, width: 430, height: 120,
++                fill: "rgba(31,41,55,0.6)", selectable: false,
++            },
+             { id: "gold-card", type: "shape", shape: "rect", x: 45, y: 70, width: 340, height: 400, fill: "rgba(250,204,21,0.08)", radius: 30, selectable: false },
+             { id: "gold-line-t", type: "shape", shape: "rect", x: 65, y: 100, width: 300, height: 1, fill: "#facc15", opacity: 0.5, selectable: false },
+             { id: "gold-line-b", type: "shape", shape: "rect", x: 65, y: 440, width: 300, height: 1, fill: "#facc15", opacity: 0.5, selectable: false },
+-            { id: "label", type: "text", text: "GALA ESPECIAL", x: 55, y: 120, width: 320, fontSize: 12, fontFamily: "Arial", color: "#facc15", fontWeight: "bold", textAlign: "center" },
+-            { id: "title", type: "text", text: "EVENTO PREMIUM", x: 35, y: 165, width: 360, fontSize: 38, fontFamily: "Arial", color: "#facc15", fontWeight: "black", textAlign: "center" },
+-            { id: "subtitle", type: "text", text: "Una noche inolvidable", x: 55, y: 235, width: 320, fontSize: 20, fontFamily: "Arial", color: "#ffffff", textAlign: "center" },
+-            { id: "artists", type: "text", text: "ARTISTA 1 · ARTISTA 2", x: 55, y: 275, width: 320, fontSize: 16, fontFamily: "Arial", color: "#fbbf24", fontWeight: "bold", textAlign: "center" },
+-            { id: "date", type: "text", text: "SÁBADO 5 JULIO · 21:00 HRS", x: 55, y: 325, width: 320, fontSize: 17, fontFamily: "Arial", color: "#e5e7eb", fontWeight: "bold", textAlign: "center" },
+-            { id: "venue", type: "text", text: "Gran Salón · Hotel Palace", x: 55, y: 360, width: 320, fontSize: 14, fontFamily: "Arial", color: "#9ca3af", textAlign: "center" },
+-            { id: "footer", type: "text", text: "ArteGenIA", x: 80, y: 450, width: 270, fontSize: 18, fontFamily: "Arial", color: "#facc15", textAlign: "center" },
++            { id: "label", type: "text", text: "GALA ESPECIAL", x: 55, y: 115, width: 320, fontSize: 12, fontFamily: "Montserrat", color: "#facc15", fontWeight: "bold", textAlign: "center" },
++            { id: "title", type: "text", text: "EVENTO PREMIUM", x: 35, y: 160, width: 360, fontSize: 38, fontFamily: "Bebas Neue", color: "#facc15", textAlign: "center" },
++            { id: "subtitle", type: "text", text: "Una noche inolvidable", x: 55, y: 225, width: 320, fontSize: 20, fontFamily: "Great Vibes", color: "#ffffff", textAlign: "center" },
++            { id: "artists", type: "text", text: "ARTISTA 1 · ARTISTA 2", x: 55, y: 268, width: 320, fontSize: 16, fontFamily: "Montserrat", color: "#fbbf24", fontWeight: "bold", textAlign: "center" },
++            { id: "date", type: "text", text: "SÁBADO 5 JULIO · 21:00 HRS", x: 55, y: 320, width: 320, fontSize: 17, fontFamily: "Montserrat", color: "#e5e7eb", fontWeight: "bold", textAlign: "center" },
++            { id: "venue", type: "text", text: "Gran Salón · Hotel Palace", x: 55, y: 355, width: 320, fontSize: 13, fontFamily: "Montserrat", color: "#9ca3af", textAlign: "center" },
++            { id: "footer", type: "text", text: "ArteGenIA", x: 80, y: 450, width: 270, fontSize: 18, fontFamily: "Great Vibes", color: "#facc15", textAlign: "center" },
+         ],
+     },
+ 
+-    // 5 — Salsa Caliente (Salsa / Bachata)
++    // 5 — Salsa Caliente
+     {
+         id: 5,
+         title: "Salsa Caliente",
+@@ -142,22 +316,45 @@
+         width: 430,
+         height: 540,
+         layers: [
+-            { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 430, height: 540, fill: "#1a0500", selectable: false },
++            // Foto de fondo
++            {
++                id: "bg-photo",
++                type: "image",
++                src: "https://images.unsplash.com/photo-1504609813442-a8924e83f76e?q=80&w=430&h=540&fit=crop",
++                x: 0, y: 0,
++                scaleX: 1,
++                scaleY: 1,
++                opacity: 1,
++            },
++            // Overlay gradiente inferior
++            {
++                id: "bg-overlay",
++                type: "shape", shape: "rect",
++                x: 0, y: 250, width: 430, height: 290,
++                fill: "rgba(26,5,0,0.97)", selectable: false,
++            },
++            // Overlay superior sutil
++            {
++                id: "bg-overlay-top",
++                type: "shape", shape: "rect",
++                x: 0, y: 0, width: 430, height: 120,
++                fill: "rgba(45,8,0,0.6)", selectable: false,
++            },
+             { id: "glow-red", type: "shape", shape: "rect", x: 0, y: 0, width: 430, height: 540, fill: "rgba(220,38,38,0.18)", selectable: false },
+             { id: "circle1", type: "shape", shape: "circle", x: 280, y: 20, width: 200, height: 200, fill: "rgba(251,146,60,0.15)", selectable: false },
+-            { id: "label", type: "text", text: "NOCHE DE", x: 35, y: 100, width: 360, fontSize: 20, fontFamily: "Arial", color: "#fb923c", fontWeight: "bold", textAlign: "center" },
+-            { id: "title", type: "text", text: "SALSA CALIENTE", x: 35, y: 135, width: 360, fontSize: 44, fontFamily: "Arial", color: "#fef2f2", fontWeight: "black", textAlign: "center" },
+-            { id: "line", type: "shape", shape: "rect", x: 80, y: 205, width: 270, height: 3, fill: "#ef4444", selectable: false },
+-            { id: "artist", type: "text", text: "ARTISTA PRINCIPAL", x: 35, y: 225, width: 360, fontSize: 22, fontFamily: "Arial", color: "#fb923c", fontWeight: "bold", textAlign: "center" },
+-            { id: "genres", type: "text", text: "SALSA · BACHATA · MERENGUE", x: 55, y: 270, width: 320, fontSize: 13, fontFamily: "Arial", color: "#fca5a5", textAlign: "center" },
+-            { id: "date", type: "text", text: "VIERNES 18 JULIO", x: 55, y: 320, width: 320, fontSize: 22, fontFamily: "Arial", color: "#ffffff", fontWeight: "bold", textAlign: "center" },
+-            { id: "time", type: "text", text: "22:30 HRS · Hasta las 04:00", x: 55, y: 355, width: 320, fontSize: 14, fontFamily: "Arial", color: "#9ca3af", textAlign: "center" },
+-            { id: "venue", type: "text", text: "Puerto Sol Club · Madrid", x: 55, y: 390, width: 320, fontSize: 15, fontFamily: "Arial", color: "#fb923c", textAlign: "center" },
+-            { id: "price", type: "text", text: "ANTICIPADA 20€ · PUERTA 25€", x: 55, y: 460, width: 320, fontSize: 14, fontFamily: "Arial", color: "#fef2f2", fontWeight: "bold", textAlign: "center" },
++            { id: "label", type: "text", text: "NOCHE DE", x: 35, y: 100, width: 360, fontSize: 20, fontFamily: "Montserrat", color: "#fb923c", fontWeight: "bold", textAlign: "center" },
++            { id: "title", type: "text", text: "SALSA CALIENTE", x: 35, y: 130, width: 360, fontSize: 44, fontFamily: "Bebas Neue", color: "#fef2f2", textAlign: "center" },
++            { id: "line", type: "shape", shape: "rect", x: 80, y: 200, width: 270, height: 3, fill: "#ef4444", selectable: false },
++            { id: "artist", type: "text", text: "ARTISTA PRINCIPAL", x: 35, y: 218, width: 360, fontSize: 22, fontFamily: "Great Vibes", color: "#fb923c", textAlign: "center" },
++            { id: "genres", type: "text", text: "SALSA · BACHATA · MERENGUE", x: 55, y: 265, width: 320, fontSize: 12, fontFamily: "Montserrat", color: "#fca5a5", textAlign: "center" },
++            { id: "date", type: "text", text: "VIERNES 18 JULIO", x: 55, y: 315, width: 320, fontSize: 22, fontFamily: "Bebas Neue", color: "#ffffff", textAlign: "center" },
++            { id: "time", type: "text", text: "22:30 HRS · Hasta las 04:00", x: 55, y: 348, width: 320, fontSize: 13, fontFamily: "Montserrat", color: "#9ca3af", textAlign: "center" },
++            { id: "venue", type: "text", text: "Puerto Sol Club · Madrid", x: 55, y: 383, width: 320, fontSize: 14, fontFamily: "Montserrat", color: "#fb923c", textAlign: "center" },
++            { id: "price", type: "text", text: "ANTICIPADA 20€ · PUERTA 25€", x: 55, y: 455, width: 320, fontSize: 14, fontFamily: "Montserrat", color: "#fef2f2", fontWeight: "bold", textAlign: "center" },
+         ],
+     },
+ 
+-    // 6 — Festival Aurora (Festival)
++    // 6 — Festival Aurora
+     {
+         id: 6,
+         title: "Festival Aurora",
+@@ -167,23 +364,46 @@
+         width: 430,
+         height: 540,
+         layers: [
+-            { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 430, height: 540, fill: "#0a0a1a", selectable: false },
++            // Foto de fondo
++            {
++                id: "bg-photo",
++                type: "image",
++                src: "https://images.unsplash.com/photo-1506157786151-b8491531f063?q=80&w=430&h=540&fit=crop",
++                x: 0, y: 0,
++                scaleX: 1,
++                scaleY: 1,
++                opacity: 1,
++            },
++            // Overlay gradiente inferior
++            {
++                id: "bg-overlay",
++                type: "shape", shape: "rect",
++                x: 0, y: 250, width: 430, height: 290,
++                fill: "rgba(10,10,26,0.97)", selectable: false,
++            },
++            // Overlay superior sutil
++            {
++                id: "bg-overlay-top",
++                type: "shape", shape: "rect",
++                x: 0, y: 0, width: 430, height: 120,
++                fill: "rgba(13,31,26,0.6)", selectable: false,
++            },
+             { id: "aurora1", type: "shape", shape: "rect", x: 0, y: 0, width: 430, height: 200, fill: "rgba(16,185,129,0.15)", selectable: false },
+             { id: "aurora2", type: "shape", shape: "rect", x: 0, y: 100, width: 430, height: 200, fill: "rgba(99,102,241,0.12)", selectable: false },
+-            { id: "days", type: "text", text: "18 · 19 · 20 JULIO", x: 35, y: 80, width: 360, fontSize: 18, fontFamily: "Arial", color: "#34d399", fontWeight: "bold", textAlign: "center" },
+-            { id: "title", type: "text", text: "FESTIVAL", x: 35, y: 120, width: 360, fontSize: 52, fontFamily: "Arial", color: "#ffffff", fontWeight: "black", textAlign: "center" },
+-            { id: "title2", type: "text", text: "AURORA", x: 35, y: 178, width: 360, fontSize: 52, fontFamily: "Arial", color: "#34d399", fontWeight: "black", textAlign: "center" },
+-            { id: "subtitle", type: "text", text: "MÚSICA SIN LÍMITES", x: 55, y: 242, width: 320, fontSize: 14, fontFamily: "Arial", color: "#a7f3d0", textAlign: "center" },
+-            { id: "line", type: "shape", shape: "rect", x: 80, y: 268, width: 270, height: 1, fill: "#34d399", opacity: 0.5, selectable: false },
+-            { id: "artists", type: "text", text: "+20 ARTISTAS · 4 ESCENARIOS", x: 35, y: 285, width: 360, fontSize: 14, fontFamily: "Arial", color: "#d1fae5", textAlign: "center" },
+-            { id: "genres", type: "text", text: "SALSA · BACHATA · URBANO · TROPICAL", x: 35, y: 315, width: 360, fontSize: 12, fontFamily: "Arial", color: "#6ee7b7", textAlign: "center" },
+-            { id: "venue", type: "text", text: "Parque Costa Azul · Barcelona", x: 55, y: 360, width: 320, fontSize: 15, fontFamily: "Arial", color: "#ffffff", textAlign: "center" },
+-            { id: "tickets", type: "text", text: "ENTRADAS EN ARTEGENIA.COM", x: 55, y: 395, width: 320, fontSize: 12, fontFamily: "Arial", color: "#34d399", textAlign: "center" },
+-            { id: "price", type: "text", text: "ABONO 3 DÍAS · DESDE 45€", x: 55, y: 460, width: 320, fontSize: 16, fontFamily: "Arial", color: "#ffffff", fontWeight: "bold", textAlign: "center" },
++            { id: "days", type: "text", text: "18 · 19 · 20 JULIO", x: 35, y: 80, width: 360, fontSize: 18, fontFamily: "Montserrat", color: "#34d399", fontWeight: "bold", textAlign: "center" },
++            { id: "title", type: "text", text: "FESTIVAL", x: 35, y: 118, width: 360, fontSize: 52, fontFamily: "Bebas Neue", color: "#ffffff", textAlign: "center" },
++            { id: "title2", type: "text", text: "AURORA", x: 35, y: 173, width: 360, fontSize: 52, fontFamily: "Bebas Neue", color: "#34d399", textAlign: "center" },
++            { id: "subtitle", type: "text", text: "MÚSICA SIN LÍMITES", x: 55, y: 237, width: 320, fontSize: 13, fontFamily: "Montserrat", color: "#a7f3d0", textAlign: "center" },
++            { id: "line", type: "shape", shape: "rect", x: 80, y: 260, width: 270, height: 1, fill: "#34d399", opacity: 0.5, selectable: false },
++            { id: "artists", type: "text", text: "+20 ARTISTAS · 4 ESCENARIOS", x: 35, y: 278, width: 360, fontSize: 13, fontFamily: "Montserrat", color: "#d1fae5", textAlign: "center" },
++            { id: "genres", type: "text", text: "SALSA · BACHATA · URBANO · TROPICAL", x: 35, y: 308, width: 360, fontSize: 11, fontFamily: "Montserrat", color: "#6ee7b7", textAlign: "center" },
++            { id: "venue", type: "text", text: "Parque Costa Azul · Barcelona", x: 55, y: 355, width: 320, fontSize: 14, fontFamily: "Montserrat", color: "#ffffff", textAlign: "center" },
++            { id: "tickets", type: "text", text: "ENTRADAS EN ARTEGENIA.COM", x: 55, y: 388, width: 320, fontSize: 11, fontFamily: "Montserrat", color: "#34d399", textAlign: "center" },
++            { id: "price", type: "text", text: "ABONO 3 DÍAS · DESDE 45€", x: 55, y: 455, width: 320, fontSize: 15, fontFamily: "Montserrat", color: "#ffffff", fontWeight: "bold", textAlign: "center" },
+         ],
+     },
+ 
+-    // 7 — Bachata Nights (Bachata)
++    // 7 — Bachata Nights
+     {
+         id: 7,
+         title: "Bachata Nights",
+@@ -193,21 +413,44 @@
+         width: 430,
+         height: 540,
+         layers: [
+-            { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 430, height: 540, fill: "#0d0005", selectable: false },
++            // Foto de fondo
++            {
++                id: "bg-photo",
++                type: "image",
++                src: "https://images.unsplash.com/photo-1545128485-c400e7702796?q=80&w=430&h=540&fit=crop",
++                x: 0, y: 0,
++                scaleX: 1,
++                scaleY: 1,
++                opacity: 1,
++            },
++            // Overlay gradiente inferior
++            {
++                id: "bg-overlay",
++                type: "shape", shape: "rect",
++                x: 0, y: 250, width: 430, height: 290,
++                fill: "rgba(13,0,5,0.97)", selectable: false,
++            },
++            // Overlay superior sutil
++            {
++                id: "bg-overlay-top",
++                type: "shape", shape: "rect",
++                x: 0, y: 0, width: 430, height: 120,
++                fill: "rgba(26,0,16,0.6)", selectable: false,
++            },
+             { id: "glow-pink", type: "shape", shape: "rect", x: 0, y: 0, width: 430, height: 540, fill: "rgba(219,39,119,0.12)", selectable: false },
+             { id: "circle-big", type: "shape", shape: "circle", x: 65, y: 100, width: 300, height: 300, fill: "rgba(219,39,119,0.08)", selectable: false },
+-            { id: "label", type: "text", text: "UNA NOCHE DE", x: 35, y: 100, width: 360, fontSize: 14, fontFamily: "Arial", color: "#f9a8d4", fontWeight: "bold", textAlign: "center" },
+-            { id: "title", type: "text", text: "BACHATA", x: 35, y: 130, width: 360, fontSize: 58, fontFamily: "Arial", color: "#fce7f3", fontWeight: "black", textAlign: "center" },
+-            { id: "title2", type: "text", text: "NIGHTS", x: 35, y: 193, width: 360, fontSize: 58, fontFamily: "Arial", color: "#ec4899", fontWeight: "black", textAlign: "center" },
+-            { id: "artists", type: "text", text: "CORA & NIKO", x: 35, y: 268, width: 360, fontSize: 24, fontFamily: "Arial", color: "#ffffff", fontWeight: "bold", textAlign: "center" },
+-            { id: "genre", type: "text", text: "BACHATA · AMOR · CONEXIÓN", x: 55, y: 305, width: 320, fontSize: 12, fontFamily: "Arial", color: "#f9a8d4", textAlign: "center" },
+-            { id: "date", type: "text", text: "DOMINGO 29 JUNIO", x: 55, y: 350, width: 320, fontSize: 20, fontFamily: "Arial", color: "#ffffff", fontWeight: "bold", textAlign: "center" },
+-            { id: "time", type: "text", text: "20:00 HRS · La Terraza", x: 55, y: 385, width: 320, fontSize: 15, fontFamily: "Arial", color: "#f9a8d4", textAlign: "center" },
+-            { id: "price", type: "text", text: "ENTRADA 18€", x: 55, y: 460, width: 320, fontSize: 18, fontFamily: "Arial", color: "#fce7f3", fontWeight: "bold", textAlign: "center" },
++            { id: "label", type: "text", text: "UNA NOCHE DE", x: 35, y: 100, width: 360, fontSize: 14, fontFamily: "Montserrat", color: "#f9a8d4", fontWeight: "bold", textAlign: "center" },
++            { id: "title", type: "text", text: "BACHATA", x: 35, y: 128, width: 360, fontSize: 58, fontFamily: "Bebas Neue", color: "#fce7f3", textAlign: "center" },
++            { id: "title2", type: "text", text: "NIGHTS", x: 35, y: 188, width: 360, fontSize: 58, fontFamily: "Bebas Neue", color: "#ec4899", textAlign: "center" },
++            { id: "artists", type: "text", text: "CORA & NIKO", x: 35, y: 262, width: 360, fontSize: 24, fontFamily: "Great Vibes", color: "#ffffff", textAlign: "center" },
++            { id: "genre", type: "text", text: "BACHATA · AMOR · CONEXIÓN", x: 55, y: 300, width: 320, fontSize: 11, fontFamily: "Montserrat", color: "#f9a8d4", textAlign: "center" },
++            { id: "date", type: "text", text: "DOMINGO 29 JUNIO", x: 55, y: 348, width: 320, fontSize: 20, fontFamily: "Bebas Neue", color: "#ffffff", textAlign: "center" },
++            { id: "time", type: "text", text: "20:00 HRS · La Terraza", x: 55, y: 378, width: 320, fontSize: 14, fontFamily: "Montserrat", color: "#f9a8d4", textAlign: "center" },
++            { id: "price", type: "text", text: "ENTRADA 18€", x: 55, y: 455, width: 320, fontSize: 18, fontFamily: "Bebas Neue", color: "#fce7f3", textAlign: "center" },
+         ],
+     },
+ 
+-    // 8 — Vibra Fest (Festival Urbano)
++    // 8 — Vibra Fest
+     {
+         id: 8,
+         title: "Vibra Fest",
+@@ -217,18 +460,41 @@
+         width: 430,
+         height: 540,
+         layers: [
+-            { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 430, height: 540, fill: "#050014", selectable: false },
++            // Foto de fondo
++            {
++                id: "bg-photo",
++                type: "image",
++                src: "https://images.unsplash.com/photo-1429962714451-bb934ecdc4ec?q=80&w=430&h=540&fit=crop",
++                x: 0, y: 0,
++                scaleX: 1,
++                scaleY: 1,
++                opacity: 1,
++            },
++            // Overlay gradiente inferior
++            {
++                id: "bg-overlay",
++                type: "shape", shape: "rect",
++                x: 0, y: 250, width: 430, height: 290,
++                fill: "rgba(5,0,20,0.97)", selectable: false,
++            },
++            // Overlay superior sutil
++            {
++                id: "bg-overlay-top",
++                type: "shape", shape: "rect",
++                x: 0, y: 0, width: 430, height: 120,
++                fill: "rgba(13,0,40,0.6)", selectable: false,
++            },
+             { id: "glow-v", type: "shape", shape: "rect", x: 0, y: 0, width: 430, height: 540, fill: "rgba(124,58,237,0.15)", selectable: false },
+             { id: "glow-c", type: "shape", shape: "circle", x: 65, y: 200, width: 300, height: 300, fill: "rgba(6,182,212,0.08)", selectable: false },
+-            { id: "dates", type: "text", text: "25 · 26 · 27 JULIO", x: 35, y: 80, width: 360, fontSize: 16, fontFamily: "Arial", color: "#c4b5fd", fontWeight: "bold", textAlign: "center" },
+-            { id: "title", type: "text", text: "VIBRA", x: 35, y: 115, width: 360, fontSize: 72, fontFamily: "Arial", color: "#a855f7", fontWeight: "black", textAlign: "center" },
+-            { id: "title2", type: "text", text: "FEST 2025", x: 35, y: 190, width: 360, fontSize: 36, fontFamily: "Arial", color: "#06b6d4", fontWeight: "black", textAlign: "center" },
+-            { id: "subtitle", type: "text", text: "MÚSICA · ARTE · CULTURA · DIVERSIÓN", x: 35, y: 245, width: 360, fontSize: 11, fontFamily: "Arial", color: "#e0e7ff", textAlign: "center" },
+-            { id: "line", type: "shape", shape: "rect", x: 80, y: 268, width: 270, height: 1, fill: "#a855f7", opacity: 0.6, selectable: false },
+-            { id: "artists", type: "text", text: "+30 ARTISTAS", x: 35, y: 285, width: 360, fontSize: 20, fontFamily: "Arial", color: "#ffffff", fontWeight: "bold", textAlign: "center" },
+-            { id: "genres", type: "text", text: "REGGAETON · TRAP · AFROBEAT · ELECTRO", x: 35, y: 320, width: 360, fontSize: 11, fontFamily: "Arial", color: "#c4b5fd", textAlign: "center" },
+-            { id: "venue", type: "text", text: "Arena Metrópolis · Valencia", x: 55, y: 365, width: 320, fontSize: 15, fontFamily: "Arial", color: "#ffffff", textAlign: "center" },
+-            { id: "tickets", type: "text", text: "ENTRADA GENERAL DESDE 35€", x: 55, y: 460, width: 320, fontSize: 15, fontFamily: "Arial", color: "#c4b5fd", fontWeight: "bold", textAlign: "center" },
++            { id: "dates", type: "text", text: "25 · 26 · 27 JULIO", x: 35, y: 80, width: 360, fontSize: 16, fontFamily: "Montserrat", color: "#c4b5fd", fontWeight: "bold", textAlign: "center" },
++            { id: "title", type: "text", text: "VIBRA", x: 35, y: 112, width: 360, fontSize: 72, fontFamily: "Bebas Neue", color: "#a855f7", textAlign: "center" },
++            { id: "title2", type: "text", text: "FEST 2025", x: 35, y: 185, width: 360, fontSize: 36, fontFamily: "Bebas Neue", color: "#06b6d4", textAlign: "center" },
++            { id: "subtitle", type: "text", text: "MÚSICA · ARTE · CULTURA · DIVERSIÓN", x: 35, y: 238, width: 360, fontSize: 10, fontFamily: "Montserrat", color: "#e0e7ff", textAlign: "center" },
++            { id: "line", type: "shape", shape: "rect", x: 80, y: 258, width: 270, height: 1, fill: "#a855f7", opacity: 0.6, selectable: false },
++            { id: "artists", type: "text", text: "+30 ARTISTAS", x: 35, y: 275, width: 360, fontSize: 20, fontFamily: "Bebas Neue", color: "#ffffff", textAlign: "center" },
++            { id: "genres", type: "text", text: "REGGAETON · TRAP · AFROBEAT · ELECTRO", x: 35, y: 310, width: 360, fontSize: 10, fontFamily: "Montserrat", color: "#c4b5fd", textAlign: "center" },
++            { id: "venue", type: "text", text: "Arena Metrópolis · Valencia", x: 55, y: 358, width: 320, fontSize: 14, fontFamily: "Montserrat", color: "#ffffff", textAlign: "center" },
++            { id: "price", type: "text", text: "ENTRADA GENERAL DESDE 35€", x: 55, y: 455, width: 320, fontSize: 14, fontFamily: "Montserrat", color: "#c4b5fd", fontWeight: "bold", textAlign: "center" },
+         ],
+     },
+-];
+\ No newline at end of file
++];

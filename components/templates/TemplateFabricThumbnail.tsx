@@ -50,8 +50,7 @@ export default function TemplateFabricThumbnail({ template, className = "" }: Te
             imageSmoothingEnabled: true,
         });
 
-        applyTemplateLayers(canvas, template.layers);
-        canvas.renderAll();
+        applyTemplateLayers(canvas, template.layers).then(() => canvas.renderAll());
 
         return () => {
             void canvas.dispose();
