@@ -11,7 +11,7 @@ export async function applyTemplateLayers(
         if (layer.type === "shape") {
             if (layer.shape === "rect") {
                 canvas.add(new Rect({
-                    left: layer.x * scale, top: layer.y * scale,
+                    left: (layer.x ?? 0) * scale, top: (layer.y ?? 0) * scale,
                     width: layer.width * scale, height: layer.height * scale,
                     fill: layer.fill, opacity: layer.opacity ?? 1,
                     rx: (layer.radius ?? 0) * scale, ry: (layer.radius ?? 0) * scale,
@@ -22,7 +22,7 @@ export async function applyTemplateLayers(
             }
             if (layer.shape === "circle") {
                 canvas.add(new Circle({
-                    left: layer.x * scale, top: layer.y * scale,
+                    left: (layer.x ?? 0) * scale, top: (layer.y ?? 0) * scale,
                     radius: (layer.width / 2) * scale,
                     fill: layer.fill, opacity: layer.opacity ?? 1,
                     selectable: layer.selectable ?? true,
