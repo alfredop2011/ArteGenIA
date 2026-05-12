@@ -11,9 +11,14 @@ export async function POST(req: NextRequest) {
         const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, "");
         const buffer = Buffer.from(base64Data, "base64");
 
+        // Verificar que el buffer tiene tamaño razonable
+        console.log("Image buffer size:", buffer.length);
+
         const formData = new FormData();
-        formData.append("image_file", new Blob([buffer], { type: "image/png" }), "image.png");
+        const blob = new Blob([buffer], { type: "image/png" });
+        formData.append("image_file", blob, "image.png");
         formData.append("size", "auto");
+        formData.append("type", "auto");
 
         const response = await fetch("https://api.remove.bg/v1.0/removebg", {
             method: "POST",

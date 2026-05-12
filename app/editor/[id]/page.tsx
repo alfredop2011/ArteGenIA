@@ -1,5 +1,4 @@
 import Link from "next/link";
-import AppShell from "@/components/layout/AppShell";
 import EditorWorkspace from "@/components/editor/EditorWorkspace";
 import { templates } from "@/data/templates";
 
@@ -15,7 +14,7 @@ export default async function EditorPage({ params }: EditorPageProps) {
 
     if (!template) {
         return (
-            <AppShell>
+
                 <section className="mx-auto max-w-7xl px-6 py-8">
                     <h1 className="text-3xl font-bold">Plantilla no encontrada</h1>
 
@@ -30,13 +29,13 @@ export default async function EditorPage({ params }: EditorPageProps) {
                         Volver a plantillas
                     </Link>
                 </section>
-            </AppShell>
+
         );
     }
 
     return (
-        <AppShell>
+
             <EditorWorkspace template={template} />
-        </AppShell>
+
     );
 }

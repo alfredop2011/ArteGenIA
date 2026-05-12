@@ -14,19 +14,12 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "ArteGenIA — Generador de Flyers",
-  description: "Crea flyers profesionales para tus eventos con inteligencia artificial",
+  description: "Crea flyers profesionales para tus eventos",
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html
-      lang="es"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
+    <html lang="es" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
@@ -35,7 +28,9 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col bg-[#0e0e14] text-white">
+        {children}
+      </body>
     </html>
   );
 }
