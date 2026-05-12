@@ -129,7 +129,7 @@ export default function EditorWorkspace({ template }: EditorWorkspaceProps) {
         return () => {
             window.removeEventListener("keydown", handleKeyDown);
         };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const handleSave = useCallback(() => {
@@ -219,9 +219,16 @@ export default function EditorWorkspace({ template }: EditorWorkspaceProps) {
 
     const addImageToCanvas = useCallback(async (file: File) => {
         const canvas = fabricCanvasRef.current;
-        if (!canvas) return;
-        const imageUrl = URL.createObjectURL(file);
-        const image = await FabricImage.fromURL(imageUrl);
+        if (!canvas) return null;
+
+        // Cargar imagen real con dimensiones correctas
+        const dataUrl = await new Promise<string>((resolve) => {
+            const reader = new FileReader();
+            reader.onload = (e) => resolve(e.target?.result as string);
+            reader.readAsDataURL(file);
+        });
+
+        const image = await FabricImage.fromURL(dataUrl);
         const maxW = canvas.width! * 0.6;
         const maxH = canvas.height! * 0.6;
         const scale = Math.min(maxW / (image.width ?? maxW), maxH / (image.height ?? maxH), 1);
@@ -235,6 +242,7 @@ export default function EditorWorkspace({ template }: EditorWorkspaceProps) {
         canvas.setActiveObject(image);
         canvas.renderAll();
         setSelectedObject(image);
+        return image;
     }, []);
 
     const handleImageUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -257,8 +265,13 @@ export default function EditorWorkspace({ template }: EditorWorkspaceProps) {
 
         canvas.remove(selectedObject);
 
-        const imageUrl = URL.createObjectURL(file);
-        const image = await FabricImage.fromURL(imageUrl);
+        const dataUrl = await new Promise<string>((resolve) => {
+            const reader = new FileReader();
+            reader.onload = (e) => resolve(e.target?.result as string);
+            reader.readAsDataURL(file);
+        });
+
+        const image = await FabricImage.fromURL(dataUrl);
         image.set({
             left: oldLeft, top: oldTop,
             scaleX: oldScaleX, scaleY: oldScaleY,
@@ -278,14 +291,20 @@ export default function EditorWorkspace({ template }: EditorWorkspaceProps) {
 
         setRemovingBg(true);
         try {
-            // Obtener base64 de la imagen seleccionada
-            const imgEl = (selectedObject as FabricImage).getElement() as HTMLImageElement;
+            // Obtener el src de la imagen (dataURL guardado en Fabric)
+            const fabricImg = selectedObject as FabricImage;
+            const imgEl = fabricImg.getElement() as HTMLImageElement;
+
             const tmpCanvas = document.createElement("canvas");
-            tmpCanvas.width = imgEl.naturalWidth || imgEl.width;
-            tmpCanvas.height = imgEl.naturalHeight || imgEl.height;
+            tmpCanvas.width = imgEl.naturalWidth > 0 ? imgEl.naturalWidth : imgEl.width > 0 ? imgEl.width : 800;
+            tmpCanvas.height = imgEl.naturalHeight > 0 ? imgEl.naturalHeight : imgEl.height > 0 ? imgEl.height : 800;
+
             const ctx = tmpCanvas.getContext("2d");
-            ctx?.drawImage(imgEl, 0, 0);
+            if (!ctx) throw new Error("No canvas context");
+            ctx.drawImage(imgEl, 0, 0, tmpCanvas.width, tmpCanvas.height);
             const imageBase64 = tmpCanvas.toDataURL("image/png");
+
+            console.log("Sending image size:", tmpCanvas.width, "x", tmpCanvas.height, "base64 length:", imageBase64.length);
 
             const res = await fetch("/api/remove-bg", {
                 method: "POST",
@@ -294,16 +313,14 @@ export default function EditorWorkspace({ template }: EditorWorkspaceProps) {
             });
 
             const data = await res.json();
-            if (!res.ok || !data.result) throw new Error(data.error || "Error");
+            if (!res.ok || !data.result) throw new Error(data.error || "Error al quitar el fondo");
 
-            // Guardar posición/escala actual
             const oldLeft = selectedObject.left ?? 0;
             const oldTop = selectedObject.top ?? 0;
             const oldScaleX = selectedObject.scaleX ?? 1;
             const oldScaleY = selectedObject.scaleY ?? 1;
             const oldAngle = selectedObject.angle ?? 0;
 
-            // Reemplazar con imagen sin fondo
             canvas.remove(selectedObject);
             const newImage = await FabricImage.fromURL(data.result);
             newImage.set({
@@ -357,11 +374,11 @@ export default function EditorWorkspace({ template }: EditorWorkspaceProps) {
                 </div>
                 <div className="flex items-center gap-2">
                     <button onClick={handleSave}
-                        className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${saveFlash ? "bg-green-600 text-white" : "bg-purple-600 hover:bg-purple-500 text-white"}`}>
+                            className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${saveFlash ? "bg-green-600 text-white" : "bg-purple-600 hover:bg-purple-500 text-white"}`}>
                         {saveFlash ? "✓ Guardado" : "💾 Guardar"}
                     </button>
                     <button onClick={exportPng}
-                        className="px-4 py-2 rounded-xl bg-yellow-400 text-black text-sm font-black hover:bg-yellow-300">
+                            className="px-4 py-2 rounded-xl bg-yellow-400 text-black text-sm font-black hover:bg-yellow-300">
                         ↓ PNG
                     </button>
                 </div>
@@ -415,12 +432,12 @@ export default function EditorWorkspace({ template }: EditorWorkspaceProps) {
                             <div>
                                 <label className="mb-1 block text-xs text-gray-400">Texto</label>
                                 <textarea value={selectedText.text} onChange={(e) => updateSelectedText(e.target.value)}
-                                    className="min-h-24 w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-sm text-white outline-none resize-none" />
+                                          className="min-h-24 w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-sm text-white outline-none resize-none" />
                             </div>
                             <div>
                                 <label className="mb-1 block text-xs text-gray-400">Fuente</label>
                                 <select value={selectedText.fontFamily} onChange={(e) => updateSelectedFont(e.target.value)}
-                                    className="w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-sm text-white outline-none">
+                                        className="w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-sm text-white outline-none">
                                     {FONTS.map((f) => <option key={f} value={f}>{f}</option>)}
                                 </select>
                             </div>
@@ -430,18 +447,18 @@ export default function EditorWorkspace({ template }: EditorWorkspaceProps) {
                                 </label>
                                 <div className="flex items-center gap-2">
                                     <input type="range" min={8} max={120} value={selectedText.fontSize}
-                                        onChange={(e) => updateFontSize(Number(e.target.value))}
-                                        className="flex-1 accent-purple-500" />
+                                           onChange={(e) => updateFontSize(Number(e.target.value))}
+                                           className="flex-1 accent-purple-500" />
                                     <input type="number" min={8} max={200} value={selectedText.fontSize}
-                                        onChange={(e) => updateFontSize(Number(e.target.value))}
-                                        className="w-16 rounded-xl border border-white/10 bg-black/40 px-2 py-1 text-sm text-white outline-none text-center" />
+                                           onChange={(e) => updateFontSize(Number(e.target.value))}
+                                           className="w-16 rounded-xl border border-white/10 bg-black/40 px-2 py-1 text-sm text-white outline-none text-center" />
                                 </div>
                             </div>
                             <div>
                                 <label className="mb-1 block text-xs text-gray-400">Color</label>
                                 <div className="flex items-center gap-3">
                                     <input type="color" value={selectedText.color} onChange={(e) => updateSelectedColor(e.target.value)}
-                                        className="h-11 w-16 rounded-xl border border-white/10 bg-black/40 cursor-pointer" />
+                                           className="h-11 w-16 rounded-xl border border-white/10 bg-black/40 cursor-pointer" />
                                     <span className="text-sm text-gray-400 font-mono">{selectedText.color}</span>
                                 </div>
                             </div>
@@ -454,12 +471,10 @@ export default function EditorWorkspace({ template }: EditorWorkspaceProps) {
                     {isImage && (
                         <div className="space-y-3">
                             <p className="text-xs text-gray-400 mb-4">Puedes mover, escalar y rotar la imagen directamente en el canvas.</p>
-
                             <button onClick={openReplacePicker}
-                                className="w-full rounded-xl bg-white/10 border border-white/10 px-4 py-3 text-sm text-white hover:bg-white/15 transition-colors">
+                                    className="w-full rounded-xl bg-white/10 border border-white/10 px-4 py-3 text-sm text-white hover:bg-white/15 transition-colors">
                                 🔄 Reemplazar imagen
                             </button>
-
                             <button
                                 onClick={handleRemoveBg}
                                 disabled={removingBg}
@@ -470,9 +485,8 @@ export default function EditorWorkspace({ template }: EditorWorkspaceProps) {
                                 }`}>
                                 {removingBg ? "⏳ Quitando fondo..." : "✂️ Quitar fondo"}
                             </button>
-
                             <button onClick={deleteSelected}
-                                className="w-full rounded-xl bg-red-900/40 border border-red-800/50 px-4 py-3 text-sm text-red-400 hover:bg-red-900/60 transition-colors">
+                                    className="w-full rounded-xl bg-red-900/40 border border-red-800/50 px-4 py-3 text-sm text-red-400 hover:bg-red-900/60 transition-colors">
                                 🗑️ Eliminar imagen
                             </button>
                         </div>
@@ -482,7 +496,7 @@ export default function EditorWorkspace({ template }: EditorWorkspaceProps) {
                         <div className="space-y-3">
                             <p className="text-sm text-gray-400">Forma seleccionada.</p>
                             <button onClick={deleteSelected}
-                                className="w-full rounded-xl bg-red-900/40 border border-red-800/50 px-4 py-3 text-sm text-red-400 hover:bg-red-900/60">
+                                    className="w-full rounded-xl bg-red-900/40 border border-red-800/50 px-4 py-3 text-sm text-red-400 hover:bg-red-900/60">
                                 🗑️ Eliminar forma
                             </button>
                         </div>
