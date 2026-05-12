@@ -12,21 +12,24 @@ export async function POST(req: NextRequest) {
         const buffer = Buffer.from(base64Data, "base64");
 
         const formData = new FormData();
-        formData.append("image_file", new Blob([buffer]), "image.png");
+        formData.append("image_file", new Blob([buffer], { type: "image/png" }), "image.png");
         formData.append("size", "auto");
 
         const response = await fetch("https://api.remove.bg/v1.0/removebg", {
             method: "POST",
             headers: {
-                "X-Api-Key": process.env.REMOVE_BG_API_KEY!,
+                "X-Api-Key": process.env.REMOVE_BG_API_KEY ?? "",
             },
             body: formData,
         });
 
         if (!response.ok) {
             const error = await response.text();
-            console.error("remove.bg error:", error);
-            return NextResponse.json({ error: "Error al quitar el fondo" }, { status: 500 });
+            console.error("remove.bg status:", response.status, "error:", error);
+            return NextResponse.json(
+                { error: `remove.bg error ${response.status}: ${error}` },
+                { status: 500 }
+            );
         }
 
         const arrayBuffer = await response.arrayBuffer();
@@ -37,6 +40,6 @@ export async function POST(req: NextRequest) {
         });
     } catch (e) {
         console.error("remove-bg route error:", e);
-        return NextResponse.json({ error: "Error interno" }, { status: 500 });
+        return NextResponse.json({ error: String(e) }, { status: 500 });
     }
 }
