@@ -1,4 +1,5 @@
 "use client";
+import LayersPanel from "@/components/editor/LayersPanel";
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Canvas, Textbox, FabricObject, FabricImage, Rect } from "fabric";
@@ -9,7 +10,10 @@ type GeneratedData = {
   eventDate: string;
   eventVenue: string;
   eventPrice: string;
-  artistPhoto: string | null;
+  artistPhotoUrl: string | null;
+  bgUrl?: string;
+  bgWidth?: number;
+  bgHeight?: number;
   palette: { colors: string[]; label: string };
   style: string;
   format: string;
@@ -40,6 +44,9 @@ export default function GeneratedEditor({ data }: Props) {
 
   const [canvasSize, setCanvasSize] = useState<{ w: number; h: number } | null>(null);
   const [selectedObject, setSelectedObject] = useState<FabricObject | null>(null);
+  const [layersTick, setLayersTick] = useState(0);
+  const [canvasReady, setCanvasReady] = useState(false);
+  const bumpLayers = () => setLayersTick(n => n + 1);
   const [selectedText, setSelectedText] = useState<SelectedText>({ text: "", color: "#ffffff", fontFamily: "Impact", fontSize: 40 });
   const [bgEditMode, setBgEditMode] = useState(false);
   const [saveFlash, setSaveFlash] = useState(false);
@@ -84,17 +91,51 @@ export default function GeneratedEditor({ data }: Props) {
       preserveObjectStacking: true,
     });
     fabricRef.current = canvas;
+    setCanvasReady(true);
 
     const build = async () => {
-      // CAPA 1: Fondo con gradiente (rect)
-      const bg = new Rect({
-        left: 0, top: 0,
-        width: canvasSize.w, height: canvasSize.h,
-        fill: c2,
-        selectable: false, evented: false,
-        id: "bg-rect",
-      });
-      canvas.add(bg);
+      // CAPA 1: Fondo (imagen de Fal.ai si existe, si no rect liso)
+      if (data.bgUrl) {
+        try {
+          const bgImg = await FabricImage.fromURL(data.bgUrl, { crossOrigin: "anonymous" });
+          const fillScale = Math.max(
+            canvasSize.w / (bgImg.width ?? 1),
+            canvasSize.h / (bgImg.height ?? 1)
+          );
+          bgImg.set({
+            left: canvasSize.w / 2,
+            top: canvasSize.h / 2,
+            originX: "center",
+            originY: "center",
+            scaleX: fillScale,
+            scaleY: fillScale,
+            selectable: false,
+            evented: false,
+          });
+          (bgImg as unknown as { id: string; name: string }).id = "bg-image";
+          (bgImg as unknown as { id: string; name: string }).name = "Fondo IA";
+          canvas.add(bgImg);
+        } catch (e) {
+          console.warn("[GeneratedEditor] bgUrl error, fallback a rect:", e);
+          const bg = new Rect({
+            left: 0, top: 0,
+            width: canvasSize.w, height: canvasSize.h,
+            fill: c2,
+            selectable: false, evented: false,
+            id: "bg-rect", name: "Fondo de color",
+          });
+          canvas.add(bg);
+        }
+      } else {
+        const bg = new Rect({
+          left: 0, top: 0,
+          width: canvasSize.w, height: canvasSize.h,
+          fill: c2,
+          selectable: false, evented: false,
+          id: "bg-rect", name: "Fondo de color",
+        });
+        canvas.add(bg);
+      }
 
       // Gradiente radial simulado con rect semitransparente
       const glow = new Rect({
@@ -103,14 +144,14 @@ export default function GeneratedEditor({ data }: Props) {
         fill: c1,
         opacity: 0.45,
         selectable: false, evented: false,
-        id: "bg-glow",
+        id: "bg-glow", name: "Brillo",
       });
       canvas.add(glow);
 
       // CAPA 2: Foto del artista
-      if (data.artistPhoto) {
+      if (data.artistPhotoUrl) {
         try {
-          const img = await FabricImage.fromURL(data.artistPhoto, { crossOrigin: "anonymous" });
+          const img = await FabricImage.fromURL(data.artistPhotoUrl, { crossOrigin: "anonymous" });
           const scaleToFill = Math.max(canvasSize.w / (img.width ?? 1), (canvasSize.h * 0.65) / (img.height ?? 1));
           img.set({
             left: canvasSize.w / 2,
@@ -121,7 +162,7 @@ export default function GeneratedEditor({ data }: Props) {
             scaleY: scaleToFill,
             selectable: false,
             evented: false,
-            id: "artist-photo",
+            id: "artist-photo", name: "Foto del artista",
           });
           canvas.add(img);
 
@@ -132,7 +173,7 @@ export default function GeneratedEditor({ data }: Props) {
             fill: c2,
             opacity: 0.8,
             selectable: false, evented: false,
-            id: "photo-fade",
+            id: "photo-fade", name: "Degradado foto",
           });
           canvas.add(fade);
         } catch (e) {
@@ -153,7 +194,7 @@ export default function GeneratedEditor({ data }: Props) {
           fill: c0,
           textAlign: "left",
           editable: true,
-          id: "event-name",
+          id: "event-name", name: "Nombre del evento",
         });
         canvas.add(nameText);
       }
@@ -170,7 +211,7 @@ export default function GeneratedEditor({ data }: Props) {
           opacity: 0.75,
           textAlign: "left",
           editable: true,
-          id: "event-date",
+          id: "event-date", name: "Fecha",
         });
         canvas.add(dateText);
       }
@@ -186,7 +227,7 @@ export default function GeneratedEditor({ data }: Props) {
           opacity: 0.6,
           textAlign: "left",
           editable: true,
-          id: "event-venue",
+          id: "event-venue", name: "Sede",
         });
         canvas.add(venueText);
       }
@@ -198,7 +239,7 @@ export default function GeneratedEditor({ data }: Props) {
           width: 110 * s, height: 30 * s,
           fill: c0,
           rx: 6 * s, ry: 6 * s,
-          id: "price-bg",
+          id: "price-bg", name: "Fondo precio",
         });
         canvas.add(priceBg);
 
@@ -211,7 +252,7 @@ export default function GeneratedEditor({ data }: Props) {
           fill: c2,
           textAlign: "center",
           editable: true,
-          id: "event-price",
+          id: "event-price", name: "Precio",
         });
         canvas.add(priceText);
       }
@@ -226,7 +267,7 @@ export default function GeneratedEditor({ data }: Props) {
         opacity: 0.2,
         textAlign: "center",
         selectable: false, evented: false,
-        id: "watermark",
+        id: "watermark", name: "Marca de agua",
       });
       canvas.add(urlText);
 
@@ -254,12 +295,28 @@ export default function GeneratedEditor({ data }: Props) {
     canvas.on("selection:created", onSelect);
     canvas.on("selection:updated", onSelect);
     canvas.on("selection:cleared", () => { setSelectedObject(null); });
+    canvas.on("object:added", bumpLayers);
+    canvas.on("object:removed", bumpLayers);
+    canvas.on("object:modified", bumpLayers);
 
     const onKey = (e: KeyboardEvent) => {
       if ((e.target as HTMLElement).tagName === "TEXTAREA") return;
       if (e.key === "Delete" || e.key === "Backspace") {
         const active = canvas.getActiveObject();
         if (active) { canvas.remove(active); canvas.discardActiveObject(); canvas.renderAll(); setSelectedObject(null); }
+      }
+      const arrowKeys = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"];
+      if (arrowKeys.includes(e.key)) {
+        const active = canvas.getActiveObject();
+        if (!active) return;
+        e.preventDefault();
+        const step = e.shiftKey ? 10 : 1;
+        if (e.key === "ArrowUp")    active.top  = (active.top  ?? 0) - step;
+        if (e.key === "ArrowDown")  active.top  = (active.top  ?? 0) + step;
+        if (e.key === "ArrowLeft")  active.left = (active.left ?? 0) - step;
+        if (e.key === "ArrowRight") active.left = (active.left ?? 0) + step;
+        active.setCoords();
+        canvas.requestRenderAll();
       }
     };
     window.addEventListener("keydown", onKey);
@@ -268,6 +325,7 @@ export default function GeneratedEditor({ data }: Props) {
       cancelled = true;
       window.removeEventListener("keydown", onKey);
       fabricRef.current = null;
+      setCanvasReady(false);
       void canvas.dispose();
     };
   }, [canvasSize, c0, c1, c2, data]);
@@ -433,7 +491,7 @@ export default function GeneratedEditor({ data }: Props) {
       <div className="flex flex-1 min-h-0">
 
         {/* Panel izquierdo */}
-        <aside className="w-56 shrink-0 bg-[#111127] border-r border-white/[0.06] p-4 flex flex-col gap-3 overflow-y-auto">
+        <aside className="w-64 shrink-0 bg-[#111127] border-r border-white/[0.06] p-4 flex flex-col gap-3 overflow-y-auto">
           <p className="text-[10px] text-purple-400 uppercase tracking-widest font-semibold">Herramientas</p>
           <button onClick={addText} className="w-full rounded-xl bg-white/5 border border-white/8 px-3 py-2.5 text-left text-sm hover:bg-white/10 transition-colors">
             ✏️ Añadir texto
@@ -461,8 +519,24 @@ export default function GeneratedEditor({ data }: Props) {
             </div>
           )}
 
+          {/* Panel de capas */}
+          <div className="mt-3 pt-3 border-t border-white/8 -mx-4">
+            <LayersPanel
+              canvas={canvasReady ? fabricRef.current : null}
+              selectedKey={
+                selectedObject
+                  ? ((selectedObject as unknown as { id?: string; name?: string }).id
+                      ?? (selectedObject as unknown as { id?: string; name?: string }).name
+                      ?? null)
+                  : null
+              }
+              refreshTick={layersTick}
+              onSelect={(obj) => setSelectedObject(obj)}
+            />
+          </div>
+
           {/* Paleta de colores del evento */}
-          <div className="mt-auto pt-3 border-t border-white/8">
+          <div className="mt-3 pt-3 border-t border-white/8">
             <p className="text-[10px] text-gray-600 uppercase tracking-wider mb-2">Paleta del diseño</p>
             <div className="flex gap-2">
               {colors.map((c, i) => (

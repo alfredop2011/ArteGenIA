@@ -9,7 +9,10 @@ type GeneratedData = {
   eventDate: string;
   eventVenue: string;
   eventPrice: string;
-  artistPhoto: string | null;
+  artistPhotoUrl: string | null;
+  bgUrl?: string;
+  bgWidth?: number;
+  bgHeight?: number;
   palette: { colors: string[]; label: string };
   style: string;
   format: string;

@@ -96,11 +96,12 @@ export default function CreatePage() {
     setCurrentStep(1);
     setStepProgress(0);
 
-    for (let step = 1; step <= AI_PROCESS_STEPS.length; step++) {
-      setCurrentStep(step);
-      const duration = step === 4 ? 2200 : step === 6 ? 1800 : 1200;
-      const start = Date.now();
-      await new Promise<void>(res => {
+    // Animar un paso individual (1-6) con su duración
+    const animateStep = (step: number, duration: number) =>
+      new Promise<void>(res => {
+        setCurrentStep(step);
+        setStepProgress(0);
+        const start = Date.now();
         const tick = () => {
           const elapsed = Date.now() - start;
           const pct = Math.min((elapsed / duration) * 100, 100);
@@ -110,9 +111,120 @@ export default function CreatePage() {
         };
         requestAnimationFrame(tick);
       });
-    }
 
-    try { localStorage.setItem("artegenia_generated", JSON.stringify({ eventName, eventDate, eventVenue, eventAddress, eventPrice, artistPhoto, prompt, palette: (COLOR_PALETTES.find(p => p.id === selectedPalette) ?? COLOR_PALETTES[0]), style: selectedStyle, format: selectedFormat, generatedAt: new Date().toISOString() })); } catch(e) { console.warn("localStorage error:", e); } setTimeout(() => router.push("/editor-new"), 600);
+    // Animar progreso del paso 3-4 mientras corren las APIs reales
+    const animateWhileFetching = <T,>(step: number, promise: Promise<T>): Promise<T> =>
+      new Promise((resolve, reject) => {
+        setCurrentStep(step);
+        setStepProgress(0);
+        const start = Date.now();
+        const softCap = 90; // sube hasta 90% mientras espera, el último 10% al recibir
+        let done = false;
+        const tick = () => {
+          if (done) return;
+          const elapsed = Date.now() - start;
+          // Curva exponencial inversa para que el progreso desacelere
+          const pct = softCap * (1 - Math.exp(-elapsed / 4000));
+          setStepProgress(pct);
+          requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+        promise.then(
+          v => { done = true; setStepProgress(100); setTimeout(() => resolve(v), 200); },
+          e => { done = true; reject(e); }
+        );
+      });
+
+    try {
+      // Pasos 1-2: analizar idea + elegir paleta (animación rápida, son visuales)
+      await animateStep(1, 600);
+      await animateStep(2, 500);
+
+      // Paleta y formato resueltos
+      const paletteObj = COLOR_PALETTES.find(p => p.id === selectedPalette) ?? COLOR_PALETTES[0];
+
+      // Paso 3: generar fondo con Fal.ai (REAL)
+      const bgPromise = fetch("/api/generate-bg", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prompt: prompt.trim(),
+          style: selectedStyle,
+          palette: { id: paletteObj.id, name: paletteObj.label, colors: paletteObj.colors },
+          format: selectedFormat,
+        }),
+      }).then(async r => {
+        if (!r.ok) {
+          const err = await r.json().catch(() => ({}));
+          throw new Error(err.detail || err.error || `generate-bg ${r.status}`);
+        }
+        return r.json() as Promise<{ url: string; width: number; height: number }>;
+      });
+
+      const bgResult = await animateWhileFetching(3, bgPromise);
+
+      // Paso 4: procesar foto del artista (REAL, si hay foto)
+      let artistUrl: string | null = null;
+      if (artistPhoto) {
+        // Convertir dataURL a Blob para enviarlo como FormData
+        const dataUrlToBlob = (dataUrl: string): Blob => {
+          const [meta, b64] = dataUrl.split(",");
+          const mime = meta.match(/data:(.*?);/)?.[1] ?? "image/png";
+          const bin = atob(b64);
+          const u8 = new Uint8Array(bin.length);
+          for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+          return new Blob([u8], { type: mime });
+        };
+        const blob = dataUrlToBlob(artistPhoto);
+        const fd = new FormData();
+        fd.append("image_file", blob, artistFileName ?? "artist.png");
+
+        const artistPromise = fetch("/api/remove-bg", { method: "POST", body: fd })
+          .then(async r => {
+            if (!r.ok) {
+              const err = await r.json().catch(() => ({}));
+              throw new Error(err.detail || err.error || `remove-bg ${r.status}`);
+            }
+            return r.json() as Promise<{ url: string }>;
+          });
+
+        const artistResult = await animateWhileFetching(4, artistPromise);
+        artistUrl = artistResult.url;
+      } else {
+        // Sin foto, solo animamos el paso
+        await animateStep(4, 500);
+      }
+
+      // Pasos 5-6: montaje final (visual)
+      await animateStep(5, 700);
+      await animateStep(6, 600);
+
+      // Guardar URLs en localStorage (¡no dataURLs!)
+      try {
+        localStorage.setItem("artegenia_generated", JSON.stringify({
+          eventName, eventDate, eventVenue, eventAddress, eventPrice,
+          artistPhotoUrl: artistUrl,
+          bgUrl: bgResult.url,
+          bgWidth: bgResult.width,
+          bgHeight: bgResult.height,
+          prompt,
+          palette: paletteObj,
+          style: selectedStyle,
+          format: selectedFormat,
+          generatedAt: new Date().toISOString(),
+        }));
+      } catch (e) {
+        console.warn("localStorage error:", e);
+      }
+
+      setTimeout(() => router.push("/editor-new"), 400);
+    } catch (err) {
+      console.error("Error generando flyer:", err);
+      alert(`Error generando el flyer: ${err instanceof Error ? err.message : "desconocido"}`);
+      setIsGenerating(false);
+      setCurrentStep(0);
+      setStepProgress(0);
+    }
   };
 
   const canGenerate = prompt.trim().length > 10 || eventName.trim().length > 2;
