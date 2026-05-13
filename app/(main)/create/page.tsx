@@ -112,7 +112,7 @@ export default function CreatePage() {
       });
     }
 
-    setTimeout(() => router.push("/templates"), 600);
+    try { localStorage.setItem("artegenia_generated", JSON.stringify({ eventName, eventDate, eventVenue, eventAddress, eventPrice, artistPhoto, prompt, palette: (COLOR_PALETTES.find(p => p.id === selectedPalette) ?? COLOR_PALETTES[0]), style: selectedStyle, format: selectedFormat, generatedAt: new Date().toISOString() })); } catch(e) { console.warn("localStorage error:", e); } setTimeout(() => router.push("/editor-new"), 600);
   };
 
   const canGenerate = prompt.trim().length > 10 || eventName.trim().length > 2;

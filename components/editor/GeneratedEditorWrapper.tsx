@@ -1,0 +1,49 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import GeneratedEditor from "@/components/editor/GeneratedEditor";
+
+type GeneratedData = {
+  eventName: string;
+  eventDate: string;
+  eventVenue: string;
+  eventPrice: string;
+  artistPhoto: string | null;
+  palette: { colors: string[]; label: string };
+  style: string;
+  format: string;
+  generatedAt: string;
+};
+
+export default function GeneratedEditorWrapper() {
+  const router = useRouter();
+  const [data, setData] = useState<GeneratedData | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("artegenia_generated");
+      if (raw) {
+        setData(JSON.parse(raw));
+      } else {
+        router.push("/create");
+      }
+    } catch {
+      router.push("/create");
+    }
+    setLoading(false);
+  }, [router]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#0a0a18] flex items-center justify-center">
+        <div className="w-10 h-10 border-2 border-purple-400 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!data) return null;
+
+  return <GeneratedEditor data={data} />;
+}
