@@ -1,653 +1,1032 @@
 "use client";
-import LayersPanel from "@/components/editor/LayersPanel";
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import { Canvas, Textbox, FabricObject, FabricImage, Rect } from "fabric";
 import { useRouter } from "next/navigation";
+import type { Canvas as FabricCanvas, FabricObject, IText } from "fabric";
+
+// ─── TYPES ────────────────────────────────────────────────────────────────────
+
+type LayerItem = {
+  id: string;
+  name: string;
+  type: "text" | "image" | "shape" | "background";
+  obj: FabricObject;
+  visible: boolean;
+  locked: boolean;
+};
+
+type TextProps = {
+  text: string;
+  fontFamily: string;
+  fontSize: number;
+  fill: string;
+  textAlign: string;
+  fontWeight: string;
+  charSpacing: number;
+  lineHeight: number;
+  opacity: number;
+  angle: number;
+  left: number;
+  top: number;
+  width: number;
+};
+
+type ImageProps = {
+  opacity: number;
+  angle: number;
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+  scaleX: number;
+  scaleY: number;
+};
+
+type LeftTool = "templates" | "elements" | "text" | "photos" | "background" | "layers";
+
+type SaveState = "saved" | "saving" | "unsaved";
 
 type GeneratedData = {
-  eventName: string;
-  eventDate: string;
-  eventVenue: string;
-  eventPrice: string;
-  artistPhotoUrl: string | null;
+  eventName?: string;
+  eventDate?: string;
+  eventVenue?: string;
+  eventPrice?: string;
+  artistPhotoUrl?: string | null;
+  artists?: Array<{ name: string; photoUrl: string | null }>;
   bgUrl?: string;
   bgWidth?: number;
   bgHeight?: number;
-  palette: { colors: string[]; label: string };
-  style: string;
-  format: string;
+  textLayers?: Array<{
+    id: string; role: string; content: string;
+    style: { fontFamily: string; fontSize: number; fontWeight: string; color: string; textAlign: string; letterSpacing?: number; opacity?: number };
+    position: { x: number; y: number; width: number; originX: string; originY: string };
+  }>;
+  palette?: { colors: string[]; label: string };
+  format?: string;
+  mode?: string;
 };
 
-type Props = { data: GeneratedData };
+const FONTS = [
+  "Montserrat", "Playfair Display", "Bebas Neue", "Oswald",
+  "Raleway", "Poppins", "Inter", "Anton", "Roboto Condensed",
+];
 
-const FONTS = ["Impact", "Arial Black", "Anton", "Bebas Neue", "Montserrat", "Playfair Display", "Oswald", "Georgia", "Arial"];
-
-// Dimensiones del canvas según formato
-const FORMAT_SIZES: Record<string, { w: number; h: number }> = {
-  instagram: { w: 430, h: 538 },
-  historia:  { w: 430, h: 763 },
-  cuadrado:  { w: 430, h: 430 },
-  evento:    { w: 763, h: 430 },
+const FORMAT_DIMS: Record<string, { w: number; h: number }> = {
+  instagram: { w: 1080, h: 1350 },
+  historia:  { w: 1080, h: 1920 },
+  cuadrado:  { w: 1080, h: 1080 },
+  evento:    { w: 1920, h: 1080 },
 };
 
-type SelectedText = { text: string; color: string; fontFamily: string; fontSize: number };
+function uid() { return Math.random().toString(36).slice(2, 8); }
 
-export default function GeneratedEditor({ data }: Props) {
+// ─── LAYER ICON ───────────────────────────────────────────────────────────────
+
+function LayerIcon({ type }: { type: LayerItem["type"] }) {
+  const icons = {
+    text:       <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M4 6h16M4 12h8m-8 6h16"/></svg>,
+    image:      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>,
+    shape:      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><rect x="3" y="3" width="18" height="18" rx="2"/></svg>,
+    background: <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>,
+  };
+  return <span className="text-gray-500">{icons[type]}</span>;
+}
+
+// ─── MAIN EDITOR ──────────────────────────────────────────────────────────────
+
+export default function GeneratedEditor() {
   const router = useRouter();
-  const canvasElRef = useRef<HTMLCanvasElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const fabricRef = useRef<FabricCanvas | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const fabricRef = useRef<Canvas | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const replaceInputRef = useRef<HTMLInputElement>(null);
-  const scaleRef = useRef(1);
 
-  const [canvasSize, setCanvasSize] = useState<{ w: number; h: number } | null>(null);
-  const [selectedObject, setSelectedObject] = useState<FabricObject | null>(null);
-  const [layersTick, setLayersTick] = useState(0);
-  const [canvasReady, setCanvasReady] = useState(false);
-  const bumpLayers = () => setLayersTick(n => n + 1);
-  const [selectedText, setSelectedText] = useState<SelectedText>({ text: "", color: "#ffffff", fontFamily: "Impact", fontSize: 40 });
-  const [bgEditMode, setBgEditMode] = useState(false);
-  const [saveFlash, setSaveFlash] = useState(false);
-  const [removingBg, setRemovingBg] = useState(false);
+  const [data, setData] = useState<GeneratedData | null>(null);
+  const [layers, setLayers] = useState<LayerItem[]>([]);
+  const [selectedLayer, setSelectedLayer] = useState<LayerItem | null>(null);
+  const [activeTool, setActiveTool] = useState<LeftTool>("layers");
+  const [zoom, setZoom] = useState(50);
+  const [saveState, setSaveState] = useState<SaveState>("saved");
+  const [canvasSize, setCanvasSize] = useState({ w: 1080, h: 1350 });
+  const [history, setHistory] = useState<string[]>([]);
+  const [historyIdx, setHistoryIdx] = useState(-1);
 
-  const { colors, label: palLabel } = data.palette;
-  const [c0, c1, c2] = colors; // acento, medio, fondo
+  // Text props for selected text layer
+  const [textProps, setTextProps] = useState<TextProps>({
+    text: "", fontFamily: "Montserrat", fontSize: 60, fill: "#ffffff",
+    textAlign: "center", fontWeight: "700", charSpacing: 0,
+    lineHeight: 1.2, opacity: 1, angle: 0, left: 540, top: 100, width: 900,
+  });
 
-  const fmt = data.format?.toLowerCase() ?? "instagram";
-  const fmtKey = Object.keys(FORMAT_SIZES).find(k => fmt.includes(k)) ?? "instagram";
-  const { w: TW, h: TH } = FORMAT_SIZES[fmtKey];
+  // Image props for selected image layer
+  const [imageProps, setImageProps] = useState<ImageProps>({
+    opacity: 1, angle: 0, left: 0, top: 0, width: 400, height: 600, scaleX: 1, scaleY: 1,
+  });
 
-  // Medir contenedor y calcular canvas size
+  // ─── LOAD DATA ──────────────────────────────────────────────────────────────
+
   useEffect(() => {
-    const node = containerRef.current;
-    if (!node) return;
-    const measure = () => {
-      const aw = node.clientWidth;
-      const ah = node.clientHeight;
-      if (aw <= 0 || ah <= 0) return;
-      const scale = Math.min(aw / TW, ah / TH, 1);
-      scaleRef.current = scale;
-      setCanvasSize({ w: Math.round(TW * scale), h: Math.round(TH * scale) });
-    };
-    measure();
-    const ro = new ResizeObserver(measure);
-    ro.observe(node);
-    return () => ro.disconnect();
-  }, [TW, TH]);
+    try {
+      const raw = localStorage.getItem("artegenia_generated");
+      if (raw) setData(JSON.parse(raw));
+      else router.push("/create");
+    } catch { router.push("/create"); }
+  }, [router]);
 
-  // Inicializar Fabric y construir capas desde los datos generados
+  // ─── INIT FABRIC ────────────────────────────────────────────────────────────
+
   useEffect(() => {
-    const el = canvasElRef.current;
-    if (!el || !canvasSize) return;
-    let cancelled = false;
+    if (!data || !canvasRef.current) return;
 
-    const s = scaleRef.current;
-    const canvas = new Canvas(el, {
-      width: canvasSize.w,
-      height: canvasSize.h,
-      backgroundColor: c2,
-      preserveObjectStacking: true,
-    });
-    fabricRef.current = canvas;
-    setCanvasReady(true);
+    let isMounted = true;
+    let canvas: FabricCanvas | null = null;
 
-    const build = async () => {
-      // CAPA 1: Fondo (imagen de Fal.ai si existe, si no rect liso)
+    (async () => {
+      const fabric = await import("fabric");
+
+      const format = data.format ?? "instagram";
+      const dims = FORMAT_DIMS[format] ?? FORMAT_DIMS.instagram;
+      if (isMounted) setCanvasSize({ w: dims.w, h: dims.h });
+
+      const scale = zoom / 100;
+
+      canvas = new fabric.Canvas(canvasRef.current!, {
+        width: dims.w * scale,
+        height: dims.h * scale,
+        backgroundColor: "#1a1a2e",
+        selection: true,
+        preserveObjectStacking: true,
+      });
+
+      canvas.setZoom(scale);
+      fabricRef.current = canvas;
+
+      const newLayers: LayerItem[] = [];
+
+      // ── Load background ──────────────────────────────────────────────────────
       if (data.bgUrl) {
         try {
-          const bgImg = await FabricImage.fromURL(data.bgUrl, { crossOrigin: "anonymous" });
-          const fillScale = Math.max(
-            canvasSize.w / (bgImg.width ?? 1),
-            canvasSize.h / (bgImg.height ?? 1)
-          );
+          const bgImg = await fabric.FabricImage.fromURL(data.bgUrl, { crossOrigin: "anonymous" });
           bgImg.set({
-            left: canvasSize.w / 2,
-            top: canvasSize.h / 2,
-            originX: "center",
-            originY: "center",
-            scaleX: fillScale,
-            scaleY: fillScale,
-            selectable: false,
-            evented: false,
-          });
-          (bgImg as unknown as { id: string; name: string }).id = "bg-image";
-          (bgImg as unknown as { id: string; name: string }).name = "Fondo IA";
-          canvas.add(bgImg);
-        } catch (e) {
-          console.warn("[GeneratedEditor] bgUrl error, fallback a rect:", e);
-          const bg = new Rect({
             left: 0, top: 0,
-            width: canvasSize.w, height: canvasSize.h,
-            fill: c2,
-            selectable: false, evented: false,
-            id: "bg-rect", name: "Fondo de color",
+            scaleX: dims.w / (bgImg.width ?? dims.w),
+            scaleY: dims.h / (bgImg.height ?? dims.h),
+            selectable: true, evented: true,
+            lockMovementX: false, lockMovementY: false,
           });
-          canvas.add(bg);
+          (bgImg as FabricObject & { customId?: string; customRole?: string }).customId = "background";
+          (bgImg as FabricObject & { customRole?: string }).customRole = "background";
+          canvas.add(bgImg);
+          canvas.sendObjectToBack(bgImg);
+          newLayers.unshift({
+            id: "background", name: "Fondo generado", type: "background",
+            obj: bgImg, visible: true, locked: false,
+          });
+        } catch (e) { console.warn("BG load error:", e); }
+      }
+
+      // ── Load text layers (from generate-flyer-assets) ────────────────────────
+      if (data.textLayers && data.textLayers.length > 0) {
+        for (const tl of data.textLayers) {
+          const itext = new fabric.IText(tl.content, {
+            left: tl.position.x,
+            top: tl.position.y,
+            width: tl.position.width,
+            fontFamily: tl.style.fontFamily,
+            fontSize: tl.style.fontSize,
+            fontWeight: tl.style.fontWeight,
+            fill: tl.style.color,
+            textAlign: tl.style.textAlign as "left" | "center" | "right",
+            charSpacing: (tl.style.letterSpacing ?? 0) * 10,
+            originX: tl.position.originX as "left" | "center" | "right",
+            originY: tl.position.originY as "top" | "center" | "bottom",
+            opacity: tl.style.opacity ?? 1,
+            selectable: true, evented: true,
+          });
+          (itext as FabricObject & { customId?: string }).customId = tl.id;
+          canvas.add(itext);
+
+          const roleLabels: Record<string, string> = {
+            eventTitle: "Título del evento",
+            mainArtist: "Artista principal",
+            additionalArtists: "Artistas adicionales",
+            date: "Fecha y hora",
+            venue: "Lugar",
+            price: "Precio",
+            label: "Etiqueta",
+          };
+          newLayers.push({
+            id: tl.id, name: roleLabels[tl.role] ?? tl.content.slice(0, 20),
+            type: "text", obj: itext, visible: true, locked: false,
+          });
         }
       } else {
-        const bg = new Rect({
-          left: 0, top: 0,
-          width: canvasSize.w, height: canvasSize.h,
-          fill: c2,
-          selectable: false, evented: false,
-          id: "bg-rect", name: "Fondo de color",
-        });
-        canvas.add(bg);
-      }
+        // Fallback: build text layers from event data
+        const textDefs = [
+          { id: "title",  content: data.eventName ?? "",  y: dims.h * 0.07, size: 80,  weight: "900", ls: 4  },
+          { id: "date",   content: data.eventDate ?? "",  y: dims.h * 0.82, size: 28,  weight: "700", ls: 3  },
+          { id: "venue",  content: data.eventVenue ?? "", y: dims.h * 0.87, size: 22,  weight: "500", ls: 2  },
+          { id: "price",  content: data.eventPrice ?? "", y: dims.h * 0.92, size: 20,  weight: "700", ls: 2  },
+        ].filter(t => t.content.trim());
 
-      // Gradiente radial simulado con rect semitransparente
-      const glow = new Rect({
-        left: 0, top: canvasSize.h * 0.35,
-        width: canvasSize.w, height: canvasSize.h * 0.65,
-        fill: c1,
-        opacity: 0.45,
-        selectable: false, evented: false,
-        id: "bg-glow", name: "Brillo",
-      });
-      canvas.add(glow);
+        const palette = data.palette?.colors ?? ["#ffffff", "#cccccc", "#0d0d1a"];
 
-      // CAPA 2: Foto del artista
-      if (data.artistPhotoUrl) {
-        try {
-          const img = await FabricImage.fromURL(data.artistPhotoUrl, { crossOrigin: "anonymous" });
-          const scaleToFill = Math.max(canvasSize.w / (img.width ?? 1), (canvasSize.h * 0.65) / (img.height ?? 1));
-          img.set({
-            left: canvasSize.w / 2,
-            top: 0,
-            originX: "center",
-            originY: "top",
-            scaleX: scaleToFill,
-            scaleY: scaleToFill,
-            selectable: false,
-            evented: false,
-            id: "artist-photo", name: "Foto del artista",
+        for (const td of textDefs) {
+          const itext = new fabric.IText(td.content.toUpperCase(), {
+            left: dims.w / 2, top: td.y, width: dims.w * 0.85,
+            fontFamily: "Montserrat", fontSize: td.size,
+            fontWeight: td.weight, fill: palette[0],
+            textAlign: "center", charSpacing: td.ls * 10,
+            originX: "center", originY: "top",
+            selectable: true, evented: true,
           });
-          canvas.add(img);
-
-          // Degradado encima de la foto
-          const fade = new Rect({
-            left: 0, top: canvasSize.h * 0.3,
-            width: canvasSize.w, height: canvasSize.h * 0.7,
-            fill: c2,
-            opacity: 0.8,
-            selectable: false, evented: false,
-            id: "photo-fade", name: "Degradado foto",
+          (itext as FabricObject & { customId?: string }).customId = td.id;
+          canvas.add(itext);
+          const labelMap: Record<string, string> = { title: "Título", date: "Fecha", venue: "Lugar", price: "Precio" };
+          newLayers.push({
+            id: td.id, name: labelMap[td.id] ?? td.id,
+            type: "text", obj: itext, visible: true, locked: false,
           });
-          canvas.add(fade);
-        } catch (e) {
-          console.warn("Error cargando foto artista:", e);
         }
       }
 
-      if (cancelled) return;
+      // ── Load artist cutouts ──────────────────────────────────────────────────
+      const artists = data.artists ?? (data.artistPhotoUrl ? [{ name: "Artista", photoUrl: data.artistPhotoUrl }] : []);
+      for (let i = 0; i < artists.length; i++) {
+        const artist = artists[i];
+        if (!artist.photoUrl) continue;
+        try {
+          const aImg = await fabric.FabricImage.fromURL(artist.photoUrl, { crossOrigin: "anonymous" });
+          const maxH = dims.h * 0.6;
+          const scale = maxH / (aImg.height ?? maxH);
+          const w = (aImg.width ?? 400) * scale;
+          const xPos = artists.length === 1
+            ? dims.w / 2 - w / 2
+            : i * (dims.w / artists.length) + dims.w / artists.length / 2 - w / 2;
 
-      // CAPA 3: Nombre del evento
-      if (data.eventName) {
-        const nameText = new Textbox(data.eventName.toUpperCase(), {
-          left: 16 * s, top: canvasSize.h * 0.6,
-          width: canvasSize.w - 32 * s,
-          fontSize: 52 * s,
-          fontFamily: "Impact",
-          fontWeight: "bold",
-          fill: c0,
-          textAlign: "left",
-          editable: true,
-          id: "event-name", name: "Nombre del evento",
-        });
-        canvas.add(nameText);
+          aImg.set({
+            left: xPos, top: dims.h * 0.3,
+            scaleX: scale, scaleY: scale,
+            selectable: true, evented: true,
+          });
+          const artistId = `artist-${i}`;
+          (aImg as FabricObject & { customId?: string }).customId = artistId;
+          canvas.add(aImg);
+          newLayers.push({
+            id: artistId, name: artist.name || `Artista ${i + 1}`,
+            type: "image", obj: aImg, visible: true, locked: false,
+          });
+        } catch (e) { console.warn(`Artist ${i} load error:`, e); }
       }
-
-      // CAPA 4: Fecha
-      if (data.eventDate) {
-        const dateText = new Textbox(data.eventDate.toUpperCase(), {
-          left: 16 * s, top: canvasSize.h * 0.6 + 58 * s,
-          width: canvasSize.w - 32 * s,
-          fontSize: 13 * s,
-          fontFamily: "Arial",
-          fontWeight: "bold",
-          fill: "#ffffff",
-          opacity: 0.75,
-          textAlign: "left",
-          editable: true,
-          id: "event-date", name: "Fecha",
-        });
-        canvas.add(dateText);
-      }
-
-      // CAPA 5: Lugar
-      if (data.eventVenue) {
-        const venueText = new Textbox(`📍 ${data.eventVenue}`, {
-          left: 16 * s, top: canvasSize.h * 0.6 + 76 * s,
-          width: canvasSize.w - 32 * s,
-          fontSize: 12 * s,
-          fontFamily: "Arial",
-          fill: "#ffffff",
-          opacity: 0.6,
-          textAlign: "left",
-          editable: true,
-          id: "event-venue", name: "Sede",
-        });
-        canvas.add(venueText);
-      }
-
-      // CAPA 6: Precio (badge)
-      if (data.eventPrice) {
-        const priceBg = new Rect({
-          left: 16 * s, top: canvasSize.h - 48 * s,
-          width: 110 * s, height: 30 * s,
-          fill: c0,
-          rx: 6 * s, ry: 6 * s,
-          id: "price-bg", name: "Fondo precio",
-        });
-        canvas.add(priceBg);
-
-        const priceText = new Textbox(`🎟️ ${data.eventPrice}`, {
-          left: 16 * s, top: canvasSize.h - 46 * s,
-          width: 110 * s,
-          fontSize: 11 * s,
-          fontFamily: "Arial",
-          fontWeight: "bold",
-          fill: c2,
-          textAlign: "center",
-          editable: true,
-          id: "event-price", name: "Precio",
-        });
-        canvas.add(priceText);
-      }
-
-      // URL watermark
-      const urlText = new Textbox("artegenia.com", {
-        left: 0, top: canvasSize.h - 20 * s,
-        width: canvasSize.w,
-        fontSize: 9 * s,
-        fontFamily: "Arial",
-        fill: "#ffffff",
-        opacity: 0.2,
-        textAlign: "center",
-        selectable: false, evented: false,
-        id: "watermark", name: "Marca de agua",
-      });
-      canvas.add(urlText);
 
       canvas.renderAll();
-    };
+      if (isMounted) setLayers(newLayers.reverse()); // Reverse for layers panel (top = front)
 
-    build();
+      // ── Selection handler ────────────────────────────────────────────────────
+      canvas.on("selection:created", (e) => {
+        const obj = e.selected?.[0];
+        if (!obj) return;
+        updateSelectedFromObj(obj, newLayers);
+      });
+      canvas.on("selection:updated", (e) => {
+        const obj = e.selected?.[0];
+        if (!obj) return;
+        updateSelectedFromObj(obj, newLayers);
+      });
+      canvas.on("selection:cleared", () => {
+        setSelectedLayer(null);
+      });
+      canvas.on("object:modified", () => {
+        const obj = canvas?.getActiveObject();
+        if (obj) updateSelectedFromObj(obj, newLayers);
+        setSaveState("unsaved");
+        saveHistory(canvas!);
+      });
 
-    // Eventos de selección
-    const onSelect = () => {
-      const active = canvas.getActiveObject();
-      if (!active) { setSelectedObject(null); return; }
-      setSelectedObject(active);
-      if (active.type === "textbox") {
-        const tb = active as Textbox;
-        const s = scaleRef.current;
-        setSelectedText({
-          text: tb.text ?? "",
-          color: String(tb.fill ?? "#ffffff"),
-          fontFamily: tb.fontFamily ?? "Impact",
-          fontSize: Math.round((typeof tb.fontSize === "number" ? tb.fontSize : 40) / s),
-        });
-      }
-    };
-    canvas.on("selection:created", onSelect);
-    canvas.on("selection:updated", onSelect);
-    canvas.on("selection:cleared", () => { setSelectedObject(null); });
-    canvas.on("object:added", bumpLayers);
-    canvas.on("object:removed", bumpLayers);
-    canvas.on("object:modified", bumpLayers);
-
-    const onKey = (e: KeyboardEvent) => {
-      if ((e.target as HTMLElement).tagName === "TEXTAREA") return;
-      if (e.key === "Delete" || e.key === "Backspace") {
-        const active = canvas.getActiveObject();
-        if (active) { canvas.remove(active); canvas.discardActiveObject(); canvas.renderAll(); setSelectedObject(null); }
-      }
-      const arrowKeys = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"];
-      if (arrowKeys.includes(e.key)) {
-        const active = canvas.getActiveObject();
-        if (!active) return;
-        e.preventDefault();
-        const step = e.shiftKey ? 10 : 1;
-        if (e.key === "ArrowUp")    active.top  = (active.top  ?? 0) - step;
-        if (e.key === "ArrowDown")  active.top  = (active.top  ?? 0) + step;
-        if (e.key === "ArrowLeft")  active.left = (active.left ?? 0) - step;
-        if (e.key === "ArrowRight") active.left = (active.left ?? 0) + step;
-        active.setCoords();
-        canvas.requestRenderAll();
-      }
-    };
-    window.addEventListener("keydown", onKey);
+      saveHistory(canvas);
+    })();
 
     return () => {
-      cancelled = true;
-      window.removeEventListener("keydown", onKey);
+      isMounted = false;
+      canvas?.dispose();
       fabricRef.current = null;
-      setCanvasReady(false);
-      void canvas.dispose();
     };
-  }, [canvasSize, c0, c1, c2, data]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data]);
 
-  const updateText = useCallback((v: string) => {
-    const c = fabricRef.current; if (!c || !selectedObject) return;
-    (selectedObject as Textbox).set("text", v);
-    setSelectedText(p => ({ ...p, text: v })); c.renderAll();
-  }, [selectedObject]);
+  // ─── UPDATE ZOOM ────────────────────────────────────────────────────────────
 
-  const updateColor = useCallback((v: string) => {
-    const c = fabricRef.current; if (!c || !selectedObject) return;
-    (selectedObject as Textbox).set("fill", v);
-    setSelectedText(p => ({ ...p, color: v })); c.renderAll();
-  }, [selectedObject]);
+  useEffect(() => {
+    const canvas = fabricRef.current;
+    if (!canvas) return;
+    const scale = zoom / 100;
+    canvas.setZoom(scale);
+    canvas.setDimensions({ width: canvasSize.w * scale, height: canvasSize.h * scale });
+    canvas.renderAll();
+  }, [zoom, canvasSize]);
 
-  const updateFont = useCallback((v: string) => {
-    const c = fabricRef.current; if (!c || !selectedObject) return;
-    (selectedObject as Textbox).set("fontFamily", v);
-    setSelectedText(p => ({ ...p, fontFamily: v })); c.renderAll();
-  }, [selectedObject]);
+  // ─── HELPERS ────────────────────────────────────────────────────────────────
 
-  const updateFontSize = useCallback((v: number) => {
-    const c = fabricRef.current; if (!c || !selectedObject) return;
-    const s = scaleRef.current;
-    const size = Math.max(6, Math.min(200, v));
-    (selectedObject as Textbox).set("fontSize", size * s);
-    setSelectedText(p => ({ ...p, fontSize: size })); c.renderAll();
-  }, [selectedObject]);
+  const updateSelectedFromObj = useCallback((obj: FabricObject, allLayers: LayerItem[]) => {
+    const id = (obj as FabricObject & { customId?: string }).customId ?? "";
+    const layer = allLayers.find(l => l.id === id) ?? null;
+    setSelectedLayer(layer);
 
-  const deleteSelected = useCallback(() => {
-    const c = fabricRef.current; if (!c || !selectedObject) return;
-    c.remove(selectedObject); c.discardActiveObject(); c.renderAll(); setSelectedObject(null);
-  }, [selectedObject]);
-
-  const bringForward = useCallback(() => {
-    const c = fabricRef.current; if (!c || !selectedObject) return;
-    c.bringObjectForward(selectedObject); c.renderAll();
-  }, [selectedObject]);
-
-  const sendBackward = useCallback(() => {
-    const c = fabricRef.current; if (!c || !selectedObject) return;
-    c.sendObjectBackwards(selectedObject); c.renderAll();
-  }, [selectedObject]);
-
-  const addText = useCallback(() => {
-    const c = fabricRef.current; if (!c) return;
-    const s = scaleRef.current;
-    const t = new Textbox("Nuevo texto", {
-      left: 20 * s, top: 100 * s, width: (TW - 40) * s,
-      fontSize: 32 * s, fontFamily: "Impact", fill: c0, fontWeight: "bold", textAlign: "center",
-    });
-    c.add(t); c.setActiveObject(t); c.renderAll();
-    setSelectedObject(t);
-    setSelectedText({ text: "Nuevo texto", color: c0, fontFamily: "Impact", fontSize: 32 });
-  }, [c0, TW]);
-
-  const toggleBgEditMode = useCallback(() => {
-    const c = fabricRef.current; if (!c) return;
-    const objects = c.getObjects();
-    const bgImg = objects.find(o => (o as FabricObject & { id?: string }).id === "artist-photo");
-    if (!bgImg) return;
-    if (!bgEditMode) {
-      bgImg.set({ selectable: true, evented: true });
-      c.bringObjectToFront(bgImg);
-      c.setActiveObject(bgImg);
-      c.renderAll();
-      setSelectedObject(bgImg);
-      setBgEditMode(true);
+    if (obj.type === "i-text" || obj.type === "text") {
+      const t = obj as IText;
+      setTextProps({
+        text: t.text ?? "",
+        fontFamily: String(t.fontFamily ?? "Montserrat"),
+        fontSize: t.fontSize ?? 60,
+        fill: String(t.fill ?? "#ffffff"),
+        textAlign: t.textAlign ?? "center",
+        fontWeight: String(t.fontWeight ?? "700"),
+        charSpacing: t.charSpacing ?? 0,
+        lineHeight: t.lineHeight ?? 1.2,
+        opacity: t.opacity ?? 1,
+        angle: t.angle ?? 0,
+        left: t.left ?? 0,
+        top: t.top ?? 0,
+        width: t.width ?? 900,
+      });
     } else {
-      bgImg.set({ selectable: false, evented: false });
-      c.sendObjectToBack(bgImg);
-      // mantener bg-rect al fondo
-      const bgRect = objects.find(o => (o as FabricObject & { id?: string }).id === "bg-rect");
-      if (bgRect) c.sendObjectToBack(bgRect);
-      c.discardActiveObject();
-      c.renderAll();
-      setSelectedObject(null);
-      setBgEditMode(false);
+      setImageProps({
+        opacity: obj.opacity ?? 1,
+        angle: obj.angle ?? 0,
+        left: obj.left ?? 0,
+        top: obj.top ?? 0,
+        width: (obj.width ?? 400) * (obj.scaleX ?? 1),
+        height: (obj.height ?? 600) * (obj.scaleY ?? 1),
+        scaleX: obj.scaleX ?? 1,
+        scaleY: obj.scaleY ?? 1,
+      });
     }
-  }, [bgEditMode]);
-
-  const addImage = useCallback(async (file: File, replacing?: FabricObject) => {
-    const c = fabricRef.current; if (!c) return;
-    const dataUrl = await new Promise<string>(res => {
-      const r = new FileReader(); r.onload = e => res(e.target?.result as string); r.readAsDataURL(file);
-    });
-    const img = await FabricImage.fromURL(dataUrl);
-    const maxW = c.width! * 0.7, maxH = c.height! * 0.7;
-    const scale = Math.min(maxW / (img.width ?? maxW), maxH / (img.height ?? maxH), 1);
-    if (replacing) {
-      img.set({ left: replacing.left, top: replacing.top, scaleX: scale, scaleY: scale });
-      c.remove(replacing);
-    } else {
-      img.set({ left: (c.width! - (img.width ?? 0) * scale) / 2, top: (c.height! - (img.height ?? 0) * scale) / 2, scaleX: scale, scaleY: scale });
-    }
-    c.add(img); c.setActiveObject(img); c.renderAll(); setSelectedObject(img);
   }, []);
 
-  const handleRemoveBg = useCallback(async () => {
-    const c = fabricRef.current;
-    if (!c || !selectedObject || selectedObject.type !== "image") return;
-    setRemovingBg(true);
-    try {
-      const imgEl = (selectedObject as FabricImage).getElement() as HTMLImageElement;
-      const tmp = document.createElement("canvas");
-      tmp.width = imgEl.naturalWidth || 800; tmp.height = imgEl.naturalHeight || 800;
-      tmp.getContext("2d")?.drawImage(imgEl, 0, 0, tmp.width, tmp.height);
-      const res = await fetch("/api/remove-bg", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ imageBase64: tmp.toDataURL("image/png") }) });
-      const dataRes = await res.json();
-      if (!res.ok || !dataRes.result) throw new Error(dataRes.error);
-      const old = selectedObject;
-      const newImg = await FabricImage.fromURL(dataRes.result);
-      newImg.set({ left: old.left, top: old.top, scaleX: old.scaleX, scaleY: old.scaleY });
-      c.remove(old); c.add(newImg); c.setActiveObject(newImg); c.renderAll(); setSelectedObject(newImg);
-    } catch { alert("Error al quitar el fondo."); }
-    finally { setRemovingBg(false); }
-  }, [selectedObject]);
+  const saveHistory = useCallback((canvas: FabricCanvas) => {
+    const json = JSON.stringify(canvas.toJSON());
+    setHistory(prev => {
+      const next = prev.slice(0, historyIdx + 1);
+      next.push(json);
+      setHistoryIdx(next.length - 1);
+      return next;
+    });
+  }, [historyIdx]);
 
-  const exportPng = useCallback(() => {
-    const c = fabricRef.current; if (!c) return;
-    const s = scaleRef.current;
-    const url = c.toDataURL({ format: "png", quality: 1, multiplier: s > 0 ? 1 / s : 1 });
-    const a = document.createElement("a"); a.href = url; a.download = `${data.eventName || "flyer"}.png`; a.click();
-  }, [data.eventName]);
+  const undo = useCallback(async () => {
+    if (historyIdx <= 0 || !fabricRef.current) return;
+    const newIdx = historyIdx - 1;
+    setHistoryIdx(newIdx);
+    await fabricRef.current.loadFromJSON(history[newIdx]);
+    fabricRef.current.renderAll();
+  }, [history, historyIdx]);
 
-  const handleSave = useCallback(() => {
-    setSaveFlash(true); setTimeout(() => setSaveFlash(false), 1500);
+  const redo = useCallback(async () => {
+    if (historyIdx >= history.length - 1 || !fabricRef.current) return;
+    const newIdx = historyIdx + 1;
+    setHistoryIdx(newIdx);
+    await fabricRef.current.loadFromJSON(history[newIdx]);
+    fabricRef.current.renderAll();
+  }, [history, historyIdx]);
+
+  // ─── TEXT UPDATES ────────────────────────────────────────────────────────────
+
+  const applyTextProp = useCallback(<K extends keyof TextProps>(key: K, value: TextProps[K]) => {
+    const canvas = fabricRef.current;
+    const obj = canvas?.getActiveObject() as IText | undefined;
+    if (!obj || (obj.type !== "i-text" && obj.type !== "text")) return;
+
+    setTextProps(prev => ({ ...prev, [key]: value }));
+
+    const fabricPropMap: Partial<Record<keyof TextProps, string>> = {
+      fontFamily: "fontFamily", fontSize: "fontSize", fill: "fill",
+      textAlign: "textAlign", fontWeight: "fontWeight",
+      charSpacing: "charSpacing", lineHeight: "lineHeight",
+      opacity: "opacity", angle: "angle", left: "left", top: "top", width: "width",
+    };
+
+    if (key === "text") {
+      (obj as IText).set("text", String(value));
+    } else {
+      const fabricKey = fabricPropMap[key];
+      if (fabricKey) obj.set(fabricKey as keyof IText, value as never);
+    }
+
+    canvas?.renderAll();
+    setSaveState("unsaved");
   }, []);
 
-  const isText = selectedObject?.type === "textbox";
-  const isImage = selectedObject?.type === "image";
+  // ─── IMAGE UPDATES ────────────────────────────────────────────────────────────
+
+  const applyImageProp = useCallback(<K extends keyof ImageProps>(key: K, value: ImageProps[K]) => {
+    const canvas = fabricRef.current;
+    const obj = canvas?.getActiveObject();
+    if (!obj || obj.type === "i-text" || obj.type === "text") return;
+
+    setImageProps(prev => ({ ...prev, [key]: value }));
+    obj.set(key as keyof FabricObject, value as never);
+    canvas?.renderAll();
+    setSaveState("unsaved");
+  }, []);
+
+  // ─── LAYERS PANEL ────────────────────────────────────────────────────────────
+
+  const refreshLayers = useCallback(() => {
+    const canvas = fabricRef.current;
+    if (!canvas) return;
+    const objs = canvas.getObjects();
+    setLayers(prev => {
+      const updated = [...prev];
+      for (const layer of updated) {
+        const found = objs.find(o => (o as FabricObject & { customId?: string }).customId === layer.id);
+        if (found) layer.obj = found;
+      }
+      return [...updated];
+    });
+  }, []);
+
+  const toggleVisibility = useCallback((layerId: string) => {
+    setLayers(prev => prev.map(l => {
+      if (l.id !== layerId) return l;
+      l.obj.set("visible", !l.visible);
+      fabricRef.current?.renderAll();
+      return { ...l, visible: !l.visible };
+    }));
+    setSaveState("unsaved");
+  }, []);
+
+  const toggleLock = useCallback((layerId: string) => {
+    setLayers(prev => prev.map(l => {
+      if (l.id !== layerId) return l;
+      const newLocked = !l.locked;
+      l.obj.set({ selectable: !newLocked, evented: !newLocked });
+      fabricRef.current?.renderAll();
+      return { ...l, locked: newLocked };
+    }));
+  }, []);
+
+  const deleteLayer = useCallback((layerId: string) => {
+    const canvas = fabricRef.current;
+    if (!canvas) return;
+    setLayers(prev => {
+      const layer = prev.find(l => l.id === layerId);
+      if (layer) { canvas.remove(layer.obj); canvas.renderAll(); }
+      return prev.filter(l => l.id !== layerId);
+    });
+    setSelectedLayer(null);
+    setSaveState("unsaved");
+  }, []);
+
+  const moveLayer = useCallback((layerId: string, dir: "up" | "down") => {
+    const canvas = fabricRef.current;
+    if (!canvas) return;
+    setLayers(prev => {
+      const idx = prev.findIndex(l => l.id === layerId);
+      if (idx < 0) return prev;
+      const layer = prev[idx];
+      if (dir === "up" && idx > 0) {
+        canvas.bringObjectForward(layer.obj);
+        const next = [...prev];
+        [next[idx], next[idx - 1]] = [next[idx - 1], next[idx]];
+        return next;
+      } else if (dir === "down" && idx < prev.length - 1) {
+        canvas.sendObjectBackwards(layer.obj);
+        const next = [...prev];
+        [next[idx], next[idx + 1]] = [next[idx + 1], next[idx]];
+        return next;
+      }
+      return prev;
+    });
+    canvas.renderAll();
+    setSaveState("unsaved");
+  }, []);
+
+  const selectLayerFromPanel = useCallback((layer: LayerItem) => {
+    const canvas = fabricRef.current;
+    if (!canvas || layer.locked) return;
+    canvas.setActiveObject(layer.obj);
+    canvas.renderAll();
+    setSelectedLayer(layer);
+    updateSelectedFromObj(layer.obj, layers);
+  }, [layers, updateSelectedFromObj]);
+
+  // ─── ADD TEXT ─────────────────────────────────────────────────────────────
+
+  const addText = useCallback(async () => {
+    const canvas = fabricRef.current;
+    if (!canvas) return;
+    const fabric = await import("fabric");
+    const itext = new fabric.IText("Nuevo texto", {
+      left: canvasSize.w / 2, top: canvasSize.h / 2,
+      fontFamily: "Montserrat", fontSize: 60, fontWeight: "700",
+      fill: "#ffffff", textAlign: "center",
+      originX: "center", originY: "center",
+      selectable: true, evented: true,
+    });
+    const newId = `text-${uid()}`;
+    (itext as FabricObject & { customId?: string }).customId = newId;
+    canvas.add(itext);
+    canvas.setActiveObject(itext);
+    canvas.renderAll();
+    const newLayer: LayerItem = { id: newId, name: "Nuevo texto", type: "text", obj: itext, visible: true, locked: false };
+    setLayers(prev => [newLayer, ...prev]);
+    setSelectedLayer(newLayer);
+    setSaveState("unsaved");
+  }, [canvasSize]);
+
+  // ─── EXPORT ────────────────────────────────────────────────────────────────
+
+  const exportFlyer = useCallback((format: "png" | "jpg" = "png") => {
+    const canvas = fabricRef.current;
+    if (!canvas) return;
+    // Export at full resolution
+    const currentZoom = canvas.getZoom();
+    canvas.setZoom(1);
+    canvas.setDimensions({ width: canvasSize.w, height: canvasSize.h });
+    const dataUrl = canvas.toDataURL({
+      format: format === "jpg" ? "jpeg" : "png",
+      quality: 0.95,
+      multiplier: 1,
+    });
+    canvas.setZoom(currentZoom);
+    canvas.setDimensions({ width: canvasSize.w * currentZoom, height: canvasSize.h * currentZoom });
+    canvas.renderAll();
+
+    const link = document.createElement("a");
+    link.download = `artegenia-flyer.${format}`;
+    link.href = dataUrl;
+    link.click();
+  }, [canvasSize]);
+
+  // ─── AUTO-SAVE ─────────────────────────────────────────────────────────────
+
+  useEffect(() => {
+    if (saveState !== "unsaved") return;
+    const t = setTimeout(() => {
+      setSaveState("saving");
+      setTimeout(() => setSaveState("saved"), 800);
+    }, 2000);
+    return () => clearTimeout(t);
+  }, [saveState]);
+
+  // ─── KEYBOARD SHORTCUTS ─────────────────────────────────────────────────────
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const canvas = fabricRef.current;
+      if (!canvas) return;
+      if (e.key === "Delete" || e.key === "Backspace") {
+        const active = canvas.getActiveObject();
+        if (active && document.activeElement?.tagName !== "INPUT" && document.activeElement?.tagName !== "TEXTAREA") {
+          const id = (active as FabricObject & { customId?: string }).customId;
+          if (id) deleteLayer(id);
+        }
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key === "z") { e.preventDefault(); undo(); }
+      if ((e.metaKey || e.ctrlKey) && e.key === "y") { e.preventDefault(); redo(); }
+      if ((e.metaKey || e.ctrlKey) && e.key === "s") { e.preventDefault(); setSaveState("saved"); }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [deleteLayer, undo, redo]);
+
+  // ─── LEFT TOOLBAR TOOLS ──────────────────────────────────────────────────────
+
+  const TOOLS: Array<{ id: LeftTool; icon: React.ReactNode; label: string }> = [
+    {
+      id: "templates",
+      label: "Templates",
+      icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>,
+    },
+    {
+      id: "elements",
+      label: "Elementos",
+      icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>,
+    },
+    {
+      id: "text",
+      label: "Texto",
+      icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg>,
+    },
+    {
+      id: "photos",
+      label: "Fotos",
+      icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>,
+    },
+    {
+      id: "background",
+      label: "Fondo",
+      icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>,
+    },
+    {
+      id: "layers",
+      label: "Capas",
+      icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>,
+    },
+  ];
+
+  // ─── RENDER ──────────────────────────────────────────────────────────────────
 
   return (
-    <div className="flex flex-col min-h-[calc(100vh-56px)] bg-[#0e0e14]">
-      <input ref={fileInputRef} type="file" accept="image/*" onChange={e => { const f = e.target.files?.[0]; if (f) addImage(f); e.target.value = ""; }} className="hidden" />
-      <input ref={replaceInputRef} type="file" accept="image/*" onChange={e => { const f = e.target.files?.[0]; if (f && selectedObject) addImage(f, selectedObject); e.target.value = ""; }} className="hidden" />
+    <div className="h-screen bg-[#0a0a0f] text-white flex flex-col overflow-hidden font-sans">
 
-      {/* Top bar */}
-      <div className="flex items-center justify-between px-5 py-2.5 bg-[#111127] border-b border-white/[0.06] gap-4">
-        <div className="flex items-center gap-3">
-          <button onClick={() => router.push("/create")} className="text-gray-500 hover:text-white text-sm transition-colors flex items-center gap-1.5">
-            ← Volver
+      {/* ══ TOP HEADER ════════════════════════════════════════════════════════════ */}
+      <header className="h-12 bg-[#111118] border-b border-white/[0.07] flex items-center px-4 gap-3 shrink-0 z-50">
+
+        {/* Logo + back */}
+        <div className="flex items-center gap-3 mr-2">
+          <button onClick={() => router.push("/create")}
+            className="text-gray-500 hover:text-white transition-colors p-1">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
           </button>
-          <div className="w-px h-4 bg-white/10" />
-          <span className="text-sm font-bold text-white">{data.eventName || "Flyer generado"}</span>
-          <div className="flex gap-1">
-            {colors.map((c, i) => <div key={i} className="w-3.5 h-3.5 rounded-full border border-white/20" style={{ background: c }} />)}
+          <div className="flex items-center gap-1.5">
+            <div className="w-6 h-6 rounded-md bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-[10px] font-black">AG</div>
+            <span className="text-sm font-bold text-white hidden sm:block">Arte Gen</span>
           </div>
-          <span className="text-xs text-gray-600">{palLabel} · {data.style}</span>
         </div>
-        <div className="flex items-center gap-2">
-          <button onClick={handleSave} className={`px-4 py-1.5 rounded-xl text-sm font-semibold transition-all ${saveFlash ? "bg-green-600 text-white" : "bg-purple-600 hover:bg-purple-500 text-white"}`}>
-            {saveFlash ? "✓ Guardado" : "💾 Guardar"}
-          </button>
-          <button onClick={exportPng} className="px-4 py-1.5 rounded-xl bg-yellow-400 text-black text-sm font-black hover:bg-yellow-300 transition-all">
-            ↓ PNG
-          </button>
-        </div>
-      </div>
 
-      {/* Cuerpo principal */}
-      <div className="flex flex-1 min-h-0">
-
-        {/* Panel izquierdo */}
-        <aside className="w-64 shrink-0 bg-[#111127] border-r border-white/[0.06] p-4 flex flex-col gap-3 overflow-y-auto">
-          <p className="text-[10px] text-purple-400 uppercase tracking-widest font-semibold">Herramientas</p>
-          <button onClick={addText} className="w-full rounded-xl bg-white/5 border border-white/8 px-3 py-2.5 text-left text-sm hover:bg-white/10 transition-colors">
-            ✏️ Añadir texto
-          </button>
-          <button onClick={() => fileInputRef.current?.click()} className="w-full rounded-xl bg-white/5 border border-white/8 px-3 py-2.5 text-left text-sm hover:bg-white/10 transition-colors">
-            🖼️ Subir imagen
-          </button>
-          <button
-            onClick={toggleBgEditMode}
-            className={`w-full rounded-xl px-3 py-2.5 text-left text-sm border transition-all ${bgEditMode ? "bg-orange-500/20 border-orange-500/40 text-orange-300" : "bg-white/5 border-white/8 hover:bg-white/10"}`}
-          >
-            {bgEditMode ? "🔒 Fijar foto (listo)" : "🎨 Mover foto artista"}
-          </button>
-
-          {selectedObject && (
-            <div className="mt-2 pt-3 border-t border-white/8">
-              <p className="text-[10px] text-gray-600 uppercase tracking-wider mb-2">Capa activa</p>
-              <div className="flex gap-1.5">
-                <button onClick={bringForward} className="flex-1 rounded-lg bg-white/5 border border-white/8 py-1.5 text-xs hover:bg-white/10">↑ Adelante</button>
-                <button onClick={sendBackward} className="flex-1 rounded-lg bg-white/5 border border-white/8 py-1.5 text-xs hover:bg-white/10">↓ Atrás</button>
-              </div>
-              <button onClick={deleteSelected} className="w-full mt-1.5 rounded-lg bg-red-900/30 border border-red-800/40 py-2 text-xs text-red-400 hover:bg-red-900/50 transition-colors">
-                🗑️ Eliminar capa
-              </button>
-            </div>
+        {/* Save status */}
+        <div className="flex items-center gap-1.5 text-xs">
+          {saveState === "saving" && (
+            <><div className="w-2.5 h-2.5 border border-gray-500 border-t-gray-300 rounded-full animate-spin" /><span className="text-gray-500">Guardando...</span></>
           )}
+          {saveState === "saved" && (
+            <><div className="w-2 h-2 rounded-full bg-green-500" /><span className="text-gray-500">Guardado</span></>
+          )}
+          {saveState === "unsaved" && (
+            <><div className="w-2 h-2 rounded-full bg-yellow-500" /><span className="text-gray-500">Sin guardar</span></>
+          )}
+        </div>
 
-          {/* Panel de capas */}
-          <div className="mt-3 pt-3 border-t border-white/8 -mx-4">
-            <LayersPanel
-              canvas={canvasReady ? fabricRef.current : null}
-              selectedKey={
-                selectedObject
-                  ? ((selectedObject as unknown as { id?: string; name?: string }).id
-                      ?? (selectedObject as unknown as { id?: string; name?: string }).name
-                      ?? null)
-                  : null
-              }
-              refreshTick={layersTick}
-              onSelect={(obj) => setSelectedObject(obj)}
-            />
+        {/* Canvas size */}
+        <div className="hidden md:flex items-center gap-1 text-xs text-gray-600 ml-2 border border-white/[0.06] rounded px-2 py-1">
+          {canvasSize.w} × {canvasSize.h} px
+        </div>
+
+        <div className="flex-1" />
+
+        {/* Undo / Redo */}
+        <div className="flex items-center gap-1">
+          <button onClick={undo} disabled={historyIdx <= 0}
+            className="p-1.5 rounded hover:bg-white/8 text-gray-500 hover:text-white disabled:opacity-30 transition-all">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M3 10h10a8 8 0 010 16v0M3 10l5-5m-5 5l5 5"/></svg>
+          </button>
+          <button onClick={redo} disabled={historyIdx >= history.length - 1}
+            className="p-1.5 rounded hover:bg-white/8 text-gray-500 hover:text-white disabled:opacity-30 transition-all">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M21 10H11a8 8 0 100 16v0M21 10l-5-5m5 5l-5 5"/></svg>
+          </button>
+        </div>
+
+        {/* Export */}
+        <div className="flex items-center gap-2">
+          <div className="relative group">
+            <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold transition-all">
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+              Descargar
+            </button>
+            <div className="absolute right-0 top-full mt-1 w-36 bg-[#1c1c28] border border-white/10 rounded-xl shadow-2xl overflow-hidden opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-all z-50">
+              {[["PNG", "png"], ["JPG", "jpg"]].map(([label, fmt]) => (
+                <button key={fmt} onClick={() => exportFlyer(fmt as "png" | "jpg")}
+                  className="w-full px-4 py-2.5 text-left text-xs text-gray-300 hover:bg-white/8 hover:text-white transition-all">
+                  Exportar como {label}
+                </button>
+              ))}
+            </div>
           </div>
+        </div>
+      </header>
 
-          {/* Paleta de colores del evento */}
-          <div className="mt-3 pt-3 border-t border-white/8">
-            <p className="text-[10px] text-gray-600 uppercase tracking-wider mb-2">Paleta del diseño</p>
-            <div className="flex gap-2">
-              {colors.map((c, i) => (
-                <div key={i} className="flex flex-col items-center gap-1">
-                  <div className="w-8 h-8 rounded-lg border border-white/10 cursor-pointer hover:scale-110 transition-transform" style={{ background: c }}
-                    onClick={() => { if (selectedObject?.type === "textbox") updateColor(c); }} />
-                  <span className="text-[8px] text-gray-700 font-mono">{c}</span>
+      {/* ══ MAIN LAYOUT ══════════════════════════════════════════════════════════ */}
+      <div className="flex-1 flex overflow-hidden">
+
+        {/* ══ LEFT TOOLBAR ═══════════════════════════════════════════════════════ */}
+        <div className="w-[60px] bg-[#111118] border-r border-white/[0.07] flex flex-col items-center py-3 gap-1 shrink-0 z-40">
+          {TOOLS.map(tool => (
+            <button key={tool.id}
+              onClick={() => {
+                setActiveTool(tool.id);
+                if (tool.id === "text") addText();
+              }}
+              title={tool.label}
+              className={`w-10 h-10 rounded-xl flex flex-col items-center justify-center gap-0.5 transition-all text-[9px] font-medium ${
+                activeTool === tool.id
+                  ? "bg-purple-600/20 text-purple-400 border border-purple-500/30"
+                  : "text-gray-600 hover:text-gray-300 hover:bg-white/5"
+              }`}>
+              {tool.icon}
+              <span className="leading-none">{tool.label.split(" ")[0]}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* ══ LEFT PANEL (contextual) ════════════════════════════════════════════ */}
+        {activeTool === "layers" && (
+          <div className="w-52 bg-[#111118] border-r border-white/[0.07] flex flex-col shrink-0">
+            <div className="px-3 py-2.5 border-b border-white/[0.06]">
+              <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-widest">Capas</p>
+            </div>
+            <div className="flex-1 overflow-y-auto">
+              {layers.map((layer, i) => (
+                <div key={layer.id}
+                  onClick={() => selectLayerFromPanel(layer)}
+                  className={`group flex items-center gap-2 px-3 py-2 cursor-pointer border-b border-white/[0.04] transition-all ${
+                    selectedLayer?.id === layer.id ? "bg-purple-600/15 border-l-2 border-l-purple-500" : "hover:bg-white/4"
+                  }`}>
+                  {/* Drag handle */}
+                  <svg className="w-3 h-3 text-gray-700 shrink-0 cursor-grab" fill="currentColor" viewBox="0 0 24 24"><circle cx="9" cy="5" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="9" cy="19" r="1.5"/><circle cx="15" cy="5" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="15" cy="19" r="1.5"/></svg>
+
+                  <LayerIcon type={layer.type} />
+
+                  <span className={`flex-1 text-xs truncate min-w-0 ${selectedLayer?.id === layer.id ? "text-white" : "text-gray-400"}`}>
+                    {layer.name}
+                  </span>
+
+                  {/* Controls */}
+                  <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button onClick={e => { e.stopPropagation(); toggleVisibility(layer.id); }}
+                      className={`p-0.5 rounded ${layer.visible ? "text-gray-500 hover:text-white" : "text-gray-700"}`}>
+                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>{layer.visible ? <><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></> : <><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24M1 1l22 22"/></>}</svg>
+                    </button>
+                    <button onClick={e => { e.stopPropagation(); toggleLock(layer.id); }}
+                      className={`p-0.5 rounded ${layer.locked ? "text-yellow-500" : "text-gray-500 hover:text-white"}`}>
+                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>{layer.locked ? <><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></> : <><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 019.9-1"/></>}</svg>
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
-            <p className="text-[9px] text-gray-700 mt-1">Clic para aplicar al texto seleccionado</p>
           </div>
-        </aside>
+        )}
 
-        {/* Canvas central */}
-        <div className="flex-1 bg-[#0a0a18] flex flex-col items-center justify-center p-6 overflow-hidden">
-          <div ref={containerRef} className="w-full flex-1 flex items-center justify-center min-h-0">
-            {canvasSize ? (
-              <div className="rounded-xl shadow-2xl overflow-hidden flex-shrink-0 ring-1 ring-white/10"
-                style={{ width: canvasSize.w, height: canvasSize.h }}>
-                <canvas ref={canvasElRef} className="block" />
-              </div>
-            ) : (
-              <div className="w-16 h-16 border-2 border-purple-400 border-t-transparent rounded-full animate-spin" />
-            )}
+        {/* ══ CANVAS AREA ════════════════════════════════════════════════════════ */}
+        <div className="flex-1 flex flex-col bg-[#0e0e16] overflow-hidden">
+
+          {/* Canvas container */}
+          <div ref={containerRef} className="flex-1 overflow-auto flex items-center justify-center p-8">
+            <div className="relative shadow-2xl shadow-black/60"
+              style={{ width: canvasSize.w * zoom / 100, height: canvasSize.h * zoom / 100 }}>
+              <canvas ref={canvasRef} />
+              {!data && (
+                <div className="absolute inset-0 flex items-center justify-center bg-[#1a1a2e] rounded">
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
+                    <p className="text-sm text-gray-400">Cargando editor…</p>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
-          <p className="text-xs text-gray-700 mt-3">Haz clic en cualquier elemento para editarlo · Doble clic para editar texto</p>
+
+          {/* ── Bottom zoom controls ─────────────────────────────────────────── */}
+          <div className="h-10 bg-[#111118] border-t border-white/[0.06] flex items-center justify-center gap-3 px-4 shrink-0">
+            <button onClick={() => setZoom(z => Math.max(10, z - 10))}
+              className="w-6 h-6 rounded flex items-center justify-center text-gray-500 hover:text-white hover:bg-white/8 transition-all text-lg leading-none">−</button>
+            <span className="text-xs text-gray-500 w-12 text-center">{zoom}%</span>
+            <button onClick={() => setZoom(z => Math.min(200, z + 10))}
+              className="w-6 h-6 rounded flex items-center justify-center text-gray-500 hover:text-white hover:bg-white/8 transition-all text-lg leading-none">+</button>
+            <div className="w-px h-4 bg-white/[0.08] mx-1" />
+            <button onClick={() => setZoom(50)} className="text-[10px] text-gray-600 hover:text-gray-300 transition-colors">Ajustar</button>
+            <button onClick={() => setZoom(100)} className="text-[10px] h-5 px-2 rounded border border-white/8 text-gray-600 hover:text-gray-300 transition-colors">100%</button>
+          </div>
         </div>
 
-        {/* Panel derecho — propiedades */}
-        <aside className="w-64 shrink-0 bg-[#111127] border-l border-white/[0.06] p-4 flex flex-col gap-4 overflow-y-auto">
-          <p className="text-[10px] text-purple-400 uppercase tracking-widest font-semibold">Propiedades</p>
+        {/* ══ RIGHT PROPERTIES PANEL ════════════════════════════════════════════ */}
+        <div className="w-64 bg-[#111118] border-l border-white/[0.07] flex flex-col shrink-0 overflow-hidden">
 
-          {!selectedObject && (
-            <p className="text-sm text-gray-500 leading-relaxed">
-              Selecciona un elemento del flyer para editar sus propiedades.
-            </p>
-          )}
+          {!selectedLayer ? (
+            <div className="flex-1 flex flex-col items-center justify-center p-6 text-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center">
+                <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5"/></svg>
+              </div>
+              <p className="text-xs text-gray-600">Selecciona un elemento<br/>para editar sus propiedades</p>
+            </div>
+          ) : selectedLayer.type === "text" ? (
 
-          {isText && (
-            <div className="flex flex-col gap-4">
-              <div>
-                <label className="text-[10px] text-gray-500 uppercase tracking-wider mb-1.5 block">Texto</label>
-                <textarea
-                  value={selectedText.text}
-                  onChange={e => updateText(e.target.value)}
-                  className="w-full min-h-[72px] bg-black/30 border border-white/10 rounded-xl px-3 py-2 text-sm text-white outline-none resize-none focus:border-purple-500/40 transition-colors"
-                />
+            // ── TEXT PROPERTIES ────────────────────────────────────────────────
+            <div className="flex-1 overflow-y-auto">
+              <div className="px-3 py-2.5 border-b border-white/[0.06] flex items-center justify-between">
+                <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-widest">Texto</p>
+                <button onClick={() => deleteLayer(selectedLayer.id)}
+                  className="text-gray-700 hover:text-red-400 transition-colors p-0.5">
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+                </button>
               </div>
-              <div>
-                <label className="text-[10px] text-gray-500 uppercase tracking-wider mb-1.5 block">Fuente</label>
-                <select
-                  value={selectedText.fontFamily}
-                  onChange={e => updateFont(e.target.value)}
-                  className="w-full bg-black/30 border border-white/10 rounded-xl px-3 py-2 text-sm text-white outline-none focus:border-purple-500/40"
-                >
-                  {FONTS.map(f => <option key={f} value={f}>{f}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="text-[10px] text-gray-500 uppercase tracking-wider mb-1.5 block">
-                  Tamaño: <span className="text-white">{selectedText.fontSize}px</span>
-                </label>
-                <div className="flex gap-2 items-center">
-                  <input type="range" min={8} max={150} value={selectedText.fontSize}
-                    onChange={e => updateFontSize(Number(e.target.value))}
-                    className="flex-1 accent-purple-500" />
-                  <input type="number" min={8} max={200} value={selectedText.fontSize}
-                    onChange={e => updateFontSize(Number(e.target.value))}
-                    className="w-14 bg-black/30 border border-white/10 rounded-lg px-2 py-1 text-sm text-white outline-none text-center" />
+
+              <div className="p-3 space-y-3">
+                {/* Text content */}
+                <div>
+                  <label className="text-[10px] text-gray-500 mb-1 block">Contenido</label>
+                  <textarea value={textProps.text}
+                    onChange={e => applyTextProp("text", e.target.value)}
+                    rows={2}
+                    className="w-full bg-white/[0.04] border border-white/8 rounded-lg px-2.5 py-2 text-xs text-white resize-none outline-none focus:border-purple-500/50" />
                 </div>
-              </div>
-              <div>
-                <label className="text-[10px] text-gray-500 uppercase tracking-wider mb-1.5 block">Color</label>
-                <div className="flex items-center gap-3">
-                  <input type="color" value={selectedText.color} onChange={e => updateColor(e.target.value)}
-                    className="h-10 w-14 rounded-xl border border-white/10 bg-black/30 cursor-pointer" />
-                  <span className="text-sm text-gray-400 font-mono">{selectedText.color}</span>
+
+                {/* Font family */}
+                <div>
+                  <label className="text-[10px] text-gray-500 mb-1 block">Fuente</label>
+                  <select value={textProps.fontFamily}
+                    onChange={e => applyTextProp("fontFamily", e.target.value)}
+                    className="w-full bg-white/[0.04] border border-white/8 rounded-lg px-2.5 py-2 text-xs text-white outline-none focus:border-purple-500/50">
+                    {FONTS.map(f => <option key={f} value={f}>{f}</option>)}
+                  </select>
+                </div>
+
+                {/* Size + Weight */}
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-[10px] text-gray-500 mb-1 block">Tamaño</label>
+                    <input type="number" value={textProps.fontSize}
+                      onChange={e => applyTextProp("fontSize", Number(e.target.value))}
+                      className="w-full bg-white/[0.04] border border-white/8 rounded-lg px-2.5 py-2 text-xs text-white outline-none focus:border-purple-500/50" />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-gray-500 mb-1 block">Peso</label>
+                    <select value={textProps.fontWeight}
+                      onChange={e => applyTextProp("fontWeight", e.target.value)}
+                      className="w-full bg-white/[0.04] border border-white/8 rounded-lg px-2.5 py-2 text-xs text-white outline-none focus:border-purple-500/50">
+                      {["400", "500", "600", "700", "800", "900"].map(w => <option key={w} value={w}>{w === "400" ? "Normal" : w === "700" ? "Bold" : w === "900" ? "Black" : w}</option>)}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Color */}
+                <div>
+                  <label className="text-[10px] text-gray-500 mb-1 block">Color</label>
+                  <div className="flex items-center gap-2">
+                    <input type="color" value={textProps.fill}
+                      onChange={e => applyTextProp("fill", e.target.value)}
+                      className="w-8 h-8 rounded-lg border-0 cursor-pointer bg-transparent" />
+                    <input type="text" value={textProps.fill}
+                      onChange={e => applyTextProp("fill", e.target.value)}
+                      className="flex-1 bg-white/[0.04] border border-white/8 rounded-lg px-2.5 py-2 text-xs text-white outline-none focus:border-purple-500/50 font-mono" />
+                  </div>
+                </div>
+
+                {/* Alignment */}
+                <div>
+                  <label className="text-[10px] text-gray-500 mb-1 block">Alineación</label>
+                  <div className="flex gap-1">
+                    {["left", "center", "right"].map(align => (
+                      <button key={align} onClick={() => applyTextProp("textAlign", align)}
+                        className={`flex-1 py-1.5 rounded-lg text-xs transition-all ${textProps.textAlign === align ? "bg-purple-600 text-white" : "bg-white/5 text-gray-500 hover:text-white"}`}>
+                        {align === "left" ? "↤" : align === "center" ? "↔" : "↦"}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Letter spacing */}
+                <div>
+                  <label className="text-[10px] text-gray-500 mb-1 block">Espaciado · {Math.round(textProps.charSpacing / 10)}</label>
+                  <input type="range" min={0} max={500} value={textProps.charSpacing}
+                    onChange={e => applyTextProp("charSpacing", Number(e.target.value))}
+                    className="w-full accent-purple-500" />
+                </div>
+
+                {/* Opacity */}
+                <div>
+                  <label className="text-[10px] text-gray-500 mb-1 block">Opacidad · {Math.round(textProps.opacity * 100)}%</label>
+                  <input type="range" min={0} max={1} step={0.01} value={textProps.opacity}
+                    onChange={e => applyTextProp("opacity", Number(e.target.value))}
+                    className="w-full accent-purple-500" />
+                </div>
+
+                {/* Rotation */}
+                <div>
+                  <label className="text-[10px] text-gray-500 mb-1 block">Rotación · {Math.round(textProps.angle)}°</label>
+                  <input type="range" min={-180} max={180} value={textProps.angle}
+                    onChange={e => applyTextProp("angle", Number(e.target.value))}
+                    className="w-full accent-purple-500" />
+                </div>
+
+                {/* Position */}
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-[10px] text-gray-500 mb-1 block">X</label>
+                    <input type="number" value={Math.round(textProps.left)}
+                      onChange={e => applyTextProp("left", Number(e.target.value))}
+                      className="w-full bg-white/[0.04] border border-white/8 rounded-lg px-2.5 py-2 text-xs text-white outline-none focus:border-purple-500/50" />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-gray-500 mb-1 block">Y</label>
+                    <input type="number" value={Math.round(textProps.top)}
+                      onChange={e => applyTextProp("top", Number(e.target.value))}
+                      className="w-full bg-white/[0.04] border border-white/8 rounded-lg px-2.5 py-2 text-xs text-white outline-none focus:border-purple-500/50" />
+                  </div>
+                </div>
+
+                {/* Layer order */}
+                <div>
+                  <label className="text-[10px] text-gray-500 mb-1 block">Orden de capa</label>
+                  <div className="flex gap-2">
+                    <button onClick={() => moveLayer(selectedLayer.id, "up")}
+                      className="flex-1 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-gray-400 hover:text-white transition-all">↑ Subir</button>
+                    <button onClick={() => moveLayer(selectedLayer.id, "down")}
+                      className="flex-1 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-gray-400 hover:text-white transition-all">↓ Bajar</button>
+                  </div>
                 </div>
               </div>
             </div>
-          )}
 
-          {isImage && (
-            <div className="flex flex-col gap-3">
-              <p className="text-xs text-gray-500">Imagen seleccionada. Mueve, escala y rota en el canvas.</p>
-              <button onClick={() => replaceInputRef.current?.click()}
-                className="w-full rounded-xl bg-white/5 border border-white/8 px-3 py-2.5 text-sm hover:bg-white/10 transition-colors">
-                🔄 Reemplazar imagen
-              </button>
-              <button onClick={handleRemoveBg} disabled={removingBg}
-                className={`w-full rounded-xl px-3 py-2.5 text-sm font-semibold transition-all ${removingBg ? "bg-white/5 text-gray-500 cursor-not-allowed" : "bg-emerald-900/30 border border-emerald-700/40 text-emerald-400 hover:bg-emerald-900/50"}`}>
-                {removingBg ? "⏳ Procesando..." : "✂️ Quitar fondo"}
-              </button>
-              <button onClick={deleteSelected}
-                className="w-full rounded-xl bg-red-900/30 border border-red-800/40 px-3 py-2.5 text-sm text-red-400 hover:bg-red-900/50 transition-colors">
-                🗑️ Eliminar imagen
-              </button>
+          ) : (
+
+            // ── IMAGE PROPERTIES ───────────────────────────────────────────────
+            <div className="flex-1 overflow-y-auto">
+              <div className="px-3 py-2.5 border-b border-white/[0.06] flex items-center justify-between">
+                <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-widest">
+                  {selectedLayer.type === "background" ? "Fondo" : "Imagen"}
+                </p>
+                {selectedLayer.type !== "background" && (
+                  <button onClick={() => deleteLayer(selectedLayer.id)}
+                    className="text-gray-700 hover:text-red-400 transition-colors p-0.5">
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+                  </button>
+                )}
+              </div>
+
+              <div className="p-3 space-y-3">
+                {/* Opacity */}
+                <div>
+                  <label className="text-[10px] text-gray-500 mb-1 block">Opacidad · {Math.round(imageProps.opacity * 100)}%</label>
+                  <input type="range" min={0} max={1} step={0.01} value={imageProps.opacity}
+                    onChange={e => applyImageProp("opacity", Number(e.target.value))}
+                    className="w-full accent-purple-500" />
+                </div>
+
+                {/* Rotation */}
+                <div>
+                  <label className="text-[10px] text-gray-500 mb-1 block">Rotación · {Math.round(imageProps.angle)}°</label>
+                  <input type="range" min={-180} max={180} value={imageProps.angle}
+                    onChange={e => applyImageProp("angle", Number(e.target.value))}
+                    className="w-full accent-purple-500" />
+                </div>
+
+                {/* Flip */}
+                <div>
+                  <label className="text-[10px] text-gray-500 mb-1 block">Voltear</label>
+                  <div className="flex gap-2">
+                    <button onClick={() => {
+                      const obj = fabricRef.current?.getActiveObject();
+                      if (obj) { obj.set("flipX", !obj.flipX); fabricRef.current?.renderAll(); setSaveState("unsaved"); }
+                    }} className="flex-1 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-gray-400 hover:text-white transition-all">↔ Horizontal</button>
+                    <button onClick={() => {
+                      const obj = fabricRef.current?.getActiveObject();
+                      if (obj) { obj.set("flipY", !obj.flipY); fabricRef.current?.renderAll(); setSaveState("unsaved"); }
+                    }} className="flex-1 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-gray-400 hover:text-white transition-all">↕ Vertical</button>
+                  </div>
+                </div>
+
+                {/* Position */}
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-[10px] text-gray-500 mb-1 block">X</label>
+                    <input type="number" value={Math.round(imageProps.left)}
+                      onChange={e => applyImageProp("left", Number(e.target.value))}
+                      className="w-full bg-white/[0.04] border border-white/8 rounded-lg px-2.5 py-2 text-xs text-white outline-none focus:border-purple-500/50" />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-gray-500 mb-1 block">Y</label>
+                    <input type="number" value={Math.round(imageProps.top)}
+                      onChange={e => applyImageProp("top", Number(e.target.value))}
+                      className="w-full bg-white/[0.04] border border-white/8 rounded-lg px-2.5 py-2 text-xs text-white outline-none focus:border-purple-500/50" />
+                  </div>
+                </div>
+
+                {/* Lock background */}
+                {selectedLayer.type === "background" && (
+                  <button onClick={() => toggleLock(selectedLayer.id)}
+                    className={`w-full py-2 rounded-lg text-xs font-medium transition-all ${
+                      selectedLayer.locked ? "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30" : "bg-white/5 text-gray-400 hover:text-white"
+                    }`}>
+                    {selectedLayer.locked ? "🔒 Fondo bloqueado" : "🔓 Bloquear fondo"}
+                  </button>
+                )}
+
+                {/* Layer order */}
+                {selectedLayer.type !== "background" && (
+                  <div>
+                    <label className="text-[10px] text-gray-500 mb-1 block">Orden de capa</label>
+                    <div className="flex gap-2">
+                      <button onClick={() => moveLayer(selectedLayer.id, "up")}
+                        className="flex-1 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-gray-400 hover:text-white transition-all">↑ Subir</button>
+                      <button onClick={() => moveLayer(selectedLayer.id, "down")}
+                        className="flex-1 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-gray-400 hover:text-white transition-all">↓ Bajar</button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           )}
-
-          {/* Info del evento */}
-          <div className="mt-auto pt-3 border-t border-white/8 flex flex-col gap-1.5">
-            <p className="text-[10px] text-gray-600 uppercase tracking-wider mb-1">Info del evento</p>
-            {data.eventName  && <p className="text-xs text-gray-400">🎤 {data.eventName}</p>}
-            {data.eventDate  && <p className="text-xs text-gray-400">📅 {data.eventDate}</p>}
-            {data.eventVenue && <p className="text-xs text-gray-400">📍 {data.eventVenue}</p>}
-            {data.eventPrice && <p className="text-xs text-gray-400">🎟️ {data.eventPrice}</p>}
-          </div>
-        </aside>
+        </div>
       </div>
+
+      <style>{`
+        canvas { display: block; }
+        input[type="range"]::-webkit-slider-thumb { cursor: pointer; }
+        input[type="color"] { -webkit-appearance: none; border-radius: 6px; padding: 0; border: 1px solid rgba(255,255,255,0.1); cursor: pointer; }
+        input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+        input[type="color"]::-webkit-color-swatch { border: none; border-radius: 4px; }
+      `}</style>
     </div>
   );
 }

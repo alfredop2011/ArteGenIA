@@ -1,437 +1,311 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import type { EventData, ChatMessage, WizardResponse } from "@/app/api/chat-wizard/route";
+import { ArtistLibraryCard, ArtistLibraryModal } from "@/components/wizard/ArtistLibrary";
+import type { ArtistEntry } from "@/components/wizard/ArtistLibrary";
 
-const PLACEHOLDERS = [
-  "Concierto de Don Filosofín el 21 de junio en Barcelona, precio 25€...",
-  "Fiesta de cumpleaños de María, sábado 14 julio, Club Neon Madrid...",
-  "Festival de salsa con 5 artistas, domingo en Valencia, entrada libre...",
-  "DJ Set de Neon Pulse, viernes 28 junio, Sala Apolo Barcelona, 15€...",
-  "Gala de flamenco, Teatro Principal Sevilla, 10 agosto, desde 30€...",
-];
+type MessageType = "text" | "artist_library";
+type UIMessage = { id: string; role: "user" | "assistant"; content: string; type?: MessageType; isLoading?: boolean; };
+type AppPhase = "chat" | "style" | "generating";
 
 const STYLE_OPTIONS = [
-  { id: "urbano",   label: "Urbano",    emoji: "🏙️" },
-  { id: "elegante", label: "Elegante",  emoji: "✨" },
-  { id: "neon",     label: "Neón",      emoji: "💜" },
-  { id: "festival", label: "Festival",  emoji: "🎪" },
-  { id: "minima",   label: "Minimal",   emoji: "◻️" },
-  { id: "retro",    label: "Retro",     emoji: "🎞️" },
+  { id: "urbano", label: "Urbano", emoji: "🏙️" },
+  { id: "elegante", label: "Elegante", emoji: "✨" },
+  { id: "neon", label: "Neón", emoji: "💜" },
+  { id: "festival", label: "Festival", emoji: "🎪" },
+  { id: "minima", label: "Minimal", emoji: "◻️" },
+  { id: "retro", label: "Retro", emoji: "🎞️" },
 ];
-
 const COLOR_PALETTES = [
-  { id: "dorado",   colors: ["#f5c518", "#7c3aed", "#0d0d1a"], label: "Dorado & Morado" },
-  { id: "neon",     colors: ["#00f5ff", "#ff00aa", "#0a0a1a"], label: "Neón" },
-  { id: "rojo",     colors: ["#ef4444", "#111827", "#f9fafb"], label: "Rojo & Negro" },
-  { id: "verde",    colors: ["#22c55e", "#064e3b", "#f0fdf4"], label: "Verde Naturaleza" },
-  { id: "rosa",     colors: ["#ec4899", "#be185d", "#fdf2f8"], label: "Rosa Vibrante" },
-  { id: "azul",     colors: ["#3b82f6", "#1e3a5f", "#eff6ff"], label: "Azul Profundo" },
+  { id: "dorado", colors: ["#f5c518", "#7c3aed", "#0d0d1a"], label: "Dorado & Morado" },
+  { id: "neon", colors: ["#00f5ff", "#ff00aa", "#0a0a1a"], label: "Neón" },
+  { id: "rojo", colors: ["#ef4444", "#111827", "#f9fafb"], label: "Rojo & Negro" },
+  { id: "verde", colors: ["#22c55e", "#064e3b", "#f0fdf4"], label: "Verde Naturaleza" },
+  { id: "rosa", colors: ["#ec4899", "#be185d", "#fdf2f8"], label: "Rosa Vibrante" },
+  { id: "azul", colors: ["#3b82f6", "#1e3a5f", "#eff6ff"], label: "Azul Profundo" },
 ];
-
 const FORMAT_OPTIONS = [
   { id: "instagram", label: "Instagram", size: "1080×1350", icon: "📱" },
-  { id: "historia",  label: "Historia",  size: "1080×1920", icon: "⬆️" },
-  { id: "cuadrado",  label: "Cuadrado",  size: "1080×1080", icon: "⬜" },
-  { id: "evento",    label: "Evento",    size: "1920×1080", icon: "🖥️" },
+  { id: "historia", label: "Historia", size: "1080×1920", icon: "⬆️" },
+  { id: "cuadrado", label: "Cuadrado", size: "1080×1080", icon: "⬜" },
+  { id: "evento", label: "Evento", size: "1920×1080", icon: "🖥️" },
 ];
-
-const AI_PROCESS_STEPS = [
-  { id: 1, label: "Analizando prompt",      sub: "Extrayendo información del evento" },
-  { id: 2, label: "Eligiendo estilo",       sub: "Seleccionando paleta y tipografías" },
-  { id: 3, label: "Generando fondo",        sub: "Creando atmósfera visual" },
-  { id: 4, label: "Procesando artista",     sub: "Eliminando fondo de la foto" },
-  { id: 5, label: "Componiendo capas",      sub: "Nombre, lugar, precio, fecha" },
-  { id: 6, label: "Preparando variaciones", sub: "3 versiones del diseño" },
+const GEN_STEPS = [
+  { id: 1, label: "Analizando evento", sub: "Preparando assets" },
+  { id: 2, label: "Generando fondo", sub: "Solo atmósfera — sin texto" },
+  { id: 3, label: "Procesando artistas", sub: "Eliminando fondos" },
+  { id: 4, label: "Capas de texto", sub: "Título, fecha, lugar, precio…" },
+  { id: 5, label: "Variantes", sub: "Composiciones de artistas" },
+  { id: 6, label: "Abriendo editor", sub: "Todo listo" },
 ];
+const EMPTY_EVENT: EventData = {
+  eventName: null, eventType: null, date: null, time: null,
+  venue: null, city: null, isFree: null, price: null,
+  mainArtist: null, additionalArtists: [], artistCount: 1,
+  flyerType: null, visualStyle: null, mood: null, extraNotes: null,
+  readyToGenerate: false, needsPhotoUpload: false, missingFields: [],
+};
+function uid() { return Math.random().toString(36).slice(2, 10); }
+function DataPill({ icon, value }: { icon: string; value: string }) {
+  return (
+    <div className="flex items-start gap-1.5 text-xs">
+      <span className="shrink-0">{icon}</span>
+      <span className="text-white font-medium leading-snug">{value}</span>
+    </div>
+  );
+}
+function TypingDots() {
+  return (
+    <div className="flex items-center gap-1.5 py-1 px-1">
+      {[0,1,2].map(i => (
+        <span key={i} className="w-2 h-2 rounded-full bg-purple-400 inline-block"
+          style={{ animation: `dotBounce 1s ease-in-out ${i*0.15}s infinite` }} />
+      ))}
+    </div>
+  );
+}
 
 export default function CreatePage() {
   const router = useRouter();
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const [prompt, setPrompt] = useState("");
-  const [placeholderIdx, setPlaceholderIdx] = useState(0);
-  const [placeholderVisible, setPlaceholderVisible] = useState(true);
+  const [messages, setMessages] = useState<UIMessage[]>([{
+    id: uid(), role: "assistant", type: "text",
+    content: "¡Hola! Soy tu asistente para crear flyers.\n\nCuéntame sobre tu evento — nombre, tipo, fecha y lugar para empezar.",
+  }]);
+  const [input, setInput] = useState("");
+  const [isThinking, setIsThinking] = useState(false);
+  const [eventData, setEventData] = useState<EventData>(EMPTY_EVENT);
+  const [ctaLabel, setCtaLabel] = useState<"continue"|"confirm"|"generate">("continue");
+  const [recentContext, setRecentContext] = useState<ChatMessage[]>([]);
+  const [artistsAndLogos, setArtistsAndLogos] = useState<ArtistEntry[]>([]);
+  const [libraryShown, setLibraryShown] = useState(false);
+  const [libraryModalOpen, setLibraryModalOpen] = useState(false);
+  const [artistsConfirmed, setArtistsConfirmed] = useState(false);
+  const [phase, setPhase] = useState<AppPhase>("chat");
   const [selectedStyle, setSelectedStyle] = useState("urbano");
   const [selectedPalette, setSelectedPalette] = useState("dorado");
   const [selectedFormat, setSelectedFormat] = useState("instagram");
-  const [artistPhoto, setArtistPhoto] = useState<string | null>(null);
-  const [artistFileName, setArtistFileName] = useState<string | null>(null);
-  const [isGenerating, setIsGenerating] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [stepProgress, setStepProgress] = useState(0);
-  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [genStatus, setGenStatus] = useState("");
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  // Campos adicionales
-  const [eventName, setEventName] = useState("");
-  const [eventDate, setEventDate] = useState("");
-  const [eventVenue, setEventVenue] = useState("");
-  const [eventAddress, setEventAddress] = useState("");
-  const [eventPrice, setEventPrice] = useState("");
+  useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setPlaceholderVisible(false);
-      setTimeout(() => {
-        setPlaceholderIdx(i => (i + 1) % PLACEHOLDERS.length);
-        setPlaceholderVisible(true);
-      }, 400);
-    }, 3500);
-    return () => clearInterval(interval);
-  }, []);
-
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setArtistFileName(file.name);
-    const reader = new FileReader();
-    reader.onload = ev => setArtistPhoto(ev.target?.result as string);
-    reader.readAsDataURL(file);
-  };
-
-  const handleGenerate = async () => {
-    if (!prompt.trim() && !eventName.trim()) return;
-    setIsGenerating(true);
-    setCurrentStep(1);
-    setStepProgress(0);
-
-    // Animar un paso individual (1-6) con su duración
-    const animateStep = (step: number, duration: number) =>
-      new Promise<void>(res => {
-        setCurrentStep(step);
-        setStepProgress(0);
-        const start = Date.now();
-        const tick = () => {
-          const elapsed = Date.now() - start;
-          const pct = Math.min((elapsed / duration) * 100, 100);
-          setStepProgress(pct);
-          if (pct < 100) requestAnimationFrame(tick);
-          else res();
-        };
-        requestAnimationFrame(tick);
-      });
-
-    // Animar progreso del paso 3-4 mientras corren las APIs reales
-    const animateWhileFetching = <T,>(step: number, promise: Promise<T>): Promise<T> =>
-      new Promise((resolve, reject) => {
-        setCurrentStep(step);
-        setStepProgress(0);
-        const start = Date.now();
-        const softCap = 90; // sube hasta 90% mientras espera, el último 10% al recibir
-        let done = false;
-        const tick = () => {
-          if (done) return;
-          const elapsed = Date.now() - start;
-          // Curva exponencial inversa para que el progreso desacelere
-          const pct = softCap * (1 - Math.exp(-elapsed / 4000));
-          setStepProgress(pct);
-          requestAnimationFrame(tick);
-        };
-        requestAnimationFrame(tick);
-        promise.then(
-          v => { done = true; setStepProgress(100); setTimeout(() => resolve(v), 200); },
-          e => { done = true; reject(e); }
-        );
-      });
-
+  const sendMessage = useCallback(async (userText: string) => {
+    if (!userText.trim() || isThinking) return;
+    const trimmed = userText.trim();
+    const userMsg: UIMessage = { id: uid(), role: "user", type: "text", content: trimmed };
+    const loadingMsg: UIMessage = { id: uid(), role: "assistant", type: "text", content: "", isLoading: true };
+    setMessages(prev => [...prev, userMsg, loadingMsg]);
+    setInput("");
+    setIsThinking(true);
     try {
-      // Pasos 1-2: analizar idea + elegir paleta (animación rápida, son visuales)
-      await animateStep(1, 600);
-      await animateStep(2, 500);
-
-      // Paleta y formato resueltos
-      const paletteObj = COLOR_PALETTES.find(p => p.id === selectedPalette) ?? COLOR_PALETTES[0];
-
-      // Paso 3: generar fondo con Fal.ai (REAL)
-      const bgPromise = fetch("/api/generate-bg", {
+      const res = await fetch("/api/chat-wizard", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          prompt: prompt.trim(),
-          style: selectedStyle,
-          palette: { id: paletteObj.id, name: paletteObj.label, colors: paletteObj.colors },
-          format: selectedFormat,
-        }),
-      }).then(async r => {
-        if (!r.ok) {
-          const err = await r.json().catch(() => ({}));
-          throw new Error(err.detail || err.error || `generate-bg ${r.status}`);
-        }
-        return r.json() as Promise<{ url: string; width: number; height: number }>;
+        body: JSON.stringify({ latestUserMessage: trimmed, currentEventData: eventData, recentContext: recentContext.slice(-4) }),
       });
+      const data: WizardResponse = await res.json();
+      const assistantMsg: UIMessage = { id: uid(), role: "assistant", type: "text", content: data.message };
+      setMessages(prev => {
+        const updated = [...prev.slice(0, -1), assistantMsg];
+        if (data.showPhotoUpload && !libraryShown) {
+          updated.push({ id: uid(), role: "assistant", type: "artist_library", content: "" });
+        }
+        return updated;
+      });
+      if (data.showPhotoUpload && !libraryShown) setLibraryShown(true);
+      setRecentContext(prev => [...prev, { role: "user", content: trimmed }, { role: "assistant", content: data.message }].slice(-8));
+      setEventData(data.eventData);
+      setCtaLabel(data.ctaLabel);
+    } catch {
+      setMessages(prev => [...prev.slice(0, -1), { id: uid(), role: "assistant", type: "text", content: "Ups, algo salió mal." }]);
+    } finally {
+      setIsThinking(false);
+      setTimeout(() => inputRef.current?.focus(), 100);
+    }
+  }, [isThinking, recentContext, eventData, libraryShown]);
 
-      const bgResult = await animateWhileFetching(3, bgPromise);
+  const handleArtistLibraryConfirm = useCallback((entries: ArtistEntry[]) => {
+    setArtistsAndLogos(entries);
+    setLibraryModalOpen(false);
+    if (!artistsConfirmed) {
+      setArtistsConfirmed(true);
+      const parts: string[] = [];
+      const main = entries.find(e => e.role === "main");
+      if (main) parts.push(`artista principal: ${main.name}`);
+      const extra = entries.filter(e => e.type === "artist" && e.role !== "main");
+      if (extra.length) parts.push(`${extra.length} artista${extra.length>1?"s":""} adicional${extra.length>1?"es":""}`);
+      const logos = entries.filter(e => e.type === "logo");
+      if (logos.length) parts.push(`${logos.length} logo${logos.length>1?"s":""}`);
+      const txt = entries.length === 0 ? "Continúo sin fotos." : `Añadí ${entries.length} elemento${entries.length>1?"s":""}: ${parts.join(", ")}.`;
+      setMessages(prev => [...prev, { id: uid(), role: "user", type: "text", content: txt }]);
+      sendMessage(txt);
+    }
+  }, [artistsConfirmed, sendMessage]);
 
-      // Paso 4: procesar foto del artista (REAL, si hay foto)
-      let artistUrl: string | null = null;
-      if (artistPhoto) {
-        // Convertir dataURL a Blob para enviarlo como FormData
-        const dataUrlToBlob = (dataUrl: string): Blob => {
-          const [meta, b64] = dataUrl.split(",");
-          const mime = meta.match(/data:(.*?);/)?.[1] ?? "image/png";
-          const bin = atob(b64);
-          const u8 = new Uint8Array(bin.length);
-          for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
-          return new Blob([u8], { type: mime });
-        };
-        const blob = dataUrlToBlob(artistPhoto);
-        const fd = new FormData();
-        fd.append("image_file", blob, artistFileName ?? "artist.png");
+  const handleCTA = useCallback(() => {
+    if (ctaLabel === "generate") setPhase("style");
+    else if (ctaLabel === "confirm") sendMessage("Sí, todo correcto. Generamos el flyer.");
+    else inputRef.current?.focus();
+  }, [ctaLabel, sendMessage]);
 
-        const artistPromise = fetch("/api/remove-bg", { method: "POST", body: fd })
-          .then(async r => {
-            if (!r.ok) {
-              const err = await r.json().catch(() => ({}));
-              throw new Error(err.detail || err.error || `remove-bg ${r.status}`);
-            }
-            return r.json() as Promise<{ url: string }>;
-          });
+  const animateStep = useCallback((step: number, label: string, dur: number) =>
+    new Promise<void>(res => {
+      setCurrentStep(step); setGenStatus(label); setStepProgress(0);
+      const t = Date.now();
+      const tick = () => { const p = Math.min((Date.now()-t)/dur*100,100); setStepProgress(p); p<100?requestAnimationFrame(tick):res(); };
+      requestAnimationFrame(tick);
+    }), []);
 
-        const artistResult = await animateWhileFetching(4, artistPromise);
-        artistUrl = artistResult.url;
-      } else {
-        // Sin foto, solo animamos el paso
-        await animateStep(4, 500);
-      }
+  const animateWhileFetching = useCallback(<T,>(step: number, label: string, promise: Promise<T>): Promise<T> =>
+    new Promise((resolve, reject) => {
+      setCurrentStep(step); setGenStatus(label); setStepProgress(0);
+      const t = Date.now(); let done = false;
+      const tick = () => { if(done)return; setStepProgress(90*(1-Math.exp(-(Date.now()-t)/5000))); requestAnimationFrame(tick); };
+      requestAnimationFrame(tick);
+      promise.then(v=>{done=true;setStepProgress(100);setTimeout(()=>resolve(v),300);}).catch(e=>{done=true;reject(e);});
+    }), []);
 
-      // Pasos 5-6: montaje final (visual)
-      await animateStep(5, 700);
-      await animateStep(6, 600);
-
-      // Guardar URLs en localStorage (¡no dataURLs!)
+  const handleGenerate = useCallback(async () => {
+    setPhase("generating");
+    try {
+      await animateStep(1, "Preparando…", 800);
+      const paletteObj = COLOR_PALETTES.find(p=>p.id===selectedPalette) ?? COLOR_PALETTES[0];
+      const bgResult = await animateWhileFetching(2, "Generando fondo sin texto…",
+        fetch("/api/generate-bg", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ eventType: eventData.eventType ?? "", style: selectedStyle, palette: { id: paletteObj.id, name: paletteObj.label, colors: paletteObj.colors }, format: selectedFormat }),
+        }).then(async r => { if(!r.ok) throw new Error(`generate-bg ${r.status}`); return r.json() as Promise<{url:string;width:number;height:number}>; })
+      );
+      const artistsWithPhoto = artistsAndLogos.filter(a => a.type === "artist" && a.imageSrc);
+      let artistUrls: Array<{id:string;name:string;isMain:boolean;url:string}> = [];
+      if (artistsWithPhoto.length > 0) {
+        const promises = artistsWithPhoto.map(async artist => {
+          try {
+            const [meta, b64] = artist.imageSrc.split(",");
+            const mime = meta.match(/data:(.*?);/)?.[1] ?? "image/png";
+            const bin = atob(b64); const u8 = new Uint8Array(bin.length);
+            for (let i=0;i<bin.length;i++) u8[i]=bin.charCodeAt(i);
+            const fd = new FormData();
+            fd.append("image_file", new Blob([u8],{type:mime}), `${artist.name}.png`);
+            const r = await fetch("/api/remove-bg", { method: "POST", body: fd });
+            const d = r.ok ? await r.json() as {url:string} : null;
+            return { id: artist.id, name: artist.name, isMain: artist.role === "main", url: d?.url ?? artist.imageSrc };
+          } catch { return { id: artist.id, name: artist.name, isMain: artist.role==="main", url: artist.imageSrc }; }
+        });
+        artistUrls = await animateWhileFetching(3, "Procesando artistas…", Promise.all(promises));
+      } else { await animateStep(3, "Sin fotos…", 400); }
+      await animateStep(4, "Creando capas de texto…", 600);
+      await animateStep(5, "Preparando variantes…", 400);
+      await animateStep(6, "Abriendo editor…", 300);
       try {
         localStorage.setItem("artegenia_generated", JSON.stringify({
-          eventName, eventDate, eventVenue, eventAddress, eventPrice,
-          artistPhotoUrl: artistUrl,
-          bgUrl: bgResult.url,
-          bgWidth: bgResult.width,
-          bgHeight: bgResult.height,
-          prompt,
-          palette: paletteObj,
-          style: selectedStyle,
-          format: selectedFormat,
-          generatedAt: new Date().toISOString(),
+          eventName: eventData.eventName ?? "",
+          eventDate: [eventData.date, eventData.time].filter(Boolean).join(" · "),
+          eventVenue: [eventData.venue, eventData.city].filter(Boolean).join(", "),
+          eventPrice: eventData.price ?? "",
+          artistPhotoUrl: artistUrls[0]?.url ?? null,
+          artists: artistUrls.map(a => ({ name: a.name, photoUrl: a.url })),
+          artistCount: artistUrls.length || 1,
+          bgUrl: bgResult.url, bgWidth: bgResult.width, bgHeight: bgResult.height,
+          prompt: (eventData.eventType ?? "event") + " " + selectedStyle,
+          palette: paletteObj, style: selectedStyle, format: selectedFormat,
+          mode: eventData.flyerType ?? "no_photo", generatedAt: new Date().toISOString(),
         }));
-      } catch (e) {
-        console.warn("localStorage error:", e);
-      }
-
+      } catch(e) { console.warn("localStorage:", e); }
       setTimeout(() => router.push("/editor-new"), 400);
-    } catch (err) {
-      console.error("Error generando flyer:", err);
-      alert(`Error generando el flyer: ${err instanceof Error ? err.message : "desconocido"}`);
-      setIsGenerating(false);
-      setCurrentStep(0);
-      setStepProgress(0);
+    } catch(err) {
+      console.error("Error generando:", err);
+      alert(`Error: ${err instanceof Error ? err.message : "desconocido"}`);
+      setPhase("style");
     }
-  };
+  }, [eventData, artistsAndLogos, selectedStyle, selectedPalette, selectedFormat, animateStep, animateWhileFetching, router]);
 
-  const canGenerate = prompt.trim().length > 10 || eventName.trim().length > 2;
-  const palette = COLOR_PALETTES.find(p => p.id === selectedPalette)!;
-
-  return (
-    <div className="min-h-screen bg-[#0e0e14] text-white">
-      {!isGenerating ? (
-        /* ─── FORMULARIO ─── */
-        <div className="max-w-3xl mx-auto px-4 py-10">
-
-          {/* Header */}
-          <div className="text-center mb-10">
-            <div className="inline-flex items-center gap-2 bg-purple-500/10 border border-purple-500/20 rounded-full px-4 py-1.5 text-sm text-purple-300 mb-4">
-              <span className="w-2 h-2 rounded-full bg-purple-400 animate-pulse" />
-              IA generativa para flyers profesionales
-            </div>
-            <h1 className="text-4xl font-black tracking-tight mb-3">
-              Describe tu <span className="text-yellow-400">evento</span>
-            </h1>
-            <p className="text-gray-400 text-lg">
-              Escribe una frase y la IA diseñará tu flyer en segundos
-            </p>
+  if (phase === "generating") {
+    const palette = COLOR_PALETTES.find(p=>p.id===selectedPalette)!;
+    const pct = Math.round(((currentStep-1+stepProgress/100)/GEN_STEPS.length)*100);
+    return (
+      <div className="flex flex-col lg:flex-row min-h-[calc(100vh-56px)]">
+        <div className="w-full lg:w-72 bg-[#111127] border-r border-white/[0.06] p-6 flex flex-col gap-4">
+          <p className="text-[10px] text-purple-400 uppercase tracking-widest font-semibold">Generando flyer</p>
+          <div className="space-y-1">
+            {GEN_STEPS.map((step,i) => {
+              const n=i+1; const isDone=n<currentStep; const isActive=n===currentStep;
+              return (
+                <div key={step.id} className="flex items-start gap-3 py-2 relative">
+                  {i<GEN_STEPS.length-1 && <div className="absolute left-[11px] top-8 w-0.5 h-5 bg-white/8" />}
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 text-[11px] font-bold transition-all ${isDone?"bg-green-500 text-black":isActive?"border-2 border-purple-400":"border-2 border-white/10 text-white/20"}`}>
+                    {isDone?"✓":isActive?<div className="w-3 h-3 border-2 border-purple-400 border-t-transparent rounded-full animate-spin"/>:n}
+                  </div>
+                  <div className="flex-1">
+                    <p className={`text-xs font-semibold ${isDone?"text-green-400":isActive?"text-white":"text-white/20"}`}>{step.label}</p>
+                    <p className={`text-[10px] ${isActive?"text-purple-300":isDone?"text-green-400/60":"text-white/15"}`}>{step.sub}</p>
+                    {isActive&&<div className="mt-1.5 h-1 bg-white/10 rounded-full overflow-hidden"><div className="h-full bg-purple-500 rounded-full transition-all duration-100" style={{width:`${stepProgress}%`}}/></div>}
+                  </div>
+                </div>
+              );
+            })}
           </div>
-
-          {/* Prompt principal */}
-          <div className="relative mb-6">
-            <div className="relative rounded-2xl border border-white/10 bg-white/[0.03] focus-within:border-purple-500/50 focus-within:bg-white/[0.05] transition-all">
-              <textarea
-                ref={textareaRef}
-                value={prompt}
-                onChange={e => setPrompt(e.target.value)}
-                rows={4}
-                className="w-full bg-transparent px-5 pt-5 pb-16 text-white placeholder-transparent resize-none outline-none text-base leading-relaxed"
-                placeholder=" "
-              />
-              {/* Placeholder animado */}
-              {!prompt && (
-                <div
-                  className="absolute top-5 left-5 right-5 text-gray-500 text-base leading-relaxed pointer-events-none transition-opacity duration-400 select-none"
-                  style={{ opacity: placeholderVisible ? 1 : 0 }}
-                >
-                  {PLACEHOLDERS[placeholderIdx]}
-                </div>
-              )}
-              {/* Barra inferior del textarea */}
-              <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-4 py-3 border-t border-white/[0.06]">
-                <div className="flex items-center gap-2 text-xs text-gray-500">
-                  <span>{prompt.length}/500</span>
-                  {prompt.length > 10 && (
-                    <span className="text-green-400 flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-green-400" />
-                      Listo para generar
-                    </span>
-                  )}
-                </div>
-                <button
-                  onClick={() => setShowAdvanced(!showAdvanced)}
-                  className="text-xs text-gray-400 hover:text-purple-300 transition-colors flex items-center gap-1"
-                >
-                  {showAdvanced ? "▲" : "▼"} Campos detallados
-                </button>
+        </div>
+        <div className="flex-1 bg-[#0a0a18] flex flex-col items-center justify-center p-8 gap-6">
+          <h2 className="text-2xl font-black text-white">Creando tu flyer ✨</h2>
+          <p className="text-sm text-gray-500">{genStatus}</p>
+          <div className="relative" style={{width:200,height:280}}>
+            <div className="absolute -inset-2 rounded-3xl" style={{background:`linear-gradient(135deg,${palette.colors[0]}30,${palette.colors[1]}30)`,filter:"blur(12px)"}}/>
+            <div className="relative w-full h-full rounded-2xl border border-white/10 flex flex-col items-center justify-center gap-3" style={{background:`linear-gradient(160deg,${palette.colors[2]},${palette.colors[1]} 60%,${palette.colors[0]}22)`}}>
+              <div className="relative w-16 h-16">
+                <svg className="w-16 h-16 -rotate-90" viewBox="0 0 64 64">
+                  <circle cx="32" cy="32" r="26" fill="none" stroke="#ffffff15" strokeWidth="4"/>
+                  <circle cx="32" cy="32" r="26" fill="none" stroke={palette.colors[0]} strokeWidth="4" strokeLinecap="round" strokeDasharray={163} strokeDashoffset={163-163*(pct/100)} style={{transition:"stroke-dashoffset 0.3s"}}/>
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center"><span className="text-white font-black text-sm">{pct}%</span></div>
               </div>
+              <p className="text-[10px] tracking-widest uppercase" style={{color:palette.colors[0]}}>Procesando</p>
             </div>
           </div>
+        </div>
+      </div>
+    );
+  }
 
-          {/* Campos avanzados (expandibles) */}
-          <div
-            className="overflow-hidden transition-all duration-500"
-            style={{ maxHeight: showAdvanced ? "600px" : "0px", opacity: showAdvanced ? 1 : 0 }}
-          >
-            <div className="grid grid-cols-2 gap-3 mb-6">
-              {[
-                { label: "Nombre del evento", value: eventName, set: setEventName, placeholder: "Don Filosofín Live", icon: "🎤", col: "col-span-2" },
-                { label: "Fecha", value: eventDate, set: setEventDate, placeholder: "Sábado 21 de junio, 2025", icon: "📅" },
-                { label: "Precio / Entrada", value: eventPrice, set: setEventPrice, placeholder: "25€ anticipada", icon: "🎟️" },
-                { label: "Lugar / Sala", value: eventVenue, set: setEventVenue, placeholder: "Sala Apolo", icon: "📍" },
-                { label: "Dirección", value: eventAddress, set: setEventAddress, placeholder: "Carrer de la Nou de la Rambla 113, Barcelona", icon: "🗺️", col: "col-span-2" },
-              ].map(field => (
-                <div key={field.label} className={`flex flex-col gap-1.5 ${field.col ?? ""}`}>
-                  <label className="text-xs text-gray-400 font-medium flex items-center gap-1.5">
-                    <span>{field.icon}</span> {field.label}
-                  </label>
-                  <input
-                    type="text"
-                    value={field.value}
-                    onChange={e => field.set(e.target.value)}
-                    placeholder={field.placeholder}
-                    className="w-full bg-white/[0.04] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-600 outline-none focus:border-purple-500/40 focus:bg-white/[0.06] transition-all"
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Foto del artista */}
-          <div className="mb-6">
-            <p className="text-sm font-semibold text-gray-300 mb-3 flex items-center gap-2">
-              <span>📸</span> Foto del artista
-              <span className="text-xs text-gray-600 font-normal">(opcional — se eliminará el fondo automáticamente)</span>
-            </p>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handlePhotoUpload}
-              className="hidden"
-            />
-            {artistPhoto ? (
-              <div className="flex items-center gap-4">
-                <div className="relative w-20 h-20 rounded-2xl overflow-hidden border-2 border-purple-500/40">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={artistPhoto} alt="Artista" className="w-full h-full object-cover" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-                </div>
-                <div>
-                  <p className="text-sm text-white font-medium">{artistFileName}</p>
-                  <p className="text-xs text-green-400 flex items-center gap-1 mt-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-green-400" />
-                    Foto cargada · el fondo se eliminará con IA
-                  </p>
-                  <button
-                    onClick={() => { setArtistPhoto(null); setArtistFileName(null); }}
-                    className="text-xs text-gray-500 hover:text-red-400 mt-1 transition-colors"
-                  >
-                    Quitar foto
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="w-full border-2 border-dashed border-white/10 rounded-2xl p-6 flex flex-col items-center gap-2 hover:border-purple-500/30 hover:bg-purple-500/5 transition-all group"
-              >
-                <div className="w-12 h-12 rounded-2xl bg-white/5 group-hover:bg-purple-500/10 flex items-center justify-center text-2xl transition-all">
-                  📸
-                </div>
-                <p className="text-sm text-gray-400 group-hover:text-gray-300 transition-colors">
-                  Sube una foto del artista o DJ
-                </p>
-                <p className="text-xs text-gray-600">JPG, PNG · máx. 10MB</p>
-              </button>
-            )}
-          </div>
-
-          {/* Estilo */}
-          <div className="mb-6">
+  if (phase === "style") {
+    const palette = COLOR_PALETTES.find(p=>p.id===selectedPalette)!;
+    return (
+      <div className="min-h-screen bg-[#0e0e14] text-white flex flex-col items-center justify-center px-4 py-10">
+        <div className="w-full max-w-xl">
+          <button onClick={()=>setPhase("chat")} className="text-gray-500 hover:text-white text-sm mb-8 transition-colors">← Volver al chat</button>
+          <h2 className="text-2xl font-black mb-1">Estilo del flyer</h2>
+          <p className="text-gray-400 text-sm mb-6">El fondo se genera sin texto — las letras son capas editables</p>
+          <div className="mb-5">
             <p className="text-sm font-semibold text-gray-300 mb-3">🎨 Estilo visual</p>
             <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
-              {STYLE_OPTIONS.map(opt => (
-                <button
-                  key={opt.id}
-                  onClick={() => setSelectedStyle(opt.id)}
-                  className={`flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl border text-xs font-medium transition-all ${
-                    selectedStyle === opt.id
-                      ? "border-purple-500 bg-purple-500/15 text-purple-300"
-                      : "border-white/8 bg-white/[0.03] text-gray-400 hover:border-white/15 hover:text-gray-300"
-                  }`}
-                >
-                  <span className="text-xl">{opt.emoji}</span>
-                  {opt.label}
+              {STYLE_OPTIONS.map(opt=>(
+                <button key={opt.id} onClick={()=>setSelectedStyle(opt.id)} className={`flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl border text-xs font-medium transition-all ${selectedStyle===opt.id?"border-purple-500 bg-purple-500/15 text-purple-300":"border-white/8 bg-white/[0.03] text-gray-400 hover:border-white/15"}`}>
+                  <span className="text-xl">{opt.emoji}</span>{opt.label}
                 </button>
               ))}
             </div>
           </div>
-
-          {/* Paleta de colores */}
-          <div className="mb-6">
+          <div className="mb-5">
             <p className="text-sm font-semibold text-gray-300 mb-3">🌈 Paleta de colores</p>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-              {COLOR_PALETTES.map(pal => (
-                <button
-                  key={pal.id}
-                  onClick={() => setSelectedPalette(pal.id)}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-all text-left ${
-                    selectedPalette === pal.id
-                      ? "border-purple-500 bg-purple-500/10"
-                      : "border-white/8 bg-white/[0.03] hover:border-white/15"
-                  }`}
-                >
-                  <div className="flex gap-1 shrink-0">
-                    {pal.colors.map((c, i) => (
-                      <div key={i} className="w-4 h-4 rounded-full border border-white/10" style={{ background: c }} />
-                    ))}
-                  </div>
-                  <span className={`text-xs font-medium ${selectedPalette === pal.id ? "text-purple-300" : "text-gray-400"}`}>
-                    {pal.label}
-                  </span>
+              {COLOR_PALETTES.map(pal=>(
+                <button key={pal.id} onClick={()=>setSelectedPalette(pal.id)} className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-all ${selectedPalette===pal.id?"border-purple-500 bg-purple-500/10":"border-white/8 bg-white/[0.03] hover:border-white/15"}`}>
+                  <div className="flex gap-1">{pal.colors.map((c,i)=><div key={i} className="w-4 h-4 rounded-full border border-white/10" style={{background:c}}/>)}</div>
+                  <span className={`text-xs font-medium ${selectedPalette===pal.id?"text-purple-300":"text-gray-400"}`}>{pal.label}</span>
                 </button>
               ))}
             </div>
           </div>
-
-          {/* Formato */}
-          <div className="mb-8">
+          <div className="mb-7">
             <p className="text-sm font-semibold text-gray-300 mb-3">📐 Formato</p>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-              {FORMAT_OPTIONS.map(fmt => (
-                <button
-                  key={fmt.id}
-                  onClick={() => setSelectedFormat(fmt.id)}
-                  className={`flex flex-col items-center gap-1 py-3 px-2 rounded-xl border transition-all ${
-                    selectedFormat === fmt.id
-                      ? "border-yellow-400/50 bg-yellow-400/8 text-yellow-400"
-                      : "border-white/8 bg-white/[0.03] text-gray-400 hover:border-white/15"
-                  }`}
-                >
+              {FORMAT_OPTIONS.map(fmt=>(
+                <button key={fmt.id} onClick={()=>setSelectedFormat(fmt.id)} className={`flex flex-col items-center gap-1 py-3 px-2 rounded-xl border transition-all ${selectedFormat===fmt.id?"border-yellow-400/50 bg-yellow-400/10 text-yellow-400":"border-white/8 bg-white/[0.03] text-gray-400 hover:border-white/15"}`}>
                   <span className="text-xl">{fmt.icon}</span>
                   <span className="text-xs font-semibold">{fmt.label}</span>
                   <span className="text-[10px] opacity-60">{fmt.size}</span>
@@ -439,317 +313,155 @@ export default function CreatePage() {
               ))}
             </div>
           </div>
-
-          {/* Botón generar */}
-          <button
-            onClick={handleGenerate}
-            disabled={!canGenerate}
-            className={`w-full py-4 rounded-2xl text-base font-black tracking-wide transition-all duration-300 flex items-center justify-center gap-3 ${
-              canGenerate
-                ? "bg-gradient-to-r from-yellow-400 to-orange-400 text-black hover:scale-[1.02] hover:shadow-2xl hover:shadow-yellow-400/20 active:scale-[0.98]"
-                : "bg-white/5 text-white/20 cursor-not-allowed"
-            }`}
-          >
-            <span className="text-xl">⚡</span>
-            Generar flyer con IA
-            <span className="text-sm font-normal opacity-70">~5 segundos</span>
+          <div className="bg-white/[0.03] border border-white/8 rounded-2xl p-4 mb-5 space-y-1.5 text-sm text-gray-400">
+            <p className="text-white font-semibold text-xs uppercase tracking-wider mb-2">Resumen</p>
+            {eventData.eventName&&<p>🎤 {eventData.eventName}</p>}
+            {(eventData.date||eventData.time)&&<p>📅 {[eventData.date,eventData.time].filter(Boolean).join(" · ")}</p>}
+            {(eventData.venue||eventData.city)&&<p>📍 {[eventData.venue,eventData.city].filter(Boolean).join(", ")}</p>}
+            {eventData.price&&<p>🎟️ {eventData.price}</p>}
+            {artistsAndLogos.length>0&&<p>👤 {artistsAndLogos.map(a=>a.name).join(", ")}</p>}
+            <p className="pt-1 border-t border-white/8">🎨 {STYLE_OPTIONS.find(s=>s.id===selectedStyle)?.label} · {palette.label} · {FORMAT_OPTIONS.find(f=>f.id===selectedFormat)?.label}</p>
+          </div>
+          <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-3 mb-5">
+            <p className="text-xs text-blue-300">ℹ️ El fondo se genera sin texto. Toda la información del evento se añade como capas editables en el editor.</p>
+          </div>
+          <button onClick={handleGenerate} className="w-full py-4 rounded-2xl text-base font-black bg-gradient-to-r from-yellow-400 to-orange-400 text-black hover:scale-[1.02] hover:shadow-2xl hover:shadow-yellow-400/20 transition-all flex items-center justify-center gap-3">
+            <span className="text-xl">⚡</span> Generar capas del flyer
           </button>
+        </div>
+      </div>
+    );
+  }
 
-          {canGenerate && (
-            <p className="text-center text-xs text-gray-600 mt-3">
-              Se usará 1 crédito · Paleta: {palette.label} · Estilo: {STYLE_OPTIONS.find(s => s.id === selectedStyle)?.label}
-            </p>
+  const hasData = !!(eventData.eventName||eventData.date||eventData.venue||eventData.city);
+  const inputBlocked = isThinking || (libraryShown && !artistsConfirmed);
+
+  return (
+    <div className="flex h-[calc(100vh-56px)] bg-[#0e0e14] text-white overflow-hidden">
+      <div className="flex-1 flex flex-col min-w-0">
+        <div className="flex-1 overflow-y-auto px-4 py-6 space-y-4">
+          {messages.map(msg => {
+            if (msg.type === "artist_library") {
+              return (
+                <div key={msg.id} className="flex justify-start">
+                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-xs font-black shrink-0 mr-2 mt-1 self-start">AG</div>
+                  <div className="max-w-[85%]">
+                    <ArtistLibraryCard selected={artistsAndLogos} onOpen={()=>setLibraryModalOpen(true)}/>
+                    {!artistsConfirmed&&(
+                      <button onClick={()=>handleArtistLibraryConfirm(artistsAndLogos)} className="mt-2 w-full max-w-xs py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-sm font-bold transition-all">
+                        Continuar →
+                      </button>
+                    )}
+                    {artistsConfirmed&&artistsAndLogos.length>0&&(
+                      <p className="mt-1.5 text-[11px] text-green-400">✓ {artistsAndLogos.length} elemento{artistsAndLogos.length>1?"s":""} añadido{artistsAndLogos.length>1?"s":""}</p>
+                    )}
+                  </div>
+                </div>
+              );
+            }
+            return (
+              <div key={msg.id} className={`flex ${msg.role==="user"?"justify-end":"justify-start"}`}>
+                {msg.role==="assistant"&&(
+                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-xs font-black shrink-0 mr-2 mt-0.5 self-start">AG</div>
+                )}
+                <div className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${msg.role==="user"?"bg-purple-600 text-white rounded-tr-sm":"bg-white/[0.06] text-gray-100 rounded-tl-sm border border-white/[0.08]"}`}>
+                  {msg.isLoading?<TypingDots/>:<span className="whitespace-pre-wrap">{msg.content}</span>}
+                </div>
+              </div>
+            );
+          })}
+          <div ref={messagesEndRef}/>
+        </div>
+        <div className="border-t border-white/[0.06] bg-[#0e0e14] p-4">
+          <div className="flex gap-3 items-end">
+            <textarea ref={inputRef} value={input} onChange={e=>setInput(e.target.value)}
+              onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendMessage(input);}}}
+              placeholder={inputBlocked&&libraryShown&&!artistsConfirmed?"Abre la card y añade artistas, luego pulsa Continuar...":"Escribe tu mensaje..."}
+              rows={1} disabled={inputBlocked}
+              className="flex-1 bg-white/[0.06] border border-white/10 rounded-2xl px-4 py-3 text-sm text-white placeholder-gray-500 outline-none focus:border-purple-500/50 resize-none transition-all disabled:opacity-40"
+              style={{minHeight:48,maxHeight:120}}
+              onInput={e=>{const el=e.target as HTMLTextAreaElement;el.style.height="auto";el.style.height=Math.min(el.scrollHeight,120)+"px";}}
+            />
+            <button onClick={()=>sendMessage(input)} disabled={!input.trim()||inputBlocked}
+              className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all shrink-0 ${input.trim()&&!inputBlocked?"bg-purple-600 hover:bg-purple-500 text-white":"bg-white/5 text-white/20 cursor-not-allowed"}`}>
+              {isThinking?<div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"/>:<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>}
+            </button>
+          </div>
+          {(ctaLabel==="confirm"||ctaLabel==="generate")&&!inputBlocked&&(
+            <button onClick={handleCTA} className="mt-3 w-full py-3 rounded-xl text-sm font-black bg-gradient-to-r from-yellow-400 to-orange-400 text-black hover:scale-[1.01] transition-all flex items-center justify-center gap-2">
+              <span>⚡</span>{ctaLabel==="confirm"?"Confirmar y elegir estilo":"Elegir estilo y generar"}
+            </button>
           )}
         </div>
-
-      ) : (
-        /* ─── PANTALLA DE GENERACIÓN ─── */
-        <div className="flex flex-col lg:flex-row min-h-[calc(100vh-56px)]">
-
-          {/* Panel izquierdo — proceso */}
-          <div className="w-full lg:w-72 bg-[#111127] border-r border-white/[0.06] p-6 flex flex-col gap-5">
-            <div>
-              <p className="text-[10px] text-purple-400 uppercase tracking-widest font-semibold mb-4">Proceso de IA</p>
-
-              {/* Prompt resumido */}
-              <div className="bg-[#0d0d1a] border border-purple-500/20 rounded-xl p-3 mb-5 text-xs text-gray-300 leading-relaxed">
-                <span className="text-yellow-400">"</span>
-                {(eventName || prompt).slice(0, 80)}{(eventName || prompt).length > 80 ? "..." : ""}
-                <span className="text-yellow-400">"</span>
-                <div className="flex flex-wrap gap-1 mt-2">
-                  {selectedStyle && <span className="bg-purple-500/15 text-purple-300 rounded-full px-2 py-0.5">{STYLE_OPTIONS.find(s=>s.id===selectedStyle)?.label}</span>}
-                  {selectedFormat && <span className="bg-blue-500/15 text-blue-300 rounded-full px-2 py-0.5">{FORMAT_OPTIONS.find(f=>f.id===selectedFormat)?.label}</span>}
-                </div>
-              </div>
-
-              {/* Steps */}
-              <div className="space-y-1">
-                {AI_PROCESS_STEPS.map((step, i) => {
-                  const stepNum = i + 1;
-                  const isDone = stepNum < currentStep;
-                  const isActive = stepNum === currentStep;
-                  const isWait = stepNum > currentStep;
-                  return (
-                    <div key={step.id} className="flex items-start gap-3 py-2 relative">
-                      {/* Conector */}
-                      {i < AI_PROCESS_STEPS.length - 1 && (
-                        <div className="absolute left-[11px] top-8 w-0.5 h-5 bg-white/8" />
-                      )}
-                      {/* Icono */}
-                      <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 text-[11px] font-bold transition-all duration-500 ${
-                        isDone ? "bg-green-500 text-black" :
-                        isActive ? "border-2 border-purple-400 text-purple-400" :
-                        "border-2 border-white/10 text-white/20"
-                      }`}>
-                        {isDone ? "✓" : isActive ? (
-                          <div className="w-3 h-3 border-2 border-purple-400 border-t-transparent rounded-full animate-spin" />
-                        ) : stepNum}
-                      </div>
-                      {/* Texto */}
-                      <div className="flex-1 min-w-0">
-                        <p className={`text-xs font-semibold transition-colors ${isDone ? "text-green-400" : isActive ? "text-white" : "text-white/20"}`}>
-                          {step.label}
-                        </p>
-                        <p className={`text-[10px] transition-colors ${isDone ? "text-green-400/60" : isActive ? "text-purple-300" : "text-white/15"}`}>
-                          {step.sub}
-                        </p>
-                        {isActive && (
-                          <div className="mt-1.5 h-1 bg-white/10 rounded-full overflow-hidden">
-                            <div
-                              className="h-full bg-purple-500 rounded-full transition-all duration-100"
-                              style={{ width: `${stepProgress}%` }}
-                            />
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Asistente IA */}
-            <div className="mt-auto bg-[#1a1a35] rounded-xl p-3">
-              <p className="text-[11px] text-purple-200 leading-relaxed">
-                {currentStep <= 2 && "Analizando tu prompt y extrayendo los datos del evento..."}
-                {currentStep === 3 && "Creando el ambiente visual perfecto para tu estilo seleccionado..."}
-                {currentStep === 4 && "Procesando la foto del artista y eliminando el fondo con IA..."}
-                {currentStep === 5 && "Componiendo las capas de texto con nombre, lugar y precio..."}
-                {currentStep === 6 && "¡Casi listo! Preparando 3 variaciones del diseño para que elijas..."}
-              </p>
-              {/* Waveform */}
-              <div className="flex items-center gap-0.5 mt-2 h-4">
-                {Array.from({ length: 9 }).map((_, i) => (
-                  <div
-                    key={i}
-                    className="w-0.5 bg-purple-500 rounded-full"
-                    style={{
-                      animation: `waveBar 1s ease-in-out ${i * 0.1}s infinite`,
-                    }}
-                  />
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Panel central — canvas en construcción */}
-          <div className="flex-1 bg-[#0a0a18] flex flex-col items-center justify-center p-8 gap-6">
-            <div className="text-center mb-2">
-              <h2 className="text-2xl font-black text-white">Tu flyer se está diseñando ✨</h2>
-              <p className="text-gray-400 text-sm mt-1">La IA está trabajando en tu diseño</p>
-            </div>
-
-            {/* Canvas simulado construyéndose */}
-            <div className="relative" style={{ width: 220, height: 310 }}>
-              {/* Fondo del flyer */}
-              <div
-                className="absolute inset-0 rounded-2xl overflow-hidden border border-white/10"
-                style={{ background: `linear-gradient(160deg, ${palette.colors[2]}, ${palette.colors[1]} 60%, ${palette.colors[0]}22)` }}
-              >
-                {/* Capa fondo — aparece en step 3 */}
-                <div
-                  className="absolute inset-0 transition-opacity duration-1000"
-                  style={{
-                    opacity: currentStep >= 3 ? 1 : 0,
-                    background: `radial-gradient(ellipse at 50% 80%, ${palette.colors[1]}80 0%, transparent 70%)`,
-                  }}
-                />
-
-                {/* Foto artista — aparece en step 4 */}
-                {artistPhoto && (
-                  <div
-                    className="absolute inset-0 transition-opacity duration-1000"
-                    style={{ opacity: currentStep >= 4 ? 1 : 0 }}
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={artistPhoto} alt="" className="w-full h-full object-cover object-top" />
-                    <div className="absolute inset-0" style={{ background: `linear-gradient(to top, ${palette.colors[2]}ee 0%, transparent 50%)` }} />
+      </div>
+      <aside className={`hidden lg:flex w-64 shrink-0 border-l border-white/[0.06] bg-[#0c0c12] flex-col transition-opacity duration-300 ${hasData?"opacity-100":"opacity-40"}`}>
+        <div className="p-4 border-b border-white/[0.06]"><p className="text-[10px] text-purple-400 uppercase tracking-widest font-semibold">Datos del evento</p></div>
+        <div className="flex-1 overflow-y-auto p-4 space-y-2.5">
+          {!hasData&&<p className="text-xs text-gray-600">Los datos aparecerán aquí mientras chateas.</p>}
+          {eventData.eventName&&<DataPill icon="🎤" value={eventData.eventName}/>}
+          {eventData.eventType&&<DataPill icon="🎭" value={eventData.eventType}/>}
+          {eventData.date&&<DataPill icon="📅" value={eventData.date}/>}
+          {eventData.time&&<DataPill icon="🕘" value={eventData.time}/>}
+          {eventData.venue&&<DataPill icon="📍" value={eventData.venue}/>}
+          {eventData.city&&<DataPill icon="🏙️" value={eventData.city}/>}
+          {eventData.isFree!==null&&<DataPill icon="🎟️" value={eventData.isFree?"Entrada libre":(eventData.price??"Precio pendiente")}/>}
+          {eventData.mainArtist&&<DataPill icon="👑" value={eventData.mainArtist}/>}
+          {(eventData.additionalArtists?.length??0)>0&&<DataPill icon="🎵" value={eventData.additionalArtists?.join(", ")}/>}
+          {eventData.flyerType&&<DataPill icon="🖼️" value={eventData.flyerType==="with_photo"?"Con foto artista":eventData.flyerType==="no_photo"?"Sin foto":"Solo logos"}/>}
+          {artistsAndLogos.length>0&&(
+            <div className="mt-2 space-y-1.5">
+              <p className="text-[10px] text-gray-500 font-medium">Artistas y logos</p>
+              {artistsAndLogos.map(a=>(
+                <div key={a.id} className="flex items-center gap-2">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={a.imageSrc} alt={a.name} className="w-7 h-7 rounded-lg object-cover border border-white/10"/>
+                  <div className="min-w-0">
+                    <p className="text-[11px] text-white font-medium truncate">{a.name}</p>
+                    <p className="text-[9px] text-gray-500">{a.role==="main"?"👑 Principal":a.type==="logo"?"🏷️ Logo":"● Secundario"}</p>
                   </div>
-                )}
-
-                {/* Textos — aparecen en step 5 */}
-                <div
-                  className="absolute inset-0 flex flex-col justify-end p-4 transition-opacity duration-1000"
-                  style={{ opacity: currentStep >= 5 ? 1 : 0 }}
-                >
-                  {eventName && (
-                    <div className="text-2xl font-black leading-tight mb-1" style={{ color: palette.colors[0], fontFamily: "Impact, sans-serif" }}>
-                      {eventName.toUpperCase().slice(0, 20)}
-                    </div>
-                  )}
-                  {eventDate && <div className="text-[10px] font-bold text-white/80 mb-1">{eventDate}</div>}
-                  {eventVenue && <div className="text-[10px] text-white/60">{eventVenue}</div>}
-                  {eventPrice && (
-                    <div className="mt-2 inline-block text-[10px] font-black px-2 py-0.5 rounded-md" style={{ background: palette.colors[0], color: palette.colors[2] }}>
-                      {eventPrice}
-                    </div>
-                  )}
-                </div>
-
-                {/* Overlay de progreso */}
-                <div
-                  className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 rounded-2xl transition-opacity duration-500"
-                  style={{ opacity: currentStep < 5 ? 1 : 0, pointerEvents: "none" }}
-                >
-                  {/* Ring */}
-                  <div className="relative w-20 h-20 mb-2">
-                    <svg className="w-20 h-20 -rotate-90" viewBox="0 0 80 80">
-                      <circle cx="40" cy="40" r="34" fill="none" stroke="#ffffff15" strokeWidth="6" />
-                      <circle
-                        cx="40" cy="40" r="34" fill="none" stroke="#a78bfa" strokeWidth="6"
-                        strokeLinecap="round"
-                        strokeDasharray={213.6}
-                        strokeDashoffset={213.6 - (213.6 * ((currentStep - 1 + stepProgress / 100) / AI_PROCESS_STEPS.length))}
-                        style={{ transition: "stroke-dashoffset 0.2s" }}
-                      />
-                    </svg>
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="text-white font-black text-lg">
-                        {Math.round(((currentStep - 1 + stepProgress / 100) / AI_PROCESS_STEPS.length) * 100)}%
-                      </span>
-                    </div>
-                  </div>
-                  <p className="text-[10px] text-purple-300 tracking-widest uppercase">Diseñando</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Barra de acciones top */}
-            <div className="flex gap-2 flex-wrap justify-center">
-              {["✂️ Quitar fondo", "T Texto editable", "⧉ Capas", "↓ Exportar PNG"].map((btn, i) => (
-                <div key={i} className={`px-3 py-1.5 rounded-lg text-xs border border-white/10 text-gray-400 ${i === 3 ? "bg-yellow-400/10 border-yellow-400/20 text-yellow-400" : "bg-white/[0.04]"}`}>
-                  {btn}
                 </div>
               ))}
             </div>
-          </div>
-
-          {/* Panel derecho — variaciones y ajustes */}
-          <div className="w-full lg:w-72 bg-[#111127] border-l border-white/[0.06] p-6 flex flex-col gap-5">
-            <div>
-              <p className="text-[10px] text-purple-400 uppercase tracking-widest font-semibold mb-4">Variaciones (3)</p>
-              <div className="space-y-2">
-                {[0, 1, 2].map(i => (
-                  <div
-                    key={i}
-                    className={`h-16 rounded-xl border overflow-hidden transition-all duration-700 ${
-                      currentStep >= 6
-                        ? i === 1 ? "border-yellow-400 border-2" : "border-white/10"
-                        : "border-white/5"
-                    }`}
-                    style={{
-                      background: i === 0
-                        ? `linear-gradient(135deg, ${palette.colors[1]}, ${palette.colors[0]}30)`
-                        : i === 1
-                        ? `linear-gradient(135deg, ${palette.colors[2]}, ${palette.colors[0]}40)`
-                        : `linear-gradient(135deg, #0f172a, #3b82f640)`,
-                      opacity: currentStep >= 6 ? 1 : 0.15,
-                      transition: "opacity 0.8s, border-color 0.5s",
-                    }}
-                  >
-                    {currentStep >= 6 && (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <span className="text-[10px] font-black" style={{ color: palette.colors[0], fontFamily: "Impact,sans-serif", opacity: 0.9 }}>
-                          {eventName?.slice(0,12).toUpperCase() || "EVENTO"}
-                        </span>
-                      </div>
-                    )}
+          )}
+          {hasData&&(
+            <div className="mt-3 pt-3 border-t border-white/8 space-y-1.5">
+              <p className="text-[10px] text-gray-600 mb-1">Campos completados</p>
+              {[
+                {label:"Nombre",done:!!eventData.eventName},
+                {label:"Fecha",done:!!(eventData.date||eventData.time)},
+                {label:"Lugar",done:!!(eventData.venue||eventData.city)},
+                {label:"Precio",done:eventData.isFree!==null},
+                {label:"Artista",done:!!eventData.mainArtist},
+                {label:"Tipo flyer",done:!!eventData.flyerType},
+                {label:"Fotos",done:artistsAndLogos.length>0||eventData.flyerType==="no_photo"},
+              ].map(f=>(
+                <div key={f.label} className="flex items-center gap-2">
+                  <div className={`w-3 h-3 rounded-full border flex items-center justify-center ${f.done?"bg-green-500 border-green-500":"border-white/20"}`}>
+                    {f.done&&<span className="text-[7px] text-black font-black">✓</span>}
                   </div>
-                ))}
-                <button
-                  className="w-full border border-dashed border-white/10 rounded-xl py-2 text-[10px] text-gray-600 hover:border-purple-500/30 hover:text-purple-400 transition-all"
-                  disabled={currentStep < 6}
-                >
-                  + Generar más variaciones
-                </button>
-              </div>
-            </div>
-
-            <div>
-              <p className="text-[10px] text-purple-400 uppercase tracking-widest font-semibold mb-3">Ajustes del diseño</p>
-              <div className="space-y-3">
-                <div>
-                  <p className="text-[10px] text-gray-500 mb-1.5">Paleta seleccionada</p>
-                  <div className="flex gap-1.5">
-                    {palette.colors.map((c, i) => (
-                      <div key={i} className="w-6 h-6 rounded-full border border-white/10" style={{ background: c }} />
-                    ))}
-                    <span className="text-[10px] text-gray-400 ml-1 self-center">{palette.label}</span>
-                  </div>
+                  <span className={`text-[11px] ${f.done?"text-green-400":"text-gray-600"}`}>{f.label}</span>
                 </div>
-                <div>
-                  <p className="text-[10px] text-gray-500 mb-1.5">Estilo</p>
-                  <span className="text-xs text-purple-300 bg-purple-500/10 px-2 py-0.5 rounded-full">
-                    {STYLE_OPTIONS.find(s => s.id === selectedStyle)?.emoji} {STYLE_OPTIONS.find(s => s.id === selectedStyle)?.label}
-                  </span>
-                </div>
-                <div>
-                  <p className="text-[10px] text-gray-500 mb-1.5">Formato</p>
-                  <span className="text-xs text-yellow-300 bg-yellow-500/10 px-2 py-0.5 rounded-full">
-                    {FORMAT_OPTIONS.find(f => f.id === selectedFormat)?.icon} {FORMAT_OPTIONS.find(f => f.id === selectedFormat)?.label}
-                  </span>
-                </div>
-              </div>
+              ))}
             </div>
-
-            {/* Capas en construcción */}
-            <div>
-              <p className="text-[10px] text-purple-400 uppercase tracking-widest font-semibold mb-3">Capas generadas</p>
-              <div className="space-y-1">
-                {[
-                  { label: "Fondo y atmósfera",  step: 3, icon: "🎨" },
-                  { label: "Foto del artista",   step: 4, icon: "👤" },
-                  { label: "Nombre del evento",  step: 5, icon: "🎤" },
-                  { label: "Lugar y dirección",  step: 5, icon: "📍" },
-                  { label: "Fecha y precio",     step: 5, icon: "🎟️" },
-                ].map(layer => (
-                  <div
-                    key={layer.label}
-                    className={`flex items-center gap-2 py-1.5 px-2 rounded-lg text-[11px] transition-all duration-500 ${
-                      currentStep >= layer.step
-                        ? "text-white bg-white/5"
-                        : "text-white/20"
-                    }`}
-                  >
-                    <span>{layer.icon}</span>
-                    <span className="flex-1">{layer.label}</span>
-                    {currentStep >= layer.step && (
-                      <span className="text-green-400 text-[10px]">✓</span>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
+          )}
+          {eventData.readyToGenerate&&<div className="p-3 rounded-xl bg-green-500/10 border border-green-500/20"><p className="text-xs text-green-400 font-semibold">✓ Listo para generar</p></div>}
+        </div>
+        <div className="p-4 border-t border-white/[0.06]">
+          <p className="text-[10px] text-gray-600 mb-2">Sugerencias rápidas</p>
+          <div className="flex flex-wrap gap-1.5">
+            {["Entrada libre","Con foto artista","Sin foto","Solo logos","Más artistas","Estilo neon"].map(chip=>(
+              <button key={chip} onClick={()=>sendMessage(chip)} disabled={isThinking}
+                className="text-[10px] px-2 py-1 rounded-full bg-white/5 border border-white/10 text-gray-400 hover:text-white hover:border-purple-500/30 transition-all disabled:opacity-30">
+                {chip}
+              </button>
+            ))}
           </div>
         </div>
+      </aside>
+      {libraryModalOpen&&(
+        <ArtistLibraryModal initialSelected={artistsAndLogos} onConfirm={handleArtistLibraryConfirm} onClose={()=>setLibraryModalOpen(false)}/>
       )}
-
-      <style>{`
-        @keyframes waveBar {
-          0%, 100% { height: 4px; }
-          50% { height: 14px; }
-        }
-      `}</style>
+      <style>{`@keyframes dotBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}`}</style>
     </div>
   );
 }
