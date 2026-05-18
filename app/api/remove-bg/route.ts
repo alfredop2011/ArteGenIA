@@ -59,11 +59,10 @@ export async function POST(req: NextRequest) {
     // 2) Subir a R2
     const resultBuf = Buffer.from(await removeBgRes.arrayBuffer());
     const key = makeKey("artist", "png");
-    const uploaded = await uploadToR2(resultBuf, key, "image/png");
-
+    const r2 = await uploadToR2(resultBuf, key, "image/png");
     return NextResponse.json({
-      url: uploaded.url,
-      key: uploaded.key,
+      url: r2.url,
+      key: r2.key,
     });
   } catch (err) {
     console.error("[/api/remove-bg] error:", err);

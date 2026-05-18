@@ -47,5 +47,5 @@ export default function EditorNewPage() {
   }
 
   if (!data) return null;
-  return <GeneratedEditor data={data} />;
+  return <GeneratedEditor />;
 }
