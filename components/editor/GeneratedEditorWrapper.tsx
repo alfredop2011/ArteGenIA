@@ -48,5 +48,5 @@ export default function GeneratedEditorWrapper() {
 
   if (!data) return null;
 
-  return <GeneratedEditor data={data} />;
+  return <GeneratedEditor />;
 }
