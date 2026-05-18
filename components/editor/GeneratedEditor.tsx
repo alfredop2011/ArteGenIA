@@ -6,10 +6,12 @@ import type { Canvas as FabricCanvas, FabricObject, IText } from "fabric";
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
 
+type LayerType = "text" | "image" | "background";
+
 type LayerItem = {
   id: string;
   name: string;
-  type: "text" | "image" | "shape" | "background";
+  type: LayerType;
   obj: FabricObject;
   visible: boolean;
   locked: boolean;
@@ -29,6 +31,9 @@ type TextProps = {
   left: number;
   top: number;
   width: number;
+  shadow: boolean;
+  shadowColor: string;
+  shadowBlur: number;
 };
 
 type ImageProps = {
@@ -38,13 +43,16 @@ type ImageProps = {
   top: number;
   width: number;
   height: number;
-  scaleX: number;
-  scaleY: number;
+  flipX: boolean;
+  flipY: boolean;
+  brightness: number;
+  contrast: number;
 };
 
+type SaveState = "saved" | "saving" | "unsaved";
 type LeftTool = "templates" | "elements" | "text" | "photos" | "background" | "layers";
 
-type SaveState = "saved" | "saving" | "unsaved";
+type ArtistData = { name: string; photoUrl: string | null };
 
 type GeneratedData = {
   eventName?: string;
@@ -52,7 +60,8 @@ type GeneratedData = {
   eventVenue?: string;
   eventPrice?: string;
   artistPhotoUrl?: string | null;
-  artists?: Array<{ name: string; photoUrl: string | null }>;
+  artists?: ArtistData[];
+  artistCount?: number;
   bgUrl?: string;
   bgWidth?: number;
   bgHeight?: number;
@@ -63,8 +72,11 @@ type GeneratedData = {
   }>;
   palette?: { colors: string[]; label: string };
   format?: string;
+  style?: string;
   mode?: string;
 };
+
+// ─── CONSTANTS ────────────────────────────────────────────────────────────────
 
 const FONTS = [
   "Montserrat", "Playfair Display", "Bebas Neue", "Oswald",
@@ -78,18 +90,258 @@ const FORMAT_DIMS: Record<string, { w: number; h: number }> = {
   evento:    { w: 1920, h: 1080 },
 };
 
+const SAFE_MARGIN = 60; // px safe margin from canvas edges
+
 function uid() { return Math.random().toString(36).slice(2, 8); }
+
+// ─── TEXT LAYOUT SYSTEM ───────────────────────────────────────────────────────
+// Computes optimal default positions for text layers based on canvas size,
+// format, and whether artist photos occupy certain areas.
+
+function buildTextLayout(
+  data: GeneratedData,
+  dims: { w: number; h: number },
+  hasArtists: boolean
+): Array<{
+  id: string; role: string; content: string;
+  x: number; y: number; width: number;
+  fontSize: number; fontWeight: string; fontFamily: string;
+  fill: string; textAlign: string; charSpacing: number;
+  opacity: number; originX: string; originY: string;
+}> {
+  const { w, h } = dims;
+  const isLandscape = w > h;
+  const palette = data.palette?.colors ?? ["#ffffff", "#f5c518", "#0d0d1a"];
+  const primary = palette[0] ?? "#ffffff";
+  const accent  = palette[1] ?? "#f5c518";
+  const style   = data.style ?? "urbano";
+
+  const titleFont = style === "elegante" ? "Playfair Display"
+    : style === "retro" ? "Bebas Neue"
+    : style === "minima" ? "Montserrat"
+    : "Montserrat";
+
+  const cx = w / 2;
+  const safeW = w - SAFE_MARGIN * 2;
+
+  // Zone allocation:
+  // Portrait: TOP zone (0-25%) = title area | MIDDLE (25-75%) = artist zone | BOTTOM (75-100%) = info
+  // Landscape: LEFT zone = artist | RIGHT zone = text
+  const topZoneEnd    = isLandscape ? h * 0.85 : h * 0.22;
+  const bottomZoneStart = isLandscape ? h * 0.15 : h * 0.72;
+
+  // If artists occupy middle, push text to top and bottom
+  // If no artists, distribute text more centrally
+  const titleY = SAFE_MARGIN;
+  const infoBaseY = hasArtists
+    ? (isLandscape ? h * 0.72 : h * 0.74)
+    : h * 0.55;
+
+  const layers: ReturnType<typeof buildTextLayout> = [];
+
+  // 1. EVENT TITLE — largest, top area
+  if (data.eventName) {
+    const titleSize = isLandscape
+      ? Math.min(90, w * 0.06)
+      : Math.min(hasArtists ? 80 : 100, w * 0.075);
+
+    layers.push({
+      id: "eventTitle",
+      role: "eventTitle",
+      content: data.eventName.toUpperCase(),
+      x: cx, y: titleY,
+      width: safeW,
+      fontSize: titleSize,
+      fontWeight: "900",
+      fontFamily: titleFont,
+      fill: primary,
+      textAlign: "center",
+      charSpacing: 30,
+      opacity: 1,
+      originX: "center", originY: "top",
+    });
+  }
+
+  // 2. DATE — below title or bottom zone
+  if (data.eventDate) {
+    const dateY = data.eventName
+      ? (hasArtists ? infoBaseY : infoBaseY - 80)
+      : infoBaseY;
+
+    layers.push({
+      id: "eventDate",
+      role: "date",
+      content: data.eventDate.toUpperCase(),
+      x: cx, y: dateY,
+      width: safeW * 0.8,
+      fontSize: isLandscape ? 32 : 28,
+      fontWeight: "700",
+      fontFamily: "Montserrat",
+      fill: primary,
+      textAlign: "center",
+      charSpacing: 40,
+      opacity: 0.95,
+      originX: "center", originY: "top",
+    });
+  }
+
+  // 3. VENUE — below date
+  if (data.eventVenue) {
+    const venueOffset = data.eventDate ? 52 : 0;
+    const venueY = (data.eventDate
+      ? (data.eventName ? (hasArtists ? infoBaseY : infoBaseY - 80) : infoBaseY)
+      : infoBaseY) + venueOffset;
+
+    layers.push({
+      id: "eventVenue",
+      role: "venue",
+      content: data.eventVenue.toUpperCase(),
+      x: cx, y: venueY,
+      width: safeW * 0.75,
+      fontSize: isLandscape ? 24 : 22,
+      fontWeight: "500",
+      fontFamily: "Montserrat",
+      fill: primary,
+      textAlign: "center",
+      charSpacing: 20,
+      opacity: 0.82,
+      originX: "center", originY: "top",
+    });
+  }
+
+  // 4. PRICE — badge style at bottom
+  if (data.eventPrice) {
+    const priceY = h - SAFE_MARGIN - 36;
+    layers.push({
+      id: "eventPrice",
+      role: "price",
+      content: data.eventPrice.toUpperCase(),
+      x: cx, y: priceY,
+      width: safeW * 0.5,
+      fontSize: 22,
+      fontWeight: "800",
+      fontFamily: "Montserrat",
+      fill: accent,
+      textAlign: "center",
+      charSpacing: 20,
+      opacity: 1,
+      originX: "center", originY: "top",
+    });
+  }
+
+  return layers.filter(l => l.content.trim());
+}
+
+// ─── ARTIST COMPOSITION SYSTEM ────────────────────────────────────────────────
+// Returns position/scale for each artist based on total count and canvas size.
+
+type ArtistComposition = {
+  x: number; y: number;
+  scaleX: number; scaleY: number;
+  zIndex: number;
+};
+
+function computeArtistCompositions(
+  artists: ArtistData[],
+  dims: { w: number; h: number },
+  imgNaturalW: number,
+  imgNaturalH: number
+): ArtistComposition[] {
+  const { w, h } = dims;
+  const n = artists.length;
+  const isLandscape = w > h;
+
+  // Target height for main artist: 55-65% of canvas height
+  const mainTargetH = h * (n === 1 ? 0.68 : 0.62);
+  const mainScale = mainTargetH / imgNaturalH;
+  const mainW = imgNaturalW * mainScale;
+
+  if (n === 1) {
+    // Hero centered, bottom-anchored
+    return [{
+      x: (w - mainW) / 2,
+      y: h * 0.18,
+      scaleX: mainScale,
+      scaleY: mainScale,
+      zIndex: 10,
+    }];
+  }
+
+  if (n === 2) {
+    // Two artists: slight overlap, main slightly larger and in front
+    const secTargetH = h * 0.52;
+    const secScale = secTargetH / imgNaturalH;
+    const secW = imgNaturalW * secScale;
+    return [
+      // Main artist: right-center, slightly larger
+      {
+        x: w * 0.5 - mainW * 0.3,
+        y: h * 0.2,
+        scaleX: mainScale,
+        scaleY: mainScale,
+        zIndex: 10,
+      },
+      // Secondary: left, slightly behind
+      {
+        x: w * 0.05,
+        y: h * 0.28,
+        scaleX: secScale,
+        scaleY: secScale,
+        zIndex: 5,
+      },
+    ];
+  }
+
+  if (n === 3) {
+    // Main centered large, two others smaller on sides
+    const secScale = (h * 0.48) / imgNaturalH;
+    const secW = imgNaturalW * secScale;
+    return [
+      // Main: center
+      { x: (w - mainW) / 2, y: h * 0.18, scaleX: mainScale, scaleY: mainScale, zIndex: 10 },
+      // Left
+      { x: SAFE_MARGIN, y: h * 0.28, scaleX: secScale, scaleY: secScale, zIndex: 5 },
+      // Right
+      { x: w - secW - SAFE_MARGIN, y: h * 0.28, scaleX: secScale, scaleY: secScale, zIndex: 5 },
+    ];
+  }
+
+  // 4+ artists: horizontal lineup with main artist slightly larger/taller
+  const comps: ArtistComposition[] = [];
+  const slotW = w / n;
+  for (let i = 0; i < n; i++) {
+    const isMain = i === 0;
+    const targetH = h * (isMain ? 0.58 : 0.50);
+    const sc = targetH / imgNaturalH;
+    const aw = imgNaturalW * sc;
+    comps.push({
+      x: slotW * i + (slotW - aw) / 2,
+      y: h * (isMain ? 0.20 : 0.24),
+      scaleX: sc, scaleY: sc,
+      zIndex: isMain ? 10 : 5,
+    });
+  }
+  return comps;
+}
 
 // ─── LAYER ICON ───────────────────────────────────────────────────────────────
 
-function LayerIcon({ type }: { type: LayerItem["type"] }) {
-  const icons = {
-    text:       <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M4 6h16M4 12h8m-8 6h16"/></svg>,
-    image:      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>,
-    shape:      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><rect x="3" y="3" width="18" height="18" rx="2"/></svg>,
-    background: <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>,
-  };
-  return <span className="text-gray-500">{icons[type]}</span>;
+function LayerIcon({ type }: { type: LayerType }) {
+  if (type === "text") return (
+    <svg className="w-3.5 h-3.5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path d="M4 7V4h16v3M9 20h6M12 4v16"/>
+    </svg>
+  );
+  if (type === "background") return (
+    <svg className="w-3.5 h-3.5 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/>
+    </svg>
+  );
+  return (
+    <svg className="w-3.5 h-3.5 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/>
+    </svg>
+  );
 }
 
 // ─── MAIN EDITOR ──────────────────────────────────────────────────────────────
@@ -107,19 +359,18 @@ export default function GeneratedEditor() {
   const [zoom, setZoom] = useState(50);
   const [saveState, setSaveState] = useState<SaveState>("saved");
   const [canvasSize, setCanvasSize] = useState({ w: 1080, h: 1350 });
-  const [history, setHistory] = useState<string[]>([]);
-  const [historyIdx, setHistoryIdx] = useState(-1);
 
-  // Text props for selected text layer
   const [textProps, setTextProps] = useState<TextProps>({
     text: "", fontFamily: "Montserrat", fontSize: 60, fill: "#ffffff",
     textAlign: "center", fontWeight: "700", charSpacing: 0,
     lineHeight: 1.2, opacity: 1, angle: 0, left: 540, top: 100, width: 900,
+    shadow: false, shadowColor: "#000000", shadowBlur: 10,
   });
 
-  // Image props for selected image layer
   const [imageProps, setImageProps] = useState<ImageProps>({
-    opacity: 1, angle: 0, left: 0, top: 0, width: 400, height: 600, scaleX: 1, scaleY: 1,
+    opacity: 1, angle: 0, left: 0, top: 0,
+    width: 400, height: 600, flipX: false, flipY: false,
+    brightness: 0, contrast: 0,
   });
 
   // ─── LOAD DATA ──────────────────────────────────────────────────────────────
@@ -136,19 +387,16 @@ export default function GeneratedEditor() {
 
   useEffect(() => {
     if (!data || !canvasRef.current) return;
-
     let isMounted = true;
     let canvas: FabricCanvas | null = null;
 
     (async () => {
       const fabric = await import("fabric");
-
       const format = data.format ?? "instagram";
       const dims = FORMAT_DIMS[format] ?? FORMAT_DIMS.instagram;
       if (isMounted) setCanvasSize({ w: dims.w, h: dims.h });
 
       const scale = zoom / 100;
-
       canvas = new fabric.Canvas(canvasRef.current!, {
         width: dims.w * scale,
         height: dims.h * scale,
@@ -156,13 +404,14 @@ export default function GeneratedEditor() {
         selection: true,
         preserveObjectStacking: true,
       });
-
       canvas.setZoom(scale);
       fabricRef.current = canvas;
 
       const newLayers: LayerItem[] = [];
+      const artists: ArtistData[] = data.artists?.filter(a => a.photoUrl) ??
+        (data.artistPhotoUrl ? [{ name: "Artista", photoUrl: data.artistPhotoUrl }] : []);
 
-      // ── Load background ──────────────────────────────────────────────────────
+      // ── BACKGROUND ──────────────────────────────────────────────────────────
       if (data.bgUrl) {
         try {
           const bgImg = await fabric.FabricImage.fromURL(data.bgUrl, { crossOrigin: "anonymous" });
@@ -171,22 +420,67 @@ export default function GeneratedEditor() {
             scaleX: dims.w / (bgImg.width ?? dims.w),
             scaleY: dims.h / (bgImg.height ?? dims.h),
             selectable: true, evented: true,
-            lockMovementX: false, lockMovementY: false,
           });
           (bgImg as FabricObject & { customId?: string; customRole?: string }).customId = "background";
           (bgImg as FabricObject & { customRole?: string }).customRole = "background";
           canvas.add(bgImg);
           canvas.sendObjectToBack(bgImg);
-          newLayers.unshift({
-            id: "background", name: "Fondo generado", type: "background",
-            obj: bgImg, visible: true, locked: false,
-          });
+          newLayers.push({ id: "background", name: "Fondo", type: "background", obj: bgImg, visible: true, locked: false });
         } catch (e) { console.warn("BG load error:", e); }
       }
 
-      // ── Load text layers (from generate-flyer-assets) ────────────────────────
+      // ── ARTIST PHOTOS — computed composition ─────────────────────────────────
+      if (artists.length > 0) {
+        // Load first image to get natural dimensions
+        let naturalW = 400, naturalH = 600;
+        try {
+          const firstImg = await fabric.FabricImage.fromURL(artists[0].photoUrl!, { crossOrigin: "anonymous" });
+          naturalW = firstImg.width ?? 400;
+          naturalH = firstImg.height ?? 600;
+        } catch {}
+
+        const compositions = computeArtistCompositions(artists, dims, naturalW, naturalH);
+
+        for (let i = 0; i < artists.length; i++) {
+          const artist = artists[i];
+          if (!artist.photoUrl) continue;
+          const comp = compositions[i] ?? compositions[0];
+
+          try {
+            const aImg = await fabric.FabricImage.fromURL(artist.photoUrl, { crossOrigin: "anonymous" });
+            aImg.set({
+              left: comp.x,
+              top: comp.y,
+              scaleX: comp.scaleX,
+              scaleY: comp.scaleY,
+              selectable: true, evented: true,
+            });
+            const artistId = `artist-${i}`;
+            (aImg as FabricObject & { customId?: string }).customId = artistId;
+
+            // Add to canvas at correct z-order
+            canvas.add(aImg);
+            newLayers.push({
+              id: artistId,
+              name: artist.name || `Artista ${i + 1}`,
+              type: "image", obj: aImg, visible: true, locked: false,
+            });
+          } catch (e) { console.warn(`Artist ${i} error:`, e); }
+        }
+      }
+
+      // ── TEXT LAYERS ──────────────────────────────────────────────────────────
+      const hasArtists = artists.length > 0;
+
+      // Use textLayers from generate-flyer-assets if available, else build from eventData
+      const textDefs = data.textLayers && data.textLayers.length > 0
+        ? null // will use textLayers below
+        : buildTextLayout(data, dims, hasArtists);
+
       if (data.textLayers && data.textLayers.length > 0) {
+        // Use structured text layers from pipeline
         for (const tl of data.textLayers) {
+          if (!tl.content.trim()) continue;
           const itext = new fabric.IText(tl.content, {
             left: tl.position.x,
             top: tl.position.y,
@@ -204,105 +498,97 @@ export default function GeneratedEditor() {
           });
           (itext as FabricObject & { customId?: string }).customId = tl.id;
           canvas.add(itext);
-
           const roleLabels: Record<string, string> = {
-            eventTitle: "Título del evento",
-            mainArtist: "Artista principal",
-            additionalArtists: "Artistas adicionales",
-            date: "Fecha y hora",
-            venue: "Lugar",
-            price: "Precio",
-            label: "Etiqueta",
+            eventTitle: "Título", mainArtist: "Artista principal",
+            additionalArtists: "Artistas", date: "Fecha", venue: "Lugar",
+            price: "Precio", label: "Etiqueta",
           };
           newLayers.push({
-            id: tl.id, name: roleLabels[tl.role] ?? tl.content.slice(0, 20),
+            id: tl.id, name: roleLabels[tl.role] ?? tl.content.slice(0, 18),
             type: "text", obj: itext, visible: true, locked: false,
           });
         }
-      } else {
-        // Fallback: build text layers from event data
-        const textDefs = [
-          { id: "title",  content: data.eventName ?? "",  y: dims.h * 0.07, size: 80,  weight: "900", ls: 4  },
-          { id: "date",   content: data.eventDate ?? "",  y: dims.h * 0.82, size: 28,  weight: "700", ls: 3  },
-          { id: "venue",  content: data.eventVenue ?? "", y: dims.h * 0.87, size: 22,  weight: "500", ls: 2  },
-          { id: "price",  content: data.eventPrice ?? "", y: dims.h * 0.92, size: 20,  weight: "700", ls: 2  },
-        ].filter(t => t.content.trim());
-
-        const palette = data.palette?.colors ?? ["#ffffff", "#cccccc", "#0d0d1a"];
-
+      } else if (textDefs) {
+        // Use computed layout
         for (const td of textDefs) {
-          const itext = new fabric.IText(td.content.toUpperCase(), {
-            left: dims.w / 2, top: td.y, width: dims.w * 0.85,
-            fontFamily: "Montserrat", fontSize: td.size,
-            fontWeight: td.weight, fill: palette[0],
-            textAlign: "center", charSpacing: td.ls * 10,
-            originX: "center", originY: "top",
+          const itext = new fabric.IText(td.content, {
+            left: td.x, top: td.y, width: td.width,
+            fontFamily: td.fontFamily, fontSize: td.fontSize,
+            fontWeight: td.fontWeight, fill: td.fill,
+            textAlign: td.textAlign as "left" | "center" | "right",
+            charSpacing: td.charSpacing,
+            originX: td.originX as "left" | "center" | "right",
+            originY: td.originY as "top" | "center" | "bottom",
+            opacity: td.opacity,
             selectable: true, evented: true,
           });
           (itext as FabricObject & { customId?: string }).customId = td.id;
           canvas.add(itext);
-          const labelMap: Record<string, string> = { title: "Título", date: "Fecha", venue: "Lugar", price: "Precio" };
+          const roleNames: Record<string, string> = {
+            eventTitle: "Título", date: "Fecha", venue: "Lugar", price: "Precio",
+          };
           newLayers.push({
-            id: td.id, name: labelMap[td.id] ?? td.id,
+            id: td.id, name: roleNames[td.role] ?? td.role,
             type: "text", obj: itext, visible: true, locked: false,
           });
         }
       }
 
-      // ── Load artist cutouts ──────────────────────────────────────────────────
-      const artists = data.artists ?? (data.artistPhotoUrl ? [{ name: "Artista", photoUrl: data.artistPhotoUrl }] : []);
-      for (let i = 0; i < artists.length; i++) {
-        const artist = artists[i];
-        if (!artist.photoUrl) continue;
-        try {
-          const aImg = await fabric.FabricImage.fromURL(artist.photoUrl, { crossOrigin: "anonymous" });
-          const maxH = dims.h * 0.6;
-          const scale = maxH / (aImg.height ?? maxH);
-          const w = (aImg.width ?? 400) * scale;
-          const xPos = artists.length === 1
-            ? dims.w / 2 - w / 2
-            : i * (dims.w / artists.length) + dims.w / artists.length / 2 - w / 2;
-
-          aImg.set({
-            left: xPos, top: dims.h * 0.3,
-            scaleX: scale, scaleY: scale,
-            selectable: true, evented: true,
-          });
-          const artistId = `artist-${i}`;
-          (aImg as FabricObject & { customId?: string }).customId = artistId;
-          canvas.add(aImg);
-          newLayers.push({
-            id: artistId, name: artist.name || `Artista ${i + 1}`,
-            type: "image", obj: aImg, visible: true, locked: false,
-          });
-        } catch (e) { console.warn(`Artist ${i} load error:`, e); }
-      }
-
       canvas.renderAll();
-      if (isMounted) setLayers(newLayers.reverse()); // Reverse for layers panel (top = front)
+      // Layers panel: reverse so top layer appears first
+      if (isMounted) setLayers([...newLayers].reverse());
 
-      // ── Selection handler ────────────────────────────────────────────────────
-      canvas.on("selection:created", (e) => {
-        const obj = e.selected?.[0];
-        if (!obj) return;
-        updateSelectedFromObj(obj, newLayers);
-      });
-      canvas.on("selection:updated", (e) => {
-        const obj = e.selected?.[0];
-        if (!obj) return;
-        updateSelectedFromObj(obj, newLayers);
-      });
-      canvas.on("selection:cleared", () => {
-        setSelectedLayer(null);
-      });
+      // ── SELECTION HANDLERS ───────────────────────────────────────────────────
+      const handleSelection = (obj: FabricObject) => {
+        const id = (obj as FabricObject & { customId?: string }).customId ?? "";
+        const layer = newLayers.find(l => l.id === id) ?? null;
+        setSelectedLayer(layer);
+
+        if (obj.type === "i-text" || obj.type === "text") {
+          const t = obj as IText;
+          const shadow = t.shadow;
+          setTextProps({
+            text: t.text ?? "",
+            fontFamily: String(t.fontFamily ?? "Montserrat"),
+            fontSize: t.fontSize ?? 60,
+            fill: String(t.fill ?? "#ffffff"),
+            textAlign: t.textAlign ?? "center",
+            fontWeight: String(t.fontWeight ?? "700"),
+            charSpacing: t.charSpacing ?? 0,
+            lineHeight: t.lineHeight ?? 1.2,
+            opacity: t.opacity ?? 1,
+            angle: t.angle ?? 0,
+            left: t.left ?? 0,
+            top: t.top ?? 0,
+            width: t.width ?? 900,
+            shadow: !!shadow,
+            shadowColor: (shadow as { color?: string })?.color ?? "#000000",
+            shadowBlur: (shadow as { blur?: number })?.blur ?? 10,
+          });
+        } else {
+          setImageProps({
+            opacity: obj.opacity ?? 1,
+            angle: obj.angle ?? 0,
+            left: obj.left ?? 0,
+            top: obj.top ?? 0,
+            width: (obj.width ?? 400) * (obj.scaleX ?? 1),
+            height: (obj.height ?? 600) * (obj.scaleY ?? 1),
+            flipX: obj.flipX ?? false,
+            flipY: obj.flipY ?? false,
+            brightness: 0,
+            contrast: 0,
+          });
+        }
+      };
+
+      canvas.on("selection:created", e => { const o = e.selected?.[0]; if (o) handleSelection(o); });
+      canvas.on("selection:updated", e => { const o = e.selected?.[0]; if (o) handleSelection(o); });
+      canvas.on("selection:cleared", () => setSelectedLayer(null));
       canvas.on("object:modified", () => {
-        const obj = canvas?.getActiveObject();
-        if (obj) updateSelectedFromObj(obj, newLayers);
+        const o = canvas?.getActiveObject();
+        if (o) handleSelection(o);
         setSaveState("unsaved");
-        saveHistory(canvas!);
       });
-
-      saveHistory(canvas);
     })();
 
     return () => {
@@ -313,7 +599,7 @@ export default function GeneratedEditor() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data]);
 
-  // ─── UPDATE ZOOM ────────────────────────────────────────────────────────────
+  // ─── ZOOM ────────────────────────────────────────────────────────────────────
 
   useEffect(() => {
     const canvas = fabricRef.current;
@@ -324,129 +610,90 @@ export default function GeneratedEditor() {
     canvas.renderAll();
   }, [zoom, canvasSize]);
 
-  // ─── HELPERS ────────────────────────────────────────────────────────────────
+  // ─── AUTO-SAVE ───────────────────────────────────────────────────────────────
 
-  const updateSelectedFromObj = useCallback((obj: FabricObject, allLayers: LayerItem[]) => {
-    const id = (obj as FabricObject & { customId?: string }).customId ?? "";
-    const layer = allLayers.find(l => l.id === id) ?? null;
-    setSelectedLayer(layer);
+  useEffect(() => {
+    if (saveState !== "unsaved") return;
+    const t = setTimeout(() => { setSaveState("saving"); setTimeout(() => setSaveState("saved"), 800); }, 2000);
+    return () => clearTimeout(t);
+  }, [saveState]);
 
-    if (obj.type === "i-text" || obj.type === "text") {
-      const t = obj as IText;
-      setTextProps({
-        text: t.text ?? "",
-        fontFamily: String(t.fontFamily ?? "Montserrat"),
-        fontSize: t.fontSize ?? 60,
-        fill: String(t.fill ?? "#ffffff"),
-        textAlign: t.textAlign ?? "center",
-        fontWeight: String(t.fontWeight ?? "700"),
-        charSpacing: t.charSpacing ?? 0,
-        lineHeight: t.lineHeight ?? 1.2,
-        opacity: t.opacity ?? 1,
-        angle: t.angle ?? 0,
-        left: t.left ?? 0,
-        top: t.top ?? 0,
-        width: t.width ?? 900,
-      });
-    } else {
-      setImageProps({
-        opacity: obj.opacity ?? 1,
-        angle: obj.angle ?? 0,
-        left: obj.left ?? 0,
-        top: obj.top ?? 0,
-        width: (obj.width ?? 400) * (obj.scaleX ?? 1),
-        height: (obj.height ?? 600) * (obj.scaleY ?? 1),
-        scaleX: obj.scaleX ?? 1,
-        scaleY: obj.scaleY ?? 1,
-      });
-    }
+  // ─── KEYBOARD ────────────────────────────────────────────────────────────────
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const canvas = fabricRef.current;
+      if (!canvas) return;
+      if ((e.key === "Delete" || e.key === "Backspace") && document.activeElement?.tagName !== "INPUT" && document.activeElement?.tagName !== "TEXTAREA") {
+        const active = canvas.getActiveObject();
+        if (active) {
+          const id = (active as FabricObject & { customId?: string }).customId;
+          canvas.remove(active);
+          canvas.renderAll();
+          if (id) setLayers(prev => prev.filter(l => l.id !== id));
+          setSelectedLayer(null);
+          setSaveState("unsaved");
+        }
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key === "z") { e.preventDefault(); /* undo */ }
+      if ((e.metaKey || e.ctrlKey) && e.key === "s") { e.preventDefault(); setSaveState("saved"); }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
   }, []);
 
-  const saveHistory = useCallback((canvas: FabricCanvas) => {
-    const json = JSON.stringify(canvas.toJSON());
-    setHistory(prev => {
-      const next = prev.slice(0, historyIdx + 1);
-      next.push(json);
-      setHistoryIdx(next.length - 1);
-      return next;
-    });
-  }, [historyIdx]);
-
-  const undo = useCallback(async () => {
-    if (historyIdx <= 0 || !fabricRef.current) return;
-    const newIdx = historyIdx - 1;
-    setHistoryIdx(newIdx);
-    await fabricRef.current.loadFromJSON(history[newIdx]);
-    fabricRef.current.renderAll();
-  }, [history, historyIdx]);
-
-  const redo = useCallback(async () => {
-    if (historyIdx >= history.length - 1 || !fabricRef.current) return;
-    const newIdx = historyIdx + 1;
-    setHistoryIdx(newIdx);
-    await fabricRef.current.loadFromJSON(history[newIdx]);
-    fabricRef.current.renderAll();
-  }, [history, historyIdx]);
-
-  // ─── TEXT UPDATES ────────────────────────────────────────────────────────────
+  // ─── TEXT PROP UPDATE ────────────────────────────────────────────────────────
 
   const applyTextProp = useCallback(<K extends keyof TextProps>(key: K, value: TextProps[K]) => {
     const canvas = fabricRef.current;
     const obj = canvas?.getActiveObject() as IText | undefined;
     if (!obj || (obj.type !== "i-text" && obj.type !== "text")) return;
-
     setTextProps(prev => ({ ...prev, [key]: value }));
 
-    const fabricPropMap: Partial<Record<keyof TextProps, string>> = {
-      fontFamily: "fontFamily", fontSize: "fontSize", fill: "fill",
-      textAlign: "textAlign", fontWeight: "fontWeight",
-      charSpacing: "charSpacing", lineHeight: "lineHeight",
-      opacity: "opacity", angle: "angle", left: "left", top: "top", width: "width",
-    };
-
     if (key === "text") {
-      (obj as IText).set("text", String(value));
+      obj.set("text", String(value));
+    } else if (key === "shadow") {
+      if (value) {
+        obj.set("shadow", { color: textProps.shadowColor, blur: textProps.shadowBlur, offsetX: 2, offsetY: 2 } as never);
+      } else {
+        obj.set("shadow", null as never);
+      }
+    } else if (key === "shadowColor" || key === "shadowBlur") {
+      if (textProps.shadow) {
+        obj.set("shadow", {
+          color: key === "shadowColor" ? String(value) : textProps.shadowColor,
+          blur: key === "shadowBlur" ? Number(value) : textProps.shadowBlur,
+          offsetX: 2, offsetY: 2,
+        } as never);
+      }
     } else {
-      const fabricKey = fabricPropMap[key];
-      if (fabricKey) obj.set(fabricKey as keyof IText, value as never);
+      obj.set(key as keyof IText, value as never);
     }
-
     canvas?.renderAll();
     setSaveState("unsaved");
-  }, []);
+  }, [textProps]);
 
-  // ─── IMAGE UPDATES ────────────────────────────────────────────────────────────
+  // ─── IMAGE PROP UPDATE ───────────────────────────────────────────────────────
 
   const applyImageProp = useCallback(<K extends keyof ImageProps>(key: K, value: ImageProps[K]) => {
     const canvas = fabricRef.current;
     const obj = canvas?.getActiveObject();
-    if (!obj || obj.type === "i-text" || obj.type === "text") return;
-
+    if (!obj) return;
     setImageProps(prev => ({ ...prev, [key]: value }));
-    obj.set(key as keyof FabricObject, value as never);
+    if (key === "width" || key === "height") {
+      // scale instead of direct set
+    } else {
+      obj.set(key as keyof FabricObject, value as never);
+    }
     canvas?.renderAll();
     setSaveState("unsaved");
   }, []);
 
-  // ─── LAYERS PANEL ────────────────────────────────────────────────────────────
+  // ─── LAYER OPS ───────────────────────────────────────────────────────────────
 
-  const refreshLayers = useCallback(() => {
-    const canvas = fabricRef.current;
-    if (!canvas) return;
-    const objs = canvas.getObjects();
-    setLayers(prev => {
-      const updated = [...prev];
-      for (const layer of updated) {
-        const found = objs.find(o => (o as FabricObject & { customId?: string }).customId === layer.id);
-        if (found) layer.obj = found;
-      }
-      return [...updated];
-    });
-  }, []);
-
-  const toggleVisibility = useCallback((layerId: string) => {
+  const toggleVisibility = useCallback((id: string) => {
     setLayers(prev => prev.map(l => {
-      if (l.id !== layerId) return l;
+      if (l.id !== id) return l;
       l.obj.set("visible", !l.visible);
       fabricRef.current?.renderAll();
       return { ...l, visible: !l.visible };
@@ -454,9 +701,9 @@ export default function GeneratedEditor() {
     setSaveState("unsaved");
   }, []);
 
-  const toggleLock = useCallback((layerId: string) => {
+  const toggleLock = useCallback((id: string) => {
     setLayers(prev => prev.map(l => {
-      if (l.id !== layerId) return l;
+      if (l.id !== id) return l;
       const newLocked = !l.locked;
       l.obj.set({ selectable: !newLocked, evented: !newLocked });
       fabricRef.current?.renderAll();
@@ -464,34 +711,32 @@ export default function GeneratedEditor() {
     }));
   }, []);
 
-  const deleteLayer = useCallback((layerId: string) => {
+  const deleteLayer = useCallback((id: string) => {
     const canvas = fabricRef.current;
     if (!canvas) return;
     setLayers(prev => {
-      const layer = prev.find(l => l.id === layerId);
+      const layer = prev.find(l => l.id === id);
       if (layer) { canvas.remove(layer.obj); canvas.renderAll(); }
-      return prev.filter(l => l.id !== layerId);
+      return prev.filter(l => l.id !== id);
     });
     setSelectedLayer(null);
     setSaveState("unsaved");
   }, []);
 
-  const moveLayer = useCallback((layerId: string, dir: "up" | "down") => {
+  const moveLayer = useCallback((id: string, dir: "up" | "down") => {
     const canvas = fabricRef.current;
     if (!canvas) return;
     setLayers(prev => {
-      const idx = prev.findIndex(l => l.id === layerId);
+      const idx = prev.findIndex(l => l.id === id);
       if (idx < 0) return prev;
       const layer = prev[idx];
       if (dir === "up" && idx > 0) {
         canvas.bringObjectForward(layer.obj);
-        const next = [...prev];
-        [next[idx], next[idx - 1]] = [next[idx - 1], next[idx]];
+        const next = [...prev]; [next[idx], next[idx - 1]] = [next[idx - 1], next[idx]];
         return next;
       } else if (dir === "down" && idx < prev.length - 1) {
         canvas.sendObjectBackwards(layer.obj);
-        const next = [...prev];
-        [next[idx], next[idx + 1]] = [next[idx + 1], next[idx]];
+        const next = [...prev]; [next[idx], next[idx + 1]] = [next[idx + 1], next[idx]];
         return next;
       }
       return prev;
@@ -506,10 +751,9 @@ export default function GeneratedEditor() {
     canvas.setActiveObject(layer.obj);
     canvas.renderAll();
     setSelectedLayer(layer);
-    updateSelectedFromObj(layer.obj, layers);
-  }, [layers, updateSelectedFromObj]);
+  }, []);
 
-  // ─── ADD TEXT ─────────────────────────────────────────────────────────────
+  // ─── ADD TEXT ────────────────────────────────────────────────────────────────
 
   const addText = useCallback(async () => {
     const canvas = fabricRef.current;
@@ -527,228 +771,133 @@ export default function GeneratedEditor() {
     canvas.add(itext);
     canvas.setActiveObject(itext);
     canvas.renderAll();
-    const newLayer: LayerItem = { id: newId, name: "Nuevo texto", type: "text", obj: itext, visible: true, locked: false };
+    const newLayer: LayerItem = { id: newId, name: "Texto nuevo", type: "text", obj: itext, visible: true, locked: false };
     setLayers(prev => [newLayer, ...prev]);
     setSelectedLayer(newLayer);
     setSaveState("unsaved");
+    setActiveTool("layers");
   }, [canvasSize]);
 
-  // ─── EXPORT ────────────────────────────────────────────────────────────────
+  // ─── EXPORT ──────────────────────────────────────────────────────────────────
 
   const exportFlyer = useCallback((format: "png" | "jpg" = "png") => {
     const canvas = fabricRef.current;
     if (!canvas) return;
-    // Export at full resolution
     const currentZoom = canvas.getZoom();
     canvas.setZoom(1);
     canvas.setDimensions({ width: canvasSize.w, height: canvasSize.h });
-    const dataUrl = canvas.toDataURL({
-      format: format === "jpg" ? "jpeg" : "png",
-      quality: 0.95,
-      multiplier: 1,
-    });
+    const dataUrl = canvas.toDataURL({ format: format === "jpg" ? "jpeg" : "png", quality: 0.95, multiplier: 1 });
     canvas.setZoom(currentZoom);
     canvas.setDimensions({ width: canvasSize.w * currentZoom, height: canvasSize.h * currentZoom });
     canvas.renderAll();
-
     const link = document.createElement("a");
     link.download = `artegenia-flyer.${format}`;
     link.href = dataUrl;
     link.click();
   }, [canvasSize]);
 
-  // ─── AUTO-SAVE ─────────────────────────────────────────────────────────────
+  // ─── LEFT TOOLS ──────────────────────────────────────────────────────────────
 
-  useEffect(() => {
-    if (saveState !== "unsaved") return;
-    const t = setTimeout(() => {
-      setSaveState("saving");
-      setTimeout(() => setSaveState("saved"), 800);
-    }, 2000);
-    return () => clearTimeout(t);
-  }, [saveState]);
-
-  // ─── KEYBOARD SHORTCUTS ─────────────────────────────────────────────────────
-
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      const canvas = fabricRef.current;
-      if (!canvas) return;
-      if (e.key === "Delete" || e.key === "Backspace") {
-        const active = canvas.getActiveObject();
-        if (active && document.activeElement?.tagName !== "INPUT" && document.activeElement?.tagName !== "TEXTAREA") {
-          const id = (active as FabricObject & { customId?: string }).customId;
-          if (id) deleteLayer(id);
-        }
-      }
-      if ((e.metaKey || e.ctrlKey) && e.key === "z") { e.preventDefault(); undo(); }
-      if ((e.metaKey || e.ctrlKey) && e.key === "y") { e.preventDefault(); redo(); }
-      if ((e.metaKey || e.ctrlKey) && e.key === "s") { e.preventDefault(); setSaveState("saved"); }
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [deleteLayer, undo, redo]);
-
-  // ─── LEFT TOOLBAR TOOLS ──────────────────────────────────────────────────────
-
-  const TOOLS: Array<{ id: LeftTool; icon: React.ReactNode; label: string }> = [
-    {
-      id: "templates",
-      label: "Templates",
-      icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>,
-    },
-    {
-      id: "elements",
-      label: "Elementos",
-      icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>,
-    },
-    {
-      id: "text",
-      label: "Texto",
-      icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg>,
-    },
-    {
-      id: "photos",
-      label: "Fotos",
-      icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>,
-    },
-    {
-      id: "background",
-      label: "Fondo",
-      icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>,
-    },
-    {
-      id: "layers",
-      label: "Capas",
-      icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>,
-    },
+  const TOOLS: Array<{ id: LeftTool; label: string; icon: React.ReactNode }> = [
+    { id: "templates", label: "Templates", icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg> },
+    { id: "elements",  label: "Elementos", icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> },
+    { id: "text",      label: "Texto",     icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg> },
+    { id: "photos",    label: "Fotos",     icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg> },
+    { id: "background",label: "Fondo",     icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg> },
+    { id: "layers",    label: "Capas",     icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg> },
   ];
+
+  const isBackground = selectedLayer?.type === "background";
+  const isText = selectedLayer?.type === "text";
+  const isImage = selectedLayer?.type === "image";
 
   // ─── RENDER ──────────────────────────────────────────────────────────────────
 
   return (
-    <div className="h-screen bg-[#0a0a0f] text-white flex flex-col overflow-hidden font-sans">
+    <div className="h-screen bg-[#0a0a0f] text-white flex flex-col overflow-hidden">
 
-      {/* ══ TOP HEADER ════════════════════════════════════════════════════════════ */}
+      {/* HEADER */}
       <header className="h-12 bg-[#111118] border-b border-white/[0.07] flex items-center px-4 gap-3 shrink-0 z-50">
-
-        {/* Logo + back */}
-        <div className="flex items-center gap-3 mr-2">
-          <button onClick={() => router.push("/create")}
-            className="text-gray-500 hover:text-white transition-colors p-1">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
-          </button>
-          <div className="flex items-center gap-1.5">
-            <div className="w-6 h-6 rounded-md bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-[10px] font-black">AG</div>
-            <span className="text-sm font-bold text-white hidden sm:block">Arte Gen</span>
-          </div>
+        <button onClick={() => router.push("/create")} className="p-1.5 text-gray-500 hover:text-white transition-colors">
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+        </button>
+        <div className="flex items-center gap-1.5">
+          <div className="w-6 h-6 rounded-md bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-[10px] font-black">AG</div>
+          <span className="text-sm font-bold hidden sm:block">Arte Gen</span>
         </div>
-
-        {/* Save status */}
-        <div className="flex items-center gap-1.5 text-xs">
-          {saveState === "saving" && (
-            <><div className="w-2.5 h-2.5 border border-gray-500 border-t-gray-300 rounded-full animate-spin" /><span className="text-gray-500">Guardando...</span></>
-          )}
-          {saveState === "saved" && (
-            <><div className="w-2 h-2 rounded-full bg-green-500" /><span className="text-gray-500">Guardado</span></>
-          )}
-          {saveState === "unsaved" && (
-            <><div className="w-2 h-2 rounded-full bg-yellow-500" /><span className="text-gray-500">Sin guardar</span></>
-          )}
+        <div className="flex items-center gap-1.5 text-xs ml-1">
+          {saveState === "saving"  && <><div className="w-2.5 h-2.5 border border-gray-500 border-t-gray-300 rounded-full animate-spin"/><span className="text-gray-500">Guardando…</span></>}
+          {saveState === "saved"   && <><div className="w-2 h-2 rounded-full bg-green-500"/><span className="text-gray-500">Guardado</span></>}
+          {saveState === "unsaved" && <><div className="w-2 h-2 rounded-full bg-yellow-500"/><span className="text-gray-500">Sin guardar</span></>}
         </div>
-
-        {/* Canvas size */}
-        <div className="hidden md:flex items-center gap-1 text-xs text-gray-600 ml-2 border border-white/[0.06] rounded px-2 py-1">
+        <div className="hidden md:flex items-center text-xs text-gray-600 border border-white/[0.06] rounded px-2 py-1 ml-1">
           {canvasSize.w} × {canvasSize.h} px
         </div>
-
-        <div className="flex-1" />
-
-        {/* Undo / Redo */}
-        <div className="flex items-center gap-1">
-          <button onClick={undo} disabled={historyIdx <= 0}
-            className="p-1.5 rounded hover:bg-white/8 text-gray-500 hover:text-white disabled:opacity-30 transition-all">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M3 10h10a8 8 0 010 16v0M3 10l5-5m-5 5l5 5"/></svg>
+        <div className="flex-1"/>
+        <div className="relative group">
+          <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold transition-all">
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+            Descargar
           </button>
-          <button onClick={redo} disabled={historyIdx >= history.length - 1}
-            className="p-1.5 rounded hover:bg-white/8 text-gray-500 hover:text-white disabled:opacity-30 transition-all">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M21 10H11a8 8 0 100 16v0M21 10l-5-5m5 5l-5 5"/></svg>
-          </button>
-        </div>
-
-        {/* Export */}
-        <div className="flex items-center gap-2">
-          <div className="relative group">
-            <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold transition-all">
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
-              Descargar
-            </button>
-            <div className="absolute right-0 top-full mt-1 w-36 bg-[#1c1c28] border border-white/10 rounded-xl shadow-2xl overflow-hidden opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-all z-50">
-              {[["PNG", "png"], ["JPG", "jpg"]].map(([label, fmt]) => (
-                <button key={fmt} onClick={() => exportFlyer(fmt as "png" | "jpg")}
-                  className="w-full px-4 py-2.5 text-left text-xs text-gray-300 hover:bg-white/8 hover:text-white transition-all">
-                  Exportar como {label}
-                </button>
-              ))}
-            </div>
+          <div className="absolute right-0 top-full mt-1 w-32 bg-[#1c1c28] border border-white/10 rounded-xl shadow-2xl overflow-hidden opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-all z-50">
+            {[["PNG", "png"], ["JPG", "jpg"]].map(([label, fmt]) => (
+              <button key={fmt} onClick={() => exportFlyer(fmt as "png" | "jpg")}
+                className="w-full px-4 py-2.5 text-left text-xs text-gray-300 hover:bg-white/8 hover:text-white transition-all">
+                Exportar {label}
+              </button>
+            ))}
           </div>
         </div>
       </header>
 
-      {/* ══ MAIN LAYOUT ══════════════════════════════════════════════════════════ */}
       <div className="flex-1 flex overflow-hidden">
 
-        {/* ══ LEFT TOOLBAR ═══════════════════════════════════════════════════════ */}
-        <div className="w-[60px] bg-[#111118] border-r border-white/[0.07] flex flex-col items-center py-3 gap-1 shrink-0 z-40">
+        {/* LEFT TOOLBAR */}
+        <div className="w-[60px] bg-[#111118] border-r border-white/[0.07] flex flex-col items-center py-3 gap-1 shrink-0">
           {TOOLS.map(tool => (
             <button key={tool.id}
-              onClick={() => {
-                setActiveTool(tool.id);
-                if (tool.id === "text") addText();
-              }}
+              onClick={() => { setActiveTool(tool.id); if (tool.id === "text") addText(); }}
               title={tool.label}
               className={`w-10 h-10 rounded-xl flex flex-col items-center justify-center gap-0.5 transition-all text-[9px] font-medium ${
-                activeTool === tool.id
-                  ? "bg-purple-600/20 text-purple-400 border border-purple-500/30"
-                  : "text-gray-600 hover:text-gray-300 hover:bg-white/5"
+                activeTool === tool.id ? "bg-purple-600/20 text-purple-400 border border-purple-500/30" : "text-gray-600 hover:text-gray-300 hover:bg-white/5"
               }`}>
               {tool.icon}
-              <span className="leading-none">{tool.label.split(" ")[0]}</span>
+              <span>{tool.label.slice(0, 5)}</span>
             </button>
           ))}
         </div>
 
-        {/* ══ LEFT PANEL (contextual) ════════════════════════════════════════════ */}
+        {/* LAYERS PANEL */}
         {activeTool === "layers" && (
           <div className="w-52 bg-[#111118] border-r border-white/[0.07] flex flex-col shrink-0">
             <div className="px-3 py-2.5 border-b border-white/[0.06]">
               <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-widest">Capas</p>
             </div>
             <div className="flex-1 overflow-y-auto">
-              {layers.map((layer, i) => (
-                <div key={layer.id}
-                  onClick={() => selectLayerFromPanel(layer)}
+              {layers.map(layer => (
+                <div key={layer.id} onClick={() => selectLayerFromPanel(layer)}
                   className={`group flex items-center gap-2 px-3 py-2 cursor-pointer border-b border-white/[0.04] transition-all ${
                     selectedLayer?.id === layer.id ? "bg-purple-600/15 border-l-2 border-l-purple-500" : "hover:bg-white/4"
                   }`}>
-                  {/* Drag handle */}
-                  <svg className="w-3 h-3 text-gray-700 shrink-0 cursor-grab" fill="currentColor" viewBox="0 0 24 24"><circle cx="9" cy="5" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="9" cy="19" r="1.5"/><circle cx="15" cy="5" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="15" cy="19" r="1.5"/></svg>
-
-                  <LayerIcon type={layer.type} />
-
-                  <span className={`flex-1 text-xs truncate min-w-0 ${selectedLayer?.id === layer.id ? "text-white" : "text-gray-400"}`}>
-                    {layer.name}
-                  </span>
-
-                  {/* Controls */}
-                  <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <svg className="w-3 h-3 text-gray-700 shrink-0 cursor-grab" fill="currentColor" viewBox="0 0 24 24">
+                    <circle cx="9" cy="5" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="9" cy="19" r="1.5"/>
+                    <circle cx="15" cy="5" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="15" cy="19" r="1.5"/>
+                  </svg>
+                  <LayerIcon type={layer.type}/>
+                  <span className={`flex-1 text-xs truncate ${selectedLayer?.id === layer.id ? "text-white" : "text-gray-400"}`}>{layer.name}</span>
+                  <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button onClick={e => { e.stopPropagation(); toggleVisibility(layer.id); }}
                       className={`p-0.5 rounded ${layer.visible ? "text-gray-500 hover:text-white" : "text-gray-700"}`}>
-                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>{layer.visible ? <><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></> : <><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24M1 1l22 22"/></>}</svg>
+                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        {layer.visible ? <><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></> : <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24M1 1l22 22"/>}
+                      </svg>
                     </button>
                     <button onClick={e => { e.stopPropagation(); toggleLock(layer.id); }}
                       className={`p-0.5 rounded ${layer.locked ? "text-yellow-500" : "text-gray-500 hover:text-white"}`}>
-                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>{layer.locked ? <><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></> : <><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 019.9-1"/></>}</svg>
+                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                        <path d={layer.locked ? "M7 11V7a5 5 0 0110 0v4" : "M7 11V7a5 5 0 019.9-1"}/>
+                      </svg>
                     </button>
                   </div>
                 </div>
@@ -757,41 +906,35 @@ export default function GeneratedEditor() {
           </div>
         )}
 
-        {/* ══ CANVAS AREA ════════════════════════════════════════════════════════ */}
+        {/* CANVAS */}
         <div className="flex-1 flex flex-col bg-[#0e0e16] overflow-hidden">
-
-          {/* Canvas container */}
           <div ref={containerRef} className="flex-1 overflow-auto flex items-center justify-center p-8">
             <div className="relative shadow-2xl shadow-black/60"
               style={{ width: canvasSize.w * zoom / 100, height: canvasSize.h * zoom / 100 }}>
-              <canvas ref={canvasRef} />
+              <canvas ref={canvasRef}/>
               {!data && (
                 <div className="absolute inset-0 flex items-center justify-center bg-[#1a1a2e] rounded">
-                  <div className="flex flex-col items-center gap-3">
-                    <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
-                    <p className="text-sm text-gray-400">Cargando editor…</p>
-                  </div>
+                  <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"/>
                 </div>
               )}
             </div>
           </div>
 
-          {/* ── Bottom zoom controls ─────────────────────────────────────────── */}
+          {/* ZOOM BAR */}
           <div className="h-10 bg-[#111118] border-t border-white/[0.06] flex items-center justify-center gap-3 px-4 shrink-0">
             <button onClick={() => setZoom(z => Math.max(10, z - 10))}
-              className="w-6 h-6 rounded flex items-center justify-center text-gray-500 hover:text-white hover:bg-white/8 transition-all text-lg leading-none">−</button>
+              className="w-6 h-6 rounded flex items-center justify-center text-gray-500 hover:text-white hover:bg-white/8 transition-all text-lg">−</button>
             <span className="text-xs text-gray-500 w-12 text-center">{zoom}%</span>
             <button onClick={() => setZoom(z => Math.min(200, z + 10))}
-              className="w-6 h-6 rounded flex items-center justify-center text-gray-500 hover:text-white hover:bg-white/8 transition-all text-lg leading-none">+</button>
-            <div className="w-px h-4 bg-white/[0.08] mx-1" />
+              className="w-6 h-6 rounded flex items-center justify-center text-gray-500 hover:text-white hover:bg-white/8 transition-all text-lg">+</button>
+            <div className="w-px h-4 bg-white/[0.08] mx-1"/>
             <button onClick={() => setZoom(50)} className="text-[10px] text-gray-600 hover:text-gray-300 transition-colors">Ajustar</button>
             <button onClick={() => setZoom(100)} className="text-[10px] h-5 px-2 rounded border border-white/8 text-gray-600 hover:text-gray-300 transition-colors">100%</button>
           </div>
         </div>
 
-        {/* ══ RIGHT PROPERTIES PANEL ════════════════════════════════════════════ */}
+        {/* RIGHT PROPERTIES PANEL */}
         <div className="w-64 bg-[#111118] border-l border-white/[0.07] flex flex-col shrink-0 overflow-hidden">
-
           {!selectedLayer ? (
             <div className="flex-1 flex flex-col items-center justify-center p-6 text-center gap-3">
               <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center">
@@ -799,144 +942,15 @@ export default function GeneratedEditor() {
               </div>
               <p className="text-xs text-gray-600">Selecciona un elemento<br/>para editar sus propiedades</p>
             </div>
-          ) : selectedLayer.type === "text" ? (
-
-            // ── TEXT PROPERTIES ────────────────────────────────────────────────
-            <div className="flex-1 overflow-y-auto">
-              <div className="px-3 py-2.5 border-b border-white/[0.06] flex items-center justify-between">
-                <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-widest">Texto</p>
-                <button onClick={() => deleteLayer(selectedLayer.id)}
-                  className="text-gray-700 hover:text-red-400 transition-colors p-0.5">
-                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
-                </button>
-              </div>
-
-              <div className="p-3 space-y-3">
-                {/* Text content */}
-                <div>
-                  <label className="text-[10px] text-gray-500 mb-1 block">Contenido</label>
-                  <textarea value={textProps.text}
-                    onChange={e => applyTextProp("text", e.target.value)}
-                    rows={2}
-                    className="w-full bg-white/[0.04] border border-white/8 rounded-lg px-2.5 py-2 text-xs text-white resize-none outline-none focus:border-purple-500/50" />
-                </div>
-
-                {/* Font family */}
-                <div>
-                  <label className="text-[10px] text-gray-500 mb-1 block">Fuente</label>
-                  <select value={textProps.fontFamily}
-                    onChange={e => applyTextProp("fontFamily", e.target.value)}
-                    className="w-full bg-white/[0.04] border border-white/8 rounded-lg px-2.5 py-2 text-xs text-white outline-none focus:border-purple-500/50">
-                    {FONTS.map(f => <option key={f} value={f}>{f}</option>)}
-                  </select>
-                </div>
-
-                {/* Size + Weight */}
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="text-[10px] text-gray-500 mb-1 block">Tamaño</label>
-                    <input type="number" value={textProps.fontSize}
-                      onChange={e => applyTextProp("fontSize", Number(e.target.value))}
-                      className="w-full bg-white/[0.04] border border-white/8 rounded-lg px-2.5 py-2 text-xs text-white outline-none focus:border-purple-500/50" />
-                  </div>
-                  <div>
-                    <label className="text-[10px] text-gray-500 mb-1 block">Peso</label>
-                    <select value={textProps.fontWeight}
-                      onChange={e => applyTextProp("fontWeight", e.target.value)}
-                      className="w-full bg-white/[0.04] border border-white/8 rounded-lg px-2.5 py-2 text-xs text-white outline-none focus:border-purple-500/50">
-                      {["400", "500", "600", "700", "800", "900"].map(w => <option key={w} value={w}>{w === "400" ? "Normal" : w === "700" ? "Bold" : w === "900" ? "Black" : w}</option>)}
-                    </select>
-                  </div>
-                </div>
-
-                {/* Color */}
-                <div>
-                  <label className="text-[10px] text-gray-500 mb-1 block">Color</label>
-                  <div className="flex items-center gap-2">
-                    <input type="color" value={textProps.fill}
-                      onChange={e => applyTextProp("fill", e.target.value)}
-                      className="w-8 h-8 rounded-lg border-0 cursor-pointer bg-transparent" />
-                    <input type="text" value={textProps.fill}
-                      onChange={e => applyTextProp("fill", e.target.value)}
-                      className="flex-1 bg-white/[0.04] border border-white/8 rounded-lg px-2.5 py-2 text-xs text-white outline-none focus:border-purple-500/50 font-mono" />
-                  </div>
-                </div>
-
-                {/* Alignment */}
-                <div>
-                  <label className="text-[10px] text-gray-500 mb-1 block">Alineación</label>
-                  <div className="flex gap-1">
-                    {["left", "center", "right"].map(align => (
-                      <button key={align} onClick={() => applyTextProp("textAlign", align)}
-                        className={`flex-1 py-1.5 rounded-lg text-xs transition-all ${textProps.textAlign === align ? "bg-purple-600 text-white" : "bg-white/5 text-gray-500 hover:text-white"}`}>
-                        {align === "left" ? "↤" : align === "center" ? "↔" : "↦"}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Letter spacing */}
-                <div>
-                  <label className="text-[10px] text-gray-500 mb-1 block">Espaciado · {Math.round(textProps.charSpacing / 10)}</label>
-                  <input type="range" min={0} max={500} value={textProps.charSpacing}
-                    onChange={e => applyTextProp("charSpacing", Number(e.target.value))}
-                    className="w-full accent-purple-500" />
-                </div>
-
-                {/* Opacity */}
-                <div>
-                  <label className="text-[10px] text-gray-500 mb-1 block">Opacidad · {Math.round(textProps.opacity * 100)}%</label>
-                  <input type="range" min={0} max={1} step={0.01} value={textProps.opacity}
-                    onChange={e => applyTextProp("opacity", Number(e.target.value))}
-                    className="w-full accent-purple-500" />
-                </div>
-
-                {/* Rotation */}
-                <div>
-                  <label className="text-[10px] text-gray-500 mb-1 block">Rotación · {Math.round(textProps.angle)}°</label>
-                  <input type="range" min={-180} max={180} value={textProps.angle}
-                    onChange={e => applyTextProp("angle", Number(e.target.value))}
-                    className="w-full accent-purple-500" />
-                </div>
-
-                {/* Position */}
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="text-[10px] text-gray-500 mb-1 block">X</label>
-                    <input type="number" value={Math.round(textProps.left)}
-                      onChange={e => applyTextProp("left", Number(e.target.value))}
-                      className="w-full bg-white/[0.04] border border-white/8 rounded-lg px-2.5 py-2 text-xs text-white outline-none focus:border-purple-500/50" />
-                  </div>
-                  <div>
-                    <label className="text-[10px] text-gray-500 mb-1 block">Y</label>
-                    <input type="number" value={Math.round(textProps.top)}
-                      onChange={e => applyTextProp("top", Number(e.target.value))}
-                      className="w-full bg-white/[0.04] border border-white/8 rounded-lg px-2.5 py-2 text-xs text-white outline-none focus:border-purple-500/50" />
-                  </div>
-                </div>
-
-                {/* Layer order */}
-                <div>
-                  <label className="text-[10px] text-gray-500 mb-1 block">Orden de capa</label>
-                  <div className="flex gap-2">
-                    <button onClick={() => moveLayer(selectedLayer.id, "up")}
-                      className="flex-1 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-gray-400 hover:text-white transition-all">↑ Subir</button>
-                    <button onClick={() => moveLayer(selectedLayer.id, "down")}
-                      className="flex-1 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-gray-400 hover:text-white transition-all">↓ Bajar</button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
           ) : (
-
-            // ── IMAGE PROPERTIES ───────────────────────────────────────────────
             <div className="flex-1 overflow-y-auto">
+
+              {/* PANEL HEADER */}
               <div className="px-3 py-2.5 border-b border-white/[0.06] flex items-center justify-between">
                 <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-widest">
-                  {selectedLayer.type === "background" ? "Fondo" : "Imagen"}
+                  {isText ? "Texto" : isBackground ? "Fondo" : "Imagen"}
                 </p>
-                {selectedLayer.type !== "background" && (
+                {!isBackground && (
                   <button onClick={() => deleteLayer(selectedLayer.id)}
                     className="text-gray-700 hover:text-red-400 transition-colors p-0.5">
                     <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
@@ -945,75 +959,191 @@ export default function GeneratedEditor() {
               </div>
 
               <div className="p-3 space-y-3">
-                {/* Opacity */}
-                <div>
-                  <label className="text-[10px] text-gray-500 mb-1 block">Opacidad · {Math.round(imageProps.opacity * 100)}%</label>
-                  <input type="range" min={0} max={1} step={0.01} value={imageProps.opacity}
-                    onChange={e => applyImageProp("opacity", Number(e.target.value))}
-                    className="w-full accent-purple-500" />
-                </div>
 
-                {/* Rotation */}
-                <div>
-                  <label className="text-[10px] text-gray-500 mb-1 block">Rotación · {Math.round(imageProps.angle)}°</label>
-                  <input type="range" min={-180} max={180} value={imageProps.angle}
-                    onChange={e => applyImageProp("angle", Number(e.target.value))}
-                    className="w-full accent-purple-500" />
-                </div>
-
-                {/* Flip */}
-                <div>
-                  <label className="text-[10px] text-gray-500 mb-1 block">Voltear</label>
-                  <div className="flex gap-2">
-                    <button onClick={() => {
-                      const obj = fabricRef.current?.getActiveObject();
-                      if (obj) { obj.set("flipX", !obj.flipX); fabricRef.current?.renderAll(); setSaveState("unsaved"); }
-                    }} className="flex-1 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-gray-400 hover:text-white transition-all">↔ Horizontal</button>
-                    <button onClick={() => {
-                      const obj = fabricRef.current?.getActiveObject();
-                      if (obj) { obj.set("flipY", !obj.flipY); fabricRef.current?.renderAll(); setSaveState("unsaved"); }
-                    }} className="flex-1 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-gray-400 hover:text-white transition-all">↕ Vertical</button>
-                  </div>
-                </div>
-
-                {/* Position */}
-                <div className="grid grid-cols-2 gap-2">
+                {/* ── TEXT PROPERTIES ── */}
+                {isText && (<>
                   <div>
-                    <label className="text-[10px] text-gray-500 mb-1 block">X</label>
-                    <input type="number" value={Math.round(imageProps.left)}
-                      onChange={e => applyImageProp("left", Number(e.target.value))}
-                      className="w-full bg-white/[0.04] border border-white/8 rounded-lg px-2.5 py-2 text-xs text-white outline-none focus:border-purple-500/50" />
+                    <label className="text-[10px] text-gray-500 mb-1 block">Contenido</label>
+                    <textarea value={textProps.text} onChange={e => applyTextProp("text", e.target.value)} rows={2}
+                      className="w-full bg-white/[0.04] border border-white/8 rounded-lg px-2.5 py-2 text-xs text-white resize-none outline-none focus:border-purple-500/50"/>
                   </div>
                   <div>
-                    <label className="text-[10px] text-gray-500 mb-1 block">Y</label>
-                    <input type="number" value={Math.round(imageProps.top)}
-                      onChange={e => applyImageProp("top", Number(e.target.value))}
-                      className="w-full bg-white/[0.04] border border-white/8 rounded-lg px-2.5 py-2 text-xs text-white outline-none focus:border-purple-500/50" />
+                    <label className="text-[10px] text-gray-500 mb-1 block">Fuente</label>
+                    <select value={textProps.fontFamily} onChange={e => applyTextProp("fontFamily", e.target.value)}
+                      className="w-full bg-white/[0.04] border border-white/8 rounded-lg px-2.5 py-2 text-xs text-white outline-none focus:border-purple-500/50">
+                      {FONTS.map(f => <option key={f} value={f}>{f}</option>)}
+                    </select>
                   </div>
-                </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[10px] text-gray-500 mb-1 block">Tamaño</label>
+                      <input type="number" value={textProps.fontSize} onChange={e => applyTextProp("fontSize", Number(e.target.value))}
+                        className="w-full bg-white/[0.04] border border-white/8 rounded-lg px-2.5 py-2 text-xs text-white outline-none focus:border-purple-500/50"/>
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-gray-500 mb-1 block">Peso</label>
+                      <select value={textProps.fontWeight} onChange={e => applyTextProp("fontWeight", e.target.value)}
+                        className="w-full bg-white/[0.04] border border-white/8 rounded-lg px-2.5 py-2 text-xs text-white outline-none focus:border-purple-500/50">
+                        {["400","500","600","700","800","900"].map(w => <option key={w} value={w}>{w}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-gray-500 mb-1 block">Color</label>
+                    <div className="flex items-center gap-2">
+                      <input type="color" value={textProps.fill} onChange={e => applyTextProp("fill", e.target.value)}
+                        className="w-8 h-8 rounded-lg border-0 cursor-pointer bg-transparent"/>
+                      <input type="text" value={textProps.fill} onChange={e => applyTextProp("fill", e.target.value)}
+                        className="flex-1 bg-white/[0.04] border border-white/8 rounded-lg px-2.5 py-2 text-xs text-white outline-none font-mono focus:border-purple-500/50"/>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-gray-500 mb-1 block">Alineación</label>
+                    <div className="flex gap-1">
+                      {["left","center","right"].map(a => (
+                        <button key={a} onClick={() => applyTextProp("textAlign", a)}
+                          className={`flex-1 py-1.5 rounded-lg text-xs transition-all ${textProps.textAlign === a ? "bg-purple-600 text-white" : "bg-white/5 text-gray-500 hover:text-white"}`}>
+                          {a === "left" ? "↤" : a === "center" ? "↔" : "↦"}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-gray-500 mb-1 block">Espaciado · {Math.round(textProps.charSpacing / 10)}</label>
+                    <input type="range" min={0} max={500} value={textProps.charSpacing} onChange={e => applyTextProp("charSpacing", Number(e.target.value))} className="w-full accent-purple-500"/>
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-gray-500 mb-1 block">Opacidad · {Math.round(textProps.opacity * 100)}%</label>
+                    <input type="range" min={0} max={1} step={0.01} value={textProps.opacity} onChange={e => applyTextProp("opacity", Number(e.target.value))} className="w-full accent-purple-500"/>
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-gray-500 mb-1 block">Rotación · {Math.round(textProps.angle)}°</label>
+                    <input type="range" min={-180} max={180} value={textProps.angle} onChange={e => applyTextProp("angle", Number(e.target.value))} className="w-full accent-purple-500"/>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[10px] text-gray-500 mb-1 block">X</label>
+                      <input type="number" value={Math.round(textProps.left)} onChange={e => applyTextProp("left", Number(e.target.value))}
+                        className="w-full bg-white/[0.04] border border-white/8 rounded-lg px-2.5 py-2 text-xs text-white outline-none focus:border-purple-500/50"/>
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-gray-500 mb-1 block">Y</label>
+                      <input type="number" value={Math.round(textProps.top)} onChange={e => applyTextProp("top", Number(e.target.value))}
+                        className="w-full bg-white/[0.04] border border-white/8 rounded-lg px-2.5 py-2 text-xs text-white outline-none focus:border-purple-500/50"/>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input type="checkbox" checked={textProps.shadow} onChange={e => applyTextProp("shadow", e.target.checked)} className="accent-purple-500"/>
+                    <label className="text-[10px] text-gray-400">Sombra</label>
+                  </div>
+                  {textProps.shadow && (
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-[10px] text-gray-500 mb-1 block">Color sombra</label>
+                        <input type="color" value={textProps.shadowColor} onChange={e => applyTextProp("shadowColor", e.target.value)}
+                          className="w-full h-8 rounded-lg border-0 cursor-pointer bg-transparent"/>
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-gray-500 mb-1 block">Blur · {textProps.shadowBlur}</label>
+                        <input type="range" min={0} max={30} value={textProps.shadowBlur} onChange={e => applyTextProp("shadowBlur", Number(e.target.value))} className="w-full accent-purple-500"/>
+                      </div>
+                    </div>
+                  )}
+                  <div>
+                    <label className="text-[10px] text-gray-500 mb-1 block">Orden de capa</label>
+                    <div className="flex gap-2">
+                      <button onClick={() => moveLayer(selectedLayer.id, "up")} className="flex-1 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-gray-400 hover:text-white transition-all">↑ Subir</button>
+                      <button onClick={() => moveLayer(selectedLayer.id, "down")} className="flex-1 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-gray-400 hover:text-white transition-all">↓ Bajar</button>
+                    </div>
+                  </div>
+                </>)}
 
-                {/* Lock background */}
-                {selectedLayer.type === "background" && (
+                {/* ── IMAGE PROPERTIES ── */}
+                {isImage && (<>
+                  <div>
+                    <label className="text-[10px] text-gray-500 mb-1 block">Opacidad · {Math.round(imageProps.opacity * 100)}%</label>
+                    <input type="range" min={0} max={1} step={0.01} value={imageProps.opacity} onChange={e => applyImageProp("opacity", Number(e.target.value))} className="w-full accent-purple-500"/>
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-gray-500 mb-1 block">Rotación · {Math.round(imageProps.angle)}°</label>
+                    <input type="range" min={-180} max={180} value={imageProps.angle} onChange={e => applyImageProp("angle", Number(e.target.value))} className="w-full accent-purple-500"/>
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-gray-500 mb-1 block">Voltear</label>
+                    <div className="flex gap-2">
+                      <button onClick={() => {
+                        const obj = fabricRef.current?.getActiveObject();
+                        if (obj) { const nv = !obj.flipX; obj.set("flipX", nv); applyImageProp("flipX", nv); fabricRef.current?.renderAll(); }
+                      }} className={`flex-1 py-1.5 rounded-lg text-xs transition-all ${imageProps.flipX ? "bg-purple-600/20 text-purple-300" : "bg-white/5 text-gray-400 hover:text-white"}`}>↔ H</button>
+                      <button onClick={() => {
+                        const obj = fabricRef.current?.getActiveObject();
+                        if (obj) { const nv = !obj.flipY; obj.set("flipY", nv); applyImageProp("flipY", nv); fabricRef.current?.renderAll(); }
+                      }} className={`flex-1 py-1.5 rounded-lg text-xs transition-all ${imageProps.flipY ? "bg-purple-600/20 text-purple-300" : "bg-white/5 text-gray-400 hover:text-white"}`}>↕ V</button>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[10px] text-gray-500 mb-1 block">X</label>
+                      <input type="number" value={Math.round(imageProps.left)} onChange={e => applyImageProp("left", Number(e.target.value))}
+                        className="w-full bg-white/[0.04] border border-white/8 rounded-lg px-2.5 py-2 text-xs text-white outline-none focus:border-purple-500/50"/>
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-gray-500 mb-1 block">Y</label>
+                      <input type="number" value={Math.round(imageProps.top)} onChange={e => applyImageProp("top", Number(e.target.value))}
+                        className="w-full bg-white/[0.04] border border-white/8 rounded-lg px-2.5 py-2 text-xs text-white outline-none focus:border-purple-500/50"/>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-gray-500 mb-1 block">Orden de capa</label>
+                    <div className="flex gap-2">
+                      <button onClick={() => moveLayer(selectedLayer.id, "up")} className="flex-1 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-gray-400 hover:text-white transition-all">↑ Subir</button>
+                      <button onClick={() => moveLayer(selectedLayer.id, "down")} className="flex-1 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-gray-400 hover:text-white transition-all">↓ Bajar</button>
+                    </div>
+                  </div>
+                </>)}
+
+                {/* ── BACKGROUND PROPERTIES ── */}
+                {isBackground && (<>
+                  <div>
+                    <label className="text-[10px] text-gray-500 mb-1 block">Opacidad · {Math.round((fabricRef.current?.getActiveObject()?.opacity ?? 1) * 100)}%</label>
+                    <input type="range" min={0} max={1} step={0.01}
+                      value={fabricRef.current?.getActiveObject()?.opacity ?? 1}
+                      onChange={e => {
+                        const obj = fabricRef.current?.getActiveObject();
+                        if (obj) { obj.set("opacity", Number(e.target.value)); fabricRef.current?.renderAll(); setSaveState("unsaved"); }
+                      }} className="w-full accent-purple-500"/>
+                  </div>
                   <button onClick={() => toggleLock(selectedLayer.id)}
                     className={`w-full py-2 rounded-lg text-xs font-medium transition-all ${
                       selectedLayer.locked ? "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30" : "bg-white/5 text-gray-400 hover:text-white"
                     }`}>
                     {selectedLayer.locked ? "🔒 Fondo bloqueado" : "🔓 Bloquear fondo"}
                   </button>
-                )}
-
-                {/* Layer order */}
-                {selectedLayer.type !== "background" && (
-                  <div>
-                    <label className="text-[10px] text-gray-500 mb-1 block">Orden de capa</label>
-                    <div className="flex gap-2">
-                      <button onClick={() => moveLayer(selectedLayer.id, "up")}
-                        className="flex-1 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-gray-400 hover:text-white transition-all">↑ Subir</button>
-                      <button onClick={() => moveLayer(selectedLayer.id, "down")}
-                        className="flex-1 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-gray-400 hover:text-white transition-all">↓ Bajar</button>
-                    </div>
-                  </div>
-                )}
+                  <button onClick={() => {
+                    const input = document.createElement("input");
+                    input.type = "file"; input.accept = "image/*";
+                    input.onchange = async (e) => {
+                      const file = (e.target as HTMLInputElement).files?.[0];
+                      if (!file || !fabricRef.current) return;
+                      const reader = new FileReader();
+                      reader.onload = async (ev) => {
+                        const fabric = await import("fabric");
+                        const src = ev.target?.result as string;
+                        const img = await fabric.FabricImage.fromURL(src);
+                        const obj = fabricRef.current?.getActiveObject();
+                        if (obj) {
+                          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                          (obj as any).setSrc?.(src, () => { fabricRef.current?.renderAll(); });
+                        }
+                        setSaveState("unsaved");
+                      };
+                      reader.readAsDataURL(file);
+                    };
+                    input.click();
+                  }} className="w-full py-2 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-gray-400 hover:text-white transition-all">
+                    📁 Reemplazar fondo
+                  </button>
+                </>)}
               </div>
             </div>
           )}
@@ -1022,7 +1152,6 @@ export default function GeneratedEditor() {
 
       <style>{`
         canvas { display: block; }
-        input[type="range"]::-webkit-slider-thumb { cursor: pointer; }
         input[type="color"] { -webkit-appearance: none; border-radius: 6px; padding: 0; border: 1px solid rgba(255,255,255,0.1); cursor: pointer; }
         input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
         input[type="color"]::-webkit-color-swatch { border: none; border-radius: 4px; }
