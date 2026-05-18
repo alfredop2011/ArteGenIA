@@ -43,7 +43,7 @@ const GEN_STEPS = [
 const EMPTY_EVENT: EventData = {
   eventName: null, eventType: null, date: null, time: null,
   venue: null, city: null, isFree: null, price: null,
-  mainArtist: null, additionalArtists: [], artistCount: 1,
+  mainArtist: null, additionalArtists: [], artists: [], artistCount: 1,
   flyerType: null, visualStyle: null, mood: null, extraNotes: null,
   readyToGenerate: false, needsPhotoUpload: false, missingFields: [],
 };
@@ -118,7 +118,7 @@ export default function CreatePage() {
         return updated;
       });
       if (data.showPhotoUpload && !libraryShown) setLibraryShown(true);
-      setRecentContext(prev => [...prev, { role: "user", content: trimmed }, { role: "assistant", content: data.message }].slice(-8));
+      setRecentContext(prev => [...prev, { role: "user" as const, content: trimmed }, { role: "assistant" as const, content: data.message }].slice(-8));
       setEventData(data.eventData);
       setCtaLabel(data.ctaLabel);
     } catch {

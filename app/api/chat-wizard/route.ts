@@ -10,14 +10,19 @@ export type EventData = {
   time: string | null;
   venue: string | null;
   city: string | null;
+  isFree: boolean | null;
   price: string | null;
+  mainArtist: string | null;
+  additionalArtists: string[];
   artists: string[];
+  artistCount: number;
   flyerType: "with_photo" | "no_photo" | "logos_only" | null;
   visualStyle: string | null;
+  mood: string | null;
   extraNotes: string | null;
   readyToGenerate: boolean;
-  artistCount: number;
   needsPhotoUpload: boolean;
+  missingFields: string[];
 };
 
 export type ChatMessage = {
@@ -118,9 +123,10 @@ RESPOND WITH THIS EXACT JSON (no extra text before or after):
 
 export const EMPTY_EVENT: EventData = {
   eventName: null, eventType: null, date: null, time: null,
-  venue: null, city: null, price: null, artists: [],
-  flyerType: null, visualStyle: null, extraNotes: null,
-  readyToGenerate: false, artistCount: 1, needsPhotoUpload: false,
+  venue: null, city: null, isFree: null, price: null,
+  mainArtist: null, additionalArtists: [], artists: [], artistCount: 1,
+  flyerType: null, visualStyle: null, mood: null, extraNotes: null,
+  readyToGenerate: false, needsPhotoUpload: false, missingFields: [],
 };
 
 export async function POST(req: NextRequest) {
