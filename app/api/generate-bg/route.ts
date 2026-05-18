@@ -39,6 +39,7 @@ const EVENT_DESC: Record<string, string> = {
 };
 
 export async function POST(req: NextRequest) {
+  console.log('[generate-bg] called, FAL_KEY exists:', !!process.env.FAL_KEY);
   try {
     const body = await req.json() as {
       eventType?: string;
