@@ -14,10 +14,11 @@ export type EventData = {
   price: string | null;
   mainArtist: string | null;
   additionalArtists: string[];
+  artists: string[];
   artistCount: number;
   flyerType: "with_photo" | "no_photo" | "logos_only" | null;
-  visualStyle: string | null;
-  mood: string | null;
+  backgroundDescription: string | null;
+  format: string | null;
   extraNotes: string | null;
   readyToGenerate: boolean;
   needsPhotoUpload: boolean;
@@ -29,11 +30,25 @@ export type ChatMessage = {
   content: string;
 };
 
+export type QuickReply = {
+  label: string;
+  value: string;
+  emoji?: string;
+};
+
+export type InlineCard =
+  | { type: "format_selector" }
+  | { type: "flyer_type_selector" }
+  | { type: "price_selector" }
+  | { type: "photo_action" };
+
 export type WizardResponse = {
   message: string;
   eventData: EventData;
   ctaLabel: "continue" | "confirm" | "generate";
   showPhotoUpload: boolean;
+  quickReplies?: QuickReply[];
+  inlineCard?: InlineCard;
 };
 
 type AnthropicContent = { type: string; text: string };
@@ -42,9 +57,9 @@ type AnthropicResponse = { content: AnthropicContent[] };
 export const EMPTY_EVENT: EventData = {
   eventName: null, eventType: null, date: null, time: null,
   venue: null, city: null, isFree: null, price: null,
-  mainArtist: null, additionalArtists: [], artistCount: 1,
-  flyerType: null, visualStyle: null, mood: null, extraNotes: null,
-  readyToGenerate: false, needsPhotoUpload: false, missingFields: [],
+  mainArtist: null, additionalArtists: [], artists: [], artistCount: 1,
+  flyerType: null, backgroundDescription: null, format: null,
+  extraNotes: null, readyToGenerate: false, needsPhotoUpload: false, missingFields: [],
 };
 
 function computeMissingFields(d: EventData): string[] {
@@ -56,73 +71,94 @@ function computeMissingFields(d: EventData): string[] {
   if (d.isFree === false && !d.price) m.push("price");
   if (!d.mainArtist) m.push("mainArtist");
   if (!d.flyerType) m.push("flyerType");
+  if (!d.backgroundDescription) m.push("backgroundDescription");
   return m;
 }
 
 function isReadyToGenerate(d: EventData): boolean {
-  const blocking = computeMissingFields(d).filter(
-    f => ["eventName", "date", "venue", "flyerType"].includes(f)
+  const blocking = computeMissingFields(d).filter(f =>
+    ["eventName", "date", "venue", "flyerType", "backgroundDescription"].includes(f)
   );
   return blocking.length === 0;
 }
 
+// Detect which inline card to show based on AI message content
+function detectInlineCard(d: EventData, message: string): InlineCard | undefined {
+  const msg = message.toLowerCase();
+
+  if (!d.flyerType && (msg.includes("foto") || msg.includes("flyer") || msg.includes("photo") || msg.includes("logo") || msg.includes("tipo de"))) {
+    return { type: "flyer_type_selector" };
+  }
+  if (!d.format && (msg.includes("formato") || msg.includes("format") || msg.includes("instagram") || msg.includes("historia") || msg.includes("tamaño"))) {
+    return { type: "format_selector" };
+  }
+  if (d.isFree === null && (msg.includes("gratuito") || msg.includes("precio") || msg.includes("free") || msg.includes("ticket") || msg.includes("entrada"))) {
+    return { type: "price_selector" };
+  }
+  return undefined;
+}
+
+// Detect quick replies
+function detectQuickReplies(d: EventData, message: string): QuickReply[] | undefined {
+  const msg = message.toLowerCase();
+
+  if (d.mainArtist && !d.additionalArtists.length && (msg.includes("más artistas") || msg.includes("more artist") || msg.includes("cartel") || msg.includes("adicional"))) {
+    return [
+      { label: "Solo ese artista", value: "Solo ese artista", emoji: "👤" },
+      { label: "Hay más artistas", value: "Sí, hay más artistas en el cartel", emoji: "👥" },
+    ];
+  }
+  return undefined;
+}
+
 function getSystemPrompt(today: string): string {
-  return `You are ArteGenIA, a friendly assistant that creates professional event flyers through conversation.
+  return `You are ArteGenIA, a friendly assistant that helps users create professional event flyers through conversation.
 
 TODAY: ${today}
 
-OUTPUT RULE: Respond ONLY with a raw JSON object. No markdown, no backticks, no text before or after the JSON.
+OUTPUT RULE: Respond ONLY with a raw JSON object. No markdown, no backticks, no explanation before or after.
 
-GOAL: Collect all event information naturally. Ask 1-2 questions per message. Never feel like a form. Respond in the user's language (Spanish or English).
+GOAL: Collect all event info through natural conversation. Ask 1-2 questions per message MAX. Respond in the user's language.
 
-FIELDS TO COLLECT (in priority order):
-1. eventName — name of the event
-2. eventType — concert, festival, party, brunch, conference, etc.
-3. date — resolve relative dates ("este viernes", "tomorrow", "next Saturday") using TODAY
-4. time — start time
-5. venue — specific venue name
-6. city — city
-7. isFree — is it free or paid? ALWAYS ASK THIS.
-8. price — only if isFree is false
-9. mainArtist — headliner / main artist name
-10. additionalArtists — other artists on the lineup
-11. flyerType — "with_photo" | "no_photo" | "logos_only"
-12. visualStyle — urban, elegant, neon, festival, minimal, retro, tropical, etc.
-13. mood — energetic, chill, luxurious, underground, romantic, etc.
+FIELDS TO COLLECT (priority order):
+1. eventName
+2. eventType — concert, festival, party, brunch, etc.
+3. date — resolve relative dates using TODAY
+4. time
+5. venue + city
+6. isFree — ALWAYS ask explicitly
+7. price — only if isFree is false
+8. mainArtist — headliner
+9. additionalArtists — other artists
+10. flyerType — "with_photo" | "no_photo" | "logos_only"
+11. backgroundDescription — natural language description of the desired background visual
+12. format — instagram | historia | cuadrado | evento (optional, default "instagram")
 
-PRICE RULE — always ask explicitly:
-"¿El evento es gratuito o tiene precio de entrada?" / "Is this event free or is there a ticket price?"
-- "free" / "gratis" / "entrada libre" → isFree: true, price: "Entrada libre"
-- any price amount → isFree: false, price: that value
+BACKGROUND DESCRIPTION RULE:
+Ask the user to describe the background naturally. Example:
+"¿Cómo quieres que sea el fondo del flyer? Puedes describir el ambiente, colores, escena o atmósfera."
+Store the answer in backgroundDescription. This will be used directly as the image generation prompt.
+The generated image will have NO text — only the visual atmosphere.
 
-ARTIST RULE:
-- Ask for the main/headliner artist early
-- Ask "¿Hay más artistas en el cartel?" / "Are there any other artists?"
-- Collect additional names in additionalArtists[]
-- artistCount = 1 + additionalArtists.length
-- If flyerType is "with_photo" → needsPhotoUpload: true
+IMPORTANT — do NOT show a separate page for style/format. Ask everything in chat.
+For flyerType and format: the UI will show inline selection cards automatically.
+For backgroundDescription: ask naturally in the message.
+For isFree: ask naturally, UI shows price selection buttons.
 
-PHOTO TRIGGER:
-- Set showPhotoUpload: true the FIRST time flyerType becomes "with_photo"
+FIELD DETECTION:
+- "gratis" / "free" / "entrada libre" → isFree: true, price: "Entrada libre"
+- "5€" / "$20" → isFree: false, price: that value
+- "con foto" / "with photo" → flyerType: "with_photo", needsPhotoUpload: true
+- "sin foto" → flyerType: "no_photo"
+- "solo logos" → flyerType: "logos_only"
+- "instagram" / "historia" / "cuadrado" / "evento" → format: that value
 
-CORRECTIONS: Handle naturally. "Actually make it Saturday" → update silently, confirm in reply.
+READY TO GENERATE:
+Set readyToGenerate: true when: eventName + (date or time) + (venue or city) + flyerType + backgroundDescription are all filled.
+Show bullet summary and ask "¿Todo correcto? ¿Generamos el flyer?"
+ctaLabel: "confirm" when showing summary, "generate" after user confirms.
 
-READY TO GENERATE: Set readyToGenerate: true when all of these are filled:
-eventName + (date or time) + (venue or city) + isFree (not null) + mainArtist + flyerType
-
-WHEN READY: Show bullet summary and ask to confirm:
-"¿Todo correcto? ¿Generamos el flyer?" → ctaLabel: "confirm"
-After user confirms → ctaLabel: "generate"
-
-FIELD DETECTION from user text:
-- "gratis" / "gratuito" / "free" / "entrada libre" → isFree: true
-- "5€" / "10 euros" / "$20" → isFree: false, price: that string
-- "con foto" / "with photo" / "foto del artista" → flyerType: "with_photo"
-- "sin foto" / "no photo" / "sin artista" → flyerType: "no_photo"
-- "solo logos" / "logos only" → flyerType: "logos_only"
-- "también actúa" / "también está" / "y también" / "and also" → add to additionalArtists
-
-RESPOND WITH EXACTLY THIS JSON SHAPE:
+RESPOND WITH EXACTLY THIS JSON:
 {
   "message": "string",
   "eventData": {
@@ -136,10 +172,11 @@ RESPOND WITH EXACTLY THIS JSON SHAPE:
     "price": null,
     "mainArtist": null,
     "additionalArtists": [],
+    "artists": [],
     "artistCount": 1,
     "flyerType": null,
-    "visualStyle": null,
-    "mood": null,
+    "backgroundDescription": null,
+    "format": null,
     "extraNotes": null,
     "readyToGenerate": false,
     "needsPhotoUpload": false,
@@ -198,10 +235,7 @@ STILL MISSING: ${missing.length ? missing.join(", ") : "nothing — ready"}`;
       }),
     });
 
-    if (!response.ok) {
-      console.error("[chat-wizard] Anthropic error:", await response.text());
-      throw new Error(`Anthropic ${response.status}`);
-    }
+    if (!response.ok) throw new Error(`Anthropic ${response.status}`);
 
     const data = await response.json() as AnthropicResponse;
     const raw = data.content?.[0]?.text?.trim() ?? "";
@@ -210,9 +244,10 @@ STILL MISSING: ${missing.length ? missing.join(", ") : "nothing — ready"}`;
     let parsed: WizardResponse;
     try {
       parsed = JSON.parse(clean);
-      // Recompute server-side for consistency
       parsed.eventData.missingFields = computeMissingFields(parsed.eventData);
       parsed.eventData.readyToGenerate = isReadyToGenerate(parsed.eventData);
+      parsed.inlineCard = detectInlineCard(parsed.eventData, parsed.message);
+      parsed.quickReplies = detectQuickReplies(parsed.eventData, parsed.message);
     } catch (e) {
       console.error("[chat-wizard] parse error:", e, "\nRaw:", raw);
       parsed = {

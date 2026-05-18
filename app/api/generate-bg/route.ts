@@ -10,79 +10,74 @@ const FORMAT_DIMS: Record<string, { width: number; height: number }> = {
   evento:    { width: 1920, height: 1080 },
 };
 
-const STYLE_DESC: Record<string, string> = {
-  urbano:   "urban nightclub atmosphere, dark moody city lights, bokeh street photography, cinematic shadows",
-  elegante: "luxury high-end editorial, gold accents, sophisticated dark minimalism, velvet textures",
-  neon:     "cyberpunk neon glow, electric magenta and cyan light streaks, dark background, rain reflections",
-  festival: "outdoor festival energy, colorful light beams, vibrant crowd bokeh, psychedelic atmosphere",
-  minima:   "clean minimalist abstract, geometric shapes, subtle gradient, lots of negative space",
-  retro:    "vintage 80s aesthetic, grainy film texture, retro color grading, analog warmth",
-  tropical: "tropical paradise mood, lush foliage bokeh, warm sunset tones, golden hour light",
-};
+function buildPrompt(backgroundDescription: string | undefined, eventType: string): string {
+  // If user provided a natural language background description, use it directly
+  const baseDesc = backgroundDescription?.trim()
+    ? backgroundDescription.trim()
+    : getDefaultAtmosphere(eventType);
 
-const EVENT_DESC: Record<string, string> = {
-  concierto:   "live concert stage atmosphere, dramatic spotlights, fog machine effects, crowd silhouettes",
-  concert:     "live concert stage atmosphere, dramatic spotlights, fog machine effects",
-  festival:    "outdoor music festival, colorful stage lighting, aerial crowd view, vibrant energy",
-  fiesta:      "nightclub dance floor, colorful disco lights, abstract bokeh, energetic atmosphere",
-  party:       "nightclub dance floor, colorful disco lights, abstract bokeh, energetic atmosphere",
-  brunch:      "bright airy setting, natural window light, floral arrangements, lifestyle photography",
-  rave:        "underground rave, laser beams, dark warehouse, strobe light effects",
-  electronica: "electronic music club, LED light show, abstract geometric patterns, futuristic atmosphere",
-  electronic:  "electronic music club, LED light show, abstract geometric patterns, futuristic atmosphere",
-  reggaeton:   "Latin urban nightlife, warm neon city streets, tropical Miami vibes, vibrant colors",
-  salsa:       "warm tropical Latin ballroom, amber stage lighting, elegant atmosphere, rich warm tones",
-  jazz:        "moody jazz club, warm amber lighting, brick walls, sophisticated intimate atmosphere",
-  cumbia:      "colorful Latin fiesta, warm tropical colors, festive folk atmosphere, vibrant energy",
-  corporate:   "modern conference hall, clean professional lighting, contemporary architecture",
-  gala:        "black tie gala, crystal chandeliers, elegant ballroom, sophisticated evening atmosphere",
-};
+  // Append strict no-text rule
+  return [
+    `Professional event flyer background image. ${baseDesc}.`,
+    `High quality, cinematic, commercial photography or digital art style.`,
+    `ABSOLUTE RULE: Do not include any text, letters, numbers, words, typography, logos,`,
+    `signs, labels, dates, prices, names, or any readable symbols whatsoever.`,
+    `Completely text-free background image. No written content of any kind.`,
+    `Pure atmospheric visual background only. Text will be added as separate editable layers.`,
+  ].join(" ");
+}
+
+function getDefaultAtmosphere(eventType: string): string {
+  const type = (eventType ?? "").toLowerCase();
+  const map: Record<string, string> = {
+    concierto:   "live concert stage atmosphere, dramatic spotlights, fog machine effects, crowd silhouettes",
+    concert:     "live concert stage atmosphere, dramatic spotlights, fog machine effects",
+    festival:    "outdoor music festival, colorful stage lighting, vibrant crowd energy",
+    fiesta:      "nightclub dance floor, colorful disco lights, abstract bokeh, energetic atmosphere",
+    party:       "nightclub dance floor, colorful disco lights, abstract bokeh, energetic atmosphere",
+    brunch:      "bright airy brunch setting, natural window light, floral arrangements",
+    rave:        "underground rave, laser beams, dark warehouse, strobe light effects",
+    electronica: "electronic music club, LED light show, abstract geometric patterns, futuristic",
+    electronic:  "electronic music club, LED light show, abstract geometric patterns, futuristic",
+    reggaeton:   "Latin urban nightlife, warm neon city streets, tropical Miami vibes",
+    salsa:       "warm tropical Latin ballroom, amber stage lighting, elegant atmosphere",
+    jazz:        "moody jazz club, warm amber lighting, brick walls, sophisticated atmosphere",
+    cumbia:      "colorful Latin fiesta, warm tropical colors, festive folk atmosphere",
+    corporate:   "modern conference hall, clean professional lighting, contemporary architecture",
+    gala:        "black tie gala, crystal chandeliers, elegant ballroom, sophisticated evening",
+  };
+  return Object.entries(map).find(([k]) => type.includes(k))?.[1]
+    ?? "event venue atmosphere, dramatic cinematic lighting, abstract modern background";
+}
 
 export async function POST(req: NextRequest) {
-  console.log('[generate-bg] called, FAL_KEY exists:', !!process.env.FAL_KEY);
+  console.log("[generate-bg] called, FAL_KEY exists:", !!process.env.FAL_KEY);
   try {
     const body = await req.json() as {
+      backgroundDescription?: string;
       eventType?: string;
+      format?: string;
+      // legacy fields kept for backwards compat
       style?: string;
       palette?: { colors: string[] };
-      format?: string;
-      // legacy fields — ignored for prompt building
       prompt?: string;
-      eventName?: string;
     };
 
-    const { eventType = "", style = "urbano", palette, format = "instagram" } = body;
+    const {
+      backgroundDescription,
+      eventType = "",
+      format = "instagram",
+    } = body;
 
     const falKey = process.env.FAL_KEY;
     if (!falKey) {
       return NextResponse.json({ error: "FAL_KEY not configured" }, { status: 500 });
     }
 
-    const styleKey = style.toLowerCase();
-    const typeKey = eventType.toLowerCase();
-
-    const styleDesc = STYLE_DESC[styleKey] ?? STYLE_DESC.urbano;
-    const typeDesc = Object.entries(EVENT_DESC).find(([k]) => typeKey.includes(k))?.[1]
-      ?? "event venue atmosphere, dramatic stage lighting, abstract background";
-
-    const colorHint = (palette?.colors ?? ["#7c3aed", "#f5c518"]).slice(0, 2).join(" and ");
-
-    // ══ CRITICAL: NO TEXT IN THE IMAGE ══════════════════════════════════════
-    // This prompt intentionally omits ALL event data (name, date, venue, price).
-    // Text is added as editable layers in the editor — NEVER baked into the image.
-    const bgPrompt = [
-      `Professional event flyer background. ${typeDesc}. ${styleDesc}.`,
-      `Color palette inspired by ${colorHint} tones.`,
-      `High quality cinematic digital art, commercial photography style.`,
-      `ABSOLUTE RULE: zero text, zero letters, zero numbers, zero words, zero typography,`,
-      `zero logos, zero signs, zero labels, zero dates, zero prices, zero names.`,
-      `Completely text-free background image. No written content whatsoever.`,
-      `Pure atmospheric visual only. Text will be added as separate editable layers later.`,
-    ].join(" ");
-
+    const bgPrompt = buildPrompt(backgroundDescription, eventType);
     const dims = FORMAT_DIMS[format] ?? FORMAT_DIMS.instagram;
 
-    console.log("[generate-bg] NO-TEXT prompt:", bgPrompt.slice(0, 150));
+    console.log("[generate-bg] prompt:", bgPrompt.slice(0, 160));
 
     const falRes = await fetch("https://fal.run/fal-ai/flux/schnell", {
       method: "POST",
@@ -111,7 +106,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "No image from Fal.ai" }, { status: 502 });
     }
 
-    // Upload to R2 for persistence (Fal URLs expire)
+    // Upload to R2 for persistence
     try {
       const { uploadToR2 } = await import("@/lib/r2");
       const imgBuf = Buffer.from(await (await fetch(img.url)).arrayBuffer());
