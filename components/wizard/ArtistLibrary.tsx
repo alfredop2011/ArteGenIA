@@ -402,13 +402,21 @@ export function ArtistLibraryModal({
                         </button>
                       </div>
 
-                      {/* Role selector */}
-                      <div className="px-2.5 pb-2.5">
+                      {/* Role selector + remove bg toggle */}
+                      <div className="px-2.5 pb-2.5 space-y-2">
                         <select value={entry.role}
                           onChange={e => updateRole(entry.id, e.target.value as ArtistRole)}
                           className="w-full bg-white/[0.04] border border-white/8 rounded-xl px-3 py-1.5 text-[11px] text-gray-400 outline-none focus:border-purple-500/40">
                           {ROLES.map(r => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
                         </select>
+                        <button
+                          onClick={() => setSelected(prev => prev.map(s => s.id === entry.id ? { ...s, removeBackground: !s.removeBackground } : s))}
+                          className={`w-full flex items-center justify-between px-3 py-1.5 rounded-xl border text-[11px] font-medium transition-all ${entry.removeBackground ? "bg-purple-500/15 border-purple-500/30 text-purple-300" : "bg-white/[0.03] border-white/8 text-gray-500"}`}>
+                          <span>{entry.removeBackground ? "✂️ Quitar fondo" : "🖼️ Mantener fondo"}</span>
+                          <div className={`w-7 h-4 rounded-full relative transition-all ${entry.removeBackground ? "bg-purple-500" : "bg-white/10"}`}>
+                            <div className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-all ${entry.removeBackground ? "left-3.5" : "left-0.5"}`}/>
+                          </div>
+                        </button>
                       </div>
                     </div>
                   ))}
