@@ -113,7 +113,10 @@ export default function CreatePage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          backgroundDescription: prompt,
+          // CRITICAL: never send event name as background description
+          // Only send event TYPE/ATMOSPHERE — the name goes as text layer, not in the image
+          backgroundDescription: extracted.eventType ?? prompt.split(",")[0].trim(),
+
           eventType: extracted.eventType,
           format: "instagram",
         }),
@@ -124,6 +127,23 @@ export default function CreatePage() {
       // Step 3: Remove background from artist photos
       setGenStep("Procesando artistas...");
       const processedArtists: Array<{ name: string; photoUrl: string }> = [];
+      // Logos — keep as-is (no remove-bg), use base64 directly
+      const logosData = artistsAndLogos.filter(a => a.type === "logo" && a.imageSrc);
+      // Compress logos to avoid localStorage quota
+      const processedLogos = logosData.map(l => {
+        try {
+          const canvas = document.createElement("canvas");
+          const img = new window.Image();
+          img.src = l.imageSrc;
+          canvas.width = 200;
+          canvas.height = 200 * (img.naturalHeight || 1) / (img.naturalWidth || 1);
+          const ctx2 = canvas.getContext("2d");
+          if (ctx2) ctx2.drawImage(img, 0, 0, canvas.width, canvas.height);
+          return { name: l.name, photoUrl: canvas.toDataURL("image/jpeg", 0.5) };
+        } catch {
+          return { name: l.name, photoUrl: l.imageSrc.slice(0, 50000) };
+        }
+      });
 
       for (const artist of artistsAndLogos.filter(a => a.type === "artist" && a.imageSrc)) {
         try {
@@ -138,7 +158,7 @@ export default function CreatePage() {
           const d = r.ok ? await r.json() as { url: string } : null;
           processedArtists.push({ name: artist.name, photoUrl: d?.url ?? artist.imageSrc });
         } catch {
-          processedArtists.push({ name: artist.name, photoUrl: artist.imageSrc });
+          processedArtists.push({ name: artist.name, photoUrl: artist.imageSrc.substring(0, 100000) });
         }
       }
 
@@ -154,6 +174,7 @@ export default function CreatePage() {
         // Artists
         artistPhotoUrl: processedArtists[0]?.photoUrl ?? null,
         artists:        processedArtists,
+        logos:          processedLogos,
         artistCount:    processedArtists.length || 1,
         // Background
         bgUrl:    bgData.url,

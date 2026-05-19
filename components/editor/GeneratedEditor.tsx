@@ -39,6 +39,7 @@ type GeneratedData = {
   eventName?: string; eventDate?: string; eventVenue?: string; eventPrice?: string;
   artistPhotoUrl?: string | null;
   artists?: ArtistData[];
+  logos?: ArtistData[];
   artistCount?: number;
   bgUrl?: string; bgWidth?: number; bgHeight?: number;
   textLayers?: Array<{
@@ -362,6 +363,27 @@ export default function GeneratedEditor() {
         }
       }
 
+      // ── LOGOS in corners ─────────────────────────────────────────────────
+      const logos = (data.logos ?? []).filter((l: ArtistData) => l.photoUrl);
+      const cornerPositions = [
+        { x: dims.w - 160, y: dims.h - 120 },
+        { x: 40,           y: dims.h - 120 },
+        { x: dims.w - 160, y: 40 },
+        { x: 40,           y: 40 },
+      ];
+      for (let i = 0; i < logos.length; i++) {
+        try {
+          const logoImg = await fabric.FabricImage.fromURL(logos[i].photoUrl!, { crossOrigin: "anonymous" });
+          const logoH = 100;
+          const logoScale = logoH / (logoImg.height ?? logoH);
+          const corner = cornerPositions[i % cornerPositions.length];
+          logoImg.set({ left: corner.x, top: corner.y, scaleX: logoScale, scaleY: logoScale, selectable: true, evented: true, originX: "left", originY: "top" });
+          const logoId = `logo-${i}`;
+          (logoImg as FabricObject & { customId?: string }).customId = logoId;
+          canvas.add(logoImg);
+          newLayers.push({ id: logoId, name: logos[i].name || `Logo ${i+1}`, type: "image", obj: logoImg, visible: true, locked: false });
+        } catch (e) { console.warn(`Logo ${i} error:`, e); }
+      }
       canvas.renderAll();
       if (isMounted) setLayers([...newLayers].reverse());
 
