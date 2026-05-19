@@ -205,17 +205,26 @@ function FlyerCanvas({
         } catch {}
       }
 
-      // 3. Logos in corners
-      const shuffled = [...LOGO_POSITIONS].sort(() => Math.random() - 0.5);
-      for (let i = 0; i < logos.length && i < 4; i++) {
-        try {
-          const img = await loadImg(logos[i].photoUrl);
-          const logoH = 80;
+      // 3. Logos — fila centrada abajo
+      if (logos.length > 0) {
+        const logoH = 80;
+        const logoGap = 20;
+        const logoY = H - logoH - 50;
+        const loadedLogos: Array<{ img: HTMLImageElement; w: number }> = [];
+        for (const logo of logos) {
+          try {
+            const img = await loadImg(logo.photoUrl);
+            const sc = logoH / img.height;
+            loadedLogos.push({ img, w: img.width * sc });
+          } catch {}
+        }
+        const totalW = loadedLogos.reduce((s, l) => s + l.w, 0) + logoGap * (loadedLogos.length - 1);
+        let lx = (W - totalW) / 2;
+        for (const { img, w } of loadedLogos) {
           const sc = logoH / img.height;
-          const lw = img.width * sc;
-          const pos = shuffled[i](W, H);
-          ctx.drawImage(img, pos.x, pos.y, lw, logoH);
-        } catch {}
+          ctx.drawImage(img, lx, logoY, w, logoH);
+          lx += w + logoGap;
+        }
       }
 
       // 4. Text overlay
