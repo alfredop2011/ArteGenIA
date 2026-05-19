@@ -363,26 +363,39 @@ export default function GeneratedEditor() {
         }
       }
 
-      // ── LOGOS in corners ─────────────────────────────────────────────────
+      // ── LOGOS — fila centrada abajo ──────────────────────────────────────
       const logos = (data.logos ?? []).filter((l: ArtistData) => l.photoUrl);
-      const cornerPositions = [
-        { x: dims.w - 160, y: dims.h - 120 },
-        { x: 40,           y: dims.h - 120 },
-        { x: dims.w - 160, y: 40 },
-        { x: 40,           y: 40 },
-      ];
-      for (let i = 0; i < logos.length; i++) {
-        try {
-          const logoImg = await fabric.FabricImage.fromURL(logos[i].photoUrl!, { crossOrigin: "anonymous" });
-          const logoH = 100;
-          const logoScale = logoH / (logoImg.height ?? logoH);
-          const corner = cornerPositions[i % cornerPositions.length];
-          logoImg.set({ left: corner.x, top: corner.y, scaleX: logoScale, scaleY: logoScale, selectable: true, evented: true, originX: "left", originY: "top" });
+      if (logos.length > 0) {
+        const logoH = 80;
+        const logoGap = 20;
+        const margin = 40;
+        const logoY = dims.h - logoH - margin;
+
+        // First pass: load all logos to get widths
+        const logoImgs: Array<{ img: InstanceType<typeof fabric.FabricImage>; w: number }> = [];
+        for (const logo of logos) {
+          try {
+            const img = await fabric.FabricImage.fromURL(logo.photoUrl!, { crossOrigin: "anonymous" });
+            const sc = logoH / (img.height ?? logoH);
+            const w = (img.width ?? logoH) * sc;
+            logoImgs.push({ img, w });
+          } catch {}
+        }
+
+        // Calculate total width and starting X to center
+        const totalW = logoImgs.reduce((sum, l) => sum + l.w, 0) + logoGap * (logoImgs.length - 1);
+        let currentX = (dims.w - totalW) / 2;
+
+        for (let i = 0; i < logoImgs.length; i++) {
+          const { img, w } = logoImgs[i];
+          const sc = logoH / (img.height ?? logoH);
+          img.set({ left: currentX, top: logoY, scaleX: sc, scaleY: sc, selectable: true, evented: true, originX: "left", originY: "top" });
           const logoId = `logo-${i}`;
-          (logoImg as FabricObject & { customId?: string }).customId = logoId;
-          canvas.add(logoImg);
-          newLayers.push({ id: logoId, name: logos[i].name || `Logo ${i+1}`, type: "image", obj: logoImg, visible: true, locked: false });
-        } catch (e) { console.warn(`Logo ${i} error:`, e); }
+          (img as FabricObject & { customId?: string }).customId = logoId;
+          canvas.add(img);
+          newLayers.push({ id: logoId, name: logos[i].name || `Logo ${i+1}`, type: "image", obj: img, visible: true, locked: false });
+          currentX += w + logoGap;
+        }
       }
       canvas.renderAll();
       if (isMounted) setLayers([...newLayers].reverse());
