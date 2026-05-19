@@ -1,3 +1,8 @@
+import type { Canvas as FabricCanvas } from "fabric";
+import * as fabric from "fabric";
+import { applyTemplateClasesBaile } from "@/lib/templates/clases-baile";
+import { applyTemplateDanceClass } from "@/lib/templates/dance-class";
+
 export type TemplateLayer =
     | {
     id: string;
@@ -48,7 +53,8 @@ export type Template = {
     premium: boolean;
     width: number;
     height: number;
-    layers: TemplateLayer[];
+    layers?: TemplateLayer[];
+    builder?: (canvas: FabricCanvas, fabricNs: typeof fabric) => Promise<unknown>;
 };
 
 export const templates: Template[] = [
@@ -260,5 +266,55 @@ export const templates: Template[] = [
             { id: "venue", type: "text", text: "Arena Metrópolis · Valencia", x: 0, y: 362, width: 430, fontSize: 15, fontFamily: "Arial", color: "#ffffff", textAlign: "center" },
             { id: "price", type: "text", text: "ENTRADA GENERAL DESDE 35€", x: 0, y: 460, width: 430, fontSize: 17, fontFamily: "Arial", color: "#c4b5fd", fontWeight: "bold", textAlign: "center" },
         ],
+    },
+
+    // 9 — Clases de Baile (Neón Amarillo) — semanal
+    {
+        id: 9,
+        title: "Clases de Baile — Neón",
+        category: "Clases",
+        image: "https://images.unsplash.com/photo-1504609813442-a8924e83f76e?q=80&w=800",
+        premium: false,
+        width: 1080,
+        height: 1350,
+        builder: (canvas, f) =>
+            applyTemplateClasesBaile(
+                canvas,
+                {
+                    title: "Clases de",
+                    subtitle: "Baile",
+                    date: "00.00.2024",
+                    time: "DESDE LAS 17:00",
+                    venue: "CALLE CUALQUIERA 123",
+                },
+                f,
+            ),
+    },
+
+    // 10 — Dance Class (Negro & Amarillo) — workshop
+    {
+        id: 10,
+        title: "Dance Class — Workshop",
+        category: "Clases",
+        image: "https://images.unsplash.com/photo-1545128485-c400e7702796?q=80&w=800",
+        premium: true,
+        width: 1080,
+        height: 1350,
+        builder: (canvas, f) =>
+            applyTemplateDanceClass(
+                canvas,
+                {
+                    studioName: "Nombre del Estudio",
+                    titleLine1: "DANCE",
+                    titleLine2: "CLASS",
+                    description: "Encuentra la libertad en el movimiento.\nÚnete a nuestra clase de baile.",
+                    price: "$75",
+                    priceLabel: "/ PERSONA",
+                    schedule: "TODOS LOS DOMINGOS",
+                    time: "9:00 AM",
+                    website: "www.tusitio.com",
+                },
+                f,
+            ),
     },
 ];

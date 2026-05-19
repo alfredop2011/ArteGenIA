@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import type { Canvas as FabricCanvas, FabricObject, IText } from "fabric";
+import { templates, type Template } from "@/data/templates";
+import { applyTemplateLayers } from "@/lib/fabricApplyTemplateLayers";
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
 
@@ -195,12 +197,18 @@ function LayerIcon({ type }: { type: LayerType }) {
 
 // ─── MAIN EDITOR ──────────────────────────────────────────────────────────────
 
-export default function GeneratedEditor() {
+type GeneratedEditorProps = {
+  /** Si se pasa, el editor carga la plantilla por id en vez de leer localStorage. */
+  templateId?: number;
+};
+
+export default function GeneratedEditor({ templateId }: GeneratedEditorProps = {}) {
   const router = useRouter();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricRef = useRef<FabricCanvas | null>(null);
 
   const [data, setData] = useState<GeneratedData | null>(null);
+  const [template, setTemplate] = useState<Template | null>(null);
   const [layers, setLayers] = useState<LayerItem[]>([]);
   const [selectedLayer, setSelectedLayer] = useState<LayerItem | null>(null);
   const [activeTool, setActiveTool] = useState<LeftTool>("layers");
@@ -222,12 +230,28 @@ export default function GeneratedEditor() {
   // ─── LOAD DATA ────────────────────────────────────────────────────────────
 
   useEffect(() => {
+    // Modo plantilla: cargar la plantilla por id
+    if (typeof templateId === "number") {
+      const tpl = templates.find(t => t.id === templateId);
+      if (tpl) {
+        setTemplate(tpl);
+        // Construimos un GeneratedData mínimo para que el resto del editor tenga datos coherentes
+        setData({
+          format: tpl.width === tpl.height ? "cuadrado" : (tpl.width > tpl.height ? "evento" : "instagram"),
+          palette: { colors: ["#ffffff", "#f5c518", "#0d0d1a"], label: "default" },
+        });
+      } else {
+        router.push("/templates");
+      }
+      return;
+    }
+    // Modo generated: leer localStorage
     try {
       const raw = localStorage.getItem("artegenia_generated");
       if (raw) setData(JSON.parse(raw));
       else router.push("/create");
     } catch { router.push("/create"); }
-  }, [router]);
+  }, [router, templateId]);
 
   // ─── INIT CANVAS ──────────────────────────────────────────────────────────
 
@@ -238,8 +262,10 @@ export default function GeneratedEditor() {
 
     (async () => {
       const fabric = await import("fabric");
-      const format = data.format ?? "instagram";
-      const dims = FORMAT_DIMS[format] ?? FORMAT_DIMS.instagram;
+      // Si hay plantilla, usar sus dimensiones; si no, las del formato del wizard
+      const dims = template
+        ? { w: template.width, h: template.height }
+        : (FORMAT_DIMS[data.format ?? "instagram"] ?? FORMAT_DIMS.instagram);
       if (isMounted) setCanvasSize({ w: dims.w, h: dims.h });
 
       const scale = zoom / 100;
@@ -254,6 +280,73 @@ export default function GeneratedEditor() {
       fabricRef.current = canvas;
 
       const newLayers: LayerItem[] = [];
+
+      // ── MODO PLANTILLA ─────────────────────────────────────────────────────
+      if (template) {
+        try {
+          if (template.builder) {
+            // ARREGLO CRÍTICO: Agrandar canvas DOM a tamaño nativo + zoom 1 ANTES del builder.
+            // Los builders dibujan en coords absolutas 0..dims.w / 0..dims.h.
+            // Si el canvas está reducido (540x675) y con setZoom(0.5), los píxeles del builder
+            // se dibujarían fuera del bitmap interno.
+            canvas.setDimensions({ width: dims.w, height: dims.h });
+            canvas.setZoom(1);
+            const builderResult = await template.builder(canvas, fabric);
+            // Restaurar canvas reducido + zoom para mostrar el resultado a tamaño viewport
+            canvas.setDimensions({ width: dims.w * scale, height: dims.h * scale });
+            canvas.setZoom(scale);
+            canvas.requestRenderAll();
+            if (Array.isArray(builderResult)) {
+              for (const bl of builderResult as Array<{ id: string; name: string; type: string; obj: FabricObject; visible: boolean; locked: boolean }>) {
+                const obj = bl.obj;
+                (obj as FabricObject & { customId?: string }).customId = bl.id;
+                // Mapear "shape" → "image" porque el editor sólo conoce text/image/background
+                const mappedType: LayerType = bl.type === "text" ? "text" : (bl.type === "background" ? "background" : "image");
+                newLayers.push({ id: bl.id, name: bl.name, type: mappedType, obj, visible: bl.visible, locked: bl.locked });
+              }
+            }
+          } else if (template.layers) {
+            // Plantilla declarativa: usar applyTemplateLayers y luego enumerar los objetos del canvas
+            await applyTemplateLayers(canvas, template.layers);
+            // Recorrer objetos añadidos y registrarlos como capas
+            const objs = canvas.getObjects();
+            for (let i = 0; i < objs.length; i++) {
+              const obj = objs[i];
+              const tplLayer = template.layers[i];
+              if (!tplLayer) continue;
+              const layerId = tplLayer.id;
+              (obj as FabricObject & { customId?: string }).customId = layerId;
+              const mappedType: LayerType = tplLayer.type === "text" ? "text" : (tplLayer.id === "bg" || tplLayer.id === "background" ? "background" : "image");
+              const layerName = tplLayer.type === "text" ? (tplLayer.text.slice(0, 22) || "Texto") : (tplLayer.type === "image" ? "Imagen" : `Forma ${i + 1}`);
+              newLayers.push({ id: layerId, name: layerName, type: mappedType, obj, visible: true, locked: false });
+            }
+          }
+        } catch (e) {
+          console.warn("Template load error:", e);
+        }
+        canvas.renderAll();
+        if (isMounted) setLayers([...newLayers].reverse());
+        // Selection handlers (mismo bloque que el modo generated; lo registramos también aquí)
+        const handleSelTpl = (obj: FabricObject) => {
+          const id = (obj as FabricObject & { customId?: string }).customId ?? "";
+          const layer = newLayers.find(l => l.id === id) ?? null;
+          setSelectedLayer(layer);
+          if (obj.type === "i-text" || obj.type === "text" || obj.type === "textbox") {
+            const t = obj as IText;
+            const sh = t.shadow as { color?: string; blur?: number } | null;
+            setTextProps({ text: t.text ?? "", fontFamily: String(t.fontFamily ?? "Montserrat"), fontSize: t.fontSize ?? 60, fill: String(t.fill ?? "#ffffff"), textAlign: t.textAlign ?? "center", fontWeight: String(t.fontWeight ?? "700"), charSpacing: t.charSpacing ?? 0, lineHeight: t.lineHeight ?? 1.2, opacity: t.opacity ?? 1, angle: t.angle ?? 0, left: t.left ?? 0, top: t.top ?? 0, width: t.width ?? 900, shadow: !!sh, shadowColor: sh?.color ?? "#000000", shadowBlur: sh?.blur ?? 10 });
+          } else {
+            setImageProps({ opacity: obj.opacity ?? 1, angle: obj.angle ?? 0, left: obj.left ?? 0, top: obj.top ?? 0, width: (obj.width ?? 400) * (obj.scaleX ?? 1), height: (obj.height ?? 600) * (obj.scaleY ?? 1), flipX: obj.flipX ?? false, flipY: obj.flipY ?? false });
+          }
+        };
+        canvas.on("selection:created", e => { const o = e.selected?.[0]; if (o) handleSelTpl(o); });
+        canvas.on("selection:updated", e => { const o = e.selected?.[0]; if (o) handleSelTpl(o); });
+        canvas.on("selection:cleared", () => setSelectedLayer(null));
+        canvas.on("object:modified", () => { const o = canvas?.getActiveObject(); if (o) handleSelTpl(o); setSaveState("unsaved"); });
+        return;
+      }
+
+      // ── MODO GENERATED (resto del código original) ─────────────────────────
       const artists: ArtistData[] = data.artists?.filter(a => a.photoUrl) ??
         (data.artistPhotoUrl ? [{ name: "Artista", photoUrl: data.artistPhotoUrl }] : []);
 
@@ -421,7 +514,7 @@ export default function GeneratedEditor() {
 
     return () => { isMounted = false; canvas?.dispose(); fabricRef.current = null; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data]);
+  }, [data, template]);
 
   // ─── ZOOM ─────────────────────────────────────────────────────────────────
 
@@ -583,7 +676,7 @@ export default function GeneratedEditor() {
 
       {/* HEADER */}
       <header className="h-12 bg-[#111118] border-b border-white/[0.07] flex items-center px-4 gap-3 shrink-0 z-50">
-        <button onClick={() => router.push("/create")} className="p-1.5 text-gray-500 hover:text-white transition-colors">
+        <button onClick={() => router.push(template ? "/templates" : "/create")} className="p-1.5 text-gray-500 hover:text-white transition-colors">
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
         </button>
         <div className="flex items-center gap-1.5">

@@ -4,9 +4,10 @@ import type { TemplateLayer } from "@/data/templates";
 /** Añade todas las capas de una plantilla al lienzo, incluyendo imágenes async */
 export async function applyTemplateLayers(
     canvas: Canvas | StaticCanvas,
-    layers: TemplateLayer[],
+    layers: TemplateLayer[] | undefined,
     scale = 1,
 ): Promise<void> {
+    if (!layers) return;
     for (const layer of layers) {
         if (layer.type === "shape") {
             if (layer.shape === "rect") {
@@ -69,6 +70,7 @@ export async function applyTemplateLayers(
                         selectable: true,
                         evented: true,
                     });
+                    void ch;
                 } else {
                     img.set({
                         left: (layer.x ?? 0) * scale, top: (layer.y ?? 0) * scale,

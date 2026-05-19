@@ -1,5 +1,5 @@
 import Link from "next/link";
-import EditorWorkspace from "@/components/editor/EditorWorkspace";
+import GeneratedEditor from "@/components/editor/GeneratedEditor";
 import GeneratedEditorWrapper from "@/components/editor/GeneratedEditorWrapper";
 import { templates } from "@/data/templates";
 
@@ -7,8 +7,13 @@ type EditorPageProps = { params: Promise<{ id: string }> };
 
 export default async function EditorPage({ params }: EditorPageProps) {
     const { id } = await params;
+
+    // Modo "generated" — flyer generado desde el wizard, lee localStorage
     if (id === "generated") return <GeneratedEditorWrapper />;
-    const template = templates.find((item) => item.id === Number(id));
+
+    // Modo plantilla — id numérico, busca en data/templates.ts
+    const templateId = Number(id);
+    const template = templates.find((item) => item.id === templateId);
     if (!template) {
         return (
             <section className="mx-auto max-w-7xl px-6 py-8">
@@ -20,5 +25,7 @@ export default async function EditorPage({ params }: EditorPageProps) {
             </section>
         );
     }
-    return <EditorWorkspace template={template} />;
+
+    // Pasamos solo el id al Client Component — el editor resuelve la plantilla por sí mismo
+    return <GeneratedEditor templateId={templateId} />;
 }

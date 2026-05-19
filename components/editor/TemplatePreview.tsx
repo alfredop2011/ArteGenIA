@@ -56,7 +56,7 @@ export default function TemplatePreview({ template }: TemplatePreviewProps) {
         };
 
         const loadLayers = async () => {
-            for (const layer of template.layers) {
+            for (const layer of template.layers ?? []) {
                 if (layer.type === "shape") {
                     if (layer.shape === "rect") {
                         canvas.add(new Rect({

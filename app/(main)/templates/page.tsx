@@ -12,6 +12,7 @@ const CATEGORIES = [
     { id: "festival", label: "Festival", icon: "⭐" },
     { id: "salsa", label: "Salsa", icon: "💃" },
     { id: "bachata", label: "Bachata", icon: "🌹" },
+    { id: "clases", label: "Clases de baile", icon: "🩰" },
     { id: "urbano", label: "Urbano", icon: "🎧" },
     { id: "discoteca", label: "Club / Discoteca", icon: "🎹" },
     { id: "gala", label: "Corporativo", icon: "💼" },

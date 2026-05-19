@@ -21,7 +21,6 @@ export default function TemplatePreview({ template }: TemplatePreviewProps) {
         if (initializedRef.current) return;
         initializedRef.current = true;
 
-        // Intentar caché
         try {
             const cached = localStorage.getItem(`${CACHE_PREFIX}${template.id}`);
             if (cached) {
@@ -33,8 +32,8 @@ export default function TemplatePreview({ template }: TemplatePreviewProps) {
 
         if (!canvasRef.current) return;
 
-        const W = template.width;   // 430
-        const H = template.height;  // 540
+        const W = template.width;
+        const H = template.height;
 
         const canvas = new Canvas(canvasRef.current, {
             width: W,
@@ -65,8 +64,18 @@ export default function TemplatePreview({ template }: TemplatePreviewProps) {
             }
         };
 
-        const loadLayers = async () => {
-            for (const layer of template.layers) {
+        const loadFromBuilder = async () => {
+            try {
+                const fabricNs = await import("fabric");
+                await template.builder!(canvas, fabricNs);
+            } catch (e) {
+                console.warn("Builder error in preview:", e);
+            }
+            setTimeout(renderAndExport, 600);
+        };
+
+        const loadFromLayers = async () => {
+            for (const layer of template.layers ?? []) {
                 if (layer.type === "shape") {
                     if (layer.shape === "rect") {
                         canvas.add(new Rect({
@@ -125,7 +134,11 @@ export default function TemplatePreview({ template }: TemplatePreviewProps) {
             setTimeout(renderAndExport, 600);
         };
 
-        loadLayers();
+        if (template.builder) {
+            void loadFromBuilder();
+        } else {
+            void loadFromLayers();
+        }
 
         return () => {
             try { canvas.dispose(); } catch {}
@@ -142,7 +155,6 @@ export default function TemplatePreview({ template }: TemplatePreviewProps) {
             className="relative w-full overflow-hidden bg-[#0d0d18]"
             style={{ aspectRatio: `${W} / ${H}` }}
         >
-            {/* Canvas visible pero escalado con CSS transform para caber en el contenedor */}
             {!previewUrl && (
                 <div
                     style={{
@@ -167,7 +179,6 @@ export default function TemplatePreview({ template }: TemplatePreviewProps) {
                 </div>
             )}
 
-            {/* Preview final */}
             {previewUrl && (
                 <img
                     src={previewUrl}
@@ -182,7 +193,6 @@ export default function TemplatePreview({ template }: TemplatePreviewProps) {
                 />
             )}
 
-            {/* Skeleton */}
             {loading && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-[#0d0d18]">
                     <div className="w-5 h-5 border-2 border-purple-500/30 border-t-purple-500 rounded-full animate-spin" />

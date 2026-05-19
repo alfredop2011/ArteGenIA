@@ -12,6 +12,7 @@ type TemplateFabricThumbnailProps = {
 
 /**
  * Miniatura WYSIWYG: mismo modelo de capas que el editor (Fabric), escalado al hueco de la tarjeta.
+ * Soporta plantillas declarativas (layers) y plantillas builder (función imperativa).
  */
 export default function TemplateFabricThumbnail({ template, className = "" }: TemplateFabricThumbnailProps) {
     const containerRef = useRef<HTMLDivElement | null>(null);
@@ -50,7 +51,17 @@ export default function TemplateFabricThumbnail({ template, className = "" }: Te
             imageSmoothingEnabled: true,
         });
 
-        applyTemplateLayers(canvas, template.layers).then(() => canvas.renderAll());
+        const render = async () => {
+            if (template.builder) {
+                const fabricNs = await import("fabric");
+                await template.builder(canvas as unknown as import("fabric").Canvas, fabricNs);
+            } else {
+                await applyTemplateLayers(canvas, template.layers);
+            }
+            canvas.renderAll();
+        };
+
+        void render();
 
         return () => {
             void canvas.dispose();
