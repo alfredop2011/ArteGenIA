@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { Lock, Palette, Pencil, Trash2, Plus } from "lucide-react";
 import { useProjects } from "@/hooks/useProjects";
 import { useAuth } from "@/hooks/useAuth";
 import type { Project } from "@/lib/supabase";
@@ -25,7 +26,9 @@ export default function ProjectsPage() {
 
     if (!user) return (
         <div className="min-h-[60vh] flex flex-col items-center justify-center text-center px-6">
-            <div className="text-5xl mb-4">🔐</div>
+            <div className="w-16 h-16 mb-4 rounded-2xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-300">
+                <Lock size={28} strokeWidth={1.8} />
+            </div>
             <h2 className="text-2xl font-black mb-2">Inicia sesión para ver tus flyers</h2>
             <p className="text-gray-400 mb-6">Guarda y accede a todos tus diseños desde cualquier dispositivo.</p>
             <Link href="/" className="px-6 py-3 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold">Ir al inicio</Link>
@@ -39,8 +42,9 @@ export default function ProjectsPage() {
                     <h1 className="text-3xl font-black text-white mb-1">Mis flyers</h1>
                     <p className="text-gray-400 text-sm">{projects.length} proyecto{projects.length !== 1 ? "s" : ""} guardado{projects.length !== 1 ? "s" : ""}</p>
                 </div>
-                <Link href="/templates" className="px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-sm transition-all hover:scale-105">
-                    + Nuevo flyer
+                <Link href="/templates" className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-sm transition-all hover:scale-105">
+                    <Plus size={16} strokeWidth={2.4} />
+                    Nuevo flyer
                 </Link>
             </div>
 
@@ -52,7 +56,9 @@ export default function ProjectsPage() {
 
             {!loading && projects.length === 0 && (
                 <div className="flex flex-col items-center justify-center py-24 text-center">
-                    <div className="text-6xl mb-4">🎨</div>
+                    <div className="w-20 h-20 mb-4 rounded-2xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-300">
+                        <Palette size={36} strokeWidth={1.6} />
+                    </div>
                     <h3 className="text-xl font-bold mb-2">Aún no tienes flyers guardados</h3>
                     <p className="text-gray-400 mb-6">Crea tu primer flyer y guárdalo para acceder desde cualquier dispositivo.</p>
                     <Link href="/templates" className="px-6 py-3 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold">Explorar plantillas</Link>
@@ -68,7 +74,7 @@ export default function ProjectsPage() {
                                     // eslint-disable-next-line @next/next/no-img-element
                                     <img src={project.thumbnail_url} alt={project.title} className="w-full h-full object-cover" />
                                 ) : (
-                                    <span className="text-4xl">🎨</span>
+                                    <Palette size={40} strokeWidth={1.4} className="text-purple-300/60" />
                                 )}
                             </div>
                             <div className="p-3">
@@ -78,10 +84,20 @@ export default function ProjectsPage() {
                                 </p>
                             </div>
                             <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-3">
-                                <Link href={`/editor/${project.id}`} className="px-5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-sm font-bold">✏️ Editar</Link>
+                                <Link href={`/editor/${project.id}`} className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-sm font-bold">
+                                    <Pencil size={14} strokeWidth={2} />
+                                    Editar
+                                </Link>
                                 <button onClick={() => handleDelete(project.id)} disabled={deleting === project.id}
-                                    className="px-5 py-2 rounded-xl bg-red-900/60 hover:bg-red-900 text-red-400 text-sm font-bold disabled:opacity-50">
-                                    {deleting === project.id ? "Eliminando..." : "🗑️ Eliminar"}
+                                    className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-red-900/60 hover:bg-red-900 text-red-400 text-sm font-bold disabled:opacity-50">
+                                    {deleting === project.id ? (
+                                        "Eliminando..."
+                                    ) : (
+                                        <>
+                                            <Trash2 size={14} strokeWidth={1.8} />
+                                            Eliminar
+                                        </>
+                                    )}
                                 </button>
                             </div>
                         </div>

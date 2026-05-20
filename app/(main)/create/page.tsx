@@ -1,6 +1,10 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
+import {
+  Mic2, Sparkle, Tent, Heart, Drum, Music2, Flame, Coffee,
+  Sparkles, Check, Zap, ImagePlus, type LucideIcon,
+} from "lucide-react";
 import { ArtistLibraryCard, ArtistLibraryModal } from "@/components/wizard/ArtistLibrary";
 import type { ArtistEntry } from "@/components/wizard/ArtistLibrary";
 import { useRouter } from "next/navigation";
@@ -24,15 +28,15 @@ type ExtractedData = {
 
 // ─── QUICK CHIPS ──────────────────────────────────────────────────────────────
 
-const QUICK_CHIPS = [
-  { label: "🎤 Concierto", text: "Concierto" },
-  { label: "🪩 Fiesta",    text: "Fiesta" },
-  { label: "🎪 Festival",  text: "Festival" },
-  { label: "❤️ Bachata",   text: "Bachata" },
-  { label: "🪘 Timba",     text: "Timba" },
-  { label: "💃 Salsa",     text: "Salsa" },
-  { label: "🔥 Reggaeton", text: "Reggaeton" },
-  { label: "☕ Brunch",    text: "Brunch" },
+const QUICK_CHIPS: { icon: LucideIcon; label: string; text: string }[] = [
+  { icon: Mic2,    label: "Concierto", text: "Concierto" },
+  { icon: Sparkle, label: "Fiesta",    text: "Fiesta" },
+  { icon: Tent,    label: "Festival",  text: "Festival" },
+  { icon: Heart,   label: "Bachata",   text: "Bachata" },
+  { icon: Drum,    label: "Timba",     text: "Timba" },
+  { icon: Music2,  label: "Salsa",     text: "Salsa" },
+  { icon: Flame,   label: "Reggaeton", text: "Reggaeton" },
+  { icon: Coffee,  label: "Brunch",    text: "Brunch" },
 ];
 
 function uid() { return Math.random().toString(36).slice(2, 8); }
@@ -210,7 +214,7 @@ export default function CreatePage() {
                 strokeLinecap="round" strokeDasharray={163} strokeDashoffset={40}
                 style={{ transition: "stroke-dashoffset 1s" }}/>
             </svg>
-            <div className="absolute inset-0 flex items-center justify-center text-xl">✨</div>
+            <div className="absolute inset-0 flex items-center justify-center text-purple-400"><Sparkles size={22} strokeWidth={1.8} className="animate-pulse" /></div>
           </div>
           <h2 className="text-xl font-black text-white mb-2">Creando tu flyer</h2>
           <p className="text-sm text-gray-500 mb-8">{genStep}</p>
@@ -227,7 +231,7 @@ export default function CreatePage() {
                 <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${
                   s.done ? "bg-green-500 text-black" : genStep.includes(s.label.split(" ")[0]) ? "border-2 border-purple-400" : "border-2 border-white/10"
                 }`}>
-                  {s.done ? "✓" : genStep.includes(s.label.split(" ")[0]) ?
+                  {s.done ? <Check size={11} strokeWidth={3} /> : genStep.includes(s.label.split(" ")[0]) ?
                     <div className="w-2.5 h-2.5 border-2 border-purple-400 border-t-transparent rounded-full animate-spin"/> : ""}
                 </div>
                 <span className={`text-xs ${s.done ? "text-green-400" : genStep.includes(s.label.split(" ")[0]) ? "text-white" : "text-white/20"}`}>{s.label}</span>
@@ -249,8 +253,9 @@ export default function CreatePage() {
 
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-black mb-2">
-            Crea tu flyer <span className="text-yellow-400">⚡</span>
+          <h1 className="text-3xl font-black mb-2 inline-flex items-center gap-2">
+            Crea tu flyer
+            <Zap size={28} strokeWidth={2.2} className="text-yellow-400 fill-yellow-400" />
           </h1>
           <p className="text-gray-500 text-sm">Describe tu evento y sube la foto del artista. Listo.</p>
         </div>
@@ -260,7 +265,10 @@ export default function CreatePage() {
 
           {/* Text area */}
           <div className="p-5 pb-3">
-            <div className="text-[10px] text-purple-400 uppercase tracking-widest font-semibold mb-3">✦ Describe tu evento</div>
+            <div className="inline-flex items-center gap-1.5 text-[10px] text-purple-400 uppercase tracking-widest font-semibold mb-3">
+              <Sparkles size={11} strokeWidth={2} />
+              Describe tu evento
+            </div>
             <textarea
               ref={textareaRef}
               value={prompt}
@@ -274,12 +282,16 @@ export default function CreatePage() {
 
           {/* Quick chips */}
           <div className="px-5 pb-3 flex flex-wrap gap-2">
-            {QUICK_CHIPS.map(chip => (
-              <button key={chip.text} onClick={() => appendChip(chip.text)}
-                className="text-xs px-3 py-1 rounded-full bg-white/5 border border-white/10 text-gray-400 hover:text-white hover:border-purple-500/30 hover:bg-purple-500/10 transition-all">
-                {chip.label}
-              </button>
-            ))}
+            {QUICK_CHIPS.map(chip => {
+              const Icon = chip.icon;
+              return (
+                <button key={chip.text} onClick={() => appendChip(chip.text)}
+                  className="inline-flex items-center gap-1.5 text-xs px-3 py-1 rounded-full bg-white/5 border border-white/10 text-gray-400 hover:text-white hover:border-purple-500/30 hover:bg-purple-500/10 transition-all">
+                  <Icon size={13} strokeWidth={1.8} />
+                  {chip.label}
+                </button>
+              );
+            })}
           </div>
 
           {/* Divider */}
@@ -287,7 +299,10 @@ export default function CreatePage() {
 
           {/* Artist Library */}
           <div className="p-5">
-            <div className="text-xs text-gray-500 mb-3">📸 Artistas y logos <span className="text-gray-700">(opcional)</span></div>
+            <div className="inline-flex items-center gap-1.5 text-xs text-gray-500 mb-3">
+              <ImagePlus size={13} strokeWidth={1.8} />
+              Artistas y logos <span className="text-gray-700">(opcional)</span>
+            </div>
             <ArtistLibraryCard
               selected={artistsAndLogos}
               onOpen={() => setLibraryModalOpen(true)}
@@ -304,7 +319,7 @@ export default function CreatePage() {
               ? "bg-gradient-to-r from-yellow-400 to-orange-400 text-black hover:scale-[1.02] hover:shadow-2xl hover:shadow-yellow-400/20"
               : "bg-white/5 text-white/20 cursor-not-allowed"
           }`}>
-          <span className="text-xl">⚡</span>
+          <Zap size={20} strokeWidth={2.4} className={prompt.trim() ? "fill-black" : ""} />
           Generar flyer
           {prompt.trim() && <span className="text-xs font-normal opacity-60 ml-1">Cmd+Enter</span>}
         </button>

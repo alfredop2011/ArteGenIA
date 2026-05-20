@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Copy } from "lucide-react";
 
 export type CardTemplate = {
     id: number;
@@ -56,7 +57,8 @@ export default function HomeTemplateCard({ t, isActive }: { t: CardTemplate; isA
                         className="mt-2 inline-flex items-center gap-2 text-xs font-black px-4 py-1.5 rounded-xl text-black transition-transform hover:scale-105"
                         style={{ background: "linear-gradient(135deg, #facc15, #f59e0b)" }}
                         onClick={e => e.stopPropagation()}>
-                        ✦ Usar plantilla
+                        <Copy size={13} strokeWidth={2.2} />
+                        Usar plantilla
                     </Link>
                 )}
             </div>

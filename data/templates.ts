@@ -345,4 +345,314 @@ export const templates: Template[] = [
             { id: "arrow", type: "text", text: "<<<", x: 540, y: 1270, width: 200, fontSize: 48, fontFamily: "Montserrat, sans-serif", color: "#F5C518", fontWeight: "900", textAlign: "center", originX: "center", originY: "top" },
         ],
     },
+
+    // ─────────────────────────────────────────────────────────────────────
+    // 11 — NEON NIGHT (Club electrónico, 1080x1350)
+    // ─────────────────────────────────────────────────────────────────────
+    {
+        id: 11,
+        title: "Neon Night",
+        category: "Club / Discoteca",
+        image: "https://images.unsplash.com/photo-1571266028243-d220c6a82b8d?q=80&w=800",
+        premium: true,
+        width: 1080,
+        height: 1350,
+        layers: [
+            // Fondo oscuro
+            { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1350, fill: "#05050f", selectable: false },
+            // Gradiente simulado con rectángulos translúcidos
+            { id: "glow-1", type: "shape", shape: "circle", x: 200, y: 200, width: 700, height: 700, radius: 350, fill: "#7c3aed", opacity: 0.18, selectable: false },
+            { id: "glow-2", type: "shape", shape: "circle", x: 600, y: 800, width: 600, height: 600, radius: 300, fill: "#ec4899", opacity: 0.16, selectable: false },
+            { id: "glow-3", type: "shape", shape: "circle", x: -100, y: 1000, width: 500, height: 500, radius: 250, fill: "#06b6d4", opacity: 0.14, selectable: false },
+            // Línea horizontal decorativa arriba
+            { id: "top-line", type: "shape", shape: "rect", x: 70, y: 110, width: 80, height: 2, fill: "#06b6d4", selectable: false },
+            { id: "category", type: "text", text: "DJ SET · LIVE", x: 170, y: 95, width: 600, fontSize: 22, fontFamily: "Montserrat, sans-serif", color: "#06b6d4", fontWeight: "600", charSpacing: 400 },
+            // Título principal grande
+            { id: "title", type: "text", text: "NEON", x: 540, y: 320, width: 1080, fontSize: 320, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", fontWeight: "900", textAlign: "center", originX: "center", originY: "center" },
+            { id: "title2", type: "text", text: "NIGHT", x: 540, y: 540, width: 1080, fontSize: 320, fontFamily: "Anton, Impact, sans-serif", color: "#06b6d4", fontWeight: "900", textAlign: "center", originX: "center", originY: "center", stroke: "#06b6d4", strokeWidth: 0 },
+            // Subtítulo con géneros
+            { id: "genres", type: "text", text: "TECHNO · HOUSE · BASS", x: 540, y: 740, width: 900, fontSize: 28, fontFamily: "Montserrat, sans-serif", color: "#e2e8f0", fontWeight: "500", textAlign: "center", originX: "center", originY: "center", charSpacing: 600 },
+            // Banda magenta diagonal decorativa
+            { id: "diag-band", type: "shape", shape: "rect", x: -100, y: 850, width: 1300, height: 4, fill: "#ec4899", angle: -2, selectable: false },
+            // Bloque de fecha grande
+            { id: "date-box", type: "shape", shape: "rect", x: 90, y: 920, width: 900, height: 220, fill: "rgba(124, 58, 237, 0.15)", stroke: "#7c3aed", strokeWidth: 2, selectable: false },
+            { id: "date-day", type: "text", text: "VIERNES 28", x: 540, y: 950, width: 900, fontSize: 56, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", fontWeight: "900", textAlign: "center", originX: "center", originY: "top" },
+            { id: "date-month", type: "text", text: "JUNIO 2026", x: 540, y: 1020, width: 900, fontSize: 36, fontFamily: "Montserrat, sans-serif", color: "#ec4899", fontWeight: "600", textAlign: "center", originX: "center", originY: "top", charSpacing: 400 },
+            { id: "date-time", type: "text", text: "23:00 — 06:00 HRS", x: 540, y: 1080, width: 900, fontSize: 24, fontFamily: "Montserrat, sans-serif", color: "#e2e8f0", fontWeight: "400", textAlign: "center", originX: "center", originY: "top", charSpacing: 200 },
+            // Pie con datos
+            { id: "venue", type: "text", text: "CLUB ESPACIO · MADRID", x: 540, y: 1210, width: 900, fontSize: 22, fontFamily: "Montserrat, sans-serif", color: "#ffffff", fontWeight: "600", textAlign: "center", originX: "center", originY: "center", charSpacing: 400 },
+            { id: "price", type: "text", text: "ENTRADA 20€ · LISTA HASTA 01:00", x: 540, y: 1255, width: 900, fontSize: 18, fontFamily: "Montserrat, sans-serif", color: "#94a3b8", fontWeight: "400", textAlign: "center", originX: "center", originY: "center" },
+        ],
+    },
+
+    // ─────────────────────────────────────────────────────────────────────
+    // 12 — LATIN HEAT (Salsa / Bachata, 1080x1350)
+    // ─────────────────────────────────────────────────────────────────────
+    {
+        id: 12,
+        title: "Latin Heat",
+        category: "Salsa",
+        image: "https://images.unsplash.com/photo-1535525153412-5a42439a210d?q=80&w=800",
+        premium: true,
+        width: 1080,
+        height: 1350,
+        layers: [
+            // Fondo gradiente cálido (rectángulos apilados)
+            { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1350, fill: "#7c1d1d", selectable: false },
+            { id: "bg-warm-1", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 700, fill: "rgba(220, 38, 38, 0.45)", selectable: false },
+            { id: "bg-warm-2", type: "shape", shape: "circle", x: 540, y: 200, width: 1400, height: 1400, radius: 700, fill: "rgba(245, 158, 11, 0.18)", selectable: false },
+            // Sello VIP arriba derecha
+            { id: "vip-circle", type: "shape", shape: "circle", x: 920, y: 100, width: 100, height: 100, radius: 50, fill: "rgba(0,0,0,0)", stroke: "#fef3c7", strokeWidth: 2, selectable: false },
+            { id: "vip-text", type: "text", text: "VIP", x: 970, y: 150, width: 100, fontSize: 32, fontFamily: "Playfair Display, serif", color: "#fef3c7", fontWeight: "900", textAlign: "center", originX: "center", originY: "center" },
+            // Mini etiqueta arriba izquierda
+            { id: "tag", type: "text", text: "— NOCHE LATINA —", x: 90, y: 130, width: 600, fontSize: 22, fontFamily: "Playfair Display, serif", color: "#fef3c7", fontWeight: "400", charSpacing: 300 },
+            // Título principal (serif elegante)
+            { id: "title", type: "text", text: "Latin", x: 540, y: 420, width: 1080, fontSize: 240, fontFamily: "Playfair Display, serif", color: "#fef3c7", fontWeight: "900", textAlign: "center", originX: "center", originY: "center" },
+            { id: "title2", type: "text", text: "HEAT", x: 540, y: 620, width: 1080, fontSize: 280, fontFamily: "Anton, Impact, sans-serif", color: "#f59e0b", fontWeight: "900", textAlign: "center", originX: "center", originY: "center", charSpacing: 500 },
+            // Línea decorativa curvada (simulada con rect angle)
+            { id: "deco-line", type: "shape", shape: "rect", x: 290, y: 800, width: 500, height: 3, fill: "#fef3c7", selectable: false },
+            // Géneros
+            { id: "genres", type: "text", text: "SALSA · BACHATA · MERENGUE", x: 540, y: 850, width: 1000, fontSize: 26, fontFamily: "Montserrat, sans-serif", color: "#fef3c7", fontWeight: "500", textAlign: "center", originX: "center", originY: "center", charSpacing: 400 },
+            // Bloque de información
+            { id: "info-bg", type: "shape", shape: "rect", x: 140, y: 970, width: 800, height: 220, fill: "rgba(0,0,0,0.35)", selectable: false },
+            { id: "date", type: "text", text: "SÁBADO 12 JULIO", x: 540, y: 1000, width: 800, fontSize: 52, fontFamily: "Playfair Display, serif", color: "#fef3c7", fontWeight: "900", textAlign: "center", originX: "center", originY: "top" },
+            { id: "time", type: "text", text: "22:00 HRS · OPEN BAR", x: 540, y: 1075, width: 800, fontSize: 28, fontFamily: "Montserrat, sans-serif", color: "#f59e0b", fontWeight: "600", textAlign: "center", originX: "center", originY: "top", charSpacing: 300 },
+            { id: "place", type: "text", text: "SALA TROPICANA · BARCELONA", x: 540, y: 1130, width: 800, fontSize: 22, fontFamily: "Montserrat, sans-serif", color: "#fef3c7", fontWeight: "400", textAlign: "center", originX: "center", originY: "top", charSpacing: 300 },
+            // Footer
+            { id: "footer", type: "text", text: "ENTRADA 15€ ANTICIPADA · 20€ EN PUERTA", x: 540, y: 1260, width: 1000, fontSize: 18, fontFamily: "Montserrat, sans-serif", color: "rgba(254,243,199,0.7)", fontWeight: "400", textAlign: "center", originX: "center", originY: "center" },
+        ],
+    },
+
+    // ─────────────────────────────────────────────────────────────────────
+    // 13 — FESTIVAL POP (Festival, 1080x1350)
+    // ─────────────────────────────────────────────────────────────────────
+    {
+        id: 13,
+        title: "Festival Pop",
+        category: "Festival",
+        image: "https://images.unsplash.com/photo-1459749411175-04bf5292ceea?q=80&w=800",
+        premium: true,
+        width: 1080,
+        height: 1350,
+        layers: [
+            // Fondo magenta-cyan gradiente con bloques
+            { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1350, fill: "#0a0a1f", selectable: false },
+            // Bloques de color para simular gradiente
+            { id: "grad-1", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 450, fill: "#ec4899", opacity: 0.85, selectable: false },
+            { id: "grad-2", type: "shape", shape: "rect", x: 0, y: 450, width: 1080, height: 450, fill: "#8b5cf6", opacity: 0.85, selectable: false },
+            { id: "grad-3", type: "shape", shape: "rect", x: 0, y: 900, width: 1080, height: 450, fill: "#06b6d4", opacity: 0.85, selectable: false },
+            // Forma circular decorativa
+            { id: "sun", type: "shape", shape: "circle", x: 540, y: 540, width: 280, height: 280, radius: 140, fill: "#fef08a", opacity: 0.95, selectable: false },
+            // Etiqueta arriba
+            { id: "label", type: "text", text: "FESTIVAL · 2026", x: 540, y: 130, width: 900, fontSize: 26, fontFamily: "Montserrat, sans-serif", color: "#ffffff", fontWeight: "700", textAlign: "center", originX: "center", originY: "center", charSpacing: 600 },
+            // Fechas grandes protagonistas (cada número diferente color)
+            { id: "date-18", type: "text", text: "18", x: 270, y: 280, width: 250, fontSize: 200, fontFamily: "Anton, Impact, sans-serif", color: "#fef08a", fontWeight: "900", textAlign: "center", originX: "center", originY: "center" },
+            { id: "date-dot1", type: "text", text: "·", x: 460, y: 280, width: 80, fontSize: 200, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", fontWeight: "900", textAlign: "center", originX: "center", originY: "center" },
+            { id: "date-19", type: "text", text: "19", x: 540, y: 280, width: 250, fontSize: 200, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", fontWeight: "900", textAlign: "center", originX: "center", originY: "center" },
+            { id: "date-dot2", type: "text", text: "·", x: 730, y: 280, width: 80, fontSize: 200, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", fontWeight: "900", textAlign: "center", originX: "center", originY: "center" },
+            { id: "date-20", type: "text", text: "20", x: 810, y: 280, width: 250, fontSize: 200, fontFamily: "Anton, Impact, sans-serif", color: "#fef08a", fontWeight: "900", textAlign: "center", originX: "center", originY: "center" },
+            { id: "month", type: "text", text: "JULIO 2026", x: 540, y: 420, width: 900, fontSize: 36, fontFamily: "Montserrat, sans-serif", color: "#ffffff", fontWeight: "600", textAlign: "center", originX: "center", originY: "center", charSpacing: 400 },
+            // Título central
+            { id: "title", type: "text", text: "AURORA", x: 540, y: 700, width: 1080, fontSize: 140, fontFamily: "Anton, Impact, sans-serif", color: "#0a0a1f", fontWeight: "900", textAlign: "center", originX: "center", originY: "center", charSpacing: 600 },
+            { id: "subtitle", type: "text", text: "MUSIC FESTIVAL", x: 540, y: 800, width: 1080, fontSize: 32, fontFamily: "Montserrat, sans-serif", color: "#0a0a1f", fontWeight: "700", textAlign: "center", originX: "center", originY: "center", charSpacing: 1200 },
+            // Lista de artistas en bloque cyan
+            { id: "artists-label", type: "text", text: "— LINE UP —", x: 540, y: 970, width: 900, fontSize: 22, fontFamily: "Montserrat, sans-serif", color: "#0a0a1f", fontWeight: "600", textAlign: "center", originX: "center", originY: "center", charSpacing: 600 },
+            { id: "artist-1", type: "text", text: "DJ ARTIST · BANDA NORTE · GRUPO SUR", x: 540, y: 1030, width: 1000, fontSize: 26, fontFamily: "Montserrat, sans-serif", color: "#ffffff", fontWeight: "700", textAlign: "center", originX: "center", originY: "center" },
+            { id: "artist-2", type: "text", text: "LOS ESTRELLAS · MC SOUND · ELÉCTRICA", x: 540, y: 1080, width: 1000, fontSize: 22, fontFamily: "Montserrat, sans-serif", color: "#fef08a", fontWeight: "500", textAlign: "center", originX: "center", originY: "center" },
+            { id: "artist-3", type: "text", text: "+ 20 ARTISTAS · 4 ESCENARIOS", x: 540, y: 1130, width: 1000, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "#ffffff", fontWeight: "400", textAlign: "center", originX: "center", originY: "center" },
+            // Footer info
+            { id: "venue", type: "text", text: "RECINTO FERIAL · MADRID", x: 540, y: 1230, width: 1000, fontSize: 22, fontFamily: "Montserrat, sans-serif", color: "#0a0a1f", fontWeight: "700", textAlign: "center", originX: "center", originY: "center", charSpacing: 400 },
+            { id: "tickets", type: "text", text: "ENTRADAS DESDE 35€ · WWW.AURORAFEST.COM", x: 540, y: 1280, width: 1000, fontSize: 18, fontFamily: "Montserrat, sans-serif", color: "#0a0a1f", fontWeight: "500", textAlign: "center", originX: "center", originY: "center" },
+        ],
+    },
+
+    // ─────────────────────────────────────────────────────────────────────
+    // 14 — BLACK TIE (Gala corporativa, 1080x1350)
+    // ─────────────────────────────────────────────────────────────────────
+    {
+        id: 14,
+        title: "Black Tie",
+        category: "Corporativo",
+        image: "https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?q=80&w=800",
+        premium: true,
+        width: 1080,
+        height: 1350,
+        layers: [
+            // Fondo negro profundo
+            { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1350, fill: "#0a0a0a", selectable: false },
+            // Sutil overlay para textura
+            { id: "vignette", type: "shape", shape: "circle", x: 540, y: 675, width: 1400, height: 1400, radius: 700, fill: "rgba(212, 175, 55, 0.05)", selectable: false },
+            // Marco dorado fino - 4 lados
+            { id: "frame-top", type: "shape", shape: "rect", x: 60, y: 60, width: 960, height: 1, fill: "#d4af37", selectable: false },
+            { id: "frame-bottom", type: "shape", shape: "rect", x: 60, y: 1290, width: 960, height: 1, fill: "#d4af37", selectable: false },
+            { id: "frame-left", type: "shape", shape: "rect", x: 60, y: 60, width: 1, height: 1231, fill: "#d4af37", selectable: false },
+            { id: "frame-right", type: "shape", shape: "rect", x: 1019, y: 60, width: 1, height: 1231, fill: "#d4af37", selectable: false },
+            // Pequeño label arriba
+            { id: "year-line", type: "shape", shape: "rect", x: 470, y: 175, width: 140, height: 1, fill: "#d4af37", selectable: false },
+            { id: "year", type: "text", text: "G A L A   2 0 2 6", x: 540, y: 220, width: 900, fontSize: 22, fontFamily: "Cormorant Garamond, Playfair Display, serif", color: "#d4af37", fontWeight: "400", textAlign: "center", originX: "center", originY: "center", charSpacing: 800 },
+            // Título principal
+            { id: "title", type: "text", text: "Black", x: 540, y: 460, width: 1080, fontSize: 200, fontFamily: "Cormorant Garamond, Playfair Display, serif", color: "#ffffff", fontWeight: "400", textAlign: "center", originX: "center", originY: "center" },
+            { id: "title-amp", type: "text", text: "&", x: 540, y: 605, width: 1080, fontSize: 90, fontFamily: "Cormorant Garamond, Playfair Display, serif", color: "#d4af37", fontWeight: "300", textAlign: "center", originX: "center", originY: "center" },
+            { id: "title2", type: "text", text: "Tie", x: 540, y: 740, width: 1080, fontSize: 200, fontFamily: "Cormorant Garamond, Playfair Display, serif", color: "#d4af37", fontWeight: "400", textAlign: "center", originX: "center", originY: "center" },
+            // Línea separadora
+            { id: "sep", type: "shape", shape: "rect", x: 470, y: 880, width: 140, height: 1, fill: "#d4af37", selectable: false },
+            // Subtítulo
+            { id: "subtitle", type: "text", text: "Una noche de elegancia y distinción", x: 540, y: 930, width: 1000, fontSize: 28, fontFamily: "Cormorant Garamond, Playfair Display, serif", color: "#e5e5e5", fontWeight: "300", textAlign: "center", originX: "center", originY: "center" },
+            // Bloque información
+            { id: "date-label", type: "text", text: "SÁBADO", x: 540, y: 1050, width: 900, fontSize: 18, fontFamily: "Montserrat, sans-serif", color: "#d4af37", fontWeight: "500", textAlign: "center", originX: "center", originY: "center", charSpacing: 1000 },
+            { id: "date", type: "text", text: "5 DE JULIO", x: 540, y: 1100, width: 900, fontSize: 56, fontFamily: "Cormorant Garamond, Playfair Display, serif", color: "#ffffff", fontWeight: "400", textAlign: "center", originX: "center", originY: "center" },
+            { id: "time", type: "text", text: "21:00 H — HOTEL PALACE", x: 540, y: 1180, width: 900, fontSize: 22, fontFamily: "Montserrat, sans-serif", color: "#e5e5e5", fontWeight: "300", textAlign: "center", originX: "center", originY: "center", charSpacing: 500 },
+            // Footer
+            { id: "rsvp", type: "text", text: "R S V P    ·    + 3 4   6 0 0   0 0 0   0 0 0", x: 540, y: 1245, width: 1000, fontSize: 14, fontFamily: "Montserrat, sans-serif", color: "rgba(212,175,55,0.7)", fontWeight: "400", textAlign: "center", originX: "center", originY: "center" },
+        ],
+    },
+
+    // ─────────────────────────────────────────────────────────────────────
+    // 15 — STREET WAVE (Reggaeton / Trap Urbano, 1080x1350)
+    // ─────────────────────────────────────────────────────────────────────
+    {
+        id: 15,
+        title: "Street Wave",
+        category: "Urbano",
+        image: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?q=80&w=800",
+        premium: true,
+        width: 1080,
+        height: 1350,
+        layers: [
+            // Fondo negro
+            { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1350, fill: "#0a0a0a", selectable: false },
+            // Bloques de color cortados como graffiti
+            { id: "block-lime", type: "shape", shape: "rect", x: 0, y: 200, width: 700, height: 280, fill: "#84cc16", angle: -3, selectable: false },
+            { id: "block-magenta", type: "shape", shape: "rect", x: 400, y: 700, width: 800, height: 200, fill: "#d946ef", angle: 2, selectable: false },
+            // Líneas de glitch horizontales
+            { id: "glitch-1", type: "shape", shape: "rect", x: 0, y: 580, width: 1080, height: 6, fill: "#84cc16", selectable: false },
+            { id: "glitch-2", type: "shape", shape: "rect", x: 0, y: 595, width: 700, height: 2, fill: "#d946ef", selectable: false },
+            { id: "glitch-3", type: "shape", shape: "rect", x: 200, y: 1180, width: 880, height: 4, fill: "#d946ef", selectable: false },
+            // Etiqueta superior tipo tag
+            { id: "tag-bg", type: "shape", shape: "rect", x: 80, y: 100, width: 200, height: 38, fill: "#84cc16", selectable: false },
+            { id: "tag-text", type: "text", text: "/// URBANO", x: 100, y: 110, width: 200, fontSize: 22, fontFamily: "Anton, Impact, sans-serif", color: "#0a0a0a", fontWeight: "900" },
+            // Numero grande decorativo
+            { id: "n-bg", type: "text", text: "01", x: 880, y: 130, width: 200, fontSize: 100, fontFamily: "Anton, Impact, sans-serif", color: "rgba(132, 204, 22, 0.25)", fontWeight: "900", textAlign: "right", originX: "right", originY: "top" },
+            // Título principal - vertical/rota
+            { id: "title", type: "text", text: "STREET", x: 540, y: 320, width: 1080, fontSize: 180, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", fontWeight: "900", textAlign: "center", originX: "center", originY: "center", angle: -3 },
+            { id: "title2", type: "text", text: "WAVE", x: 540, y: 470, width: 1080, fontSize: 220, fontFamily: "Anton, Impact, sans-serif", color: "#0a0a0a", fontWeight: "900", textAlign: "center", originX: "center", originY: "center", angle: -3, stroke: "#84cc16", strokeWidth: 0 },
+            // Subtítulo géneros tipo lista
+            { id: "genres", type: "text", text: "REGGAETON  /  TRAP  /  DEMBOW", x: 540, y: 660, width: 1000, fontSize: 28, fontFamily: "Anton, Impact, sans-serif", color: "#84cc16", fontWeight: "900", textAlign: "center", originX: "center", originY: "center", charSpacing: 300 },
+            // Bloque magenta con info principal
+            { id: "feat-label", type: "text", text: "FEAT", x: 540, y: 760, width: 1000, fontSize: 22, fontFamily: "Anton, Impact, sans-serif", color: "#0a0a0a", fontWeight: "900", textAlign: "center", originX: "center", originY: "center", charSpacing: 800 },
+            { id: "artists", type: "text", text: "MC FLOW · DJ HOSTILE · TRAP KIDS", x: 540, y: 820, width: 1000, fontSize: 34, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", fontWeight: "900", textAlign: "center", originX: "center", originY: "center" },
+            // Bloque fecha grande
+            { id: "date-bg", type: "shape", shape: "rect", x: 90, y: 970, width: 900, height: 160, fill: "rgba(132, 204, 22, 0.12)", stroke: "#84cc16", strokeWidth: 2, selectable: false },
+            { id: "date", type: "text", text: "SÁBADO 22 AGOSTO", x: 540, y: 1010, width: 900, fontSize: 48, fontFamily: "Anton, Impact, sans-serif", color: "#84cc16", fontWeight: "900", textAlign: "center", originX: "center", originY: "top", charSpacing: 200 },
+            { id: "time", type: "text", text: "23:00 / OPEN BAR HASTA 01:00", x: 540, y: 1075, width: 900, fontSize: 22, fontFamily: "Montserrat, sans-serif", color: "#ffffff", fontWeight: "500", textAlign: "center", originX: "center", originY: "top", charSpacing: 200 },
+            // Footer
+            { id: "venue", type: "text", text: "WAREHOUSE 47 · MADRID", x: 540, y: 1220, width: 1000, fontSize: 24, fontFamily: "Anton, Impact, sans-serif", color: "#d946ef", fontWeight: "900", textAlign: "center", originX: "center", originY: "center", charSpacing: 600 },
+            { id: "price", type: "text", text: "ENTRADA 12€ · NO DRESS CODE", x: 540, y: 1265, width: 1000, fontSize: 16, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.6)", fontWeight: "400", textAlign: "center", originX: "center", originY: "center", charSpacing: 200 },
+        ],
+    },
+
+    // ─────────────────────────────────────────────────────────────────────
+    // 16 — GOLDEN PARTY (Cumpleaños / Aniversario, 1080x1350)
+    // ─────────────────────────────────────────────────────────────────────
+    {
+        id: 16,
+        title: "Golden Party",
+        category: "Cumpleaños",
+        image: "https://images.unsplash.com/photo-1530103862676-de8c9debad1d?q=80&w=800",
+        premium: true,
+        width: 1080,
+        height: 1350,
+        layers: [
+            // Fondo azul medianoche profundo
+            { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1350, fill: "#0c0a3e", selectable: false },
+            // Capa decorativa - circulo suave central
+            { id: "glow-center", type: "shape", shape: "circle", x: 540, y: 600, width: 1100, height: 1100, radius: 550, fill: "rgba(251, 191, 36, 0.08)", selectable: false },
+            { id: "glow-2", type: "shape", shape: "circle", x: 540, y: 600, width: 700, height: 700, radius: 350, fill: "rgba(251, 191, 36, 0.06)", selectable: false },
+            // Confetti / estrellas pequeñas (puntos dorados)
+            { id: "star-1", type: "shape", shape: "circle", x: 150, y: 200, width: 8, height: 8, radius: 4, fill: "#fbbf24", selectable: false },
+            { id: "star-2", type: "shape", shape: "circle", x: 880, y: 230, width: 6, height: 6, radius: 3, fill: "#fbbf24", selectable: false },
+            { id: "star-3", type: "shape", shape: "circle", x: 950, y: 380, width: 10, height: 10, radius: 5, fill: "#fbbf24", selectable: false },
+            { id: "star-4", type: "shape", shape: "circle", x: 120, y: 480, width: 6, height: 6, radius: 3, fill: "#fbbf24", selectable: false },
+            { id: "star-5", type: "shape", shape: "circle", x: 200, y: 1100, width: 8, height: 8, radius: 4, fill: "#fbbf24", selectable: false },
+            { id: "star-6", type: "shape", shape: "circle", x: 920, y: 1150, width: 6, height: 6, radius: 3, fill: "#fbbf24", selectable: false },
+            { id: "star-7", type: "shape", shape: "circle", x: 80, y: 850, width: 10, height: 10, radius: 5, fill: "#fbbf24", selectable: false },
+            { id: "star-8", type: "shape", shape: "circle", x: 1000, y: 900, width: 8, height: 8, radius: 4, fill: "#fbbf24", selectable: false },
+            // Marco decorativo dorado fino (esquinas)
+            { id: "corner-tl-h", type: "shape", shape: "rect", x: 80, y: 80, width: 80, height: 2, fill: "#fbbf24", selectable: false },
+            { id: "corner-tl-v", type: "shape", shape: "rect", x: 80, y: 80, width: 2, height: 80, fill: "#fbbf24", selectable: false },
+            { id: "corner-tr-h", type: "shape", shape: "rect", x: 920, y: 80, width: 80, height: 2, fill: "#fbbf24", selectable: false },
+            { id: "corner-tr-v", type: "shape", shape: "rect", x: 998, y: 80, width: 2, height: 80, fill: "#fbbf24", selectable: false },
+            { id: "corner-bl-h", type: "shape", shape: "rect", x: 80, y: 1268, width: 80, height: 2, fill: "#fbbf24", selectable: false },
+            { id: "corner-bl-v", type: "shape", shape: "rect", x: 80, y: 1190, width: 2, height: 80, fill: "#fbbf24", selectable: false },
+            { id: "corner-br-h", type: "shape", shape: "rect", x: 920, y: 1268, width: 80, height: 2, fill: "#fbbf24", selectable: false },
+            { id: "corner-br-v", type: "shape", shape: "rect", x: 998, y: 1190, width: 2, height: 80, fill: "#fbbf24", selectable: false },
+            // Etiqueta arriba "Happy Birthday"
+            { id: "label", type: "text", text: "— HAPPY BIRTHDAY —", x: 540, y: 200, width: 1000, fontSize: 22, fontFamily: "Playfair Display, serif", color: "#fbbf24", fontWeight: "400", textAlign: "center", originX: "center", originY: "center", charSpacing: 800 },
+            // Edad gigante protagonista
+            { id: "age", type: "text", text: "30", x: 540, y: 480, width: 1080, fontSize: 480, fontFamily: "Playfair Display, serif", color: "#fbbf24", fontWeight: "900", textAlign: "center", originX: "center", originY: "center" },
+            // Nombre en script
+            { id: "name", type: "text", text: "Carlos", x: 540, y: 800, width: 1080, fontSize: 96, fontFamily: "Great Vibes, cursive", color: "#ffffff", fontWeight: "400", textAlign: "center", originX: "center", originY: "center" },
+            // Línea decorativa
+            { id: "deco-line", type: "shape", shape: "rect", x: 390, y: 890, width: 300, height: 1, fill: "#fbbf24", selectable: false },
+            // Bloque fecha
+            { id: "date-day", type: "text", text: "SÁBADO", x: 540, y: 960, width: 900, fontSize: 18, fontFamily: "Montserrat, sans-serif", color: "#fbbf24", fontWeight: "500", textAlign: "center", originX: "center", originY: "center", charSpacing: 800 },
+            { id: "date", type: "text", text: "15 DE MARZO", x: 540, y: 1010, width: 900, fontSize: 48, fontFamily: "Playfair Display, serif", color: "#ffffff", fontWeight: "700", textAlign: "center", originX: "center", originY: "center" },
+            { id: "time", type: "text", text: "20:00 H · CENA Y FIESTA", x: 540, y: 1080, width: 900, fontSize: 22, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.8)", fontWeight: "400", textAlign: "center", originX: "center", originY: "center", charSpacing: 300 },
+            // Lugar
+            { id: "place", type: "text", text: "Salón Marbella · Av. Principal 25", x: 540, y: 1160, width: 900, fontSize: 20, fontFamily: "Playfair Display, serif", color: "#fbbf24", fontWeight: "400", textAlign: "center", originX: "center", originY: "center" },
+            // Footer
+            { id: "rsvp", type: "text", text: "Confirmar asistencia · 600 000 000", x: 540, y: 1230, width: 1000, fontSize: 16, fontFamily: "Montserrat, sans-serif", color: "rgba(251,191,36,0.7)", fontWeight: "400", textAlign: "center", originX: "center", originY: "center" },
+        ],
+    },
+
+    // ─────────────────────────────────────────────────────────────────────
+    // 17 — BOTANIC LOVE (Boda / 15 años, 1080x1350)
+    // ─────────────────────────────────────────────────────────────────────
+    {
+        id: 17,
+        title: "Botanic Love",
+        category: "Boda",
+        image: "https://images.unsplash.com/photo-1519741497674-611481863552?q=80&w=800",
+        premium: true,
+        width: 1080,
+        height: 1350,
+        layers: [
+            // Fondo crema cálido
+            { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1350, fill: "#fef3e8", selectable: false },
+            // Sutil overlay con tonos polvo
+            { id: "wash", type: "shape", shape: "circle", x: 540, y: 675, width: 1500, height: 1500, radius: 750, fill: "rgba(253, 164, 175, 0.06)", selectable: false },
+            // Hojas botánicas decorativas (simuladas con elipses rotadas)
+            { id: "leaf-tl-1", type: "shape", shape: "circle", x: 50, y: 80, width: 200, height: 80, radius: 40, fill: "#86efac", opacity: 0.7, angle: -25, selectable: false },
+            { id: "leaf-tl-2", type: "shape", shape: "circle", x: 130, y: 130, width: 160, height: 60, radius: 30, fill: "#bbf7d0", opacity: 0.85, angle: -45, selectable: false },
+            { id: "leaf-tl-3", type: "shape", shape: "circle", x: 80, y: 200, width: 130, height: 50, radius: 25, fill: "#86efac", opacity: 0.6, angle: 15, selectable: false },
+            { id: "leaf-br-1", type: "shape", shape: "circle", x: 1030, y: 1270, width: 200, height: 80, radius: 40, fill: "#86efac", opacity: 0.7, angle: 155, selectable: false },
+            { id: "leaf-br-2", type: "shape", shape: "circle", x: 950, y: 1220, width: 160, height: 60, radius: 30, fill: "#bbf7d0", opacity: 0.85, angle: 135, selectable: false },
+            { id: "leaf-br-3", type: "shape", shape: "circle", x: 1000, y: 1150, width: 130, height: 50, radius: 25, fill: "#86efac", opacity: 0.6, angle: 195, selectable: false },
+            // Flores rosadas
+            { id: "flower-1", type: "shape", shape: "circle", x: 180, y: 170, width: 40, height: 40, radius: 20, fill: "#fda4af", opacity: 0.85, selectable: false },
+            { id: "flower-1-c", type: "shape", shape: "circle", x: 180, y: 170, width: 14, height: 14, radius: 7, fill: "#fef3e8", selectable: false },
+            { id: "flower-2", type: "shape", shape: "circle", x: 920, y: 1220, width: 40, height: 40, radius: 20, fill: "#fda4af", opacity: 0.85, selectable: false },
+            { id: "flower-2-c", type: "shape", shape: "circle", x: 920, y: 1220, width: 14, height: 14, radius: 7, fill: "#fef3e8", selectable: false },
+            // Etiqueta arriba
+            { id: "label", type: "text", text: "— SAVE THE DATE —", x: 540, y: 320, width: 900, fontSize: 20, fontFamily: "Playfair Display, serif", color: "#9a3412", fontWeight: "400", textAlign: "center", originX: "center", originY: "center", charSpacing: 800 },
+            // Nombres en script grandes
+            { id: "name1", type: "text", text: "María", x: 540, y: 450, width: 1080, fontSize: 130, fontFamily: "Great Vibes, cursive", color: "#7c2d12", fontWeight: "400", textAlign: "center", originX: "center", originY: "center" },
+            { id: "amp", type: "text", text: "&", x: 540, y: 580, width: 1080, fontSize: 70, fontFamily: "Playfair Display, serif", color: "#fda4af", fontWeight: "300", textAlign: "center", originX: "center", originY: "center" },
+            { id: "name2", type: "text", text: "Daniel", x: 540, y: 700, width: 1080, fontSize: 130, fontFamily: "Great Vibes, cursive", color: "#7c2d12", fontWeight: "400", textAlign: "center", originX: "center", originY: "center" },
+            // Línea decorativa
+            { id: "deco-line", type: "shape", shape: "rect", x: 390, y: 820, width: 300, height: 1, fill: "#fda4af", selectable: false },
+            // Mensaje
+            { id: "message", type: "text", text: "Tenemos el honor de invitarte a nuestra boda", x: 540, y: 880, width: 900, fontSize: 22, fontFamily: "Playfair Display, serif", color: "#7c2d12", fontWeight: "400", textAlign: "center", originX: "center", originY: "center" },
+            // Fecha protagonista
+            { id: "date-day-label", type: "text", text: "SÁBADO", x: 300, y: 1000, width: 200, fontSize: 18, fontFamily: "Montserrat, sans-serif", color: "#9a3412", fontWeight: "500", textAlign: "center", originX: "center", originY: "center", charSpacing: 600 },
+            { id: "date-day", type: "text", text: "12", x: 300, y: 1070, width: 200, fontSize: 120, fontFamily: "Playfair Display, serif", color: "#7c2d12", fontWeight: "900", textAlign: "center", originX: "center", originY: "center" },
+            { id: "date-month", type: "text", text: "JUNIO", x: 540, y: 1000, width: 200, fontSize: 18, fontFamily: "Montserrat, sans-serif", color: "#9a3412", fontWeight: "500", textAlign: "center", originX: "center", originY: "center", charSpacing: 600 },
+            { id: "date-month-name", type: "text", text: "DE", x: 540, y: 1060, width: 200, fontSize: 36, fontFamily: "Playfair Display, serif", color: "#7c2d12", fontWeight: "400", textAlign: "center", originX: "center", originY: "center" },
+            { id: "date-month-name2", type: "text", text: "2026", x: 540, y: 1110, width: 200, fontSize: 36, fontFamily: "Playfair Display, serif", color: "#7c2d12", fontWeight: "400", textAlign: "center", originX: "center", originY: "center" },
+            { id: "date-time-label", type: "text", text: "CEREMONIA", x: 780, y: 1000, width: 200, fontSize: 18, fontFamily: "Montserrat, sans-serif", color: "#9a3412", fontWeight: "500", textAlign: "center", originX: "center", originY: "center", charSpacing: 600 },
+            { id: "date-time", type: "text", text: "17:00", x: 780, y: 1070, width: 200, fontSize: 56, fontFamily: "Playfair Display, serif", color: "#7c2d12", fontWeight: "700", textAlign: "center", originX: "center", originY: "center" },
+            // Lugar
+            { id: "place", type: "text", text: "Hacienda Los Olivos · Sevilla", x: 540, y: 1230, width: 900, fontSize: 20, fontFamily: "Playfair Display, serif", color: "#9a3412", fontWeight: "400", textAlign: "center", originX: "center", originY: "center" },
+        ],
+    },
 ];

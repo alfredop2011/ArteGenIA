@@ -1,13 +1,16 @@
 "use client";
+import { Zap, Layers, Download, Gift, type LucideIcon } from "lucide-react";
 import MatrixRain from "@/components/home/MatrixRain";
 import HeroChat from "@/components/home/HeroChat";
 import TemplateCarousel3D from "@/components/home/TemplateCarousel3D";
 
-const BENEFITS = [
-    { icon: "⚡", title: "Genera en segundos", sub: "Con IA avanzada" },
-    { icon: "🎨", title: "Edita por capas", sub: "Personaliza cada detalle" },
-    { icon: "⬇️", title: "Descarga en alta calidad", sub: "PNG listo para imprimir" },
-    { icon: "🎁", title: "Sin registro", sub: "Gratis para empezar" },
+type Benefit = { icon: LucideIcon; title: string; sub: string };
+
+const BENEFITS: Benefit[] = [
+    { icon: Zap,      title: "Genera en segundos",        sub: "Con IA avanzada" },
+    { icon: Layers,   title: "Edita por capas",            sub: "Personaliza cada detalle" },
+    { icon: Download, title: "Descarga en alta calidad",   sub: "PNG listo para imprimir" },
+    { icon: Gift,     title: "Sin registro",               sub: "Gratis para empezar" },
 ];
 
 export default function Home() {
@@ -51,19 +54,22 @@ export default function Home() {
 
                     {/* Benefits — after carousel, normal flow */}
                     <div className="w-full grid grid-cols-2 md:grid-cols-4 gap-3 mt-4 pb-6 max-w-[1200px]">
-                        {BENEFITS.map((b, i) => (
-                            <div key={i} className="flex items-center gap-3 px-4 py-3 rounded-2xl"
-                                style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)" }}>
-                                <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg shrink-0"
-                                    style={{ background: "rgba(168,85,247,0.18)", border: "1px solid rgba(168,85,247,0.35)", boxShadow: "0 0 12px rgba(168,85,247,0.2)" }}>
-                                    {b.icon}
+                        {BENEFITS.map((b, i) => {
+                            const Icon = b.icon;
+                            return (
+                                <div key={i} className="flex items-center gap-3 px-4 py-3 rounded-2xl"
+                                    style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)" }}>
+                                    <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 text-purple-300"
+                                        style={{ background: "rgba(168,85,247,0.18)", border: "1px solid rgba(168,85,247,0.35)", boxShadow: "0 0 12px rgba(168,85,247,0.2)" }}>
+                                        <Icon size={18} strokeWidth={1.8} />
+                                    </div>
+                                    <div>
+                                        <p className="font-bold text-xs leading-tight" style={{color:"#fff"}}>{b.title}</p>
+                                        <p className="text-xs leading-tight" style={{color:"#9ca3af"}}>{b.sub}</p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <p className="font-bold text-xs leading-tight" style={{color:"#fff"}}>{b.title}</p>
-                                    <p className="text-xs leading-tight" style={{color:"#9ca3af"}}>{b.sub}</p>
-                                </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 </div>
             </div>

@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import { Sparkles, User, Building2, CalendarDays, Lightbulb, type LucideIcon } from "lucide-react";
 
 const EXAMPLES = [
     "Crea un flyer para noche de salsa con 2 artistas…",
@@ -8,11 +9,11 @@ const EXAMPLES = [
     "Festival latino con 10 artistas y entrada premium…",
 ];
 const CHIPS = ["Noche de salsa en discoteca", "Concierto de reggaetón", "Festival de música urbana", "Evento de bachata"];
-const QUICK = [
-    { icon: "👤", label: "2 artistas" },
-    { icon: "🏛️", label: "Discoteca" },
-    { icon: "📅", label: "Viernes por la noche" },
-    { icon: "💡", label: "Ideas aleatorias" },
+const QUICK: { icon: LucideIcon; label: string }[] = [
+    { icon: User,         label: "2 artistas" },
+    { icon: Building2,    label: "Discoteca" },
+    { icon: CalendarDays, label: "Viernes por la noche" },
+    { icon: Lightbulb,    label: "Ideas aleatorias" },
 ];
 
 export default function HeroChat() {
@@ -80,7 +81,7 @@ export default function HeroChat() {
                         } : {}}>
                         {generating
                             ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Generando...</>
-                            : <>✦ Generar flyer</>}
+                            : <><Sparkles size={15} strokeWidth={2} />Generar flyer</>}
                     </button>
                 </div>
 
@@ -96,11 +97,15 @@ export default function HeroChat() {
 
                 {/* Quick options */}
                 <div className="border-t border-white/[0.06] px-5 py-2 flex items-center gap-6 overflow-x-auto">
-                    {QUICK.map(q => (
-                        <button key={q.label} className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-300 whitespace-nowrap transition-colors">
-                            <span>{q.icon}</span>{q.label}
-                        </button>
-                    ))}
+                    {QUICK.map(q => {
+                        const Icon = q.icon;
+                        return (
+                            <button key={q.label} className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-300 whitespace-nowrap transition-colors">
+                                <Icon size={13} strokeWidth={1.8} />
+                                {q.label}
+                            </button>
+                        );
+                    })}
                 </div>
             </div>
         </div>

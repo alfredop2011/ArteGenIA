@@ -2,6 +2,7 @@
 import { Swiper, SwiperSlide } from "swiper/react";
 import { EffectCoverflow, Autoplay, Navigation, Pagination } from "swiper/modules";
 import Link from "next/link";
+import { Sparkles, Copy, ArrowRight } from "lucide-react";
 import "swiper/css";
 import "swiper/css/effect-coverflow";
 
@@ -26,11 +27,12 @@ export default function TemplateCarousel3D() {
             {/* Header + chips */}
             <div className="flex items-center justify-between mb-2 px-2">
                 <div className="flex items-center gap-2">
-                    <span className="text-yellow-400">✨</span>
+                    <Sparkles size={15} strokeWidth={2} className="text-yellow-400" />
                     <span className="text-white font-bold text-sm">Plantillas que inspiran</span>
                 </div>
-                <a href="/templates" className="text-xs text-gray-400 hover:text-white transition-colors">
-                    Ver todas las plantillas →
+                <a href="/templates" className="inline-flex items-center gap-1 text-xs text-gray-400 hover:text-white transition-colors">
+                    Ver todas las plantillas
+                    <ArrowRight size={12} strokeWidth={2} />
                 </a>
             </div>
             <div className="flex gap-1.5 flex-wrap mb-3 px-2">
@@ -118,7 +120,8 @@ export default function TemplateCarousel3D() {
                                                 className="mt-3 inline-flex items-center gap-1.5 font-black px-4 py-1.5 rounded-xl text-black transition-transform hover:scale-105"
                                                 style={{ fontSize: "0.8rem", background: "linear-gradient(135deg,#facc15,#f59e0b)", boxShadow: "0 4px 20px rgba(250,204,21,0.5), 0 0 30px rgba(168,85,247,0.25)" }}
                                                 onClick={e => e.stopPropagation()}>
-                                                ✦ Usar plantilla
+                                                <Copy size={13} strokeWidth={2.2} />
+                                                Usar plantilla
                                             </Link>
                                         )}
                                     </div>

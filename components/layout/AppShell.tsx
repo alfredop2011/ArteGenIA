@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { Zap, Bell, Crown, Image as ImageIcon, History, LogOut } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import AuthModal from "@/components/auth/AuthModal";
 
@@ -66,7 +67,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                             <>
                                 {/* Créditos reales */}
                                 <div className="flex items-center gap-2 border border-white/10 rounded-full px-3 py-1 text-xs text-gray-300">
-                                    <span className="text-yellow-400 font-bold">⚡</span>
+                                    <Zap size={14} strokeWidth={2.2} className="text-yellow-400 fill-yellow-400" />
                                     <span>Créditos</span>
                                     <span className="font-bold text-white">
                                         {profile?.credits ?? 0} / {profile?.plan === "pro" ? "∞" : "20"}
@@ -74,8 +75,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                                 </div>
 
                                 {/* Notificaciones */}
-                                <button className="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center text-gray-400 hover:text-white hover:border-white/20 transition-colors text-sm">
-                                    🔔
+                                <button aria-label="Notificaciones" className="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center text-gray-400 hover:text-white hover:border-white/20 transition-colors">
+                                    <Bell size={15} strokeWidth={1.8} />
                                 </button>
 
                                 {/* Avatar + menu */}
@@ -91,23 +92,31 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                                             <div className="px-4 py-3 border-b border-white/[0.06]">
                                                 <p className="text-white text-sm font-semibold truncate">{profile?.name ?? user.email}</p>
                                                 <p className="text-gray-500 text-xs truncate">{user.email}</p>
-                                                <span className={`inline-block mt-1 text-xs px-2 py-0.5 rounded-full font-medium ${profile?.plan === "pro" ? "bg-yellow-400/20 text-yellow-400" : "bg-white/5 text-gray-400"}`}>
-                                                    {profile?.plan === "pro" ? "⭐ PRO" : "Free"}
+                                                <span className={`inline-flex items-center gap-1 mt-1 text-xs px-2 py-0.5 rounded-full font-medium ${profile?.plan === "pro" ? "bg-yellow-400/20 text-yellow-400" : "bg-white/5 text-gray-400"}`}>
+                                                    {profile?.plan === "pro" ? (
+                                                        <>
+                                                            <Crown size={11} strokeWidth={2.2} className="fill-yellow-400" />
+                                                            PRO
+                                                        </>
+                                                    ) : "Free"}
                                                 </span>
                                             </div>
                                             <div className="p-2">
                                                 <Link href="/projects" onClick={() => setShowUserMenu(false)}
                                                     className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-gray-300 hover:bg-white/5 hover:text-white transition-colors">
-                                                    🖼️ Mis flyers
+                                                    <ImageIcon size={15} strokeWidth={1.8} />
+                                                    Mis flyers
                                                 </Link>
                                                 <Link href="/history" onClick={() => setShowUserMenu(false)}
                                                     className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-gray-300 hover:bg-white/5 hover:text-white transition-colors">
-                                                    📋 Historial
+                                                    <History size={15} strokeWidth={1.8} />
+                                                    Historial
                                                 </Link>
                                                 <button
                                                     onClick={() => { signOut(); setShowUserMenu(false); }}
                                                     className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-red-400 hover:bg-red-500/10 transition-colors">
-                                                    🚪 Cerrar sesión
+                                                    <LogOut size={15} strokeWidth={1.8} />
+                                                    Cerrar sesión
                                                 </button>
                                             </div>
                                         </div>
