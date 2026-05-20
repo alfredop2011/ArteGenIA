@@ -3,18 +3,23 @@
 import { useEffect, useRef, useState } from "react";
 import { Canvas, Rect, Textbox, Circle, FabricImage } from "fabric";
 import type { Template } from "@/data/templates";
+import { getVariant } from "@/data/templates";
+import type { FormatId } from "@/data/formats";
 
 interface TemplatePreviewProps {
     template: Template;
+    formatId?: FormatId;
 }
 
 const CACHE_PREFIX = "artegenia_preview_v2_";
 
-export default function TemplatePreview({ template }: TemplatePreviewProps) {
+export default function TemplatePreview({ template, formatId }: TemplatePreviewProps) {
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
     const initializedRef = useRef(false);
+
+    const variant = getVariant(template, formatId);
 
     useEffect(() => {
         if (initializedRef.current) return;
@@ -31,10 +36,10 @@ export default function TemplatePreview({ template }: TemplatePreviewProps) {
 
         if (!canvasRef.current) return;
 
-        // Usar dimensiones de la plantilla (puede ser 430x540 o 1080x1350)
+        // Usar dimensiones de la variante
         const canvas = new Canvas(canvasRef.current, {
-            width: template.width,
-            height: template.height,
+            width: variant.width,
+            height: variant.height,
             backgroundColor: "#080812",
             preserveObjectStacking: true,
             renderOnAddRemove: false,
@@ -44,7 +49,7 @@ export default function TemplatePreview({ template }: TemplatePreviewProps) {
             try {
                 canvas.renderAll();
                 // multiplier ajustado para que el thumbnail final sea ~215px de ancho
-                const multiplier = 215 / template.width;
+                const multiplier = 215 / variant.width;
                 const dataUrl = canvas.toDataURL({ format: "jpeg", quality: 0.85, multiplier });
                 try {
                     localStorage.setItem(`${CACHE_PREFIX}${template.id}`, dataUrl);
@@ -59,7 +64,7 @@ export default function TemplatePreview({ template }: TemplatePreviewProps) {
         };
 
         const loadFromLayers = async () => {
-            for (const layer of template.layers ?? []) {
+            for (const layer of variant.layers ?? []) {
                 if (layer.type === "shape") {
                     if (layer.shape === "rect") {
                         canvas.add(new Rect({
@@ -121,12 +126,12 @@ export default function TemplatePreview({ template }: TemplatePreviewProps) {
     return (
         <div
             className="relative w-full overflow-hidden bg-[#0d0d18]"
-            style={{ aspectRatio: `${template.width} / ${template.height}` }}
+            style={{ aspectRatio: `${variant.width} / ${variant.height}` }}
         >
             {!previewUrl && (
                 <canvas
                     ref={canvasRef}
-                    style={{ position: "absolute", top: -9999, left: -9999, width: template.width, height: template.height }}
+                    style={{ position: "absolute", top: -9999, left: -9999, width: variant.width, height: variant.height }}
                 />
             )}
 

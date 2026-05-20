@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   LayoutGrid,
   Search,
@@ -22,8 +22,11 @@ import {
   Sparkles,
   type LucideIcon,
 } from "lucide-react";
-import { templates } from "@/data/templates";
+import { templates, type Template } from "@/data/templates";
+import { type FormatId } from "@/data/formats";
 import TemplateFabricThumbnail from "@/components/templates/TemplateFabricThumbnail";
+import FormatPickerModal from "@/components/templates/FormatPickerModal";
+import FormatDestinationPicker from "@/components/templates/FormatDestinationPicker";
 
 type CategoryItem = { id: string; label: string; icon: LucideIcon };
 
@@ -46,15 +49,57 @@ const COLORS = ["#7c3aed", "#ec4899", "#ef4444", "#f97316", "#eab308", "#22c55e"
 
 const STYLES = ["Todos los estilos", "Neón", "Dorado Premium", "Minimalista", "Tropical", "Urbano"];
 
+// Ratios CSS para que las cards adapten su altura según el formato activo
+const FORMAT_ASPECT: Record<FormatId, string> = {
+    "square":       "1 / 1",
+    "portrait":     "4 / 5",
+    "story":        "9 / 16",
+    "print":        "1240 / 1748",
+    "fb-cover":     "1920 / 1005",
+    "flyer-legacy": "430 / 540",
+};
+
 export default function TemplatesPage() {
+    const router = useRouter();
+    const [activeFormat, setActiveFormat] = useState<FormatId>("portrait");
     const [activeCategory, setActiveCategory] = useState("todas");
     const [activeTopFilter, setActiveTopFilter] = useState("Todas");
     const [searchQuery, setSearchQuery] = useState("");
     const [activeColor, setActiveColor] = useState<string | null>(null);
     const [activeStyle, setActiveStyle] = useState("Todos los estilos");
+    const [modalTemplate, setModalTemplate] = useState<Template | null>(null);
+
+    const handleUseTemplate = (template: Template) => {
+        // Si la plantilla tiene la variante del formato activo, ir directo a ella
+        const directVariant = template.variants.find(v => v.format === activeFormat);
+        if (directVariant) {
+            router.push(`/editor/${template.id}?format=${activeFormat}`);
+            return;
+        }
+        // Si solo hay 1 variante saltamos el modal y abrimos directamente
+        if (template.variants.length <= 1) {
+            const fmt = template.variants[0]?.format;
+            router.push(fmt ? `/editor/${template.id}?format=${fmt}` : `/editor/${template.id}`);
+            return;
+        }
+        // Más de 1 variante: pedir al usuario que elija
+        setModalTemplate(template);
+    };
+
+    // Contadores por formato (cuántas plantillas tienen cada variante)
+    const formatCounts = useMemo<Record<"square" | "story" | "portrait" | "fb-cover", number>>(() => ({
+        "square":   templates.filter(t => t.variants.some(v => v.format === "square")).length,
+        "story":    templates.filter(t => t.variants.some(v => v.format === "story")).length,
+        "portrait": templates.filter(t => t.variants.some(v => v.format === "portrait")).length,
+        "fb-cover": templates.filter(t => t.variants.some(v => v.format === "fb-cover")).length,
+    }), []);
 
     const filtered = useMemo(() => {
         return templates.filter((t) => {
+            // Filtrado estricto por formato activo
+            const matchFormat = t.variants.some(v => v.format === activeFormat);
+            if (!matchFormat) return false;
+
             const cat = t.category.toLowerCase();
             const matchCat = activeCategory === "todas"
                 || cat === activeCategory
@@ -70,9 +115,10 @@ export default function TemplatesPage() {
                 cat.includes(activeTopFilter.toLowerCase());
             return matchCat && matchSearch && matchTop;
         });
-    }, [activeCategory, searchQuery, activeTopFilter]);
+    }, [activeFormat, activeCategory, searchQuery, activeTopFilter]);
 
     const clearFilters = () => {
+        setActiveFormat("portrait");
         setActiveCategory("todas");
         setActiveTopFilter("Todas");
         setSearchQuery("");
@@ -191,6 +237,13 @@ export default function TemplatesPage() {
                         </select>
                     </div>
 
+                    {/* ─── Selector de formato premium con parallax ─── */}
+                    <FormatDestinationPicker
+                        selectedFormat={activeFormat as "square" | "story" | "portrait" | "fb-cover"}
+                        onFormatChange={(id) => setActiveFormat(id)}
+                        counts={formatCounts}
+                    />
+
                     {/* Filtros rápidos */}
                     <div className="flex flex-wrap gap-2 mb-6">
                         {TOP_FILTERS.map((filter) => {
@@ -218,8 +271,8 @@ export default function TemplatesPage() {
                     {filtered.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-24 text-gray-600">
                             <SearchX size={40} strokeWidth={1.5} className="mb-4 text-gray-700" />
-                            <p className="text-lg font-medium">No se encontraron plantillas</p>
-                            <p className="text-sm mt-1">Prueba con otros filtros</p>
+                            <p className="text-lg font-medium">No hay plantillas en este formato todavía</p>
+                            <p className="text-sm mt-1">Prueba con otro formato o quita algún filtro</p>
                             <button onClick={clearFilters} className="mt-4 text-purple-400 text-sm hover:text-purple-300">
                                 Limpiar filtros
                             </button>
@@ -228,12 +281,16 @@ export default function TemplatesPage() {
                         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                             {filtered.map((template) => (
                                 <article
-                                    key={template.id}
+                                    key={`${template.id}-${activeFormat}`}
                                     className="group overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.03] hover:border-purple-500/30 transition-all hover:shadow-2xl hover:shadow-purple-900/20 hover:-translate-y-1 duration-300"
                                 >
-                                    <div className="relative aspect-[4/5] overflow-hidden">
+                                    <div
+                                        className="relative overflow-hidden"
+                                        style={{ aspectRatio: FORMAT_ASPECT[activeFormat] }}
+                                    >
                                         <TemplateFabricThumbnail
                                             template={template}
+                                            formatId={activeFormat}
                                             className="absolute inset-0 h-full w-full transition duration-500 group-hover:scale-[1.02]"
                                         />
                                         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
@@ -255,15 +312,15 @@ export default function TemplatesPage() {
                                     </div>
 
                                     <div className="p-3">
-                                        <Link
-                                            href={`/editor/${template.id}`}
+                                        <button
+                                            onClick={() => handleUseTemplate(template)}
                                             className="flex items-center justify-center gap-2 w-full rounded-xl bg-white/[0.06] border border-white/10 px-4 py-2.5 text-sm font-semibold text-white hover:bg-purple-600 hover:border-purple-600 transition-all"
                                             aria-label={`Usar plantilla ${template.title}`}
                                         >
                                             <Copy size={15} strokeWidth={1.8} />
                                             Usar plantilla
                                             <Sparkles size={13} strokeWidth={1.8} className="ml-0.5 text-yellow-300 opacity-0 group-hover:opacity-100 transition-opacity" />
-                                        </Link>
+                                        </button>
                                     </div>
                                 </article>
                             ))}
@@ -271,6 +328,13 @@ export default function TemplatesPage() {
                     )}
                 </div>
             </div>
+
+            {modalTemplate && (
+                <FormatPickerModal
+                    template={modalTemplate}
+                    onClose={() => setModalTemplate(null)}
+                />
+            )}
         </div>
     );
 }

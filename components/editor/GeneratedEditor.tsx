@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import type { Canvas as FabricCanvas, FabricObject, IText } from "fabric";
-import { templates, type Template } from "@/data/templates";
+import { templates, type Template, getVariant } from "@/data/templates";
+import type { FormatId } from "@/data/formats";
 import { applyTemplateLayers } from "@/lib/fabricApplyTemplateLayers";
 import { ArtistLibraryModal, type ArtistEntry } from "@/components/wizard/ArtistLibrary";
 import { useProjects } from "@/hooks/useProjects";
@@ -204,11 +205,13 @@ function LayerIcon({ type }: { type: LayerType }) {
 type GeneratedEditorProps = {
   /** Si se pasa, el editor carga la plantilla por id en vez de leer localStorage. */
   templateId?: number;
+  /** Variante de formato a cargar de la plantilla. Si no se pasa, usa la primera. */
+  formatId?: FormatId;
   /** Si se pasa, el editor carga el proyecto guardado del usuario por su UUID. */
   projectId?: string;
 };
 
-export default function GeneratedEditor({ templateId, projectId }: GeneratedEditorProps = {}) {
+export default function GeneratedEditor({ templateId, formatId, projectId }: GeneratedEditorProps = {}) {
   const router = useRouter();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricRef = useRef<FabricCanvas | null>(null);
@@ -339,9 +342,10 @@ export default function GeneratedEditor({ templateId, projectId }: GeneratedEdit
       if (tpl) {
         setTemplate(tpl);
         setDocTitle(tpl.title);
+        const v = getVariant(tpl, formatId);
         // Construimos un GeneratedData mínimo para que el resto del editor tenga datos coherentes
         setData({
-          format: tpl.width === tpl.height ? "cuadrado" : (tpl.width > tpl.height ? "evento" : "instagram"),
+          format: v.width === v.height ? "cuadrado" : (v.width > v.height ? "evento" : "instagram"),
           palette: { colors: ["#ffffff", "#f5c518", "#0d0d1a"], label: "default" },
         });
       } else {
@@ -355,7 +359,7 @@ export default function GeneratedEditor({ templateId, projectId }: GeneratedEdit
       if (raw) setData(JSON.parse(raw));
       else router.push("/create");
     } catch { router.push("/create"); }
-  }, [router, templateId]);
+  }, [router, templateId, formatId]);
 
   // ─── INIT CANVAS ──────────────────────────────────────────────────────────
 
@@ -366,9 +370,9 @@ export default function GeneratedEditor({ templateId, projectId }: GeneratedEdit
 
     (async () => {
       const fabric = await import("fabric");
-      // Si hay plantilla, usar sus dimensiones; si no, las del formato del wizard
+      // Si hay plantilla, usar las dimensiones de la variante; si no, las del formato del wizard
       const dims = template
-        ? { w: template.width, h: template.height }
+        ? (() => { const v = getVariant(template, formatId); return { w: v.width, h: v.height }; })()
         : (FORMAT_DIMS[data.format ?? "instagram"] ?? FORMAT_DIMS.instagram);
       if (isMounted) setCanvasSize({ w: dims.w, h: dims.h });
 
@@ -413,14 +417,15 @@ export default function GeneratedEditor({ templateId, projectId }: GeneratedEdit
       // ── MODO PLANTILLA ─────────────────────────────────────────────────────
       if (template) {
         try {
-          if (template.layers) {
+          const variant = getVariant(template, formatId);
+          if (variant.layers) {
             // Plantilla declarativa: usar applyTemplateLayers y luego enumerar los objetos del canvas
-            await applyTemplateLayers(canvas, template.layers);
+            await applyTemplateLayers(canvas, variant.layers);
             // Recorrer objetos añadidos y registrarlos como capas
             const objs = canvas.getObjects();
             for (let i = 0; i < objs.length; i++) {
               const obj = objs[i];
-              const tplLayer = template.layers[i];
+              const tplLayer = variant.layers[i];
               if (!tplLayer) continue;
               const layerId = tplLayer.id;
               (obj as FabricObject & { customId?: string }).customId = layerId;

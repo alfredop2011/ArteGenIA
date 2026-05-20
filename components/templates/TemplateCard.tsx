@@ -1,9 +1,12 @@
 "use client";
 
 import type { Template, TemplateLayer } from "@/data/templates";
+import { getVariant } from "@/data/templates";
+import type { FormatId } from "@/data/formats";
 
 interface TemplateCardProps {
     template: Template;
+    formatId?: FormatId;
 }
 
 // Foto de fondo y estilos por template
@@ -81,11 +84,12 @@ const FALLBACK_CONFIG = {
     titleFont: "Bebas Neue",
 };
 
-export default function TemplateCard({ template }: TemplateCardProps) {
+export default function TemplateCard({ template, formatId }: TemplateCardProps) {
     const config = CARD_CONFIG[template.id] ?? FALLBACK_CONFIG;
+    const variant = getVariant(template, formatId);
 
     // Las plantillas builder no tienen layers; usar el título como fallback
-    const allLayers: TemplateLayer[] = template.layers ?? [];
+    const allLayers: TemplateLayer[] = variant.layers ?? [];
     const textLayers = allLayers.filter(l => l.type === "text") as Extract<TemplateLayer, { type: "text" }>[];
     const titleLayer = textLayers.length
         ? textLayers.reduce((a, b) => (a.fontSize > b.fontSize ? a : b), textLayers[0])
@@ -101,7 +105,7 @@ export default function TemplateCard({ template }: TemplateCardProps) {
     return (
         <div
             className="w-full relative overflow-hidden"
-            style={{ aspectRatio: `${template.width} / ${template.height}` }}
+            style={{ aspectRatio: `${variant.width} / ${variant.height}` }}
         >
             {/* Foto de fondo */}
             <img

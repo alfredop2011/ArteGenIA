@@ -3,19 +3,24 @@
 import { useEffect, useRef, useState } from "react";
 import { Canvas, Rect, Textbox, Circle, FabricImage } from "fabric";
 import type { Template } from "@/data/templates";
+import { getVariant } from "@/data/templates";
+import type { FormatId } from "@/data/formats";
 
 interface TemplatePreviewProps {
     template: Template;
+    formatId?: FormatId;
 }
 
 const CACHE_PREFIX = "artegenia_preview_v4_";
 
-export default function TemplatePreview({ template }: TemplatePreviewProps) {
+export default function TemplatePreview({ template, formatId }: TemplatePreviewProps) {
     const wrapperRef = useRef<HTMLDivElement | null>(null);
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
     const initializedRef = useRef(false);
+
+    const variant = getVariant(template, formatId);
 
     useEffect(() => {
         if (initializedRef.current) return;
@@ -32,8 +37,8 @@ export default function TemplatePreview({ template }: TemplatePreviewProps) {
 
         if (!canvasRef.current) return;
 
-        const W = template.width;
-        const H = template.height;
+        const W = variant.width;
+        const H = variant.height;
 
         const canvas = new Canvas(canvasRef.current, {
             width: W,
@@ -65,7 +70,7 @@ export default function TemplatePreview({ template }: TemplatePreviewProps) {
         };
 
         const loadFromLayers = async () => {
-            for (const layer of template.layers ?? []) {
+            for (const layer of variant.layers ?? []) {
                 if (layer.type === "shape") {
                     if (layer.shape === "rect") {
                         canvas.add(new Rect({
@@ -132,8 +137,8 @@ export default function TemplatePreview({ template }: TemplatePreviewProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    const W = template.width;
-    const H = template.height;
+    const W = variant.width;
+    const H = variant.height;
 
     return (
         <div

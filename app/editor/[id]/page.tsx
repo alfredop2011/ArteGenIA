@@ -2,14 +2,19 @@ import Link from "next/link";
 import GeneratedEditor from "@/components/editor/GeneratedEditor";
 import GeneratedEditorWrapper from "@/components/editor/GeneratedEditorWrapper";
 import { templates } from "@/data/templates";
+import { isValidFormatId, type FormatId } from "@/data/formats";
 
-type EditorPageProps = { params: Promise<{ id: string }> };
+type EditorPageProps = {
+    params: Promise<{ id: string }>;
+    searchParams: Promise<{ format?: string }>;
+};
 
 // UUID v4 pattern, used by Supabase for projects.id
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-export default async function EditorPage({ params }: EditorPageProps) {
+export default async function EditorPage({ params, searchParams }: EditorPageProps) {
     const { id } = await params;
+    const sp = await searchParams;
 
     // Modo "generated" — flyer generado desde el wizard, lee localStorage
     if (id === "generated") return <GeneratedEditorWrapper />;
@@ -34,6 +39,12 @@ export default async function EditorPage({ params }: EditorPageProps) {
         );
     }
 
-    // Pasamos solo el id al Client Component — el editor resuelve la plantilla por sí mismo
-    return <GeneratedEditor templateId={templateId} />;
+    // Resolver formato pedido o el primero disponible
+    const requestedFormat = sp.format;
+    const formatId: FormatId | undefined =
+        requestedFormat && isValidFormatId(requestedFormat)
+            ? (requestedFormat as FormatId)
+            : undefined;
+
+    return <GeneratedEditor templateId={templateId} formatId={formatId} />;
 }

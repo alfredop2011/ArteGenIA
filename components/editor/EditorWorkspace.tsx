@@ -3,18 +3,21 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Canvas, Textbox, FabricObject, FabricImage } from "fabric";
 import type { Template } from "@/data/templates";
+import { getVariant } from "@/data/templates";
+import type { FormatId } from "@/data/formats";
 import { applyTemplateLayers } from "@/lib/fabricApplyTemplateLayers";
 import { useEditorStorage } from "@/hooks/useEditorStorage";
 import { useProjects } from "@/hooks/useProjects";
 import { useAuth } from "@/hooks/useAuth";
 
-type EditorWorkspaceProps = { template: Template };
+type EditorWorkspaceProps = { template: Template; formatId?: FormatId };
 type SelectedTextState = { text: string; color: string; fontFamily: string; fontSize: number };
 
 const FONTS = ["Arial","Bebas Neue","Anton","Montserrat","Playfair Display","Great Vibes","Oswald","Georgia"];
 const IDENTITY: [number,number,number,number,number,number] = [1,0,0,1,0,0];
 
-export default function EditorWorkspace({ template }: EditorWorkspaceProps) {
+export default function EditorWorkspace({ template, formatId }: EditorWorkspaceProps) {
+    const variant = getVariant(template, formatId);
     const canvasElRef = useRef<HTMLCanvasElement | null>(null);
     const canvasScrollRef = useRef<HTMLDivElement | null>(null);
     const fabricRef = useRef<Canvas | null>(null);
@@ -66,8 +69,8 @@ export default function EditorWorkspace({ template }: EditorWorkspaceProps) {
         let cancelled = false;
 
         const canvas = new Canvas(el, {
-            width: template.width,
-            height: template.height,
+            width: variant.width,
+            height: variant.height,
             backgroundColor: "#080812",
             preserveObjectStacking: true,
             enableRetinaScaling: false,
@@ -87,7 +90,7 @@ export default function EditorWorkspace({ template }: EditorWorkspaceProps) {
                 saveHistory();
             });
         } else {
-            applyTemplateLayers(canvas, template.layers).then(() => {
+            applyTemplateLayers(canvas, variant.layers).then(() => {
                 if (cancelled || canvas.disposed) return;
                 canvas.calcOffset();
                 saveHistory();
@@ -163,8 +166,8 @@ export default function EditorWorkspace({ template }: EditorWorkspaceProps) {
                 template.id,
                 c.toJSON(),
                 "flyer",
-                template.width,
-                template.height,
+                variant.width,
+                variant.height,
             );
             if (id && !projectId) setProjectId(id);
         }
@@ -236,12 +239,12 @@ export default function EditorWorkspace({ template }: EditorWorkspaceProps) {
     const addText = useCallback(() => {
         const c = fabricRef.current; if (!c) return;
         const t = new Textbox("Nuevo texto", {
-            left: 40, top: 40, width: Math.min(350, template.width - 80),
+            left: 40, top: 40, width: Math.min(350, variant.width - 80),
             fontSize: 32, fontFamily: "Arial", fill: "#ffffff", fontWeight: "bold", textAlign: "center",
         });
         c.add(t); c.setActiveObject(t); c.renderAll();
         setSelectedObject(t); setSelectedText({ text: "Nuevo texto", color: "#ffffff", fontFamily: "Arial", fontSize: 32 });
-    }, [template.width]);
+    }, [variant.width]);
 
     const addImageToCanvas = useCallback(async (file: File, replacing?: FabricObject) => {
         const c = fabricRef.current; if (!c) return;
