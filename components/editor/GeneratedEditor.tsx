@@ -215,6 +215,7 @@ export default function GeneratedEditor({ templateId }: GeneratedEditorProps = {
   const [selectedLayer, setSelectedLayer] = useState<LayerItem | null>(null);
   const [activeTool, setActiveTool] = useState<LeftTool>("layers");
   const [artistsModalOpen, setArtistsModalOpen] = useState(false);
+  const [paletteOpen, setPaletteOpen] = useState(false);
   const [docTitle, setDocTitle] = useState("Diseño sin título");
   const [viewMode, setViewMode] = useState<ViewMode>("sidebar");
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
@@ -266,6 +267,20 @@ export default function GeneratedEditor({ templateId }: GeneratedEditorProps = {
   }, []);
 
   useEffect(() => { updateToolbarRef.current(); }, [zoom]);
+
+  // ─── COMMAND PALETTE: Cmd+K / Ctrl+K ──────────────────────────────────────
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setPaletteOpen(prev => !prev);
+      } else if (e.key === "Escape") {
+        setPaletteOpen(false);
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
 
   // ─── LOAD DATA ────────────────────────────────────────────────────────────
 
@@ -918,6 +933,16 @@ export default function GeneratedEditor({ templateId }: GeneratedEditorProps = {
           </button>
         </div>
 
+        {/* Command palette trigger */}
+        <button
+          onClick={() => setPaletteOpen(true)}
+          title="Buscar comando (⌘K)"
+          className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/[0.04] border border-white/[0.08] text-[11px] text-gray-400 hover:text-white hover:bg-white/[0.06] transition-all">
+          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <span>Buscar</span>
+          <kbd className="ml-1 px-1.5 py-0.5 rounded bg-white/[0.06] text-[9px] text-gray-500 border border-white/5 font-mono">⌘K</kbd>
+        </button>
+
         {/* Share (placeholder) */}
         <button title="Compartir (próximamente)" className="ag-icon-btn opacity-60">
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
@@ -1459,6 +1484,65 @@ export default function GeneratedEditor({ templateId }: GeneratedEditorProps = {
         </div>
       )}
 
+      {/* ─── COMMAND PALETTE ─────────────────────────────────────────── */}
+      {paletteOpen && (
+        <CommandPalette
+          onClose={() => setPaletteOpen(false)}
+          isText={isText}
+          isImage={isImage}
+          hasSelection={!!selectedLayer}
+          commands={[
+            // ── Acciones ────────────────────────────────────
+            { id: "add-text", label: "Añadir texto", desc: "Insertar un nuevo texto", group: "Acciones", icon: "T", run: addText },
+            { id: "open-photos", label: "Abrir biblioteca de fotos", desc: "Subir artista o logo", group: "Acciones", icon: "📷", run: () => setArtistsModalOpen(true) },
+            { id: "duplicate", label: "Duplicar elemento", desc: "Clonar la capa seleccionada", group: "Acciones", icon: "⧉", disabled: !selectedLayer, run: () => {
+              const obj = fabricRef.current?.getActiveObject();
+              if (!obj || !selectedLayer) return;
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              (obj as any).clone?.((cloned: FabricObject) => {
+                cloned.set({ left: (obj.left ?? 0) + 30, top: (obj.top ?? 0) + 30 });
+                const newId = `dup-${uid()}`;
+                (cloned as FabricObject & { customId?: string }).customId = newId;
+                fabricRef.current?.add(cloned);
+                fabricRef.current?.setActiveObject(cloned);
+                fabricRef.current?.renderAll();
+                setLayers(prev => [{ id: newId, name: `${selectedLayer.name} (copia)`, type: selectedLayer.type, obj: cloned, visible: true, locked: false }, ...prev]);
+                setSaveState("unsaved");
+              });
+            } },
+            { id: "delete", label: "Eliminar elemento", desc: "Borra la capa seleccionada", group: "Acciones", icon: "🗑", disabled: !selectedLayer, run: () => selectedLayer && deleteLayer(selectedLayer.id) },
+            { id: "lock", label: selectedLayer?.locked ? "Desbloquear elemento" : "Bloquear elemento", desc: "Evitar modificaciones", group: "Acciones", icon: "🔒", disabled: !selectedLayer, run: () => selectedLayer && toggleLock(selectedLayer.id) },
+            { id: "flip-h", label: "Voltear horizontal", desc: "Espejo en eje X", group: "Acciones", icon: "↔", disabled: !isImage, run: () => { const obj = fabricRef.current?.getActiveObject(); if (obj) { obj.set("flipX", !obj.flipX); fabricRef.current?.renderAll(); setSaveState("unsaved"); } } },
+            { id: "flip-v", label: "Voltear vertical", desc: "Espejo en eje Y", group: "Acciones", icon: "↕", disabled: !isImage, run: () => { const obj = fabricRef.current?.getActiveObject(); if (obj) { obj.set("flipY", !obj.flipY); fabricRef.current?.renderAll(); setSaveState("unsaved"); } } },
+
+            // ── Alinear ────────────────────────────────────
+            { id: "center-h", label: "Centrar horizontal", desc: "Eje X del canvas", group: "Alinear", icon: "⇔", disabled: !selectedLayer, run: () => alignSelectedTo("center-h") },
+            { id: "center-v", label: "Centrar vertical", desc: "Eje Y del canvas", group: "Alinear", icon: "⇕", disabled: !selectedLayer, run: () => alignSelectedTo("center-v") },
+            { id: "align-left", label: "Alinear izquierda", desc: "Pegado al borde izq", group: "Alinear", icon: "⇤", disabled: !selectedLayer, run: () => alignSelectedTo("left") },
+            { id: "align-right", label: "Alinear derecha", desc: "Pegado al borde der", group: "Alinear", icon: "⇥", disabled: !selectedLayer, run: () => alignSelectedTo("right") },
+            { id: "align-top", label: "Alinear arriba", desc: "Pegado al borde superior", group: "Alinear", icon: "⇡", disabled: !selectedLayer, run: () => alignSelectedTo("top") },
+            { id: "align-bottom", label: "Alinear abajo", desc: "Pegado al borde inferior", group: "Alinear", icon: "⇣", disabled: !selectedLayer, run: () => alignSelectedTo("bottom") },
+
+            // ── Capa ────────────────────────────────────
+            { id: "layer-up", label: "Subir capa", desc: "Mover hacia adelante", group: "Capa", icon: "▲", disabled: !selectedLayer, run: () => selectedLayer && moveLayer(selectedLayer.id, "up") },
+            { id: "layer-down", label: "Bajar capa", desc: "Mover hacia atrás", group: "Capa", icon: "▼", disabled: !selectedLayer, run: () => selectedLayer && moveLayer(selectedLayer.id, "down") },
+
+            // ── Vista ────────────────────────────────────
+            { id: "view-sidebar", label: "Vista Sidebar", desc: "Barra lateral con categorías", group: "Vista", icon: "▥", run: () => setViewMode("sidebar") },
+            { id: "view-dock", label: "Vista Dock", desc: "Dock flotante inferior", group: "Vista", icon: "▤", run: () => setViewMode("dock") },
+            { id: "zoom-fit", label: "Zoom 50%", desc: "Ajustar al área visible", group: "Vista", icon: "⊟", run: () => setZoom(50) },
+            { id: "zoom-100", label: "Zoom 100%", desc: "Tamaño real", group: "Vista", icon: "⊞", run: () => setZoom(100) },
+
+            // ── Exportar ────────────────────────────────────
+            { id: "export-png", label: "Exportar como PNG", desc: "Descargar imagen PNG", group: "Exportar", icon: "⬇", run: () => exportFlyer("png") },
+            { id: "export-jpg", label: "Exportar como JPG", desc: "Descargar imagen JPG", group: "Exportar", icon: "⬇", run: () => exportFlyer("jpg") },
+
+            // ── Navegación ────────────────────────────────────
+            { id: "go-templates", label: "Ver todas las plantillas", desc: "Volver al listado", group: "Navegación", icon: "←", run: () => router.push("/templates") },
+          ]}
+        />
+      )}
+
       {artistsModalOpen && (
         <ArtistLibraryModal
           initialSelected={[]}
@@ -1508,6 +1592,137 @@ function CollapsibleSection({
           {children}
         </div>
       )}
+    </div>
+  );
+}
+
+// ─── COMMAND PALETTE COMPONENT ────────────────────────────────────────────────
+
+type PaletteCommand = {
+  id: string;
+  label: string;
+  desc: string;
+  group: string;
+  icon: string;
+  disabled?: boolean;
+  run: () => void;
+};
+
+function CommandPalette({
+  commands,
+  onClose,
+}: {
+  commands: PaletteCommand[];
+  onClose: () => void;
+  isText: boolean;
+  isImage: boolean;
+  hasSelection: boolean;
+}) {
+  const [query, setQuery] = useState("");
+  const [activeIdx, setActiveIdx] = useState(0);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => { inputRef.current?.focus(); }, []);
+
+  const q = query.trim().toLowerCase();
+  const filtered = q
+    ? commands.filter(c => !c.disabled && (c.label.toLowerCase().includes(q) || c.desc.toLowerCase().includes(q) || c.group.toLowerCase().includes(q)))
+    : commands.filter(c => !c.disabled);
+
+  const grouped: Record<string, PaletteCommand[]> = {};
+  for (const c of filtered) {
+    if (!grouped[c.group]) grouped[c.group] = [];
+    grouped[c.group].push(c);
+  }
+  const orderedGroups = ["Acciones", "Alinear", "Capa", "Vista", "Exportar", "Navegación"].filter(g => grouped[g]);
+  const flat = orderedGroups.flatMap(g => grouped[g]);
+
+  useEffect(() => { setActiveIdx(0); }, [query]);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "ArrowDown") { e.preventDefault(); setActiveIdx(i => Math.min(i + 1, flat.length - 1)); }
+      else if (e.key === "ArrowUp") { e.preventDefault(); setActiveIdx(i => Math.max(i - 1, 0)); }
+      else if (e.key === "Enter") {
+        e.preventDefault();
+        const cmd = flat[activeIdx];
+        if (cmd) { cmd.run(); onClose(); }
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [flat, activeIdx, onClose]);
+
+  useEffect(() => {
+    const el = document.querySelector(`[data-palette-idx="${activeIdx}"]`);
+    el?.scrollIntoView({ block: "nearest" });
+  }, [activeIdx]);
+
+  return (
+    <div
+      className="fixed inset-0 z-[100] flex items-start justify-center pt-24 px-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150"
+      onClick={onClose}>
+      <div
+        className="w-full max-w-xl ag-glass border border-white/[0.08] rounded-2xl shadow-2xl shadow-purple-500/20 overflow-hidden animate-in slide-in-from-top-2 duration-200"
+        onClick={e => e.stopPropagation()}>
+        <div className="flex items-center gap-3 px-4 py-3.5 border-b border-white/[0.06]">
+          <svg className="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input
+            ref={inputRef}
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            placeholder="Describe lo que quieres hacer…"
+            className="flex-1 bg-transparent text-sm text-white placeholder-gray-600 outline-none"
+          />
+          <kbd className="px-1.5 py-0.5 rounded bg-white/[0.06] text-[10px] text-gray-500 border border-white/5 font-mono">esc</kbd>
+        </div>
+
+        <div className="max-h-[420px] overflow-y-auto py-1">
+          {flat.length === 0 ? (
+            <div className="px-4 py-8 text-center text-xs text-gray-600">
+              Sin resultados. Prueba otra búsqueda.
+            </div>
+          ) : (
+            orderedGroups.map(group => (
+              <div key={group}>
+                <div className="px-4 pt-3 pb-1 text-[10px] font-semibold text-gray-600 uppercase tracking-widest">{group}</div>
+                {grouped[group].map(cmd => {
+                  const idx = flat.indexOf(cmd);
+                  const isActive = idx === activeIdx;
+                  return (
+                    <button
+                      key={cmd.id}
+                      data-palette-idx={idx}
+                      onMouseEnter={() => setActiveIdx(idx)}
+                      onClick={() => { cmd.run(); onClose(); }}
+                      className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${isActive ? "bg-purple-600/20 border-l-2 border-l-purple-500" : "hover:bg-white/[0.03]"}`}>
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm shrink-0 ${isActive ? "bg-purple-500/30 text-purple-200" : "bg-white/5 text-gray-400"}`}>
+                        {cmd.icon}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className={`text-[12.5px] font-medium ${isActive ? "text-white" : "text-gray-300"}`}>{cmd.label}</div>
+                        <div className="text-[10.5px] text-gray-600 truncate">{cmd.desc}</div>
+                      </div>
+                      {isActive && (
+                        <kbd className="px-1.5 py-0.5 rounded bg-white/[0.06] text-[10px] text-gray-400 border border-white/5 font-mono">↵</kbd>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            ))
+          )}
+        </div>
+
+        <div className="px-4 py-2 border-t border-white/[0.06] flex items-center justify-between text-[10px] text-gray-600">
+          <div className="flex items-center gap-3">
+            <span className="flex items-center gap-1"><kbd className="px-1 py-0.5 rounded bg-white/[0.06] border border-white/5 font-mono">↑↓</kbd> navegar</span>
+            <span className="flex items-center gap-1"><kbd className="px-1 py-0.5 rounded bg-white/[0.06] border border-white/5 font-mono">↵</kbd> ejecutar</span>
+            <span className="flex items-center gap-1"><kbd className="px-1 py-0.5 rounded bg-white/[0.06] border border-white/5 font-mono">esc</kbd> cerrar</span>
+          </div>
+          <span>{flat.length} comandos</span>
+        </div>
+      </div>
     </div>
   );
 }
