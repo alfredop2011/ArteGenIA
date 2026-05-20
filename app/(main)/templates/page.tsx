@@ -14,8 +14,6 @@ import {
   Disc3,
   SlidersHorizontal,
   BriefcaseBusiness,
-  Cake,
-  Gem,
   Crown,
   Check,
   Trash2,
@@ -40,8 +38,6 @@ const CATEGORIES: CategoryItem[] = [
     { id: "urbano", label: "Urbano", icon: Disc3 },
     { id: "discoteca", label: "Club / Discoteca", icon: SlidersHorizontal },
     { id: "gala", label: "Corporativo", icon: BriefcaseBusiness },
-    { id: "cumple", label: "Cumpleaños", icon: Cake },
-    { id: "boda", label: "Boda / 15 años", icon: Gem },
 ];
 
 const TOP_FILTERS = ["Todas", "1 artista", "2 artistas", "5 artistas", "10 artistas", "Premium", "Salsa", "Festival"];
@@ -65,9 +61,7 @@ export default function TemplatesPage() {
                 || cat.includes(activeCategory)
                 || activeCategory.includes(cat.split(" ")[0])
                 || (activeCategory === "gala" && cat.includes("corporativo"))
-                || (activeCategory === "discoteca" && cat.includes("club"))
-                || (activeCategory === "cumple" && cat.includes("cumple"))
-                || (activeCategory === "boda" && cat.includes("boda"));
+                || (activeCategory === "discoteca" && cat.includes("club"));
             const matchSearch = searchQuery === "" ||
                 t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 t.category.toLowerCase().includes(searchQuery.toLowerCase());
