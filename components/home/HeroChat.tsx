@@ -3,12 +3,12 @@ import { useEffect, useRef, useState } from "react";
 import { Sparkles, User, Building2, CalendarDays, Lightbulb, type LucideIcon } from "lucide-react";
 
 const EXAMPLES = [
-    "Crea un flyer para noche de salsa con 2 artistas…",
-    "Diseña un cartel para bachata romántica este sábado…",
-    "Haz un flyer urbano con neón morado y dorado…",
-    "Festival latino con 10 artistas y entrada premium…",
+    "Crea un flyer para un concierto con 2 artistas…",
+    "Diseña un cartel para una fiesta este sábado…",
+    "Haz un flyer con neón morado y dorado…",
+    "Festival con 10 artistas y entrada premium…",
 ];
-const CHIPS = ["Noche de salsa en discoteca", "Concierto de reggaetón", "Festival de música urbana", "Evento de bachata"];
+const CHIPS = ["Fiesta este sábado", "Concierto en directo", "Festival al aire libre", "Clase abierta"];
 const QUICK: { icon: LucideIcon; label: string }[] = [
     { icon: User,         label: "2 artistas" },
     { icon: Building2,    label: "Discoteca" },

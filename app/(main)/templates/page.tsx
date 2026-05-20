@@ -55,10 +55,6 @@ const AUDIENCES: AudienceItem[] = [
 
 const TOP_FILTERS = ["Todas", "Festival"];
 
-const COLORS = ["#7c3aed", "#ec4899", "#ef4444", "#f97316", "#eab308", "#22c55e", "#06b6d4", "#6b7280", "#000000"];
-
-const STYLES = ["Todos los estilos", "Neón", "Dorado Premium", "Minimalista", "Tropical", "Urbano"];
-
 // Ratios CSS para que las cards adapten su altura según el formato activo
 const FORMAT_ASPECT: Record<FormatId, string> = {
     "square":       "1 / 1",
@@ -76,8 +72,6 @@ export default function TemplatesPage() {
     const [activeAudiences, setActiveAudiences] = useState<AudienceId[]>([]);
     const [activeTopFilter, setActiveTopFilter] = useState("Todas");
     const [searchQuery, setSearchQuery] = useState("");
-    const [activeColor, setActiveColor] = useState<string | null>(null);
-    const [activeStyle, setActiveStyle] = useState("Todos los estilos");
     const [modalTemplate, setModalTemplate] = useState<Template | null>(null);
 
     const toggleAudience = (id: AudienceId) => {
@@ -145,8 +139,6 @@ export default function TemplatesPage() {
         setActiveAudiences([]);
         setActiveTopFilter("Todas");
         setSearchQuery("");
-        setActiveColor(null);
-        setActiveStyle("Todos los estilos");
     };
 
     return (
@@ -240,37 +232,6 @@ export default function TemplatesPage() {
                                 </button>
                             );
                         })}
-                    </div>
-                </div>
-
-                <div>
-                    <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">Estilos</h3>
-                    <select
-                        value={activeStyle}
-                        onChange={(e) => setActiveStyle(e.target.value)}
-                        className="w-full bg-white/[0.05] border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-gray-300 outline-none"
-                    >
-                        {STYLES.map((s) => (
-                            <option key={s} value={s} className="bg-[#1a1a2e]">{s}</option>
-                        ))}
-                    </select>
-                </div>
-
-                <div>
-                    <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">Colores</h3>
-                    <div className="flex flex-wrap gap-2">
-                        {COLORS.map((color) => (
-                            <button
-                                key={color}
-                                onClick={() => setActiveColor(activeColor === color ? null : color)}
-                                aria-label={`Filtrar por color ${color}`}
-                                title={color}
-                                className={`w-7 h-7 rounded-full transition-transform hover:scale-110 ${
-                                    activeColor === color ? "ring-2 ring-white ring-offset-1 ring-offset-[#0c0c12]" : ""
-                                }`}
-                                style={{ backgroundColor: color }}
-                            />
-                        ))}
                     </div>
                 </div>
 

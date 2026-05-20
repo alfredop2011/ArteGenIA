@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback } from "react";
 import {
-  Mic2, Sparkle, Tent, Heart, Drum, Music2, Flame, Coffee,
+  Mic2, Sparkle, Tent, Footprints,
   Sparkles, Check, Zap, ImagePlus, type LucideIcon,
 } from "lucide-react";
 import { ArtistLibraryCard, ArtistLibraryModal } from "@/components/wizard/ArtistLibrary";
@@ -29,14 +29,10 @@ type ExtractedData = {
 // ─── QUICK CHIPS ──────────────────────────────────────────────────────────────
 
 const QUICK_CHIPS: { icon: LucideIcon; label: string; text: string }[] = [
-  { icon: Mic2,    label: "Concierto", text: "Concierto" },
-  { icon: Sparkle, label: "Fiesta",    text: "Fiesta" },
-  { icon: Tent,    label: "Festival",  text: "Festival" },
-  { icon: Heart,   label: "Bachata",   text: "Bachata" },
-  { icon: Drum,    label: "Timba",     text: "Timba" },
-  { icon: Music2,  label: "Salsa",     text: "Salsa" },
-  { icon: Flame,   label: "Reggaeton", text: "Reggaeton" },
-  { icon: Coffee,  label: "Brunch",    text: "Brunch" },
+  { icon: Mic2,        label: "Concierto", text: "Concierto" },
+  { icon: Sparkle,     label: "Fiesta",    text: "Fiesta" },
+  { icon: Tent,        label: "Festival",  text: "Festival" },
+  { icon: Footprints,  label: "Clases",    text: "Clases" },
 ];
 
 function uid() { return Math.random().toString(36).slice(2, 8); }
@@ -274,7 +270,7 @@ export default function CreatePage() {
               value={prompt}
               onChange={e => setPrompt(e.target.value)}
               onKeyDown={e => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) handleGenerate(); }}
-              placeholder={'Ej: "Concierto de Don Filosofín, viernes 21 junio, Sala Apolo Barcelona, 25€"\n\nO simplemente: "Fiesta de salsa el sábado en Madrid"'}
+              placeholder={'Ej: "Concierto de Don Filosofín, viernes 21 junio, Sala Apolo Barcelona, 25€"\n\nO simplemente: "Festival de música el sábado en Madrid"'}
               rows={4}
               className="w-full bg-transparent text-white placeholder-gray-600 text-sm leading-relaxed outline-none resize-none"
             />
