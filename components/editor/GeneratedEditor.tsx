@@ -6,6 +6,8 @@ import type { Canvas as FabricCanvas, FabricObject, IText } from "fabric";
 import { templates, type Template } from "@/data/templates";
 import { applyTemplateLayers } from "@/lib/fabricApplyTemplateLayers";
 import { ArtistLibraryModal, type ArtistEntry } from "@/components/wizard/ArtistLibrary";
+import { useProjects } from "@/hooks/useProjects";
+import { supabase } from "@/lib/supabase";
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
 
@@ -202,9 +204,11 @@ function LayerIcon({ type }: { type: LayerType }) {
 type GeneratedEditorProps = {
   /** Si se pasa, el editor carga la plantilla por id en vez de leer localStorage. */
   templateId?: number;
+  /** Si se pasa, el editor carga el proyecto guardado del usuario por su UUID. */
+  projectId?: string;
 };
 
-export default function GeneratedEditor({ templateId }: GeneratedEditorProps = {}) {
+export default function GeneratedEditor({ templateId, projectId }: GeneratedEditorProps = {}) {
   const router = useRouter();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricRef = useRef<FabricCanvas | null>(null);
@@ -223,7 +227,11 @@ export default function GeneratedEditor({ templateId }: GeneratedEditorProps = {
   });
   const [zoom, setZoom] = useState(50);
   const [floatingToolbar, setFloatingToolbar] = useState<{visible: boolean; x: number; y: number; alignOpen: boolean; moreOpen: boolean}>({ visible: false, x: 0, y: 0, alignOpen: false, moreOpen: false });
+  const [currentProjectId, setCurrentProjectId] = useState<string | null>(projectId ?? null);
+  const [savingProject, setSavingProject] = useState(false);
   const canvasWrapperRef = useRef<HTMLDivElement>(null);
+
+  const { saveProject } = useProjects();
   const [saveState, setSaveState] = useState<SaveState>("saved");
   const [canvasSize, setCanvasSize] = useState({ w: 1080, h: 1350 });
 
@@ -268,12 +276,16 @@ export default function GeneratedEditor({ templateId }: GeneratedEditorProps = {
 
   useEffect(() => { updateToolbarRef.current(); }, [zoom]);
 
-  // ─── COMMAND PALETTE: Cmd+K / Ctrl+K ──────────────────────────────────────
+  // ─── COMMAND PALETTE: Cmd+K / Ctrl+K + Cmd+S para guardar ─────────────────
+  const handleSaveRef = useRef<() => void>(() => {});
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
         setPaletteOpen(prev => !prev);
+      } else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "s") {
+        e.preventDefault();
+        handleSaveRef.current();
       } else if (e.key === "Escape") {
         setPaletteOpen(false);
       }
@@ -285,6 +297,34 @@ export default function GeneratedEditor({ templateId }: GeneratedEditorProps = {
   // ─── LOAD DATA ────────────────────────────────────────────────────────────
 
   useEffect(() => {
+    // Modo proyecto guardado: cargar fabric_json desde Supabase
+    if (projectId) {
+      (async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) { router.push("/"); return; }
+        const { data: row, error } = await supabase.from("projects")
+          .select("*")
+          .eq("id", projectId)
+          .eq("user_id", user.id)
+          .single();
+        if (error || !row) { router.push("/projects"); return; }
+        setDocTitle(row.title ?? "Diseño sin título");
+        setCurrentProjectId(row.id);
+        setCanvasSize({ w: row.width, h: row.height });
+        // Si tenía template_id, podemos usarlo de pista de paleta
+        if (row.template_id) {
+          const tpl = templates.find(t => t.id === row.template_id);
+          if (tpl) setTemplate(tpl);
+        }
+        setData({
+          format: row.format ?? (row.width === row.height ? "cuadrado" : "instagram"),
+          palette: { colors: ["#ffffff", "#f5c518", "#0d0d1a"], label: "default" },
+        });
+        // Guardamos el JSON para hidratar el canvas cuando esté listo (en el otro useEffect)
+        (window as unknown as { __pendingFabricJson?: object }).__pendingFabricJson = row.fabric_json ?? {};
+      })();
+      return;
+    }
     // Modo plantilla: cargar la plantilla por id
     if (typeof templateId === "number") {
       const tpl = templates.find(t => t.id === templateId);
@@ -336,6 +376,31 @@ export default function GeneratedEditor({ templateId }: GeneratedEditorProps = {
       fabricRef.current = canvas;
 
       const newLayers: LayerItem[] = [];
+
+      // ── MODO PROYECTO GUARDADO: hidratar desde fabric_json ──────────────
+      const pendingJson = (window as unknown as { __pendingFabricJson?: object }).__pendingFabricJson;
+      if (pendingJson) {
+        delete (window as unknown as { __pendingFabricJson?: object }).__pendingFabricJson;
+        try {
+          await canvas.loadFromJSON(pendingJson);
+          canvas.setZoom(scale);
+          canvas.setDimensions({ width: dims.w * scale, height: dims.h * scale });
+          canvas.renderAll();
+          // Reconstruir LayerItem[] de los objetos cargados
+          canvas.getObjects().forEach((obj, i) => {
+            const cid = (obj as FabricObject & { customId?: string }).customId ?? `obj-${i}`;
+            (obj as FabricObject & { customId?: string }).customId = cid;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const objType = (obj as any).type as string;
+            const layerType: LayerType = objType === "i-text" || objType === "textbox" ? "text" : "image";
+            newLayers.push({ id: cid, name: `Capa ${i+1}`, type: layerType, obj, visible: true, locked: false });
+          });
+          if (isMounted) setLayers([...newLayers].reverse());
+          return;
+        } catch (e) {
+          console.warn("Error cargando proyecto:", e);
+        }
+      }
 
       // ── MODO PLANTILLA ─────────────────────────────────────────────────────
       if (template) {
@@ -823,6 +888,49 @@ export default function GeneratedEditor({ templateId }: GeneratedEditorProps = {
     link.download = `artegenia-flyer.${format}`; link.href = dataUrl; link.click();
   }, [canvasSize]);
 
+  // ─── SAVE TO SUPABASE ─────────────────────────────────────────────────────
+
+  const handleSave = useCallback(async () => {
+    const canvas = fabricRef.current;
+    if (!canvas) return;
+    setSavingProject(true);
+    setSaveState("saving");
+    try {
+      // Serializar el canvas a JSON. Incluimos customId para reidentificar capas al cargar.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const fabricJson = (canvas.toJSON as any)(["customId"]) as object;
+      const result = await saveProject(
+        currentProjectId,
+        docTitle || "Diseño sin título",
+        templateId ?? template?.id ?? 0,
+        fabricJson,
+        data?.format ?? "instagram",
+        canvasSize.w,
+        canvasSize.h,
+      );
+      if (result) {
+        if (!currentProjectId) {
+          setCurrentProjectId(result);
+          // Actualiza la URL del navegador a /editor/<uuid> sin recargar
+          window.history.replaceState(null, "", `/editor/${result}`);
+        }
+        setSaveState("saved");
+      } else {
+        setSaveState("unsaved");
+        alert("No se pudo guardar. ¿Has iniciado sesión?");
+      }
+    } catch (e) {
+      console.error("Error guardando:", e);
+      setSaveState("unsaved");
+      alert("Error al guardar el diseño.");
+    } finally {
+      setSavingProject(false);
+    }
+  }, [currentProjectId, docTitle, templateId, template, data, canvasSize, saveProject]);
+
+  // Sync ref so the Cmd+S keyboard handler always calls the latest version
+  useEffect(() => { handleSaveRef.current = handleSave; }, [handleSave]);
+
   // ─── LEFT TOOLS ───────────────────────────────────────────────────────────
 
   const TOOLS: Array<{ id: LeftTool; label: string; icon: React.ReactNode; comingSoon?: boolean }> = [
@@ -946,6 +1054,19 @@ export default function GeneratedEditor({ templateId }: GeneratedEditorProps = {
         {/* Share (placeholder) */}
         <button title="Compartir (próximamente)" className="ag-icon-btn opacity-60">
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+        </button>
+
+        {/* Save */}
+        <button
+          onClick={handleSave}
+          disabled={savingProject}
+          title={currentProjectId ? "Guardar cambios (⌘S)" : "Guardar nuevo diseño"}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.08] border border-white/[0.08] text-white text-xs font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+          {savingProject ? (
+            <><div className="w-3 h-3 border border-gray-400 border-t-white rounded-full animate-spin"/><span>Guardando…</span></>
+          ) : (
+            <><svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg><span>{currentProjectId ? "Guardar" : "Guardar"}</span></>
+          )}
         </button>
 
         {/* Export */}
@@ -1493,6 +1614,7 @@ export default function GeneratedEditor({ templateId }: GeneratedEditorProps = {
           hasSelection={!!selectedLayer}
           commands={[
             // ── Acciones ────────────────────────────────────
+            { id: "save", label: "Guardar diseño", desc: "Subir a la nube (⌘S)", group: "Acciones", icon: "💾", run: handleSave },
             { id: "add-text", label: "Añadir texto", desc: "Insertar un nuevo texto", group: "Acciones", icon: "T", run: addText },
             { id: "open-photos", label: "Abrir biblioteca de fotos", desc: "Subir artista o logo", group: "Acciones", icon: "📷", run: () => setArtistsModalOpen(true) },
             { id: "duplicate", label: "Duplicar elemento", desc: "Clonar la capa seleccionada", group: "Acciones", icon: "⧉", disabled: !selectedLayer, run: () => {
@@ -1538,6 +1660,7 @@ export default function GeneratedEditor({ templateId }: GeneratedEditorProps = {
             { id: "export-jpg", label: "Exportar como JPG", desc: "Descargar imagen JPG", group: "Exportar", icon: "⬇", run: () => exportFlyer("jpg") },
 
             // ── Navegación ────────────────────────────────────
+            { id: "go-projects", label: "Mis diseños", desc: "Ver mis diseños guardados", group: "Navegación", icon: "📁", run: () => router.push("/projects") },
             { id: "go-templates", label: "Ver todas las plantillas", desc: "Volver al listado", group: "Navegación", icon: "←", run: () => router.push("/templates") },
           ]}
         />

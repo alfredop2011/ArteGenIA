@@ -5,11 +5,19 @@ import { templates } from "@/data/templates";
 
 type EditorPageProps = { params: Promise<{ id: string }> };
 
+// UUID v4 pattern, used by Supabase for projects.id
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export default async function EditorPage({ params }: EditorPageProps) {
     const { id } = await params;
 
     // Modo "generated" — flyer generado desde el wizard, lee localStorage
     if (id === "generated") return <GeneratedEditorWrapper />;
+
+    // Modo "proyecto guardado" — id es un UUID de Supabase
+    if (UUID_RE.test(id)) {
+        return <GeneratedEditor projectId={id} />;
+    }
 
     // Modo plantilla — id numérico, busca en data/templates.ts
     const templateId = Number(id);
