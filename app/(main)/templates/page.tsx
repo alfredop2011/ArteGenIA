@@ -8,12 +8,15 @@ import {
   PartyPopper,
   Mic2,
   Star,
-  Music2,
-  Heart,
   Footprints,
-  Disc3,
   SlidersHorizontal,
   BriefcaseBusiness,
+  GraduationCap,
+  Clapperboard,
+  Palette,
+  Landmark,
+  Megaphone,
+  School,
   Crown,
   Check,
   Trash2,
@@ -22,28 +25,35 @@ import {
   Sparkles,
   type LucideIcon,
 } from "lucide-react";
-import { templates, type Template } from "@/data/templates";
+import { templates, type Template, type AudienceId } from "@/data/templates";
 import { type FormatId } from "@/data/formats";
 import TemplateFabricThumbnail from "@/components/templates/TemplateFabricThumbnail";
 import FormatPickerModal from "@/components/templates/FormatPickerModal";
 import FormatDestinationPicker from "@/components/templates/FormatDestinationPicker";
 
 type CategoryItem = { id: string; label: string; icon: LucideIcon };
+type AudienceItem = { id: AudienceId; label: string; icon: LucideIcon };
 
 const CATEGORIES: CategoryItem[] = [
     { id: "todas", label: "Todas", icon: LayoutGrid },
-    { id: "fiesta", label: "Fiesta / Club", icon: PartyPopper },
+    { id: "fiesta", label: "Fiesta", icon: PartyPopper },
     { id: "concierto", label: "Conciertos", icon: Mic2 },
     { id: "festival", label: "Festival", icon: Star },
-    { id: "salsa", label: "Salsa", icon: Music2 },
-    { id: "bachata", label: "Bachata", icon: Heart },
     { id: "clases", label: "Clases de baile", icon: Footprints },
-    { id: "urbano", label: "Urbano", icon: Disc3 },
     { id: "discoteca", label: "Club / Discoteca", icon: SlidersHorizontal },
     { id: "gala", label: "Corporativo", icon: BriefcaseBusiness },
 ];
 
-const TOP_FILTERS = ["Todas", "1 artista", "2 artistas", "5 artistas", "10 artistas", "Premium", "Salsa", "Festival"];
+const AUDIENCES: AudienceItem[] = [
+    { id: "academias",     label: "Academias",     icon: GraduationCap },
+    { id: "productoras",   label: "Productoras",   icon: Clapperboard },
+    { id: "freelance",     label: "Freelance",     icon: Palette },
+    { id: "instituciones", label: "Instituciones", icon: Landmark },
+    { id: "agencias",      label: "Agencias",      icon: Megaphone },
+    { id: "colegios",      label: "Colegios",      icon: School },
+];
+
+const TOP_FILTERS = ["Todas", "Festival"];
 
 const COLORS = ["#7c3aed", "#ec4899", "#ef4444", "#f97316", "#eab308", "#22c55e", "#06b6d4", "#6b7280", "#000000"];
 
@@ -63,11 +73,18 @@ export default function TemplatesPage() {
     const router = useRouter();
     const [activeFormat, setActiveFormat] = useState<FormatId>("portrait");
     const [activeCategory, setActiveCategory] = useState("todas");
+    const [activeAudiences, setActiveAudiences] = useState<AudienceId[]>([]);
     const [activeTopFilter, setActiveTopFilter] = useState("Todas");
     const [searchQuery, setSearchQuery] = useState("");
     const [activeColor, setActiveColor] = useState<string | null>(null);
     const [activeStyle, setActiveStyle] = useState("Todos los estilos");
     const [modalTemplate, setModalTemplate] = useState<Template | null>(null);
+
+    const toggleAudience = (id: AudienceId) => {
+        setActiveAudiences(prev =>
+            prev.includes(id) ? prev.filter(a => a !== id) : [...prev, id]
+        );
+    };
 
     const handleUseTemplate = (template: Template) => {
         // Si la plantilla tiene la variante del formato activo, ir directo a ella
@@ -107,19 +124,25 @@ export default function TemplatesPage() {
                 || activeCategory.includes(cat.split(" ")[0])
                 || (activeCategory === "gala" && cat.includes("corporativo"))
                 || (activeCategory === "discoteca" && cat.includes("club"));
+
+            // Audiencias: AND lógico — la plantilla debe servir a TODAS las activas
+            const matchAudience = activeAudiences.length === 0 ||
+                activeAudiences.every(a => t.audience.includes(a));
+
             const matchSearch = searchQuery === "" ||
                 t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 t.category.toLowerCase().includes(searchQuery.toLowerCase());
             const matchTop = activeTopFilter === "Todas" ||
                 (activeTopFilter === "Premium" && t.premium) ||
                 cat.includes(activeTopFilter.toLowerCase());
-            return matchCat && matchSearch && matchTop;
+            return matchCat && matchAudience && matchSearch && matchTop;
         });
-    }, [activeFormat, activeCategory, searchQuery, activeTopFilter]);
+    }, [activeFormat, activeCategory, activeAudiences, searchQuery, activeTopFilter]);
 
     const clearFilters = () => {
         setActiveFormat("portrait");
         setActiveCategory("todas");
+        setActiveAudiences([]);
         setActiveTopFilter("Todas");
         setSearchQuery("");
         setActiveColor(null);
@@ -170,6 +193,49 @@ export default function TemplatesPage() {
                                     <span>{cat.label}</span>
                                     {isActive && (
                                         <Check size={15} strokeWidth={2} className="ml-auto text-purple-300" />
+                                    )}
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
+
+                <div>
+                    <div className="flex items-baseline justify-between mb-3">
+                        <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest">Para quién es</h3>
+                        {activeAudiences.length > 0 && (
+                            <button
+                                onClick={() => setActiveAudiences([])}
+                                className="text-[10px] text-purple-400 hover:text-purple-300 transition-colors"
+                            >
+                                Limpiar
+                            </button>
+                        )}
+                    </div>
+                    <div className="space-y-0.5">
+                        {AUDIENCES.map((aud) => {
+                            const Icon = aud.icon;
+                            const isActive = activeAudiences.includes(aud.id);
+                            return (
+                                <button
+                                    key={aud.id}
+                                    onClick={() => toggleAudience(aud.id)}
+                                    aria-label={aud.label}
+                                    aria-pressed={isActive}
+                                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all ${
+                                        isActive
+                                            ? "bg-purple-600/20 text-white border border-purple-500/30"
+                                            : "text-gray-400 hover:text-white hover:bg-white/[0.04] border border-transparent"
+                                    }`}
+                                >
+                                    <Icon
+                                        size={16}
+                                        strokeWidth={1.8}
+                                        className={`shrink-0 ${isActive ? "text-yellow-400" : ""}`}
+                                    />
+                                    <span>{aud.label}</span>
+                                    {isActive && (
+                                        <Check size={13} strokeWidth={2.4} className="ml-auto text-purple-300" />
                                     )}
                                 </button>
                             );

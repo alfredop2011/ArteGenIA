@@ -81,12 +81,22 @@ export type TemplateVariant = {
     layers: TemplateLayer[];
 };
 
+export type AudienceId =
+    | "academias"
+    | "productoras"
+    | "freelance"
+    | "instituciones"
+    | "agencias"
+    | "colegios";
+
 export type Template = {
     id: number;
     title: string;
     category: string;
     image: string;
     premium: boolean;
+    /** Audiencias objetivo (multi-select AND en /templates) */
+    audience: AudienceId[];
     variants: TemplateVariant[];
 };
 
@@ -110,6 +120,7 @@ export const templates: Template[] = [
         category: "Concierto",
         image: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?q=80&w=800",
         premium: true,
+        audience: ["productoras", "freelance"],
         variants: [
             { format: "portrait", width: 1080, height: 1350, layers: [
             { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1350, fill: "#0a0800", selectable: false },
@@ -135,6 +146,7 @@ export const templates: Template[] = [
         category: "Gala",
         image: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?q=80&w=800",
         premium: false,
+        audience: ["productoras", "instituciones", "agencias"],
         variants: [
             { format: "portrait", width: 1080, height: 1350, layers: [
             { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1350, fill: "#111827", selectable: false },
@@ -158,9 +170,10 @@ export const templates: Template[] = [
     {
         id: 3,
         title: "Bachata Nights",
-        category: "Bachata",
+        category: "Fiesta",
         image: "https://images.unsplash.com/photo-1545128485-c400e7702796?q=80&w=800",
         premium: false,
+        audience: ["productoras", "academias"],
         variants: [
             { format: "portrait", width: 1080, height: 1350, layers: [
             { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1350, fill: "#0d0005", selectable: false },
@@ -184,9 +197,10 @@ export const templates: Template[] = [
     {
         id: 4,
         title: "Vibra Fest",
-        category: "Urbano",
+        category: "Festival",
         image: "https://images.unsplash.com/photo-1429962714451-bb934ecdc4ec?q=80&w=800",
         premium: true,
+        audience: ["productoras", "agencias"],
         variants: [
             { format: "portrait", width: 1080, height: 1350, layers: [
             { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1350, fill: "#050014", selectable: false },
@@ -213,6 +227,7 @@ export const templates: Template[] = [
         category: "Clases",
         image: "https://images.unsplash.com/photo-1504609813442-a8924e83f76e?q=80&w=800",
         premium: false,
+        audience: ["academias"],
         variants: [
             { format: "portrait", width: 1080, height: 1350, layers: [
             { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 2713, height: 3375, fill: "#FFE600", selectable: false },
@@ -235,6 +250,7 @@ export const templates: Template[] = [
         category: "Clases",
         image: "https://images.unsplash.com/photo-1545128485-c400e7702796?q=80&w=800",
         premium: true,
+        audience: ["academias", "colegios"],
         variants: [
             { format: "portrait", width: 1080, height: 1350, layers: [
             { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 2713, height: 3375, fill: "#0D0D0D", selectable: false },
@@ -266,6 +282,7 @@ export const templates: Template[] = [
         category: "Club / Discoteca",
         image: "https://images.unsplash.com/photo-1571266028243-d220c6a82b8d?q=80&w=800",
         premium: true,
+        audience: ["productoras", "freelance"],
         variants: [
             // ── Post de Instagram (cuadrado 1080×1080)
             { format: "square", width: 1080, height: 1080, layers: [
@@ -329,9 +346,10 @@ export const templates: Template[] = [
         {
         id: 8,
         title: "Latin Heat",
-        category: "Salsa",
+        category: "Fiesta",
         image: "https://images.unsplash.com/photo-1545959570-a94084071b5d?q=80&w=800",
         premium: true,
+        audience: ["productoras", "academias"],
         variants: [
             // ── Post de Instagram (1080×1080)
             { format: "square", width: 1080, height: 1080, layers: [
@@ -400,6 +418,7 @@ export const templates: Template[] = [
         category: "Festival",
         image: "https://images.unsplash.com/photo-1459749411175-04bf5292ceea?q=80&w=800",
         premium: true,
+        audience: ["productoras", "agencias"],
         variants: [
             { format: "portrait", width: 1080, height: 1350, layers: [
             // Fondo magenta-cyan gradiente con bloques
@@ -443,6 +462,7 @@ export const templates: Template[] = [
         category: "Corporativo",
         image: "https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?q=80&w=800",
         premium: true,
+        audience: ["instituciones", "agencias"],
         variants: [
             // ── Post de Instagram (1080×1080)
             { format: "square", width: 1080, height: 1080, layers: [
@@ -506,9 +526,10 @@ export const templates: Template[] = [
     {
         id: 11,
         title: "Street Wave",
-        category: "Urbano",
+        category: "Fiesta",
         image: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?q=80&w=800",
         premium: true,
+        audience: ["productoras", "freelance"],
         variants: [
             { format: "portrait", width: 1080, height: 1350, layers: [
             // Fondo negro
