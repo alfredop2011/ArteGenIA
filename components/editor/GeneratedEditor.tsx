@@ -221,6 +221,8 @@ export default function GeneratedEditor({ templateId }: GeneratedEditorProps = {
     style: true, effects: false, transform: false, position: false, animation: false,
   });
   const [zoom, setZoom] = useState(50);
+  const [floatingToolbar, setFloatingToolbar] = useState<{visible: boolean; x: number; y: number; alignOpen: boolean; moreOpen: boolean}>({ visible: false, x: 0, y: 0, alignOpen: false, moreOpen: false });
+  const canvasWrapperRef = useRef<HTMLDivElement>(null);
   const [saveState, setSaveState] = useState<SaveState>("saved");
   const [canvasSize, setCanvasSize] = useState({ w: 1080, h: 1350 });
 
@@ -250,6 +252,20 @@ export default function GeneratedEditor({ templateId }: GeneratedEditorProps = {
   useEffect(() => {
     localStorage.setItem("artegenia-open-sections", JSON.stringify(openSections));
   }, [openSections]);
+
+  // ─── RECALC TOOLBAR ON ZOOM / RESIZE / SCROLL ─────────────────────────────
+  const updateToolbarRef = useRef<() => void>(() => {});
+  useEffect(() => {
+    const handler = () => updateToolbarRef.current();
+    window.addEventListener("resize", handler);
+    window.addEventListener("scroll", handler, true);
+    return () => {
+      window.removeEventListener("resize", handler);
+      window.removeEventListener("scroll", handler, true);
+    };
+  }, []);
+
+  useEffect(() => { updateToolbarRef.current(); }, [zoom]);
 
   // ─── LOAD DATA ────────────────────────────────────────────────────────────
 
@@ -343,10 +359,13 @@ export default function GeneratedEditor({ templateId }: GeneratedEditorProps = {
             setImageProps({ opacity: obj.opacity ?? 1, angle: obj.angle ?? 0, left: obj.left ?? 0, top: obj.top ?? 0, width: (obj.width ?? 400) * (obj.scaleX ?? 1), height: (obj.height ?? 600) * (obj.scaleY ?? 1), flipX: obj.flipX ?? false, flipY: obj.flipY ?? false });
           }
         };
-        canvas.on("selection:created", e => { const o = e.selected?.[0]; if (o) handleSelTpl(o); });
-        canvas.on("selection:updated", e => { const o = e.selected?.[0]; if (o) handleSelTpl(o); });
-        canvas.on("selection:cleared", () => setSelectedLayer(null));
-        canvas.on("object:modified", () => { const o = canvas?.getActiveObject(); if (o) handleSelTpl(o); setSaveState("unsaved"); });
+        canvas.on("selection:created", e => { const o = e.selected?.[0]; if (o) handleSelTpl(o); updateFloatingToolbar(); });
+        canvas.on("selection:updated", e => { const o = e.selected?.[0]; if (o) handleSelTpl(o); updateFloatingToolbar(); });
+        canvas.on("selection:cleared", () => { setSelectedLayer(null); setFloatingToolbar(p => ({ ...p, visible: false, alignOpen: false, moreOpen: false })); });
+        canvas.on("object:modified", () => { const o = canvas?.getActiveObject(); if (o) handleSelTpl(o); setSaveState("unsaved"); updateFloatingToolbar(); });
+        canvas.on("object:moving", () => updateFloatingToolbar());
+        canvas.on("object:scaling", () => updateFloatingToolbar());
+        canvas.on("object:rotating", () => updateFloatingToolbar());
         return;
       }
 
@@ -510,10 +529,13 @@ export default function GeneratedEditor({ templateId }: GeneratedEditorProps = {
           setImageProps({ opacity: obj.opacity ?? 1, angle: obj.angle ?? 0, left: obj.left ?? 0, top: obj.top ?? 0, width: (obj.width ?? 400) * (obj.scaleX ?? 1), height: (obj.height ?? 600) * (obj.scaleY ?? 1), flipX: obj.flipX ?? false, flipY: obj.flipY ?? false });
         }
       };
-      canvas.on("selection:created", e => { const o = e.selected?.[0]; if (o) handleSel(o); });
-      canvas.on("selection:updated", e => { const o = e.selected?.[0]; if (o) handleSel(o); });
-      canvas.on("selection:cleared", () => setSelectedLayer(null));
-      canvas.on("object:modified", () => { const o = canvas?.getActiveObject(); if (o) handleSel(o); setSaveState("unsaved"); });
+      canvas.on("selection:created", e => { const o = e.selected?.[0]; if (o) handleSel(o); updateFloatingToolbar(); });
+      canvas.on("selection:updated", e => { const o = e.selected?.[0]; if (o) handleSel(o); updateFloatingToolbar(); });
+      canvas.on("selection:cleared", () => { setSelectedLayer(null); setFloatingToolbar(p => ({ ...p, visible: false, alignOpen: false, moreOpen: false })); });
+      canvas.on("object:modified", () => { const o = canvas?.getActiveObject(); if (o) handleSel(o); setSaveState("unsaved"); updateFloatingToolbar(); });
+      canvas.on("object:moving", () => updateFloatingToolbar());
+      canvas.on("object:scaling", () => updateFloatingToolbar());
+      canvas.on("object:rotating", () => updateFloatingToolbar());
     })();
 
     return () => { isMounted = false; canvas?.dispose(); fabricRef.current = null; };
@@ -617,6 +639,34 @@ export default function GeneratedEditor({ templateId }: GeneratedEditorProps = {
     }
     setSaveState("unsaved");
   }, [canvasSize, selectedLayer]);
+
+  // ─── FLOATING TOOLBAR POSITIONING ────────────────────────────────────────
+
+  const updateFloatingToolbar = useCallback(() => {
+    const canvas = fabricRef.current;
+    const obj = canvas?.getActiveObject();
+    const wrapper = canvasWrapperRef.current;
+    if (!canvas || !obj || !wrapper) {
+      setFloatingToolbar(prev => ({ ...prev, visible: false, alignOpen: false, moreOpen: false }));
+      return;
+    }
+    const bounds = obj.getBoundingRect();
+    const wrapperRect = wrapper.getBoundingClientRect();
+    // bounds is in canvas-internal coords (already zoomed by Fabric), so add wrapperRect offset
+    const x = wrapperRect.left + bounds.left + bounds.width / 2;
+    let y = wrapperRect.top + bounds.top - 12; // 12px above bounding box
+    // If too close to top of viewport, place below the object instead
+    if (y < 80) y = wrapperRect.top + bounds.top + bounds.height + 12;
+    // Clamp X so the toolbar never overflows the canvas area
+    const TOOLBAR_HALF = 230;
+    const minX = wrapperRect.left + TOOLBAR_HALF;
+    const maxX = wrapperRect.right - TOOLBAR_HALF;
+    const clampedX = Math.max(minX, Math.min(x, maxX));
+    setFloatingToolbar({ visible: true, x: clampedX, y, alignOpen: false, moreOpen: false });
+  }, []);
+
+  // Keep the ref in sync so window listeners can call latest version
+  useEffect(() => { updateToolbarRef.current = updateFloatingToolbar; }, [updateFloatingToolbar]);
 
   // ─── LAYER OPS ────────────────────────────────────────────────────────────
 
@@ -958,7 +1008,7 @@ export default function GeneratedEditor({ templateId }: GeneratedEditorProps = {
           <div className="flex-1 overflow-auto">
             {/* Center the canvas both horizontally and vertically */}
             <div className="min-h-full flex items-center justify-center p-8">
-              <div className="relative shadow-2xl shadow-black/70"
+              <div ref={canvasWrapperRef} className="relative shadow-2xl shadow-black/70"
                 style={{ width: canvasSize.w * zoom / 100, height: canvasSize.h * zoom / 100, flexShrink: 0 }}>
                 <canvas ref={canvasRef} />
                 {!data && (
@@ -1237,7 +1287,177 @@ export default function GeneratedEditor({ templateId }: GeneratedEditorProps = {
           transform: scale(0.94);
         }
         .ag-sidebar-btn { transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1); }
+        .ag-fab-btn {
+          display: inline-flex; flex-direction: column; align-items: center; justify-content: center;
+          padding: 6px 10px;
+          gap: 2px;
+          border-radius: 10px;
+          color: rgba(255,255,255,0.7);
+          font-size: 10px;
+          font-weight: 500;
+          transition: all 0.15s ease;
+          cursor: pointer;
+          background: transparent;
+          border: none;
+        }
+        .ag-fab-btn:hover {
+          background: rgba(255,255,255,0.06);
+          color: white;
+        }
+        .ag-fab-btn:active {
+          transform: scale(0.94);
+        }
+        .ag-fab-btn-danger:hover {
+          background: rgba(248, 113, 113, 0.15);
+          color: rgb(248, 113, 113);
+        }
+        @keyframes ag-fade-in {
+          from { opacity: 0; transform: translate(-50%, calc(-100% + 4px)); }
+          to   { opacity: 1; transform: translate(-50%, -100%); }
+        }
       `}</style>
+
+      {/* ─── FLOATING TOOLBAR ─────────────────────────────────────────── */}
+      {floatingToolbar.visible && selectedLayer && (
+        <div
+          className="fixed z-50 pointer-events-none"
+          style={{ left: floatingToolbar.x, top: floatingToolbar.y, transform: "translate(-50%, -100%)" }}>
+          <div className="pointer-events-auto ag-glass border border-white/[0.08] rounded-2xl shadow-2xl shadow-purple-500/20 flex items-center gap-0.5 p-1 animate-in fade-in slide-in-from-bottom-1 duration-150">
+            {/* Editar */}
+            <button
+              onClick={() => {
+                const obj = fabricRef.current?.getActiveObject();
+                if (!obj) return;
+                if (selectedLayer.type === "text") {
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  (obj as any).enterEditing?.();
+                  fabricRef.current?.renderAll();
+                } else if (selectedLayer.type === "image") {
+                  const input = document.createElement("input");
+                  input.type = "file"; input.accept = "image/*";
+                  input.onchange = (e) => {
+                    const file = (e.target as HTMLInputElement).files?.[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = (ev) => {
+                      const src = ev.target?.result as string;
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                      (obj as any).setSrc?.(src, () => { fabricRef.current?.renderAll(); });
+                      setSaveState("unsaved");
+                    };
+                    reader.readAsDataURL(file);
+                  };
+                  input.click();
+                }
+              }}
+              title="Editar"
+              className="ag-fab-btn"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 113 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              <span>Editar</span>
+            </button>
+
+            {/* Estilos → scroll to panel */}
+            <button
+              onClick={() => setOpenSections(p => ({ ...p, style: true }))}
+              title="Abrir panel de estilos"
+              className="ag-fab-btn"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 011.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>
+              <span>Estilos</span>
+            </button>
+
+            {/* Alinear (popup) */}
+            <div className="relative">
+              <button
+                onClick={() => setFloatingToolbar(p => ({ ...p, alignOpen: !p.alignOpen, moreOpen: false }))}
+                title="Alinear"
+                className={`ag-fab-btn ${floatingToolbar.alignOpen ? "bg-purple-600/20 text-purple-200" : ""}`}>
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><line x1="3" y1="12" x2="21" y2="12"/><rect x="8" y="7" width="3" height="10"/><rect x="14" y="9" width="3" height="6"/></svg>
+                <span>Alinear</span>
+              </button>
+              {floatingToolbar.alignOpen && (
+                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 ag-glass border border-white/[0.08] rounded-xl p-1.5 shadow-2xl">
+                  <div className="grid grid-cols-3 gap-1 w-32">
+                    {[
+                      { pos: "left", label: "Izq", icon: <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><line x1="3" y1="3" x2="3" y2="21"/><rect x="7" y="8" width="10" height="3"/><rect x="7" y="14" width="6" height="3"/></svg> },
+                      { pos: "center-h", label: "C·H", icon: <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><line x1="12" y1="3" x2="12" y2="21"/><rect x="7" y="8" width="10" height="3"/><rect x="9" y="14" width="6" height="3"/></svg> },
+                      { pos: "right", label: "Der", icon: <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><line x1="21" y1="3" x2="21" y2="21"/><rect x="7" y="8" width="10" height="3"/><rect x="11" y="14" width="6" height="3"/></svg> },
+                      { pos: "top", label: "Arr", icon: <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><line x1="3" y1="3" x2="21" y2="3"/><rect x="8" y="7" width="3" height="10"/><rect x="14" y="7" width="3" height="6"/></svg> },
+                      { pos: "center-v", label: "C·V", icon: <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><line x1="3" y1="12" x2="21" y2="12"/><rect x="8" y="7" width="3" height="10"/><rect x="14" y="9" width="3" height="6"/></svg> },
+                      { pos: "bottom", label: "Aba", icon: <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><line x1="3" y1="21" x2="21" y2="21"/><rect x="8" y="7" width="3" height="10"/><rect x="14" y="11" width="3" height="6"/></svg> },
+                    ].map(item => (
+                      <button key={item.pos} onClick={() => { alignSelectedTo(item.pos as "left" | "center-h" | "right" | "top" | "center-v" | "bottom"); setFloatingToolbar(p => ({ ...p, alignOpen: false })); }} title={item.label} className="aspect-square rounded-lg bg-white/5 hover:bg-purple-600/20 text-gray-400 hover:text-purple-200 transition-all flex items-center justify-center">
+                        {item.icon}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Bloquear */}
+            <button
+              onClick={() => toggleLock(selectedLayer.id)}
+              title={selectedLayer.locked ? "Desbloquear" : "Bloquear"}
+              className={`ag-fab-btn ${selectedLayer.locked ? "bg-amber-500/20 text-amber-300" : ""}`}>
+              {selectedLayer.locked
+                ? <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                : <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 019.9-1"/></svg>}
+              <span>{selectedLayer.locked ? "Desbloq." : "Bloquear"}</span>
+            </button>
+
+            {/* Eliminar */}
+            <button
+              onClick={() => deleteLayer(selectedLayer.id)}
+              title="Eliminar"
+              className="ag-fab-btn ag-fab-btn-danger">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+              <span>Eliminar</span>
+            </button>
+
+            <div className="w-px h-6 bg-white/10 mx-0.5"/>
+
+            {/* Más */}
+            <div className="relative">
+              <button
+                onClick={() => setFloatingToolbar(p => ({ ...p, moreOpen: !p.moreOpen, alignOpen: false }))}
+                title="Más opciones"
+                className={`ag-fab-btn ${floatingToolbar.moreOpen ? "bg-white/10 text-white" : ""}`}>
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>
+              </button>
+              {floatingToolbar.moreOpen && (
+                <div className="absolute top-full right-0 mt-2 ag-glass border border-white/[0.08] rounded-xl py-1 shadow-2xl min-w-[180px]">
+                  {[
+                    { label: "Duplicar", onClick: () => {
+                      const obj = fabricRef.current?.getActiveObject();
+                      if (!obj) return;
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                      (obj as any).clone?.((cloned: FabricObject) => {
+                        cloned.set({ left: (obj.left ?? 0) + 30, top: (obj.top ?? 0) + 30 });
+                        const newId = `dup-${uid()}`;
+                        (cloned as FabricObject & { customId?: string }).customId = newId;
+                        fabricRef.current?.add(cloned);
+                        fabricRef.current?.setActiveObject(cloned);
+                        fabricRef.current?.renderAll();
+                        setLayers(prev => [{ id: newId, name: `${selectedLayer.name} (copia)`, type: selectedLayer.type, obj: cloned, visible: true, locked: false }, ...prev]);
+                        setSaveState("unsaved");
+                      });
+                    } },
+                    { label: "Subir capa", onClick: () => moveLayer(selectedLayer.id, "up") },
+                    { label: "Bajar capa", onClick: () => moveLayer(selectedLayer.id, "down") },
+                    ...(selectedLayer.type === "image" ? [
+                      { label: "Voltear H", onClick: () => { const obj = fabricRef.current?.getActiveObject(); if (obj) { obj.set("flipX", !obj.flipX); fabricRef.current?.renderAll(); setSaveState("unsaved"); } } },
+                      { label: "Voltear V", onClick: () => { const obj = fabricRef.current?.getActiveObject(); if (obj) { obj.set("flipY", !obj.flipY); fabricRef.current?.renderAll(); setSaveState("unsaved"); } } },
+                    ] : []),
+                  ].map((item, i) => (
+                    <button key={i} onClick={() => { item.onClick(); setFloatingToolbar(p => ({ ...p, moreOpen: false })); }}
+                      className="w-full text-left px-3.5 py-2 text-[11px] text-gray-300 hover:bg-white/5 hover:text-white transition-all">
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {artistsModalOpen && (
         <ArtistLibraryModal
