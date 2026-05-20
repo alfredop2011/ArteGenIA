@@ -217,6 +217,9 @@ export default function GeneratedEditor({ templateId }: GeneratedEditorProps = {
   const [artistsModalOpen, setArtistsModalOpen] = useState(false);
   const [docTitle, setDocTitle] = useState("Diseño sin título");
   const [viewMode, setViewMode] = useState<ViewMode>("sidebar");
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({
+    style: true, effects: false, transform: false, position: false, animation: false,
+  });
   const [zoom, setZoom] = useState(50);
   const [saveState, setSaveState] = useState<SaveState>("saved");
   const [canvasSize, setCanvasSize] = useState({ w: 1080, h: 1350 });
@@ -236,10 +239,17 @@ export default function GeneratedEditor({ templateId }: GeneratedEditorProps = {
   useEffect(() => {
     const saved = localStorage.getItem("artegenia-view-mode");
     if (saved === "sidebar" || saved === "dock") setViewMode(saved);
+    const sections = localStorage.getItem("artegenia-open-sections");
+    if (sections) {
+      try { setOpenSections(JSON.parse(sections)); } catch {}
+    }
   }, []);
   useEffect(() => {
     localStorage.setItem("artegenia-view-mode", viewMode);
   }, [viewMode]);
+  useEffect(() => {
+    localStorage.setItem("artegenia-open-sections", JSON.stringify(openSections));
+  }, [openSections]);
 
   // ─── LOAD DATA ────────────────────────────────────────────────────────────
 
@@ -574,6 +584,39 @@ export default function GeneratedEditor({ templateId }: GeneratedEditorProps = {
     if (key !== "width" && key !== "height") obj.set(key as keyof FabricObject, value as never);
     canvas?.renderAll(); setSaveState("unsaved");
   }, []);
+
+  // ─── ALIGN TO CANVAS ──────────────────────────────────────────────────────
+
+  const alignSelectedTo = useCallback((position: "left" | "center-h" | "right" | "top" | "center-v" | "bottom") => {
+    const canvas = fabricRef.current;
+    const obj = canvas?.getActiveObject();
+    if (!obj || !canvas) return;
+    const cw = canvasSize.w;
+    const ch = canvasSize.h;
+    const bounds = obj.getBoundingRect();
+    const oW = bounds.width / canvas.getZoom();
+    const oH = bounds.height / canvas.getZoom();
+    // Account for object's origin
+    const ox = obj.originX === "center" ? 0.5 : obj.originX === "right" ? 1 : 0;
+    const oy = obj.originY === "center" ? 0.5 : obj.originY === "bottom" ? 1 : 0;
+
+    if (position === "left") obj.set("left", ox * oW);
+    if (position === "right") obj.set("left", cw - (1 - ox) * oW);
+    if (position === "center-h") obj.set("left", cw / 2 - oW / 2 + ox * oW);
+    if (position === "top") obj.set("top", oy * oH);
+    if (position === "bottom") obj.set("top", ch - (1 - oy) * oH);
+    if (position === "center-v") obj.set("top", ch / 2 - oH / 2 + oy * oH);
+
+    obj.setCoords();
+    canvas.renderAll();
+    // Sync visible props
+    if (selectedLayer?.type === "text") {
+      setTextProps(prev => ({ ...prev, left: obj.left as number, top: obj.top as number }));
+    } else if (selectedLayer?.type === "image") {
+      setImageProps(prev => ({ ...prev, left: obj.left as number, top: obj.top as number }));
+    }
+    setSaveState("unsaved");
+  }, [canvasSize, selectedLayer]);
 
   // ─── LAYER OPS ────────────────────────────────────────────────────────────
 
@@ -939,30 +982,41 @@ export default function GeneratedEditor({ templateId }: GeneratedEditorProps = {
         </div>
 
         {/* RIGHT PROPERTIES PANEL */}
-        <div className="w-64 ag-glass border-l border-white/[0.06] flex flex-col shrink-0 overflow-hidden">
+        <div className="w-72 ag-glass border-l border-white/[0.06] flex flex-col shrink-0 overflow-hidden">
           {!selectedLayer ? (
             <div className="flex-1 flex flex-col items-center justify-center p-6 text-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/5 flex items-center justify-center">
                 <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5"/></svg>
               </div>
               <p className="text-xs text-gray-600">Selecciona un elemento<br/>para editar sus propiedades</p>
             </div>
           ) : (
             <div className="flex-1 overflow-y-auto">
-              <div className="px-3 py-2.5 border-b border-white/[0.06] flex items-center justify-between">
-                <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-widest">
-                  {isText ? "Texto" : isBackground ? "Fondo" : "Imagen"}
-                </p>
+              {/* HEADER */}
+              <div className="px-3.5 py-3 border-b border-white/[0.06] flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className={`w-6 h-6 rounded-lg flex items-center justify-center ${isText ? "bg-blue-500/20 text-blue-300" : isBackground ? "bg-emerald-500/20 text-emerald-300" : "bg-purple-500/20 text-purple-300"}`}>
+                    {isText ? <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg>
+                     : isBackground ? <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M3 3h18v18H3z"/></svg>
+                     : <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>}
+                  </div>
+                  <p className="text-[11px] font-semibold text-white/90">
+                    {isText ? "Texto" : isBackground ? "Fondo" : "Imagen"}
+                  </p>
+                </div>
                 {!isBackground && (
-                  <button onClick={() => deleteLayer(selectedLayer.id)} className="text-gray-700 hover:text-red-400 transition-colors p-0.5">
+                  <button onClick={() => deleteLayer(selectedLayer.id)} title="Eliminar capa" className="text-gray-600 hover:text-red-400 transition-colors p-1 rounded-lg hover:bg-white/5">
                     <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
                   </button>
                 )}
               </div>
 
-              <div className="p-3 space-y-3">
-
-                {/* TEXT PROPS */}
+              {/* ─── SECCIÓN ESTILO ──────────────────────────────────── */}
+              <CollapsibleSection
+                title="Estilo"
+                sectionKey="style"
+                openSections={openSections}
+                setOpenSections={setOpenSections}>
                 {isText && (<>
                   <div><label className="text-[10px] text-gray-500 mb-1 block">Contenido</label><textarea value={textProps.text} onChange={e => applyTextProp("text", e.target.value)} rows={2} className="w-full bg-white/[0.04] border border-white/8 rounded-lg px-2.5 py-2 text-xs text-white resize-none outline-none focus:border-purple-500/50"/></div>
                   <div><label className="text-[10px] text-gray-500 mb-1 block">Fuente</label><select value={textProps.fontFamily} onChange={e => applyTextProp("fontFamily", e.target.value)} className="w-full bg-white/[0.04] border border-white/8 rounded-lg px-2.5 py-2 text-xs text-white outline-none focus:border-purple-500/50">{FONTS.map(f => <option key={f} value={f}>{f}</option>)}</select></div>
@@ -974,26 +1028,10 @@ export default function GeneratedEditor({ templateId }: GeneratedEditorProps = {
                   <div><label className="text-[10px] text-gray-500 mb-1 block">Alineación</label><div className="flex gap-1">{["left","center","right"].map(a => (<button key={a} onClick={() => applyTextProp("textAlign", a)} className={`flex-1 py-1.5 rounded-lg text-xs transition-all ${textProps.textAlign === a ? "bg-purple-600 text-white" : "bg-white/5 text-gray-500 hover:text-white"}`}>{a==="left"?"↤":a==="center"?"↔":"↦"}</button>))}</div></div>
                   <div><label className="text-[10px] text-gray-500 mb-1 block">Espaciado · {Math.round(textProps.charSpacing/10)}</label><input type="range" min={0} max={500} value={textProps.charSpacing} onChange={e => applyTextProp("charSpacing", Number(e.target.value))} className="w-full accent-purple-500"/></div>
                   <div><label className="text-[10px] text-gray-500 mb-1 block">Opacidad · {Math.round(textProps.opacity*100)}%</label><input type="range" min={0} max={1} step={0.01} value={textProps.opacity} onChange={e => applyTextProp("opacity", Number(e.target.value))} className="w-full accent-purple-500"/></div>
-                  <div><label className="text-[10px] text-gray-500 mb-1 block">Rotación · {Math.round(textProps.angle)}°</label><input type="range" min={-180} max={180} value={textProps.angle} onChange={e => applyTextProp("angle", Number(e.target.value))} className="w-full accent-purple-500"/></div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div><label className="text-[10px] text-gray-500 mb-1 block">X</label><input type="number" value={Math.round(textProps.left)} onChange={e => applyTextProp("left", Number(e.target.value))} className="w-full bg-white/[0.04] border border-white/8 rounded-lg px-2.5 py-2 text-xs text-white outline-none focus:border-purple-500/50"/></div>
-                    <div><label className="text-[10px] text-gray-500 mb-1 block">Y</label><input type="number" value={Math.round(textProps.top)} onChange={e => applyTextProp("top", Number(e.target.value))} className="w-full bg-white/[0.04] border border-white/8 rounded-lg px-2.5 py-2 text-xs text-white outline-none focus:border-purple-500/50"/></div>
-                  </div>
-                  <div className="flex items-center gap-2"><input type="checkbox" checked={textProps.shadow} onChange={e => applyTextProp("shadow", e.target.checked)} className="accent-purple-500"/><label className="text-[10px] text-gray-400">Sombra</label></div>
-                  {textProps.shadow && <div className="grid grid-cols-2 gap-2"><div><label className="text-[10px] text-gray-500 mb-1 block">Color sombra</label><input type="color" value={textProps.shadowColor} onChange={e => applyTextProp("shadowColor", e.target.value)} className="w-full h-8 rounded-lg border-0 cursor-pointer bg-transparent"/></div><div><label className="text-[10px] text-gray-500 mb-1 block">Blur · {textProps.shadowBlur}</label><input type="range" min={0} max={30} value={textProps.shadowBlur} onChange={e => applyTextProp("shadowBlur", Number(e.target.value))} className="w-full accent-purple-500"/></div></div>}
-                  <div><label className="text-[10px] text-gray-500 mb-1 block">Orden</label><div className="flex gap-2"><button onClick={() => moveLayer(selectedLayer.id, "up")} className="flex-1 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-gray-400 hover:text-white transition-all">↑ Subir</button><button onClick={() => moveLayer(selectedLayer.id, "down")} className="flex-1 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-gray-400 hover:text-white transition-all">↓ Bajar</button></div></div>
                 </>)}
-
-                {/* IMAGE PROPS */}
                 {isImage && (<>
                   <div><label className="text-[10px] text-gray-500 mb-1 block">Opacidad · {Math.round(imageProps.opacity*100)}%</label><input type="range" min={0} max={1} step={0.01} value={imageProps.opacity} onChange={e => applyImageProp("opacity", Number(e.target.value))} className="w-full accent-purple-500"/></div>
-                  <div><label className="text-[10px] text-gray-500 mb-1 block">Rotación · {Math.round(imageProps.angle)}°</label><input type="range" min={-180} max={180} value={imageProps.angle} onChange={e => applyImageProp("angle", Number(e.target.value))} className="w-full accent-purple-500"/></div>
-                  <div><label className="text-[10px] text-gray-500 mb-1 block">Voltear</label><div className="flex gap-2"><button onClick={() => { const obj = fabricRef.current?.getActiveObject(); if (obj) { const nv = !obj.flipX; obj.set("flipX", nv); applyImageProp("flipX", nv); fabricRef.current?.renderAll(); } }} className={`flex-1 py-1.5 rounded-lg text-xs transition-all ${imageProps.flipX?"bg-purple-600/20 text-purple-300":"bg-white/5 text-gray-400 hover:text-white"}`}>↔ H</button><button onClick={() => { const obj = fabricRef.current?.getActiveObject(); if (obj) { const nv = !obj.flipY; obj.set("flipY", nv); applyImageProp("flipY", nv); fabricRef.current?.renderAll(); } }} className={`flex-1 py-1.5 rounded-lg text-xs transition-all ${imageProps.flipY?"bg-purple-600/20 text-purple-300":"bg-white/5 text-gray-400 hover:text-white"}`}>↕ V</button></div></div>
-                  <div className="grid grid-cols-2 gap-2"><div><label className="text-[10px] text-gray-500 mb-1 block">X</label><input type="number" value={Math.round(imageProps.left)} onChange={e => applyImageProp("left", Number(e.target.value))} className="w-full bg-white/[0.04] border border-white/8 rounded-lg px-2.5 py-2 text-xs text-white outline-none focus:border-purple-500/50"/></div><div><label className="text-[10px] text-gray-500 mb-1 block">Y</label><input type="number" value={Math.round(imageProps.top)} onChange={e => applyImageProp("top", Number(e.target.value))} className="w-full bg-white/[0.04] border border-white/8 rounded-lg px-2.5 py-2 text-xs text-white outline-none focus:border-purple-500/50"/></div></div>
-                  <div><label className="text-[10px] text-gray-500 mb-1 block">Orden</label><div className="flex gap-2"><button onClick={() => moveLayer(selectedLayer.id, "up")} className="flex-1 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-gray-400 hover:text-white transition-all">↑ Subir</button><button onClick={() => moveLayer(selectedLayer.id, "down")} className="flex-1 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-gray-400 hover:text-white transition-all">↓ Bajar</button></div></div>
                 </>)}
-
-                {/* BACKGROUND PROPS */}
                 {isBackground && (<>
                   <div><label className="text-[10px] text-gray-500 mb-1 block">Opacidad</label><input type="range" min={0} max={1} step={0.01} value={fabricRef.current?.getActiveObject()?.opacity ?? 1} onChange={e => { const obj = fabricRef.current?.getActiveObject(); if (obj) { obj.set("opacity", Number(e.target.value)); fabricRef.current?.renderAll(); setSaveState("unsaved"); } }} className="w-full accent-purple-500"/></div>
                   <button onClick={() => toggleLock(selectedLayer.id)} className={`w-full py-2 rounded-lg text-xs font-medium transition-all ${selectedLayer.locked?"bg-yellow-500/20 text-yellow-400 border border-yellow-500/30":"bg-white/5 text-gray-400 hover:text-white"}`}>{selectedLayer.locked?"🔒 Fondo bloqueado":"🔓 Bloquear fondo"}</button>
@@ -1016,7 +1054,122 @@ export default function GeneratedEditor({ templateId }: GeneratedEditorProps = {
                     input.click();
                   }} className="w-full py-2 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-gray-400 hover:text-white transition-all">📁 Reemplazar fondo</button>
                 </>)}
-              </div>
+              </CollapsibleSection>
+
+              {/* ─── SECCIÓN EFECTOS (solo texto) ─────────────────────── */}
+              {isText && (
+                <CollapsibleSection
+                  title="Efectos"
+                  sectionKey="effects"
+                  openSections={openSections}
+                  setOpenSections={setOpenSections}>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    <button onClick={() => applyTextProp("shadow", !textProps.shadow)}
+                      className={`relative py-2 rounded-lg text-[10px] font-medium transition-all border ${textProps.shadow ? "bg-purple-600/30 text-purple-200 border-purple-500/40" : "bg-white/[0.03] text-gray-400 border-white/5 hover:text-white"}`}>
+                      Sombra
+                    </button>
+                    <button disabled className="relative py-2 rounded-lg text-[10px] font-medium bg-white/[0.03] text-gray-600 border border-white/5 cursor-not-allowed">
+                      Contorno
+                      <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-amber-400"/>
+                    </button>
+                    <button disabled className="relative py-2 rounded-lg text-[10px] font-medium bg-white/[0.03] text-gray-600 border border-white/5 cursor-not-allowed">
+                      Neón
+                      <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-amber-400"/>
+                    </button>
+                  </div>
+                  {textProps.shadow && (
+                    <div className="grid grid-cols-2 gap-2 mt-2">
+                      <div><label className="text-[10px] text-gray-500 mb-1 block">Color</label><input type="color" value={textProps.shadowColor} onChange={e => applyTextProp("shadowColor", e.target.value)} className="w-full h-8 rounded-lg border-0 cursor-pointer bg-transparent"/></div>
+                      <div><label className="text-[10px] text-gray-500 mb-1 block">Blur · {textProps.shadowBlur}</label><input type="range" min={0} max={30} value={textProps.shadowBlur} onChange={e => applyTextProp("shadowBlur", Number(e.target.value))} className="w-full accent-purple-500"/></div>
+                    </div>
+                  )}
+                </CollapsibleSection>
+              )}
+
+              {/* ─── SECCIÓN TRANSFORMAR (solo imagen) ────────────────── */}
+              {isImage && (
+                <CollapsibleSection
+                  title="Transformar"
+                  sectionKey="transform"
+                  openSections={openSections}
+                  setOpenSections={setOpenSections}>
+                  <div><label className="text-[10px] text-gray-500 mb-1 block">Voltear</label>
+                    <div className="flex gap-2">
+                      <button onClick={() => { const obj = fabricRef.current?.getActiveObject(); if (obj) { const nv = !obj.flipX; obj.set("flipX", nv); applyImageProp("flipX", nv); fabricRef.current?.renderAll(); } }} className={`flex-1 py-1.5 rounded-lg text-xs transition-all ${imageProps.flipX?"bg-purple-600/20 text-purple-300":"bg-white/5 text-gray-400 hover:text-white"}`}>↔ Horizontal</button>
+                      <button onClick={() => { const obj = fabricRef.current?.getActiveObject(); if (obj) { const nv = !obj.flipY; obj.set("flipY", nv); applyImageProp("flipY", nv); fabricRef.current?.renderAll(); } }} className={`flex-1 py-1.5 rounded-lg text-xs transition-all ${imageProps.flipY?"bg-purple-600/20 text-purple-300":"bg-white/5 text-gray-400 hover:text-white"}`}>↕ Vertical</button>
+                    </div>
+                  </div>
+                </CollapsibleSection>
+              )}
+
+              {/* ─── SECCIÓN POSICIÓN Y TAMAÑO ─────────────────────────── */}
+              {!isBackground && (
+                <CollapsibleSection
+                  title="Posición y tamaño"
+                  sectionKey="position"
+                  openSections={openSections}
+                  setOpenSections={setOpenSections}>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div><label className="text-[10px] text-gray-500 mb-1 block">X</label>
+                      <input type="number" value={Math.round(isText ? textProps.left : imageProps.left)}
+                        onChange={e => isText ? applyTextProp("left", Number(e.target.value)) : applyImageProp("left", Number(e.target.value))}
+                        className="w-full bg-white/[0.04] border border-white/8 rounded-lg px-2.5 py-2 text-xs text-white outline-none focus:border-purple-500/50"/></div>
+                    <div><label className="text-[10px] text-gray-500 mb-1 block">Y</label>
+                      <input type="number" value={Math.round(isText ? textProps.top : imageProps.top)}
+                        onChange={e => isText ? applyTextProp("top", Number(e.target.value)) : applyImageProp("top", Number(e.target.value))}
+                        className="w-full bg-white/[0.04] border border-white/8 rounded-lg px-2.5 py-2 text-xs text-white outline-none focus:border-purple-500/50"/></div>
+                  </div>
+                  <div><label className="text-[10px] text-gray-500 mb-1 block">Rotación · {Math.round(isText ? textProps.angle : imageProps.angle)}°</label>
+                    <input type="range" min={-180} max={180}
+                      value={isText ? textProps.angle : imageProps.angle}
+                      onChange={e => isText ? applyTextProp("angle", Number(e.target.value)) : applyImageProp("angle", Number(e.target.value))}
+                      className="w-full accent-purple-500"/></div>
+
+                  {/* ALINEAR RESPECTO AL CANVAS */}
+                  <div><label className="text-[10px] text-gray-500 mb-1.5 block">Alinear en canvas</label>
+                    <div className="grid grid-cols-3 gap-1">
+                      <button onClick={() => alignSelectedTo("left")} title="Alinear izquierda" className="py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all flex items-center justify-center">
+                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><line x1="3" y1="3" x2="3" y2="21"/><rect x="7" y="8" width="10" height="3"/><rect x="7" y="14" width="6" height="3"/></svg>
+                      </button>
+                      <button onClick={() => alignSelectedTo("center-h")} title="Centrar horizontal" className="py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all flex items-center justify-center">
+                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><line x1="12" y1="3" x2="12" y2="21"/><rect x="7" y="8" width="10" height="3"/><rect x="9" y="14" width="6" height="3"/></svg>
+                      </button>
+                      <button onClick={() => alignSelectedTo("right")} title="Alinear derecha" className="py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all flex items-center justify-center">
+                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><line x1="21" y1="3" x2="21" y2="21"/><rect x="7" y="8" width="10" height="3"/><rect x="11" y="14" width="6" height="3"/></svg>
+                      </button>
+                      <button onClick={() => alignSelectedTo("top")} title="Alinear arriba" className="py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all flex items-center justify-center">
+                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><line x1="3" y1="3" x2="21" y2="3"/><rect x="8" y="7" width="3" height="10"/><rect x="14" y="7" width="3" height="6"/></svg>
+                      </button>
+                      <button onClick={() => alignSelectedTo("center-v")} title="Centrar vertical" className="py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all flex items-center justify-center">
+                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><line x1="3" y1="12" x2="21" y2="12"/><rect x="8" y="7" width="3" height="10"/><rect x="14" y="9" width="3" height="6"/></svg>
+                      </button>
+                      <button onClick={() => alignSelectedTo("bottom")} title="Alinear abajo" className="py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all flex items-center justify-center">
+                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><line x1="3" y1="21" x2="21" y2="21"/><rect x="8" y="7" width="3" height="10"/><rect x="14" y="11" width="3" height="6"/></svg>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* ORDEN */}
+                  <div><label className="text-[10px] text-gray-500 mb-1.5 block">Orden de capa</label>
+                    <div className="flex gap-2">
+                      <button onClick={() => moveLayer(selectedLayer.id, "up")} className="flex-1 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-gray-400 hover:text-white transition-all">↑ Subir</button>
+                      <button onClick={() => moveLayer(selectedLayer.id, "down")} className="flex-1 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-gray-400 hover:text-white transition-all">↓ Bajar</button>
+                    </div>
+                  </div>
+                </CollapsibleSection>
+              )}
+
+              {/* ─── SECCIÓN ANIMACIÓN (placeholder) ─────────────────── */}
+              <CollapsibleSection
+                title="Animación"
+                sectionKey="animation"
+                openSections={openSections}
+                setOpenSections={setOpenSections}
+                badge="próximamente">
+                <p className="text-[10px] text-gray-600 leading-relaxed">
+                  Las animaciones de entrada y salida estarán disponibles próximamente.
+                </p>
+              </CollapsibleSection>
             </div>
           )}
         </div>
@@ -1095,6 +1248,45 @@ export default function GeneratedEditor({ templateId }: GeneratedEditorProps = {
           }}
           onClose={() => setArtistsModalOpen(false)}
         />
+      )}
+    </div>
+  );
+}
+
+// ─── COLLAPSIBLE SECTION COMPONENT ────────────────────────────────────────────
+
+function CollapsibleSection({
+  title, sectionKey, openSections, setOpenSections, children, badge,
+}: {
+  title: string;
+  sectionKey: string;
+  openSections: Record<string, boolean>;
+  setOpenSections: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
+  children: React.ReactNode;
+  badge?: string;
+}) {
+  const isOpen = openSections[sectionKey] ?? false;
+  return (
+    <div className="border-b border-white/[0.04]">
+      <button
+        onClick={() => setOpenSections(prev => ({ ...prev, [sectionKey]: !prev[sectionKey] }))}
+        className="w-full px-3.5 py-2.5 flex items-center justify-between text-left hover:bg-white/[0.02] transition-colors group">
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] font-semibold text-white/85 group-hover:text-white">{title}</span>
+          {badge && (
+            <span className="flex items-center gap-1 text-[9px] text-amber-400/80 bg-amber-500/10 border border-amber-500/20 rounded-full px-1.5 py-0.5">
+              <span className="w-1 h-1 rounded-full bg-amber-400"/>{badge}
+            </span>
+          )}
+        </div>
+        <svg className={`w-3.5 h-3.5 text-gray-500 transition-transform ${isOpen ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
+      </button>
+      {isOpen && (
+        <div className="px-3.5 pb-3 space-y-2.5 animate-in fade-in slide-in-from-top-1 duration-150">
+          {children}
+        </div>
       )}
     </div>
   );
