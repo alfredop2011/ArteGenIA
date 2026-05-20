@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import type { Canvas as FabricCanvas, FabricObject, IText } from "fabric";
 import { templates, type Template } from "@/data/templates";
 import { applyTemplateLayers } from "@/lib/fabricApplyTemplateLayers";
+import { ArtistLibraryModal, type ArtistEntry } from "@/components/wizard/ArtistLibrary";
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
 
@@ -212,6 +213,7 @@ export default function GeneratedEditor({ templateId }: GeneratedEditorProps = {
   const [layers, setLayers] = useState<LayerItem[]>([]);
   const [selectedLayer, setSelectedLayer] = useState<LayerItem | null>(null);
   const [activeTool, setActiveTool] = useState<LeftTool>("layers");
+  const [artistsModalOpen, setArtistsModalOpen] = useState(false);
   const [zoom, setZoom] = useState(50);
   const [saveState, setSaveState] = useState<SaveState>("saved");
   const [canvasSize, setCanvasSize] = useState({ w: 1080, h: 1350 });
@@ -578,6 +580,72 @@ export default function GeneratedEditor({ templateId }: GeneratedEditorProps = {
     setSelectedLayer(null); setSaveState("unsaved");
   }, []);
 
+  // ─── ADD ARTISTS / LOGOS FROM ARTISTLIBRARY ──────────────────────────────
+  const addArtistsFromLibrary = useCallback(async (entries: ArtistEntry[]) => {
+    const canvas = fabricRef.current;
+    if (!canvas || entries.length === 0) return;
+
+    const fabric = await import("fabric");
+    const newLayers: LayerItem[] = [];
+    const cw = canvasSize.w;
+    const ch = canvasSize.h;
+
+    for (const entry of entries) {
+      try {
+        // Si la entry quiere quitar fondo, llamar al endpoint primero
+        let srcUrl = entry.imageSrc;
+        if (entry.removeBackground) {
+          try {
+            const res = await fetch("/api/remove-bg", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ imageUrl: entry.imageSrc }),
+            });
+            if (res.ok) {
+              const json = await res.json();
+              if (json.url) srcUrl = json.url;
+            }
+          } catch (e) {
+            console.warn("remove-bg falló, usando imagen original:", e);
+          }
+        }
+
+        const img = await fabric.FabricImage.fromURL(srcUrl, { crossOrigin: "anonymous" });
+        const isLogo = entry.type === "logo";
+        // Tamaños distintos: logo pequeño, artista grande
+        const targetH = isLogo ? Math.min(180, ch * 0.13) : Math.min(900, ch * 0.65);
+        const imgH = img.height ?? targetH;
+        const scale = targetH / imgH;
+        img.set({
+          left: cw / 2,
+          top: isLogo ? ch * 0.92 : ch * 0.5,
+          originX: "center",
+          originY: isLogo ? "bottom" : "center",
+          scaleX: scale,
+          scaleY: scale,
+          selectable: true,
+          evented: true,
+        });
+        (img as FabricObject & { customId?: string }).customId = entry.id;
+        canvas.add(img);
+        newLayers.push({
+          id: entry.id,
+          name: entry.name || (isLogo ? "Logo" : "Artista"),
+          type: "image",
+          obj: img,
+          visible: true,
+          locked: false,
+        });
+      } catch (e) {
+        console.warn("Error añadiendo entry:", entry.id, e);
+      }
+    }
+
+    canvas.renderAll();
+    setLayers(prev => [...newLayers.reverse(), ...prev]);
+    setSaveState("unsaved");
+  }, [canvasSize]);
+
   const moveLayer = useCallback((id: string, dir: "up" | "down") => {
     const canvas = fabricRef.current;
     if (!canvas) return;
@@ -693,7 +761,11 @@ export default function GeneratedEditor({ templateId }: GeneratedEditorProps = {
         <div className="w-[60px] bg-[#111118] border-r border-white/[0.07] flex flex-col items-center py-3 gap-1 shrink-0">
           {TOOLS.map(tool => (
             <button key={tool.id}
-              onClick={() => { setActiveTool(tool.id); if (tool.id === "text") addText(); }}
+              onClick={() => {
+                if (tool.id === "photos") { setArtistsModalOpen(true); return; }
+                setActiveTool(tool.id);
+                if (tool.id === "text") addText();
+              }}
               title={tool.label}
               className={`w-10 h-10 rounded-xl flex flex-col items-center justify-center gap-0.5 transition-all text-[9px] font-medium ${activeTool === tool.id ? "bg-purple-600/20 text-purple-400 border border-purple-500/30" : "text-gray-600 hover:text-gray-300 hover:bg-white/5"}`}>
               {tool.icon}
@@ -847,6 +919,17 @@ export default function GeneratedEditor({ templateId }: GeneratedEditorProps = {
         input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
         input[type="color"]::-webkit-color-swatch { border: none; border-radius: 4px; }
       `}</style>
+
+      {artistsModalOpen && (
+        <ArtistLibraryModal
+          initialSelected={[]}
+          onConfirm={(entries) => {
+            setArtistsModalOpen(false);
+            void addArtistsFromLibrary(entries);
+          }}
+          onClose={() => setArtistsModalOpen(false)}
+        />
+      )}
     </div>
   );
 }
