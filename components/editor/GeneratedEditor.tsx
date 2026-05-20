@@ -231,6 +231,14 @@ export default function GeneratedEditor({ templateId, projectId }: GeneratedEdit
   const [savingProject, setSavingProject] = useState(false);
   const canvasWrapperRef = useRef<HTMLDivElement>(null);
 
+  // Si la prop projectId cambia (HMR, navegacion interna), sincronizar el state
+  // Sin esto, modificar un proyecto ya guardado podia crear duplicados en lugar de actualizar
+  useEffect(() => {
+    if (projectId && projectId !== currentProjectId) {
+      setCurrentProjectId(projectId);
+    }
+  }, [projectId, currentProjectId]);
+
   const { saveProject } = useProjects();
   const [saveState, setSaveState] = useState<SaveState>("saved");
   const [canvasSize, setCanvasSize] = useState({ w: 1080, h: 1350 });
@@ -899,6 +907,23 @@ export default function GeneratedEditor({ templateId, projectId }: GeneratedEdit
       // Serializar el canvas a JSON. Incluimos customId para reidentificar capas al cargar.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const fabricJson = (canvas.toJSON as any)(["customId"]) as object;
+
+      // Generar thumbnail JPEG ~320px de ancho como data URL para guardar inline en BD
+      // Cambiamos zoom temporal a tamaño real para que el export sea fiel
+      let thumbnailUrl: string | null = null;
+      try {
+        const currentZoom = canvas.getZoom();
+        canvas.setZoom(1);
+        canvas.setDimensions({ width: canvasSize.w, height: canvasSize.h });
+        const thumbScale = 320 / Math.max(canvasSize.w, canvasSize.h);
+        thumbnailUrl = canvas.toDataURL({ format: "jpeg", quality: 0.6, multiplier: thumbScale });
+        canvas.setZoom(currentZoom);
+        canvas.setDimensions({ width: canvasSize.w * currentZoom, height: canvasSize.h * currentZoom });
+        canvas.renderAll();
+      } catch (thumbErr) {
+        console.warn("No se pudo generar thumbnail:", thumbErr);
+      }
+
       const result = await saveProject(
         currentProjectId,
         docTitle || "Diseño sin título",
@@ -907,6 +932,7 @@ export default function GeneratedEditor({ templateId, projectId }: GeneratedEdit
         data?.format ?? "instagram",
         canvasSize.w,
         canvasSize.h,
+        thumbnailUrl,
       );
       if (result) {
         if (!currentProjectId) {

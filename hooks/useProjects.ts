@@ -14,21 +14,25 @@ export function useProjects() {
         format: string = "flyer",
         width: number = 430,
         height: number = 540,
+        thumbnailUrl: string | null = null,
     ): Promise<string | null> => {
         setLoading(true); setError(null);
         try {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) throw new Error("No autenticado");
             if (projectId) {
-                const { error } = await supabase.from("projects").update({
-                    title, fabric_json: fabricJson, updated_at: new Date().toISOString(),
-                }).eq("id", projectId).eq("user_id", user.id);
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const patch: any = { title, fabric_json: fabricJson, updated_at: new Date().toISOString() };
+                if (thumbnailUrl) patch.thumbnail_url = thumbnailUrl;
+                const { error } = await supabase.from("projects").update(patch)
+                    .eq("id", projectId).eq("user_id", user.id);
                 if (error) throw error;
                 return projectId;
             } else {
                 const { data, error } = await supabase.from("projects").insert({
                     user_id: user.id, title, template_id: templateId,
                     fabric_json: fabricJson, format, width, height,
+                    thumbnail_url: thumbnailUrl,
                 }).select("id").single();
                 if (error) throw error;
                 return data.id;

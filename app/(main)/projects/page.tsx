@@ -63,8 +63,13 @@ export default function ProjectsPage() {
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                     {projects.map(project => (
                         <div key={project.id} className="group relative rounded-2xl border border-white/10 bg-white/[0.03] overflow-hidden hover:border-purple-500/30 transition-all">
-                            <div className="aspect-[3/4] bg-gradient-to-br from-purple-900/40 to-pink-900/20 flex items-center justify-center">
-                                <span className="text-4xl">🎨</span>
+                            <div className="aspect-[3/4] bg-gradient-to-br from-purple-900/40 to-pink-900/20 flex items-center justify-center overflow-hidden">
+                                {project.thumbnail_url ? (
+                                    // eslint-disable-next-line @next/next/no-img-element
+                                    <img src={project.thumbnail_url} alt={project.title} className="w-full h-full object-cover" />
+                                ) : (
+                                    <span className="text-4xl">🎨</span>
+                                )}
                             </div>
                             <div className="p-3">
                                 <h3 className="text-white font-bold text-sm truncate">{project.title}</h3>
@@ -73,7 +78,7 @@ export default function ProjectsPage() {
                                 </p>
                             </div>
                             <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-3">
-                                <Link href={`/editor/${project.template_id ?? 1}`} className="px-5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-sm font-bold">✏️ Editar</Link>
+                                <Link href={`/editor/${project.id}`} className="px-5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-sm font-bold">✏️ Editar</Link>
                                 <button onClick={() => handleDelete(project.id)} disabled={deleting === project.id}
                                     className="px-5 py-2 rounded-xl bg-red-900/60 hover:bg-red-900 text-red-400 text-sm font-bold disabled:opacity-50">
                                     {deleting === project.id ? "Eliminando..." : "🗑️ Eliminar"}
