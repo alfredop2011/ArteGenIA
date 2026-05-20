@@ -31,9 +31,10 @@ export default function TemplatePreview({ template }: TemplatePreviewProps) {
 
         if (!canvasRef.current) return;
 
+        // Usar dimensiones de la plantilla (puede ser 430x540 o 1080x1350)
         const canvas = new Canvas(canvasRef.current, {
-            width: 430,
-            height: 540,
+            width: template.width,
+            height: template.height,
             backgroundColor: "#080812",
             preserveObjectStacking: true,
             renderOnAddRemove: false,
@@ -42,7 +43,9 @@ export default function TemplatePreview({ template }: TemplatePreviewProps) {
         const renderAndExport = () => {
             try {
                 canvas.renderAll();
-                const dataUrl = canvas.toDataURL({ format: "jpeg", quality: 0.85, multiplier: 0.5 });
+                // multiplier ajustado para que el thumbnail final sea ~215px de ancho
+                const multiplier = 215 / template.width;
+                const dataUrl = canvas.toDataURL({ format: "jpeg", quality: 0.85, multiplier });
                 try {
                     localStorage.setItem(`${CACHE_PREFIX}${template.id}`, dataUrl);
                 } catch {}
@@ -55,7 +58,7 @@ export default function TemplatePreview({ template }: TemplatePreviewProps) {
             }
         };
 
-        const loadLayers = async () => {
+        const loadFromLayers = async () => {
             for (const layer of template.layers ?? []) {
                 if (layer.type === "shape") {
                     if (layer.shape === "rect") {
@@ -107,7 +110,7 @@ export default function TemplatePreview({ template }: TemplatePreviewProps) {
             setTimeout(renderAndExport, 500);
         };
 
-        loadLayers();
+        void loadFromLayers();
 
         return () => {
             try { canvas.dispose(); } catch {}
@@ -118,12 +121,12 @@ export default function TemplatePreview({ template }: TemplatePreviewProps) {
     return (
         <div
             className="relative w-full overflow-hidden bg-[#0d0d18]"
-            style={{ aspectRatio: "430 / 540" }}
+            style={{ aspectRatio: `${template.width} / ${template.height}` }}
         >
             {!previewUrl && (
                 <canvas
                     ref={canvasRef}
-                    style={{ position: "absolute", top: -9999, left: -9999, width: 430, height: 540 }}
+                    style={{ position: "absolute", top: -9999, left: -9999, width: template.width, height: template.height }}
                 />
             )}
 

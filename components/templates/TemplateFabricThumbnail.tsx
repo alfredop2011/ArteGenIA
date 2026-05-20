@@ -52,12 +52,7 @@ export default function TemplateFabricThumbnail({ template, className = "" }: Te
         });
 
         const render = async () => {
-            if (template.builder) {
-                const fabricNs = await import("fabric");
-                await template.builder(canvas as unknown as import("fabric").Canvas, fabricNs);
-            } else {
-                await applyTemplateLayers(canvas, template.layers);
-            }
+            await applyTemplateLayers(canvas, template.layers);
             canvas.renderAll();
         };
 

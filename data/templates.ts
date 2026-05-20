@@ -1,8 +1,3 @@
-import type { Canvas as FabricCanvas } from "fabric";
-import * as fabric from "fabric";
-import { applyTemplateClasesBaile } from "@/lib/templates/clases-baile";
-import { applyTemplateDanceClass } from "@/lib/templates/dance-class";
-
 export type TemplateLayer =
     | {
     id: string;
@@ -14,8 +9,16 @@ export type TemplateLayer =
     fontSize: number;
     fontFamily: string;
     color: string;
-    fontWeight?: "normal" | "bold" | "black";
+    fontWeight?: "normal" | "bold" | "black" | string;
     textAlign?: "left" | "center" | "right";
+    originX?: "left" | "center" | "right";
+    originY?: "top" | "center" | "bottom";
+    angle?: number;
+    charSpacing?: number;
+    lineHeight?: number;
+    underline?: boolean;
+    stroke?: string;
+    strokeWidth?: number;
 }
     | {
     id: string;
@@ -29,6 +32,27 @@ export type TemplateLayer =
     opacity?: number;
     radius?: number;
     selectable?: boolean;
+    originX?: "left" | "center" | "right";
+    originY?: "top" | "center" | "bottom";
+    angle?: number;
+    stroke?: string;
+    strokeWidth?: number;
+    strokeDashArray?: number[];
+}
+    | {
+    id: string;
+    type: "shape-pattern";
+    shape: "rect";
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    fill: string;
+    count: number;
+    offsetX?: number;
+    offsetY?: number;
+    angle?: number;
+    opacity?: number;
 }
     | {
     id: string;
@@ -39,6 +63,9 @@ export type TemplateLayer =
     scaleX?: number;
     scaleY?: number;
     opacity?: number;
+    angle?: number;
+    originX?: "left" | "center" | "right";
+    originY?: "top" | "center" | "bottom";
     cropX?: number;
     cropY?: number;
     cropWidth?: number;
@@ -53,8 +80,7 @@ export type Template = {
     premium: boolean;
     width: number;
     height: number;
-    layers?: TemplateLayer[];
-    builder?: (canvas: FabricCanvas, fabricNs: typeof fabric) => Promise<unknown>;
+    layers: TemplateLayer[];
 };
 
 export const templates: Template[] = [
@@ -268,6 +294,7 @@ export const templates: Template[] = [
         ],
     },
 
+
     // 9 — Clases de Baile (Neón Amarillo) — semanal
     {
         id: 9,
@@ -277,18 +304,18 @@ export const templates: Template[] = [
         premium: false,
         width: 1080,
         height: 1350,
-        builder: (canvas, f) =>
-            applyTemplateClasesBaile(
-                canvas,
-                {
-                    title: "Clases de",
-                    subtitle: "Baile",
-                    date: "00.00.2024",
-                    time: "DESDE LAS 17:00",
-                    venue: "CALLE CUALQUIERA 123",
-                },
-                f,
-            ),
+        layers: [
+            { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1350, fill: "#FFE600", selectable: false },
+            { id: "deco-purple", type: "shape", shape: "rect", x: 594, y: -80, width: 420, height: 520, fill: "#7B2FBE", opacity: 0.95, angle: 12 },
+            { id: "top-band", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 220, fill: "#0D0D0D", selectable: false },
+            { id: "title-line1", type: "text", text: "CLASES DE", x: 540, y: 48, width: 1080, fontSize: 112, fontFamily: "Anton, Impact, sans-serif", color: "#FFFFFF", fontWeight: "900", textAlign: "center", originX: "center", originY: "top", charSpacing: -10 },
+            { id: "title-line2", type: "text", text: "BAILE", x: 540, y: 148, width: 1080, fontSize: 112, fontFamily: "Anton, Impact, sans-serif", color: "#FFE600", fontWeight: "900", textAlign: "center", originX: "center", originY: "top", charSpacing: -10 },
+            { id: "photo-frame", type: "shape", shape: "rect", x: 270, y: 297, width: 540, height: 742, fill: "rgba(0,0,0,0.15)", radius: 8, stroke: "rgba(0,0,0,0.3)", strokeWidth: 2, strokeDashArray: [10, 5] },
+            { id: "photo-hint", type: "text", text: "+ Foto artista", x: 540, y: 648, width: 540, fontSize: 32, fontFamily: "Montserrat, sans-serif", color: "rgba(0,0,0,0.4)", textAlign: "center", originX: "center", originY: "center" },
+            { id: "bottom-band", type: "shape", shape: "rect", x: 0, y: 1090, width: 1080, height: 260, fill: "#0D0D0D", selectable: false },
+            { id: "date", type: "text", text: "00.00.2024", x: 540, y: 1110, width: 1080, fontSize: 96, fontFamily: "Anton, Impact, sans-serif", color: "#FFE600", fontWeight: "900", textAlign: "center", originX: "center", originY: "top", charSpacing: 5 },
+            { id: "venue", type: "text", text: "DESDE LAS 17:00 | CALLE CUALQUIERA 123", x: 540, y: 1222, width: 1080, fontSize: 28, fontFamily: "Montserrat, sans-serif", color: "#FFFFFF", fontWeight: "600", textAlign: "center", originX: "center", originY: "top", charSpacing: 30 },
+        ],
     },
 
     // 10 — Dance Class (Negro & Amarillo) — workshop
@@ -300,21 +327,23 @@ export const templates: Template[] = [
         premium: true,
         width: 1080,
         height: 1350,
-        builder: (canvas, f) =>
-            applyTemplateDanceClass(
-                canvas,
-                {
-                    studioName: "Nombre del Estudio",
-                    titleLine1: "DANCE",
-                    titleLine2: "CLASS",
-                    description: "Encuentra la libertad en el movimiento.\nÚnete a nuestra clase de baile.",
-                    price: "$75",
-                    priceLabel: "/ PERSONA",
-                    schedule: "TODOS LOS DOMINGOS",
-                    time: "9:00 AM",
-                    website: "www.tusitio.com",
-                },
-                f,
-            ),
+        layers: [
+            { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1350, fill: "#0D0D0D", selectable: false },
+            { id: "stripes", type: "shape-pattern", shape: "rect", x: 670, y: -60, width: 22, height: 340, fill: "#F5C518", count: 6, offsetX: 38, angle: -15 },
+            { id: "studio-bg", type: "shape", shape: "rect", x: 48, y: 52, width: 520, height: 56, fill: "#F5C518", selectable: false },
+            { id: "studio-name", type: "text", text: "NOMBRE DEL ESTUDIO", x: 80, y: 60, width: 480, fontSize: 28, fontFamily: "Montserrat, sans-serif", color: "#0D0D0D", fontWeight: "800", textAlign: "left", charSpacing: 20 },
+            { id: "title1", type: "text", text: "DANCE", x: 48, y: 148, width: 980, fontSize: 200, fontFamily: "Anton, Impact, sans-serif", color: "#FFFFFF", fontWeight: "900", textAlign: "left", charSpacing: -8 },
+            { id: "title2", type: "text", text: "CLASS", x: 48, y: 340, width: 980, fontSize: 200, fontFamily: "Anton, Impact, sans-serif", color: "transparent", stroke: "#F5C518", strokeWidth: 4, fontWeight: "900", textAlign: "left", charSpacing: -8 },
+            { id: "description", type: "text", text: "Encuentra la libertad en el movimiento.\nÚnete a nuestra clase de baile.", x: 48, y: 580, width: 480, fontSize: 30, fontFamily: "Montserrat, sans-serif", color: "#FFFFFF", fontWeight: "400", textAlign: "left", lineHeight: 1.4 },
+            { id: "price-bg", type: "shape", shape: "rect", x: 48, y: 720, width: 220, height: 100, fill: "#F5C518", selectable: false },
+            { id: "price", type: "text", text: "$75", x: 80, y: 730, width: 200, fontSize: 52, fontFamily: "Anton, Impact, sans-serif", color: "#0D0D0D", fontWeight: "900", textAlign: "left" },
+            { id: "price-label", type: "text", text: "/ PERSONA", x: 80, y: 790, width: 200, fontSize: 18, fontFamily: "Montserrat, sans-serif", color: "#0D0D0D", fontWeight: "600", textAlign: "left" },
+            { id: "schedule-bg", type: "shape", shape: "rect", x: 288, y: 720, width: 340, height: 100, fill: "#F5C518", selectable: false },
+            { id: "schedule", type: "text", text: "TODOS LOS DOMINGOS", x: 308, y: 728, width: 320, fontSize: 22, fontFamily: "Montserrat, sans-serif", color: "#0D0D0D", fontWeight: "700", textAlign: "left" },
+            { id: "time", type: "text", text: "9:00 AM", x: 308, y: 762, width: 320, fontSize: 44, fontFamily: "Anton, Impact, sans-serif", color: "#0D0D0D", fontWeight: "900", textAlign: "left" },
+            { id: "separator", type: "shape", shape: "rect", x: 0, y: 850, width: 1080, height: 8, fill: "#F5C518", selectable: false },
+            { id: "website", type: "text", text: "www.tusitio.com", x: 540, y: 890, width: 1080, fontSize: 30, fontFamily: "Montserrat, sans-serif", color: "#F5C518", fontWeight: "600", textAlign: "center", originX: "center", originY: "top", underline: true },
+            { id: "arrow", type: "text", text: "<<<", x: 540, y: 1270, width: 200, fontSize: 48, fontFamily: "Montserrat, sans-serif", color: "#F5C518", fontWeight: "900", textAlign: "center", originX: "center", originY: "top" },
+        ],
     },
 ];

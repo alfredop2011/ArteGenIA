@@ -284,28 +284,7 @@ export default function GeneratedEditor({ templateId }: GeneratedEditorProps = {
       // ── MODO PLANTILLA ─────────────────────────────────────────────────────
       if (template) {
         try {
-          if (template.builder) {
-            // ARREGLO CRÍTICO: Agrandar canvas DOM a tamaño nativo + zoom 1 ANTES del builder.
-            // Los builders dibujan en coords absolutas 0..dims.w / 0..dims.h.
-            // Si el canvas está reducido (540x675) y con setZoom(0.5), los píxeles del builder
-            // se dibujarían fuera del bitmap interno.
-            canvas.setDimensions({ width: dims.w, height: dims.h });
-            canvas.setZoom(1);
-            const builderResult = await template.builder(canvas, fabric);
-            // Restaurar canvas reducido + zoom para mostrar el resultado a tamaño viewport
-            canvas.setDimensions({ width: dims.w * scale, height: dims.h * scale });
-            canvas.setZoom(scale);
-            canvas.requestRenderAll();
-            if (Array.isArray(builderResult)) {
-              for (const bl of builderResult as Array<{ id: string; name: string; type: string; obj: FabricObject; visible: boolean; locked: boolean }>) {
-                const obj = bl.obj;
-                (obj as FabricObject & { customId?: string }).customId = bl.id;
-                // Mapear "shape" → "image" porque el editor sólo conoce text/image/background
-                const mappedType: LayerType = bl.type === "text" ? "text" : (bl.type === "background" ? "background" : "image");
-                newLayers.push({ id: bl.id, name: bl.name, type: mappedType, obj, visible: bl.visible, locked: bl.locked });
-              }
-            }
-          } else if (template.layers) {
+          if (template.layers) {
             // Plantilla declarativa: usar applyTemplateLayers y luego enumerar los objetos del canvas
             await applyTemplateLayers(canvas, template.layers);
             // Recorrer objetos añadidos y registrarlos como capas

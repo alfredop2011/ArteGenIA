@@ -64,16 +64,6 @@ export default function TemplatePreview({ template }: TemplatePreviewProps) {
             }
         };
 
-        const loadFromBuilder = async () => {
-            try {
-                const fabricNs = await import("fabric");
-                await template.builder!(canvas, fabricNs);
-            } catch (e) {
-                console.warn("Builder error in preview:", e);
-            }
-            setTimeout(renderAndExport, 600);
-        };
-
         const loadFromLayers = async () => {
             for (const layer of template.layers ?? []) {
                 if (layer.type === "shape") {
@@ -134,11 +124,7 @@ export default function TemplatePreview({ template }: TemplatePreviewProps) {
             setTimeout(renderAndExport, 600);
         };
 
-        if (template.builder) {
-            void loadFromBuilder();
-        } else {
-            void loadFromLayers();
-        }
+        void loadFromLayers();
 
         return () => {
             try { canvas.dispose(); } catch {}
