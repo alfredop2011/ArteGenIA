@@ -34,7 +34,8 @@ type ImageProps = {
 };
 
 type SaveState = "saved" | "saving" | "unsaved";
-type LeftTool = "templates" | "elements" | "text" | "photos" | "background" | "layers";
+type LeftTool = "design" | "elements" | "text" | "photos" | "background" | "layers" | "ai" | "brand" | "favorites";
+type ViewMode = "sidebar" | "dock";
 
 type ArtistData = { name: string; photoUrl: string | null };
 
@@ -214,6 +215,8 @@ export default function GeneratedEditor({ templateId }: GeneratedEditorProps = {
   const [selectedLayer, setSelectedLayer] = useState<LayerItem | null>(null);
   const [activeTool, setActiveTool] = useState<LeftTool>("layers");
   const [artistsModalOpen, setArtistsModalOpen] = useState(false);
+  const [docTitle, setDocTitle] = useState("Diseño sin título");
+  const [viewMode, setViewMode] = useState<ViewMode>("sidebar");
   const [zoom, setZoom] = useState(50);
   const [saveState, setSaveState] = useState<SaveState>("saved");
   const [canvasSize, setCanvasSize] = useState({ w: 1080, h: 1350 });
@@ -229,6 +232,15 @@ export default function GeneratedEditor({ templateId }: GeneratedEditorProps = {
     opacity: 1, angle: 0, left: 0, top: 0, width: 400, height: 600, flipX: false, flipY: false,
   });
 
+  // ─── PERSIST VIEW MODE ────────────────────────────────────────────────────
+  useEffect(() => {
+    const saved = localStorage.getItem("artegenia-view-mode");
+    if (saved === "sidebar" || saved === "dock") setViewMode(saved);
+  }, []);
+  useEffect(() => {
+    localStorage.setItem("artegenia-view-mode", viewMode);
+  }, [viewMode]);
+
   // ─── LOAD DATA ────────────────────────────────────────────────────────────
 
   useEffect(() => {
@@ -237,6 +249,7 @@ export default function GeneratedEditor({ templateId }: GeneratedEditorProps = {
       const tpl = templates.find(t => t.id === templateId);
       if (tpl) {
         setTemplate(tpl);
+        setDocTitle(tpl.title);
         // Construimos un GeneratedData mínimo para que el resto del editor tenga datos coherentes
         setData({
           format: tpl.width === tpl.height ? "cuadrado" : (tpl.width > tpl.height ? "evento" : "instagram"),
@@ -704,12 +717,16 @@ export default function GeneratedEditor({ templateId }: GeneratedEditorProps = {
 
   // ─── LEFT TOOLS ───────────────────────────────────────────────────────────
 
-  const TOOLS: Array<{ id: LeftTool; label: string; icon: React.ReactNode }> = [
-    { id: "templates", label: "Plantillas", icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg> },
+  const TOOLS: Array<{ id: LeftTool; label: string; icon: React.ReactNode; comingSoon?: boolean }> = [
+    { id: "design",    label: "Diseño",    icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg> },
     { id: "text",      label: "Texto",     icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg> },
+    { id: "elements",  label: "Elementos", icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></svg>, comingSoon: true },
     { id: "photos",    label: "Fotos",     icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg> },
     { id: "background",label: "Fondo",     icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg> },
     { id: "layers",    label: "Capas",     icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg> },
+    { id: "ai",        label: "IA Tools",  icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 16.8 5.8 21.3l2.4-7.4L2 9.4h7.6z"/></svg>, comingSoon: true },
+    { id: "brand",     label: "Brand Kit", icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>, comingSoon: true },
+    { id: "favorites", label: "Favoritos", icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0016.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 002 8.5c0 2.29 1.51 4.04 3 5.5l7 7z"/></svg>, comingSoon: true },
   ];
 
   const isBackground = selectedLayer?.type === "background";
@@ -721,30 +738,105 @@ export default function GeneratedEditor({ templateId }: GeneratedEditorProps = {
   return (
     <div className="h-screen bg-[#0a0a0f] text-white flex flex-col overflow-hidden">
 
-      {/* HEADER */}
-      <header className="h-12 bg-[#111118] border-b border-white/[0.07] flex items-center px-4 gap-3 shrink-0 z-50">
-        <button onClick={() => router.push(template ? "/templates" : "/create")} className="p-1.5 text-gray-500 hover:text-white transition-colors">
+      {/* HEADER — TOPBAR */}
+      <header className="h-14 ag-glass border-b border-white/[0.06] flex items-center px-4 gap-3 shrink-0 z-50">
+        {/* Back */}
+        <button onClick={() => router.push(template ? "/templates" : "/create")}
+          title="Volver"
+          className="ag-icon-btn">
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
         </button>
-        <div className="flex items-center gap-1.5">
-          <div className="w-6 h-6 rounded-md bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-[10px] font-black">AG</div>
-          <span className="text-sm font-bold hidden sm:block">Arte Gen</span>
+
+        {/* Logo */}
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-purple-500 via-fuchsia-500 to-indigo-600 flex items-center justify-center text-[11px] font-black shadow-lg shadow-purple-500/40">AG</div>
+          <span className="text-[13px] font-bold hidden lg:block text-white/90 tracking-tight">Arte Gen</span>
         </div>
-        <div className="flex items-center gap-1.5 text-xs ml-1">
-          {saveState === "saving"  && <><div className="w-2.5 h-2.5 border border-gray-500 border-t-gray-300 rounded-full animate-spin"/><span className="text-gray-500">Guardando…</span></>}
-          {saveState === "saved"   && <><div className="w-2 h-2 rounded-full bg-green-500"/><span className="text-gray-500">Guardado</span></>}
-          {saveState === "unsaved" && <><div className="w-2 h-2 rounded-full bg-yellow-500"/><span className="text-gray-500">Sin guardar</span></>}
+
+        <div className="w-px h-6 bg-white/[0.07] mx-1"/>
+
+        {/* Editable doc title */}
+        <input
+          value={docTitle}
+          onChange={(e) => { setDocTitle(e.target.value); setSaveState("unsaved"); }}
+          className="bg-transparent text-sm font-semibold text-white/95 px-2 py-1 rounded-lg hover:bg-white/[0.04] focus:bg-white/[0.06] focus:outline-none focus:ring-1 focus:ring-purple-500/40 transition-all min-w-0 max-w-[200px]"
+          placeholder="Diseño sin título"
+        />
+
+        {/* Save state */}
+        <div className="flex items-center gap-1.5 text-[11px] ml-1">
+          {saveState === "saving"  && <><div className="w-2.5 h-2.5 border border-gray-500 border-t-purple-400 rounded-full animate-spin"/><span className="text-gray-500">Guardando…</span></>}
+          {saveState === "saved"   && <><div className="w-2 h-2 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400/50"/><span className="text-gray-500">Guardado</span></>}
+          {saveState === "unsaved" && <><div className="w-2 h-2 rounded-full bg-amber-400 shadow-sm shadow-amber-400/50"/><span className="text-gray-500">Sin guardar</span></>}
         </div>
-        <div className="hidden md:flex text-xs text-gray-600 border border-white/[0.06] rounded px-2 py-1 ml-1">
+
+        {/* Size badge */}
+        <div className="hidden md:flex items-center text-[11px] text-gray-400 border border-white/[0.07] bg-white/[0.02] rounded-lg px-2.5 py-1 ml-1">
           {canvasSize.w} × {canvasSize.h} px
         </div>
+
         <div className="flex-1"/>
-        <div className="relative group">
-          <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold transition-all">
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
-            Descargar
+
+        {/* Undo/redo (placeholder for now — coming in fase 2 functional) */}
+        <button title="Deshacer (próximamente)" className="ag-icon-btn opacity-50 cursor-not-allowed">
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M3 7v6h6M21 17a9 9 0 00-15-6.7L3 13"/></svg>
+        </button>
+        <button title="Rehacer (próximamente)" className="ag-icon-btn opacity-50 cursor-not-allowed">
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M21 7v6h-6M3 17a9 9 0 0115-6.7l3 2.7"/></svg>
+        </button>
+
+        <div className="w-px h-5 bg-white/[0.07] mx-0.5"/>
+
+        {/* Zoom selector */}
+        <div className="flex items-center bg-white/[0.03] border border-white/[0.07] rounded-lg overflow-hidden">
+          <button onClick={() => setZoom(z => Math.max(10, z - 10))} className="px-2 py-1 text-gray-400 hover:text-white hover:bg-white/5 transition-colors text-sm">−</button>
+          <select value={zoom} onChange={(e) => setZoom(parseInt(e.target.value))}
+            className="bg-transparent text-[11px] text-white/90 px-1.5 py-1 outline-none cursor-pointer">
+            {[25, 50, 75, 100, 125, 150, 200].map(z => <option key={z} value={z} className="bg-[#1c1c28]">{z}%</option>)}
+          </select>
+          <button onClick={() => setZoom(z => Math.min(200, z + 10))} className="px-2 py-1 text-gray-400 hover:text-white hover:bg-white/5 transition-colors text-sm">+</button>
+        </div>
+
+        <div className="w-px h-5 bg-white/[0.07] mx-0.5"/>
+
+        {/* View mode toggle — pill */}
+        <div className="flex items-center bg-white/[0.04] border border-white/[0.08] rounded-lg overflow-hidden p-0.5">
+          <button
+            onClick={() => setViewMode("sidebar")}
+            title="Vista con barra lateral fija"
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium transition-all ${
+              viewMode === "sidebar"
+                ? "bg-purple-600/30 text-purple-200 shadow-sm shadow-purple-500/30"
+                : "text-gray-500 hover:text-gray-300"
+            }`}>
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><rect x="3" y="3" width="6" height="18" rx="2"/><line x1="6" y1="7" x2="6" y2="7.01"/><line x1="6" y1="11" x2="6" y2="11.01"/><line x1="6" y1="15" x2="6" y2="15.01"/></svg>
+            Sidebar
           </button>
-          <div className="absolute right-0 top-full mt-1 w-32 bg-[#1c1c28] border border-white/10 rounded-xl shadow-2xl overflow-hidden opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-all z-50">
+          <button
+            onClick={() => setViewMode("dock")}
+            title="Vista con dock flotante inferior"
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium transition-all ${
+              viewMode === "dock"
+                ? "bg-purple-600/30 text-purple-200 shadow-sm shadow-purple-500/30"
+                : "text-gray-500 hover:text-gray-300"
+            }`}>
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><rect x="3" y="14" width="18" height="6" rx="2"/><circle cx="8" cy="17" r="0.7" fill="currentColor"/><circle cx="12" cy="17" r="0.7" fill="currentColor"/><circle cx="16" cy="17" r="0.7" fill="currentColor"/></svg>
+            Dock
+          </button>
+        </div>
+
+        {/* Share (placeholder) */}
+        <button title="Compartir (próximamente)" className="ag-icon-btn opacity-60">
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+        </button>
+
+        {/* Export */}
+        <div className="relative group">
+          <button className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-fuchsia-600 hover:from-purple-500 hover:to-fuchsia-500 text-white text-xs font-semibold transition-all shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50">
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+            Exportar
+          </button>
+          <div className="absolute right-0 top-full mt-1 w-36 ag-glass border border-white/10 rounded-xl shadow-2xl overflow-hidden opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-all z-50">
             {[["PNG","png"],["JPG","jpg"]].map(([label, fmt]) => (
               <button key={fmt} onClick={() => exportFlyer(fmt as "png"|"jpg")}
                 className="w-full px-4 py-2.5 text-left text-xs text-gray-300 hover:bg-white/8 hover:text-white transition-all">
@@ -753,30 +845,47 @@ export default function GeneratedEditor({ templateId }: GeneratedEditorProps = {
             ))}
           </div>
         </div>
+
+        {/* User avatar */}
+        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-zinc-700 to-zinc-900 border border-white/[0.07] flex items-center justify-center text-[11px] font-bold text-white/80 cursor-pointer hover:border-white/20 transition-all ml-1">AG</div>
       </header>
 
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden bg-[#070711]">
 
-        {/* LEFT TOOLBAR */}
-        <div className="w-[60px] bg-[#111118] border-r border-white/[0.07] flex flex-col items-center py-3 gap-1 shrink-0">
-          {TOOLS.map(tool => (
-            <button key={tool.id}
-              onClick={() => {
-                if (tool.id === "photos") { setArtistsModalOpen(true); return; }
-                setActiveTool(tool.id);
-                if (tool.id === "text") addText();
-              }}
-              title={tool.label}
-              className={`w-10 h-10 rounded-xl flex flex-col items-center justify-center gap-0.5 transition-all text-[9px] font-medium ${activeTool === tool.id ? "bg-purple-600/20 text-purple-400 border border-purple-500/30" : "text-gray-600 hover:text-gray-300 hover:bg-white/5"}`}>
-              {tool.icon}
-              <span className="leading-none">{tool.label.slice(0,6)}</span>
-            </button>
-          ))}
-        </div>
+        {/* LEFT SIDEBAR — only when viewMode = sidebar */}
+        {viewMode === "sidebar" && (
+          <div className="w-[68px] ag-glass border-r border-white/[0.06] flex flex-col items-center py-3 gap-1.5 shrink-0 z-30">
+            {TOOLS.map(tool => {
+              const isActive = activeTool === tool.id;
+              return (
+                <button key={tool.id}
+                  onClick={() => {
+                    if (tool.comingSoon) return;
+                    if (tool.id === "photos") { setArtistsModalOpen(true); return; }
+                    setActiveTool(tool.id);
+                    if (tool.id === "text") addText();
+                  }}
+                  title={tool.comingSoon ? `${tool.label} · próximamente` : tool.label}
+                  className={`relative w-12 h-12 rounded-2xl flex flex-col items-center justify-center gap-0.5 transition-all text-[9px] font-medium ag-sidebar-btn ${
+                    isActive
+                      ? "bg-gradient-to-br from-purple-600/30 to-fuchsia-600/20 text-purple-300 border border-purple-500/40 shadow-lg shadow-purple-500/20"
+                      : tool.comingSoon
+                      ? "text-gray-600 hover:text-gray-400 cursor-default"
+                      : "text-gray-500 hover:text-white hover:bg-white/[0.05] active:scale-95"
+                  }`}>
+                  {tool.icon}
+                  <span className="leading-none">{tool.label.slice(0, 6)}</span>
+                  {tool.comingSoon && <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-amber-400 shadow-sm shadow-amber-400/60"/>}
+                  {isActive && <span className="absolute -left-px top-1/2 -translate-y-1/2 w-0.5 h-6 rounded-r-full bg-gradient-to-b from-purple-400 to-fuchsia-400"/>}
+                </button>
+              );
+            })}
+          </div>
+        )}
 
         {/* LAYERS PANEL */}
         {activeTool === "layers" && (
-          <div className="w-52 bg-[#111118] border-r border-white/[0.07] flex flex-col shrink-0">
+          <div className="w-52 ag-glass border-r border-white/[0.06] flex flex-col shrink-0">
             <div className="px-3 py-2.5 border-b border-white/[0.06]">
               <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-widest">Capas</p>
             </div>
@@ -802,7 +911,7 @@ export default function GeneratedEditor({ templateId }: GeneratedEditorProps = {
         )}
 
         {/* CANVAS — centered in dark workspace */}
-        <div className="flex-1 flex flex-col bg-[#0e0e16] overflow-hidden">
+        <div className="flex-1 flex flex-col bg-transparent overflow-hidden">
           <div className="flex-1 overflow-auto">
             {/* Center the canvas both horizontally and vertically */}
             <div className="min-h-full flex items-center justify-center p-8">
@@ -819,7 +928,7 @@ export default function GeneratedEditor({ templateId }: GeneratedEditorProps = {
           </div>
 
           {/* ZOOM BAR */}
-          <div className="h-10 bg-[#111118] border-t border-white/[0.06] flex items-center justify-center gap-3 px-4 shrink-0">
+          <div className="h-10 ag-glass border-t border-white/[0.06] flex items-center justify-center gap-3 px-4 shrink-0">
             <button onClick={() => setZoom(z => Math.max(10, z - 10))} className="w-6 h-6 rounded flex items-center justify-center text-gray-500 hover:text-white hover:bg-white/8 transition-all text-lg">−</button>
             <span className="text-xs text-gray-500 w-12 text-center">{zoom}%</span>
             <button onClick={() => setZoom(z => Math.min(200, z + 10))} className="w-6 h-6 rounded flex items-center justify-center text-gray-500 hover:text-white hover:bg-white/8 transition-all text-lg">+</button>
@@ -830,7 +939,7 @@ export default function GeneratedEditor({ templateId }: GeneratedEditorProps = {
         </div>
 
         {/* RIGHT PROPERTIES PANEL */}
-        <div className="w-64 bg-[#111118] border-l border-white/[0.07] flex flex-col shrink-0 overflow-hidden">
+        <div className="w-64 ag-glass border-l border-white/[0.06] flex flex-col shrink-0 overflow-hidden">
           {!selectedLayer ? (
             <div className="flex-1 flex flex-col items-center justify-center p-6 text-center gap-3">
               <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center">
@@ -913,11 +1022,68 @@ export default function GeneratedEditor({ templateId }: GeneratedEditorProps = {
         </div>
       </div>
 
+      {/* DOCK INFERIOR — only when viewMode = dock */}
+      {viewMode === "dock" && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 ag-glass border border-white/[0.08] rounded-3xl px-3 py-2 flex items-center gap-1.5 shadow-2xl shadow-purple-500/10">
+          {TOOLS.filter(t => ["design","text","photos","layers","ai","background"].includes(t.id)).map(tool => {
+            const isActive = activeTool === tool.id;
+            return (
+              <button key={tool.id}
+                onClick={() => {
+                  if (tool.comingSoon) return;
+                  if (tool.id === "photos") { setArtistsModalOpen(true); return; }
+                  setActiveTool(tool.id);
+                  if (tool.id === "text") addText();
+                }}
+                title={tool.comingSoon ? `${tool.label} · próximamente` : tool.label}
+                className={`group relative w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${
+                  isActive
+                    ? "bg-gradient-to-br from-purple-600/30 to-fuchsia-600/20 text-purple-300 border border-purple-500/40 shadow-lg shadow-purple-500/30"
+                    : tool.comingSoon
+                    ? "text-gray-600 cursor-default"
+                    : "text-gray-400 hover:text-white hover:bg-white/[0.06] hover:-translate-y-0.5 active:scale-95"
+                }`}>
+                {tool.icon}
+                {tool.comingSoon && <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-amber-400 shadow-sm shadow-amber-400/60"/>}
+                <span className="absolute bottom-full mb-2 px-2 py-1 rounded-md bg-black/85 border border-white/10 text-[10px] text-white whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity">{tool.label}</span>
+              </button>
+            );
+          })}
+          <div className="w-px h-7 bg-white/[0.08] mx-1"/>
+          <button onClick={() => exportFlyer("png")}
+            title="Exportar PNG"
+            className="group relative w-12 h-12 rounded-2xl flex items-center justify-center transition-all bg-gradient-to-br from-purple-600 to-fuchsia-600 hover:from-purple-500 hover:to-fuchsia-500 text-white shadow-lg shadow-purple-500/40 hover:-translate-y-0.5 active:scale-95">
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+            <span className="absolute bottom-full mb-2 px-2 py-1 rounded-md bg-black/85 border border-white/10 text-[10px] text-white whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity">Exportar</span>
+          </button>
+        </div>
+      )}
+
       <style>{`
         canvas { display: block; }
         input[type="color"] { -webkit-appearance: none; border-radius: 6px; padding: 0; border: 1px solid rgba(255,255,255,0.1); cursor: pointer; }
         input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
         input[type="color"]::-webkit-color-swatch { border: none; border-radius: 4px; }
+        .ag-glass {
+          background: rgba(18, 18, 32, 0.88);
+          backdrop-filter: blur(20px) saturate(180%);
+          -webkit-backdrop-filter: blur(20px) saturate(180%);
+        }
+        .ag-icon-btn {
+          width: 32px; height: 32px;
+          display: inline-flex; align-items: center; justify-content: center;
+          border-radius: 10px;
+          color: rgba(255,255,255,0.55);
+          transition: all 0.15s ease;
+        }
+        .ag-icon-btn:hover {
+          background: rgba(255,255,255,0.06);
+          color: rgba(255,255,255,0.95);
+        }
+        .ag-icon-btn:active:not(.cursor-not-allowed) {
+          transform: scale(0.94);
+        }
+        .ag-sidebar-btn { transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1); }
       `}</style>
 
       {artistsModalOpen && (
