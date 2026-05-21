@@ -219,6 +219,37 @@ export const templates: Template[] = [
             { id: "venue", type: "text", text: "Gran Salón · Hotel Palace", x: 0, y: 862, width: 1080, fontSize: 35, fontFamily: "Arial", color: "#9ca3af", textAlign: "center" },
             { id: "footer", type: "text", text: "ArteGenIA", x: 0, y: 1138, width: 1080, fontSize: 45, fontFamily: "Arial", color: "#facc15", textAlign: "center" },
         ] },
+            // ── Variant: Portada de Facebook (1920×1005, banner horizontal) ──
+            { format: "fb-cover", width: 1920, height: 1005, layers: [
+                // Fondo base
+                { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 1920, height: 1005, fill: "#111827", selectable: false },
+                // Foto a la derecha (banner side)
+                { id: "photo", type: "image", src: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?q=80&w=1600", x: 960, y: 0, scaleX: 1.0, scaleY: 1.0, opacity: 0.65 },
+                // Gradient fade de derecha a izquierda (overlay oscuro sobre foto)
+                { id: "overlay-right", type: "shape", shape: "rect", x: 960, y: 0, width: 960, height: 1005, fill: "rgba(17,24,39,0.45)", selectable: false },
+                // Bloque oscuro sólido a la izquierda
+                { id: "overlay-left", type: "shape", shape: "rect", x: 0, y: 0, width: 1100, height: 1005, fill: "rgba(17,24,39,0.93)", selectable: false },
+                // Línea dorada vertical separadora
+                { id: "gold-divider", type: "shape", shape: "rect", x: 1100, y: 250, width: 2, height: 505, fill: "#facc15", opacity: 0.5, selectable: false },
+                // Línea dorada horizontal superior (decoración)
+                { id: "gold-line-t", type: "shape", shape: "rect", x: 110, y: 180, width: 460, height: 2, fill: "#facc15", opacity: 0.6, selectable: false },
+                // Línea dorada horizontal inferior (decoración)
+                { id: "gold-line-b", type: "shape", shape: "rect", x: 110, y: 820, width: 460, height: 2, fill: "#facc15", opacity: 0.6, selectable: false },
+                // Label arriba
+                { id: "label", type: "text", text: "GALA ESPECIAL", x: 110, y: 130, width: 880, fontSize: 28, fontFamily: "Arial", color: "#facc15", fontWeight: "bold", textAlign: "left", charSpacing: 200 },
+                // Titulo gigante
+                { id: "title", type: "text", text: "EVENTO PREMIUM", x: 110, y: 220, width: 880, fontSize: 100, fontFamily: "Arial", color: "#facc15", fontWeight: "bold", textAlign: "left", lineHeight: 0.95 },
+                // Subtítulo
+                { id: "subtitle", type: "text", text: "Una noche inolvidable", x: 110, y: 470, width: 880, fontSize: 44, fontFamily: "Arial", color: "#ffffff", textAlign: "left" },
+                // Artistas
+                { id: "artists", type: "text", text: "ARTISTA 1 · ARTISTA 2", x: 110, y: 555, width: 880, fontSize: 32, fontFamily: "Arial", color: "#fbbf24", fontWeight: "bold", textAlign: "left" },
+                // Fecha (debajo de la línea dorada inferior)
+                { id: "date", type: "text", text: "SÁBADO 5 JULIO · 21:00 HRS", x: 110, y: 850, width: 880, fontSize: 36, fontFamily: "Arial", color: "#e5e7eb", fontWeight: "bold", textAlign: "left" },
+                // Venue
+                { id: "venue", type: "text", text: "Gran Salón · Hotel Palace", x: 110, y: 915, width: 880, fontSize: 28, fontFamily: "Arial", color: "#9ca3af", textAlign: "left" },
+                // Footer pequeño (esquina inferior derecha)
+                { id: "footer", type: "text", text: "ArteGenIA", x: 1150, y: 940, width: 750, fontSize: 22, fontFamily: "Arial", color: "#facc15", textAlign: "right" },
+            ] },
         ],
     },
 
