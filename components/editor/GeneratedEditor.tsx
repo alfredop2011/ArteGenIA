@@ -867,6 +867,32 @@ export default function GeneratedEditor({ templateId, formatId, projectId }: Gen
 
   // ─── ADD TEXT ─────────────────────────────────────────────────────────────
 
+  // Duplica el objeto activo del canvas. En Fabric 7, clone() devuelve Promise.
+  const duplicateActiveObject = useCallback(async () => {
+    const canvas = fabricRef.current;
+    if (!canvas) return;
+    const obj = canvas.getActiveObject();
+    if (!obj || !selectedLayer) return;
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const cloned = await (obj as any).clone();
+      if (!cloned) return;
+      cloned.set({ left: (obj.left ?? 0) + 30, top: (obj.top ?? 0) + 30 });
+      const newId = `dup-${uid()}`;
+      (cloned as FabricObject & { customId?: string }).customId = newId;
+      canvas.add(cloned);
+      canvas.setActiveObject(cloned);
+      canvas.renderAll();
+      setLayers(prev => [
+        { id: newId, name: `${selectedLayer.name} (copia)`, type: selectedLayer.type, obj: cloned, visible: true, locked: false },
+        ...prev,
+      ]);
+      setSaveState("unsaved");
+    } catch (err) {
+      console.error("[duplicate] clone failed:", err);
+    }
+  }, [selectedLayer]);
+
   const addText = useCallback(async () => {
     const canvas = fabricRef.current;
     if (!canvas) return;
@@ -1602,21 +1628,7 @@ export default function GeneratedEditor({ templateId, formatId, projectId }: Gen
               {floatingToolbar.moreOpen && (
                 <div className="absolute top-full right-0 mt-2 ag-glass border border-white/[0.08] rounded-xl py-1 shadow-2xl min-w-[180px]">
                   {[
-                    { label: "Duplicar", onClick: () => {
-                      const obj = fabricRef.current?.getActiveObject();
-                      if (!obj) return;
-                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                      (obj as any).clone?.((cloned: FabricObject) => {
-                        cloned.set({ left: (obj.left ?? 0) + 30, top: (obj.top ?? 0) + 30 });
-                        const newId = `dup-${uid()}`;
-                        (cloned as FabricObject & { customId?: string }).customId = newId;
-                        fabricRef.current?.add(cloned);
-                        fabricRef.current?.setActiveObject(cloned);
-                        fabricRef.current?.renderAll();
-                        setLayers(prev => [{ id: newId, name: `${selectedLayer.name} (copia)`, type: selectedLayer.type, obj: cloned, visible: true, locked: false }, ...prev]);
-                        setSaveState("unsaved");
-                      });
-                    } },
+                    { label: "Duplicar", onClick: duplicateActiveObject },
                     { label: "Subir capa", onClick: () => moveLayer(selectedLayer.id, "up") },
                     { label: "Bajar capa", onClick: () => moveLayer(selectedLayer.id, "down") },
                     ...(selectedLayer.type === "image" ? [
@@ -1648,21 +1660,7 @@ export default function GeneratedEditor({ templateId, formatId, projectId }: Gen
             { id: "save", label: "Guardar diseño", desc: "Subir a la nube (⌘S)", group: "Acciones", icon: "💾", run: handleSave },
             { id: "add-text", label: "Añadir texto", desc: "Insertar un nuevo texto", group: "Acciones", icon: "T", run: addText },
             { id: "open-photos", label: "Abrir biblioteca de fotos", desc: "Subir artista o logo", group: "Acciones", icon: "📷", run: () => setArtistsModalOpen(true) },
-            { id: "duplicate", label: "Duplicar elemento", desc: "Clonar la capa seleccionada", group: "Acciones", icon: "⧉", disabled: !selectedLayer, run: () => {
-              const obj = fabricRef.current?.getActiveObject();
-              if (!obj || !selectedLayer) return;
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              (obj as any).clone?.((cloned: FabricObject) => {
-                cloned.set({ left: (obj.left ?? 0) + 30, top: (obj.top ?? 0) + 30 });
-                const newId = `dup-${uid()}`;
-                (cloned as FabricObject & { customId?: string }).customId = newId;
-                fabricRef.current?.add(cloned);
-                fabricRef.current?.setActiveObject(cloned);
-                fabricRef.current?.renderAll();
-                setLayers(prev => [{ id: newId, name: `${selectedLayer.name} (copia)`, type: selectedLayer.type, obj: cloned, visible: true, locked: false }, ...prev]);
-                setSaveState("unsaved");
-              });
-            } },
+            { id: "duplicate", label: "Duplicar elemento", desc: "Clonar la capa seleccionada", group: "Acciones", icon: "⧉", disabled: !selectedLayer, run: duplicateActiveObject },
             { id: "delete", label: "Eliminar elemento", desc: "Borra la capa seleccionada", group: "Acciones", icon: "🗑", disabled: !selectedLayer, run: () => selectedLayer && deleteLayer(selectedLayer.id) },
             { id: "lock", label: selectedLayer?.locked ? "Desbloquear elemento" : "Bloquear elemento", desc: "Evitar modificaciones", group: "Acciones", icon: "🔒", disabled: !selectedLayer, run: () => selectedLayer && toggleLock(selectedLayer.id) },
             { id: "flip-h", label: "Voltear horizontal", desc: "Espejo en eje X", group: "Acciones", icon: "↔", disabled: !isImage, run: () => { const obj = fabricRef.current?.getActiveObject(); if (obj) { obj.set("flipX", !obj.flipX); fabricRef.current?.renderAll(); setSaveState("unsaved"); } } },
