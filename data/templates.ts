@@ -277,6 +277,43 @@ export const templates: Template[] = [
             { id: "time", type: "text", text: "20:00 HRS · La Terraza", x: 0, y: 1012, width: 1080, fontSize: 38, fontFamily: "Arial", color: "#f9a8d4", textAlign: "center" },
             { id: "price", type: "text", text: "ENTRADA 18€", x: 0, y: 1150, width: 1080, fontSize: 55, fontFamily: "Arial", color: "#fce7f3", fontWeight: "bold", textAlign: "center" },
         ] },
+            // ── Variant: Historia de Instagram (1080×1920, vertical narrativo) ──
+            { format: "story", width: 1080, height: 1920, layers: [
+                // Fondo base
+                { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1920, fill: "#0d0005", selectable: false },
+                // Foto cubriendo más altura, con opacidad para que el texto destaque
+                { id: "photo", type: "image", src: "https://images.unsplash.com/photo-1545128485-c400e7702796?q=80&w=1080", x: 0, y: 0, scaleX: 1.4, scaleY: 1.4, opacity: 0.55 },
+                // Overlay general
+                { id: "overlay", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1920, fill: "rgba(13,0,5,0.75)", selectable: false },
+                // Glow rosado sobre toda la composición
+                { id: "glow-pink", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1920, fill: "rgba(219,39,119,0.08)", selectable: false },
+                // Safe area visual: en stories de Instagram el header/footer del usuario tapa los primeros y últimos ~250px.
+                // Por eso colocamos el contenido principal entre y=280 y y=1700.
+
+                // Label superior
+                { id: "label", type: "text", text: "UNA NOCHE DE", x: 0, y: 320, width: 1080, fontSize: 42, fontFamily: "Arial", color: "#f9a8d4", fontWeight: "bold", textAlign: "center", charSpacing: 200 },
+                // Título "BACHATA" — más grande aprovechando el alto
+                { id: "title", type: "text", text: "BACHATA", x: 0, y: 410, width: 1080, fontSize: 200, fontFamily: "Arial", color: "#fce7f3", fontWeight: "bold", textAlign: "center" },
+                // Título "NIGHTS"
+                { id: "title2", type: "text", text: "NIGHTS", x: 0, y: 615, width: 1080, fontSize: 200, fontFamily: "Arial", color: "#ec4899", fontWeight: "bold", textAlign: "center" },
+                // Línea decorativa rosa
+                { id: "line", type: "shape", shape: "rect", x: 240, y: 850, width: 600, height: 3, fill: "#ec4899", opacity: 0.55, selectable: false },
+                // Artistas (centro vertical, más prominentes que en portrait)
+                { id: "artists", type: "text", text: "CORA & NIKO", x: 0, y: 905, width: 1080, fontSize: 78, fontFamily: "Arial", color: "#ffffff", fontWeight: "bold", textAlign: "center" },
+                // Genre
+                { id: "genre", type: "text", text: "BACHATA · AMOR · CONEXIÓN", x: 0, y: 1020, width: 1080, fontSize: 34, fontFamily: "Arial", color: "#f9a8d4", textAlign: "center", charSpacing: 100 },
+                // Bloque inferior con fecha (más respiro entre elementos)
+                { id: "line-2", type: "shape", shape: "rect", x: 240, y: 1180, width: 600, height: 3, fill: "#ec4899", opacity: 0.55, selectable: false },
+                // Fecha (más grande para destacar — es el dato más importante en story)
+                { id: "date", type: "text", text: "DOMINGO 29 JUNIO", x: 0, y: 1240, width: 1080, fontSize: 70, fontFamily: "Arial", color: "#ffffff", fontWeight: "bold", textAlign: "center" },
+                // Hora y venue
+                { id: "time", type: "text", text: "20:00 HRS · La Terraza", x: 0, y: 1345, width: 1080, fontSize: 44, fontFamily: "Arial", color: "#f9a8d4", textAlign: "center" },
+                // CTA inferior — entrada / precio destacado
+                { id: "price-bg", type: "shape", shape: "rect", x: 290, y: 1500, width: 500, height: 110, fill: "rgba(236,72,153,0.15)", radius: 55, stroke: "#ec4899", strokeWidth: 2, opacity: 0.9, selectable: false },
+                { id: "price", type: "text", text: "ENTRADA 18€", x: 0, y: 1530, width: 1080, fontSize: 50, fontFamily: "Arial", color: "#fce7f3", fontWeight: "bold", textAlign: "center" },
+                // Footer (zona "swipe up" en story)
+                { id: "footer", type: "text", text: "DESLIZA PARA RESERVAR", x: 0, y: 1700, width: 1080, fontSize: 26, fontFamily: "Arial", color: "#f9a8d4", textAlign: "center", charSpacing: 300 },
+            ] },
         ],
     },
 
