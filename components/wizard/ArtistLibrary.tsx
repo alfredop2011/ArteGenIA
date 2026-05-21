@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
+import { compressImage } from "@/lib/imageCompression";
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
 
@@ -16,6 +17,8 @@ export type ArtistEntry = {
   uploadedByUser: boolean;
   removeBackground: boolean;
   order: number;
+  /** Si proviene de un colaborador registrado en BD, su id. Si es subida puntual, null. */
+  collaboratorId?: string | null;
 };
 
 type Category = "all" | "artist" | "dj" | "group" | "logo";
@@ -26,6 +29,10 @@ type LibraryItem = {
   category: Category;
   name: string;
   imageSrc: string;
+  /** true si es un colaborador registrado en BD (mostramos badge CRM) */
+  isCollaborator?: boolean;
+  /** id de la fila en BD (para vincular ArtistEntry y referenciarlo luego) */
+  collaboratorId?: string;
 };
 
 // ─── HELPERS ──────────────────────────────────────────────────────────────────
@@ -130,9 +137,46 @@ export function ArtistLibraryModal({
   const [dragIdx, setDragIdx] = useState<number | null>(null);
   const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [loadingCollabs, setLoadingCollabs] = useState(true);
+  const [saveCollabTarget, setSaveCollabTarget] = useState<ArtistEntry | null>(null);
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
   const artistFileRef = useRef<HTMLInputElement>(null);
   const logoFileRef   = useRef<HTMLInputElement>(null);
+
+  // ── Cargar colaboradores registrados al montar ──────────────────────────────
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/collaborators");
+        if (!res.ok) return; // si no esta autenticado, dejamos library vacia
+        const data = await res.json();
+        if (cancelled) return;
+        const items: LibraryItem[] = (data.collaborators ?? []).map((c: {
+          id: string;
+          kind: "person" | "brand";
+          artist_name: string;
+          role: string | null;
+          photo_url: string | null;
+        }) => ({
+          id: `collab-${c.id}`,
+          type: c.kind === "brand" ? "logo" : "artist" as ArtistType,
+          category: c.kind === "brand" ? "logo" : "artist" as Category,
+          name: c.artist_name,
+          imageSrc: c.photo_url ?? "",
+          isCollaborator: true,
+          collaboratorId: c.id,
+        }));
+        setLibrary(items);
+      } catch {
+        // silencioso: si falla, library queda vacia
+      } finally {
+        if (!cancelled) setLoadingCollabs(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   const filtered = library.filter(item => {
     const matchSearch = item.name.toLowerCase().includes(search.toLowerCase());
@@ -142,11 +186,26 @@ export function ArtistLibraryModal({
 
   // ── Upload ──────────────────────────────────────────────────────────────────
 
-  const handleUpload = useCallback((file: File, type: ArtistType) => {
+  const handleUpload = useCallback(async (file: File, type: ArtistType) => {
+    // Validacion temprana (defensa con el limite reducido)
+    if (file.size > 5 * 1024 * 1024) {
+      console.warn("[ArtistLibrary] Archivo > 5MB, ignorado");
+      return;
+    }
     setUploading(true);
-    const reader = new FileReader();
-    reader.onload = ev => {
-      const src = ev.target?.result as string;
+    try {
+      // Comprimir en cliente antes de convertir a dataURL
+      const compressed = await compressImage(file, {
+        mode: type === "logo" ? "brand" : "person",
+      });
+
+      const src = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = ev => resolve(ev.target?.result as string);
+        reader.onerror = () => reject(new Error("read failed"));
+        reader.readAsDataURL(compressed);
+      });
+
       const raw = file.name.replace(/\.[^.]+$/, "").replace(/[-_]/g, " ");
       const name = raw.charAt(0).toUpperCase() + raw.slice(1);
 
@@ -165,9 +224,9 @@ export function ArtistLibraryModal({
         order: selected.length + 1,
       };
       setSelected(prev => [...prev, entry]);
+    } finally {
       setUploading(false);
-    };
-    reader.readAsDataURL(file);
+    }
   }, [selected.length]);
 
   // ── Toggle item ─────────────────────────────────────────────────────────────
@@ -179,9 +238,10 @@ export function ArtistLibraryModal({
       const entry: ArtistEntry = {
         id: item.id, type: item.type, name: item.name,
         role: prev.length === 0 && item.type === "artist" ? "main" : defaultRole(item.type),
-        imageSrc: item.imageSrc, uploadedByUser: false,
+        imageSrc: item.imageSrc, uploadedByUser: !item.isCollaborator,
         removeBackground: item.type === "artist",
         order: prev.length + 1,
+        collaboratorId: item.collaboratorId ?? null,
       };
       return [...prev, entry];
     });
@@ -258,18 +318,54 @@ export function ArtistLibraryModal({
           </div>
         </div>
 
-        {/* Category filters */}
-        <div className="px-6 pb-4 flex gap-2 shrink-0">
-          {CATEGORIES.map(cat => (
-            <button key={cat.id} onClick={() => setCategory(cat.id)}
-              className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all border ${
-                category === cat.id
-                  ? "bg-purple-600 text-white border-purple-600"
-                  : "bg-transparent text-gray-400 border-white/10 hover:text-white hover:border-white/20"
-              }`}>
-              {cat.label}
+        {/* Category filters + view toggle */}
+        <div className="px-6 pb-4 flex items-center gap-2 shrink-0">
+          <div className="flex gap-2 flex-1 min-w-0 overflow-x-auto">
+            {CATEGORIES.map(cat => (
+              <button key={cat.id} onClick={() => setCategory(cat.id)}
+                className={`shrink-0 px-4 py-1.5 rounded-full text-xs font-medium transition-all border ${
+                  category === cat.id
+                    ? "bg-purple-600 text-white border-purple-600"
+                    : "bg-transparent text-gray-400 border-white/10 hover:text-white hover:border-white/20"
+                }`}>
+                {cat.label}
+              </button>
+            ))}
+          </div>
+
+          {/* View mode toggle */}
+          <div className="flex items-center gap-0.5 p-0.5 bg-white/[0.04] border border-white/[0.08] rounded-full shrink-0">
+            <button
+              onClick={() => setViewMode("grid")}
+              title="Vista detallada"
+              className={`p-1.5 rounded-full transition-colors ${
+                viewMode === "grid" ? "bg-white/10 text-white" : "text-gray-500 hover:text-gray-300"
+              }`}
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <rect x="3" y="3" width="7" height="7" rx="1"/>
+                <rect x="14" y="3" width="7" height="7" rx="1"/>
+                <rect x="3" y="14" width="7" height="7" rx="1"/>
+                <rect x="14" y="14" width="7" height="7" rx="1"/>
+              </svg>
             </button>
-          ))}
+            <button
+              onClick={() => setViewMode("list")}
+              title="Vista compacta"
+              className={`p-1.5 rounded-full transition-colors ${
+                viewMode === "list" ? "bg-white/10 text-white" : "text-gray-500 hover:text-gray-300"
+              }`}
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <line x1="8" y1="6" x2="21" y2="6"/>
+                <line x1="8" y1="12" x2="21" y2="12"/>
+                <line x1="8" y1="18" x2="21" y2="18"/>
+                <line x1="3" y1="6" x2="3.01" y2="6"/>
+                <line x1="3" y1="12" x2="3.01" y2="12"/>
+                <line x1="3" y1="18" x2="3.01" y2="18"/>
+              </svg>
+            </button>
+          </div>
         </div>
 
         {/* Body */}
@@ -300,16 +396,26 @@ export function ArtistLibraryModal({
 
             {/* Grid */}
             <div className="flex-1 overflow-y-auto px-4 pb-4">
-              {filtered.length === 0 ? (
+              {loadingCollabs ? (
+                <div className="flex items-center justify-center h-40">
+                  <div className="w-6 h-6 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"/>
+                </div>
+              ) : filtered.length === 0 ? (
                 <div
                   className="flex flex-col items-center justify-center h-40 gap-3 border-2 border-dashed border-white/10 rounded-2xl cursor-pointer hover:border-purple-500/30 transition-all"
                   onClick={() => artistFileRef.current?.click()}
                   onDragOver={e => e.preventDefault()}
                   onDrop={e => { e.preventDefault(); Array.from(e.dataTransfer.files).filter(f => f.type.startsWith("image/")).forEach(f => handleUpload(f, "artist")); }}>
                   <svg className="w-8 h-8 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
-                  <p className="text-xs text-gray-600 text-center">{search ? `Sin resultados para "${search}"` : "Sube tu primer artista o logo"}</p>
+                  <p className="text-xs text-gray-600 text-center">
+                    {search
+                      ? `Sin resultados para "${search}"`
+                      : library.length === 0
+                        ? "Sin colaboradores aún. Sube uno puntual o ve a /colaboradores para invitar"
+                        : "Sin coincidencias en esta categoría"}
+                  </p>
                 </div>
-              ) : (
+              ) : viewMode === "grid" ? (
                 <div className="grid grid-cols-3 gap-3">
                   {filtered.map(item => {
                     const isSelected = selected.some(s => s.id === item.id);
@@ -324,6 +430,12 @@ export function ArtistLibraryModal({
                         <div className="relative aspect-square w-full overflow-hidden bg-white/5">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img src={item.imageSrc} alt={item.name} className="w-full h-full object-cover"/>
+                          {/* Badge CRM (colaborador registrado) */}
+                          {item.isCollaborator && !isSelected && (
+                            <div className="absolute top-2 left-2 px-1.5 py-0.5 rounded-md bg-emerald-500/85 text-white text-[9px] font-bold tracking-wide shadow-sm">
+                              CRM
+                            </div>
+                          )}
                           {/* Checkmark */}
                           {isSelected && (
                             <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-purple-500 flex items-center justify-center shadow-lg">
@@ -337,6 +449,56 @@ export function ArtistLibraryModal({
                         <div className="bg-[#111118] px-2 py-2">
                           <p className="text-xs text-white font-medium truncate">{item.name}</p>
                         </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                // ── Vista lista compacta ────────────────────────────────────
+                <div className="flex flex-col gap-1">
+                  {filtered.map(item => {
+                    const isSelected = selected.some(s => s.id === item.id);
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={() => toggleItem(item)}
+                        className={`group flex items-center gap-3 px-3 py-2 rounded-xl border transition-all text-left ${
+                          isSelected
+                            ? "bg-purple-500/10 border-purple-500/50"
+                            : "bg-white/[0.02] border-transparent hover:bg-white/[0.05] hover:border-white/10"
+                        }`}
+                      >
+                        {/* Checkbox indicator */}
+                        <div className={`w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition-all ${
+                          isSelected
+                            ? "bg-purple-500 border-purple-500"
+                            : "border-white/30 group-hover:border-white/50"
+                        }`}>
+                          {isSelected && (
+                            <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}><path d="M5 13l4 4L19 7"/></svg>
+                          )}
+                        </div>
+
+                        {/* Thumbnail */}
+                        <div className={`w-10 h-10 overflow-hidden bg-white/5 shrink-0 ${item.type === "logo" ? "rounded-md bg-white p-0.5" : "rounded-full"}`}>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={item.imageSrc} alt={item.name} className="w-full h-full object-cover"/>
+                        </div>
+
+                        {/* Name + badge */}
+                        <div className="flex-1 min-w-0 flex items-center gap-2">
+                          <p className="text-xs text-white font-medium truncate">{item.name}</p>
+                          {item.isCollaborator && (
+                            <span className="shrink-0 px-1.5 py-0.5 rounded-md bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-[9px] font-bold tracking-wide">
+                              CRM
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Type chip */}
+                        <span className="text-[9px] text-gray-500 uppercase tracking-wide shrink-0">
+                          {item.type === "logo" ? "Logo" : "Artista"}
+                        </span>
                       </button>
                     );
                   })}
@@ -417,6 +579,17 @@ export function ArtistLibraryModal({
                             <div className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-all ${entry.removeBackground ? "left-3.5" : "left-0.5"}`}/>
                           </div>
                         </button>
+                        {/* Guardar como colaborador (solo si es subida puntual de usuario) */}
+                        {entry.uploadedByUser && !entry.collaboratorId && (
+                          <button
+                            onClick={() => setSaveCollabTarget(entry)}
+                            className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-[11px] font-semibold hover:bg-emerald-500/20 transition-all">
+                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                              <path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l7-3 7 3z"/>
+                            </svg>
+                            Guardar como colaborador
+                          </button>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -448,6 +621,237 @@ export function ArtistLibraryModal({
             Agregar seleccionados
           </button>
         </div>
+      </div>
+
+      {/* Sub-modal: guardar como colaborador */}
+      {saveCollabTarget && (
+        <SaveCollabModal
+          entry={saveCollabTarget}
+          onClose={() => setSaveCollabTarget(null)}
+          onSaved={(newCollabId) => {
+            // Marcar el entry como vinculado y refrescar la library
+            setSelected(prev => prev.map(s =>
+              s.id === saveCollabTarget.id
+                ? { ...s, collaboratorId: newCollabId, uploadedByUser: false }
+                : s
+            ));
+            // Añadir a library para que aparezca con badge CRM
+            setLibrary(prev => [
+              {
+                id: `collab-${newCollabId}`,
+                type: saveCollabTarget.type,
+                category: saveCollabTarget.type === "logo" ? "logo" : "artist" as Category,
+                name: saveCollabTarget.name,
+                imageSrc: saveCollabTarget.imageSrc,
+                isCollaborator: true,
+                collaboratorId: newCollabId,
+              },
+              ...prev.filter(l => l.id !== saveCollabTarget.id), // quita el item viejo si estaba
+            ]);
+            setSaveCollabTarget(null);
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+// ─── SAVE AS COLLABORATOR SUB-MODAL ──────────────────────────────────────────
+
+function SaveCollabModal({
+  entry,
+  onClose,
+  onSaved,
+}: {
+  entry: ArtistEntry;
+  onClose: () => void;
+  onSaved: (newCollabId: string) => void;
+}) {
+  const isBrand = entry.type === "logo";
+  const [name, setName] = useState(entry.name);
+  const [role, setRole] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Persona: en lugar de guardar, generamos link de invitación con consentimiento RGPD
+  const [inviteToken, setInviteToken] = useState<string | null>(null);
+  const [generating, setGenerating] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const generateInvite = useCallback(async () => {
+    setGenerating(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/collaborator-invites", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Error al generar enlace");
+      setInviteToken(data.token);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error desconocido");
+    } finally {
+      setGenerating(false);
+    }
+  }, []);
+
+  // Marca: guardado directo via API
+  const saveBrand = async () => {
+    if (!name.trim()) return setError("Falta el nombre");
+    setSaving(true);
+    setError(null);
+    try {
+      // Convertir dataURL a Blob para FormData
+      const response = await fetch(entry.imageSrc);
+      const blob = await response.blob();
+      const ext = blob.type.split("/")[1] || "png";
+
+      const fd = new FormData();
+      fd.append("kind", "brand");
+      fd.append("artist_name", name.trim());
+      if (role.trim()) fd.append("role", role.trim());
+      fd.append("photo", new File([blob], `${name.trim()}.${ext}`, { type: blob.type }));
+
+      const res = await fetch("/api/collaborators/manual", { method: "POST", body: fd });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Error al guardar");
+      onSaved(data.collaboratorId);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error desconocido");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const inviteUrl = inviteToken && typeof window !== "undefined"
+    ? `${window.location.origin}/upload/${inviteToken}`
+    : "";
+
+  const copy = async () => {
+    if (!inviteUrl) return;
+    await navigator.clipboard.writeText(inviteUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const whatsappUrl = inviteUrl
+    ? `https://wa.me/?text=${encodeURIComponent(
+        `Hola! Te comparto un enlace para que registres tus datos como colaborador:\n\n${inviteUrl}\n\nCaduca en 7 días.`
+      )}`
+    : "";
+
+  return (
+    <div
+      className="fixed inset-0 z-[110] flex items-center justify-center bg-black/75 backdrop-blur-sm p-4"
+      onClick={e => e.target === e.currentTarget && onClose()}
+    >
+      <div className="w-full max-w-md rounded-3xl p-6 relative"
+        style={{
+          background: "rgba(15,15,25,0.98)",
+          border: "1px solid rgba(168,85,247,0.30)",
+          boxShadow: "0 0 60px rgba(168,85,247,0.15)",
+        }}
+      >
+        <button onClick={onClose}
+          className="absolute top-4 right-4 text-gray-500 hover:text-white transition-colors p-1 rounded-lg hover:bg-white/5">
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+
+        <h2 className="text-xl font-black text-white mb-1">
+          {isBrand ? "Guardar marca" : "Invitar para registrar"}
+        </h2>
+        <p className="text-xs text-gray-500 mb-5">
+          {isBrand
+            ? "La marca se guardará en tu lista de colaboradores."
+            : "Por RGPD, las personas deben firmar su consentimiento. Genera un link y mándaselo."}
+        </p>
+
+        {/* Preview imagen */}
+        <div className="flex items-center gap-3 mb-5 p-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+          <div className={`w-14 h-14 overflow-hidden shrink-0 ${isBrand ? "rounded-xl bg-white p-1" : "rounded-full"}`}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={entry.imageSrc} alt={entry.name} className="w-full h-full object-cover"/>
+          </div>
+          <p className="text-sm text-white font-medium truncate">{entry.name}</p>
+        </div>
+
+        {error && <p className="text-xs text-red-400 mb-3">{error}</p>}
+
+        {/* ── Flujo MARCA ─────────────────────────────────────────────── */}
+        {isBrand && (
+          <div className="space-y-3">
+            <div>
+              <label className="block text-[10px] font-semibold text-gray-400 mb-1.5">Nombre de la marca</label>
+              <input
+                type="text"
+                value={name}
+                onChange={e => setName(e.target.value)}
+                className="w-full bg-white/[0.04] border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white outline-none focus:border-purple-500/40 transition-colors"
+              />
+            </div>
+            <div>
+              <label className="block text-[10px] font-semibold text-gray-400 mb-1.5">
+                Rol <span className="text-gray-600 font-normal">(opcional)</span>
+              </label>
+              <input
+                type="text"
+                value={role}
+                onChange={e => setRole(e.target.value)}
+                placeholder="Ej: Patrocinador oficial"
+                className="w-full bg-white/[0.04] border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white placeholder-gray-600 outline-none focus:border-purple-500/40 transition-colors"
+              />
+            </div>
+            <button
+              onClick={saveBrand}
+              disabled={saving || !name.trim()}
+              className="w-full py-2.5 rounded-xl font-bold text-sm text-white transition-all hover:scale-[1.02] disabled:opacity-40 disabled:hover:scale-100"
+              style={{ background: "linear-gradient(135deg, #d97706, #f59e0b)" }}
+            >
+              {saving ? "Guardando…" : "Guardar marca"}
+            </button>
+          </div>
+        )}
+
+        {/* ── Flujo PERSONA ────────────────────────────────────────────── */}
+        {!isBrand && !inviteToken && (
+          <button
+            onClick={generateInvite}
+            disabled={generating}
+            className="w-full py-2.5 rounded-xl font-bold text-sm text-white transition-all hover:scale-[1.02] disabled:opacity-40"
+            style={{ background: "linear-gradient(135deg, #7c3aed, #c026d3)" }}
+          >
+            {generating ? "Generando enlace…" : "Generar enlace para registrar"}
+          </button>
+        )}
+
+        {!isBrand && inviteToken && (
+          <div className="space-y-3">
+            <div className="bg-white/[0.04] border border-white/10 rounded-xl p-3">
+              <p className="text-[10px] text-gray-500 mb-1">Enlace único · caduca en 7 días</p>
+              <p className="text-xs text-white font-mono break-all">{inviteUrl}</p>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={copy}
+                className="flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold text-white bg-white/[0.06] hover:bg-white/[0.10] border border-white/10 transition-all"
+              >
+                {copied
+                  ? <><svg className="w-3.5 h-3.5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path d="M5 13l4 4L19 7"/></svg> Copiado</>
+                  : <><svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Copiar</>}
+              </button>
+              <a
+                href={whatsappUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold text-white transition-all hover:scale-[1.02]"
+                style={{ background: "#25D366" }}
+              >
+                WhatsApp
+              </a>
+            </div>
+            <p className="text-[10px] text-gray-600 text-center">
+              Cuando esta persona complete el formulario aparecerá en tu lista de colaboradores
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
