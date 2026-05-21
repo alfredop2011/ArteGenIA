@@ -1,4 +1,4 @@
-import { Circle, FabricImage, Rect, Textbox, type Canvas, type StaticCanvas } from "fabric";
+import { Circle, FabricImage, Rect, Shadow, Textbox, type Canvas, type StaticCanvas } from "fabric";
 import type { TemplateLayer } from "@/data/templates";
 
 /** Añade todas las capas de una plantilla al lienzo, incluyendo imágenes async */
@@ -129,6 +129,15 @@ export async function applyTemplateLayers(
                             height: layer.cropHeight,
                         });
                     }
+                }
+                // Aplicar sombra/glow si la capa la define (útil para artistas recortados)
+                if (layer.shadow) {
+                    img.set("shadow", new Shadow({
+                        color: layer.shadow.color,
+                        blur: layer.shadow.blur,
+                        offsetX: layer.shadow.offsetX ?? 0,
+                        offsetY: layer.shadow.offsetY ?? 0,
+                    }));
                 }
                 canvas.add(img);
             } catch (e) {

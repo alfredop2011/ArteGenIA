@@ -70,6 +70,16 @@ export type TemplateLayer =
     cropY?: number;
     cropWidth?: number;
     cropHeight?: number;
+    /**
+     * Sombra/glow alrededor de la imagen (útil para "stickers" de artistas
+     * recortados sin fondo). Si se define, Fabric.js aplica la sombra.
+     */
+    shadow?: {
+        color: string;
+        blur: number;
+        offsetX?: number;
+        offsetY?: number;
+    };
 };
 
 import type { FormatId } from "./formats";
@@ -686,6 +696,63 @@ export const templates: Template[] = [
             { id: "venue", type: "text", text: "WAREHOUSE 47 · MADRID", x: 540, y: 1220, width: 1000, fontSize: 24, fontFamily: "Anton, Impact, sans-serif", color: "#d946ef", fontWeight: "900", textAlign: "center", originX: "center", originY: "center", charSpacing: 600 },
             { id: "price", type: "text", text: "ENTRADA 12€ · NO DRESS CODE", x: 540, y: 1265, width: 1000, fontSize: 16, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.6)", fontWeight: "400", textAlign: "center", originX: "center", originY: "center", charSpacing: 200 },
         ] },
+        ],
+    },
+
+// ─────────────────────────────────────────────────────────────────────
+// 12 — Crossover Salsa (3 artistas) — estilo flyer baile social
+//      Slots de artistas con glow blanco automático
+// ─────────────────────────────────────────────────────────────────────
+    {
+        id: 12,
+        title: "Crossover 3 Artistas",
+        category: "Fiesta",
+        image: "https://images.unsplash.com/photo-1561489413-985b06da5bee?q=80&w=800",
+        premium: false,
+        audience: ["productoras", "academias"],
+        internalTags: ["beta"],
+        variants: [
+            { format: "portrait", width: 1080, height: 1350, layers: [
+                // ── FONDO ──────────────────────────────────────────────────
+                { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1350, fill: "#1a0000", selectable: false },
+                // Fondo ciudad/ambiente con tinte rojo
+                { id: "bg-photo", type: "image", src: "https://images.unsplash.com/photo-1543351611-58f69d7c1781?q=80&w=1200", x: 0, y: 0, scaleX: 0.9, scaleY: 0.9, opacity: 0.35 },
+                // Overlay rojo general para cohesión
+                { id: "overlay-red", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1350, fill: "rgba(180,30,30,0.35)", selectable: false },
+
+                // ── DECORACIONES SUPERIORES (esquinas de flores rojas — placeholders) ──
+                // Pueden reemplazarse por PNGs de flores reales en sesiones futuras
+                { id: "deco-top-left", type: "shape", shape: "circle", x: 0, y: 0, width: 280, height: 280, fill: "rgba(220,38,38,0.4)", opacity: 0.65, selectable: false },
+                { id: "deco-top-right", type: "shape", shape: "circle", x: 800, y: 0, width: 280, height: 280, fill: "rgba(220,38,38,0.4)", opacity: 0.65, selectable: false },
+
+                // ── SLOTS DE ARTISTAS (3 en triángulo: 2 arriba, 1 grande abajo centrado) ──
+                // Cada slot usa una foto placeholder + shadow blanca difusa (glow)
+                // El usuario sustituye estas fotos por sus colaboradores (con remove-bg)
+                { id: "artist-1", type: "image", src: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?q=80&w=600", x: 240, y: 250, scaleX: 0.55, scaleY: 0.55, originX: "center", originY: "top", shadow: { color: "rgba(255,255,255,0.9)", blur: 35, offsetX: 0, offsetY: 0 } },
+                { id: "artist-2", type: "image", src: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=600", x: 840, y: 250, scaleX: 0.55, scaleY: 0.55, originX: "center", originY: "top", shadow: { color: "rgba(255,255,255,0.9)", blur: 35, offsetX: 0, offsetY: 0 } },
+                // Artista 3 (centro, más prominente — el "headliner")
+                { id: "artist-3", type: "image", src: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=600", x: 540, y: 380, scaleX: 0.75, scaleY: 0.75, originX: "center", originY: "top", shadow: { color: "rgba(255,255,255,0.95)", blur: 45, offsetX: 0, offsetY: 0 } },
+
+                // ── BLOQUE DE TÍTULO/INFO PRINCIPAL ────────────────────────
+                { id: "title-bg", type: "shape", shape: "rect", x: 80, y: 880, width: 920, height: 320, fill: "rgba(13,0,0,0.7)", radius: 12, selectable: false },
+                // Fecha
+                { id: "date", type: "text", text: "SÁBADO 16 DE MAYO  |  18:00 A 23:00", x: 0, y: 900, width: 1080, fontSize: 30, fontFamily: "Arial", color: "#ffffff", fontWeight: "bold", textAlign: "center" },
+                // Título del evento
+                { id: "title", type: "text", text: "TARDEO CROSSOVER", x: 0, y: 945, width: 1080, fontSize: 75, fontFamily: "Arial", color: "#ffffff", fontWeight: "bold", textAlign: "center" },
+                // Estilos / géneros
+                { id: "genres", type: "text", text: "BACHATA · SALSA · PERREO", x: 0, y: 1035, width: 1080, fontSize: 32, fontFamily: "Arial", color: "#fca5a5", textAlign: "center", charSpacing: 200 },
+                // DJ
+                { id: "dj", type: "text", text: "DJ MAURO", x: 0, y: 1095, width: 1080, fontSize: 42, fontFamily: "Arial", color: "#ffffff", fontWeight: "bold", textAlign: "center" },
+
+                // ── BANDA HORARIOS (franja blanca) ─────────────────────────
+                { id: "schedule-bg", type: "shape", shape: "rect", x: 60, y: 1180, width: 960, height: 70, fill: "rgba(255,255,255,0.95)", selectable: false },
+                { id: "schedule-1", type: "text", text: "18:00 TALLER DE BACHATA · 18:45 A 23:00 SOCIAL", x: 0, y: 1198, width: 1080, fontSize: 24, fontFamily: "Arial", color: "#7f1d1d", fontWeight: "bold", textAlign: "center" },
+
+                // ── INFO INFERIOR ──────────────────────────────────────────
+                { id: "price", type: "text", text: "ENTRADA: 15€ EN PUERTA (1 COPA / 2 REFRESCOS)", x: 0, y: 1265, width: 1080, fontSize: 20, fontFamily: "Arial", color: "#ffffff", fontWeight: "bold", textAlign: "center" },
+                { id: "venue", type: "text", text: "C/ VICTORIA 6 · DISCOTECA EL SON · METRO SOL", x: 0, y: 1300, width: 1080, fontSize: 18, fontFamily: "Arial", color: "#fca5a5", textAlign: "center" },
+                { id: "phone", type: "text", text: "RESERVAS: +34 600 000 000", x: 0, y: 1325, width: 1080, fontSize: 16, fontFamily: "Arial", color: "#fca5a5", textAlign: "center" },
+            ] },
         ],
     },
 ];
