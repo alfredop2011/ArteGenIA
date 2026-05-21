@@ -7,23 +7,22 @@ import { uploadToR2 } from "@/lib/r2";
  * POST /api/collaborators
  * Recibe el registro de un colaborador (persona o marca).
  *
+ * Si el invite tiene `updates_collaborator_id` distinto de NULL, en lugar de
+ * crear una fila nueva, se ACTUALIZA la existente (flujo de re-invitación).
+ *
  * Campos comunes:
- *   - token            (string, requerido)
- *   - kind             ("person" | "brand", requerido)
- *   - photo            (File, requerido) -- foto si persona, logo si marca
+ *   - token  (requerido)
+ *   - kind   ("person" | "brand", requerido)
+ *   - photo  (File, requerido)
  *
- * Si kind === "person":
- *   - artist_name      (requerido)
- *   - role             (opcional)
- *   - phone            (opcional)
- *   - consent_accepted ("true", requerido)
- *   - consent_text     (requerido)
+ * Persona:
+ *   - artist_name (requerido)
+ *   - role, phone (opcionales)
+ *   - consent_accepted, consent_text (requeridos)
  *
- * Si kind === "brand":
- *   - artist_name      (requerido, es el nombre de la marca)
- *   - No requiere phone, role ni consent (es una entidad, no persona fisica)
- *
- * Usa supabaseAdmin porque el visitante NO esta autenticado.
+ * Marca:
+ *   - artist_name (requerido)
+ *   - sin teléfono ni consentimiento
  */
 export async function POST(req: NextRequest) {
   try {
@@ -37,24 +36,20 @@ export async function POST(req: NextRequest) {
     const consentText = formData.get("consent_text") as string | null;
     const photo = formData.get("photo") as File | null;
 
-    // Validaciones comunes
-    if (!token)        return NextResponse.json({ error: "Falta token" }, { status: 400 });
-    if (!artistName)   return NextResponse.json({ error: "Falta nombre" }, { status: 400 });
-    if (!photo)        return NextResponse.json({ error: "Falta imagen" }, { status: 400 });
+    if (!token)      return NextResponse.json({ error: "Falta token" }, { status: 400 });
+    if (!artistName) return NextResponse.json({ error: "Falta nombre" }, { status: 400 });
+    if (!photo)      return NextResponse.json({ error: "Falta imagen" }, { status: 400 });
     if (!photo.type.startsWith("image/")) {
-      return NextResponse.json({ error: "Solo se permiten imágenes" }, { status: 400 });
+      return NextResponse.json({ error: "Solo imágenes" }, { status: 400 });
     }
     if (photo.size > 15 * 1024 * 1024) {
       return NextResponse.json({ error: "Máximo 15MB" }, { status: 400 });
     }
-
-    // Validar tipo
     if (kindRaw !== "person" && kindRaw !== "brand") {
-      return NextResponse.json({ error: "Tipo de colaborador inválido" }, { status: 400 });
+      return NextResponse.json({ error: "Tipo inválido" }, { status: 400 });
     }
     const kind = kindRaw as "person" | "brand";
 
-    // Validaciones especificas por tipo
     if (kind === "person") {
       if (!consentAccepted) {
         return NextResponse.json({ error: "Debes aceptar el consentimiento" }, { status: 400 });
@@ -67,7 +62,7 @@ export async function POST(req: NextRequest) {
     // Validar token
     const { data: invite, error: inviteErr } = await supabaseAdmin
       .from("collaborator_invites")
-      .select("token, owner_id, expires_at, used_at")
+      .select("token, owner_id, expires_at, used_at, updates_collaborator_id")
       .eq("token", token)
       .maybeSingle();
 
@@ -89,33 +84,80 @@ export async function POST(req: NextRequest) {
     const bytes = Buffer.from(await photo.arrayBuffer());
     const { url: photoUrl } = await uploadToR2(bytes, key, photo.type);
 
-    // IP para prueba de consentimiento (solo personas)
     const ip = kind === "person"
       ? (req.headers.get("x-forwarded-for")?.split(",")[0].trim()
          || req.headers.get("x-real-ip")
          || null)
       : null;
 
-    // Insertar colaborador
-    const { data: collab, error: collabErr } = await supabaseAdmin
-      .from("collaborators")
-      .insert({
-        owner_id: invite.owner_id,
-        kind,
-        artist_name: artistName,
-        role,
-        phone: kind === "person" ? phone : null,
-        photo_url: photoUrl,
-        consent_text: kind === "person" ? consentText : null,
-        consent_at: kind === "person" ? new Date().toISOString() : null,
-        consent_ip: ip,
-      })
-      .select("id")
-      .single();
+    const payload = {
+      owner_id: invite.owner_id,
+      kind,
+      artist_name: artistName,
+      role,
+      phone: kind === "person" ? phone : null,
+      photo_url: photoUrl,
+      consent_text: kind === "person" ? consentText : null,
+      consent_at: kind === "person" ? new Date().toISOString() : null,
+      consent_ip: ip,
+    };
 
-    if (collabErr || !collab) {
-      console.error("[collaborators POST insert]", collabErr);
-      return NextResponse.json({ error: "No se pudo guardar" }, { status: 500 });
+    let collabId: string;
+
+    if (invite.updates_collaborator_id) {
+      // ── Flujo de RE-INVITACIÓN: actualizar fila existente ─────────────
+      // Verificamos que esa fila siga existiendo y sea del mismo owner
+      const { data: target, error: tgtErr } = await supabaseAdmin
+        .from("collaborators")
+        .select("id, owner_id, kind")
+        .eq("id", invite.updates_collaborator_id)
+        .maybeSingle();
+
+      if (tgtErr || !target) {
+        return NextResponse.json(
+          { error: "El colaborador a actualizar ya no existe" },
+          { status: 410 }
+        );
+      }
+      if (target.owner_id !== invite.owner_id) {
+        return NextResponse.json({ error: "Token incoherente" }, { status: 403 });
+      }
+      // Solo permitimos re-invitación de personas (consistencia con reinvite endpoint)
+      if (target.kind !== "person" || kind !== "person") {
+        return NextResponse.json(
+          { error: "La re-invitación solo aplica a personas" },
+          { status: 400 }
+        );
+      }
+
+      const { error: updErr } = await supabaseAdmin
+        .from("collaborators")
+        .update({
+          ...payload,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", invite.updates_collaborator_id);
+
+      if (updErr) {
+        console.error("[collaborators POST update]", updErr);
+        return NextResponse.json({ error: "No se pudo actualizar" }, { status: 500 });
+      }
+
+      collabId = invite.updates_collaborator_id;
+    } else {
+      // ── Flujo NORMAL: insertar nuevo colaborador ──────────────────────
+      const { data: collab, error: collabErr } = await supabaseAdmin
+        .from("collaborators")
+        .insert(payload)
+        .select("id")
+        .single();
+
+      if (collabErr || !collab) {
+        console.error("[collaborators POST insert]", collabErr);
+        return NextResponse.json({ error: "No se pudo guardar" }, { status: 500 });
+      }
+
+      collabId = collab.id;
     }
 
     // Marcar invite como usado
@@ -123,11 +165,11 @@ export async function POST(req: NextRequest) {
       .from("collaborator_invites")
       .update({
         used_at: new Date().toISOString(),
-        collaborator_id: collab.id,
+        collaborator_id: collabId,
       })
       .eq("token", token);
 
-    return NextResponse.json({ ok: true, collaboratorId: collab.id });
+    return NextResponse.json({ ok: true, collaboratorId: collabId });
   } catch (e) {
     console.error("[collaborators POST]", e);
     return NextResponse.json({ error: "Error procesando la solicitud" }, { status: 500 });
@@ -141,14 +183,11 @@ export async function POST(req: NextRequest) {
 export async function GET() {
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) {
-    return NextResponse.json({ error: "No autenticado" }, { status: 401 });
-  }
+  if (!user) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
 
   const { data, error } = await supabase
     .from("collaborators")
-    .select("id, kind, artist_name, role, phone, photo_url, created_at")
+    .select("id, kind, artist_name, role, phone, photo_url, created_at, updated_at")
     .order("created_at", { ascending: false });
 
   if (error) {

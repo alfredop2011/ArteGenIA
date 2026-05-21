@@ -17,6 +17,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         { href: "/create", label: "Crear" },
         { href: "/templates", label: "Plantillas" },
         { href: "/projects", label: "Mis flyers" },
+        { href: "/colaboradores", label: "Colaboradores" },
         { href: "/history", label: "Historial" },
     ];
 

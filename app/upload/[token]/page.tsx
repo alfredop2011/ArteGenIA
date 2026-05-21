@@ -1,20 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, use } from "react";
-import { Camera, Check, Sparkles, ShieldCheck, Loader2, User, Tag, ArrowLeft } from "lucide-react";
-
-/**
- * Página pública donde un colaborador rellena sus datos.
- *
- * Flujo:
- *  1. Al montar, valida el token contra /api/collaborator-invites?token=...
- *  2. Si es válido, muestra un selector inicial: ¿Persona o Marca?
- *  3. Según elija, muestra el formulario correspondiente:
- *     - Persona: nombre artístico + rol opcional + teléfono opcional + foto + consentimiento RGPD
- *     - Marca:   nombre de la marca + logo
- *  4. Al enviar, POST a /api/collaborators con FormData
- *  5. Muestra confirmación de éxito o error
- */
+import { Camera, Check, Sparkles, ShieldCheck, Loader2, User, Tag, ArrowLeft, RotateCw } from "lucide-react";
 
 const CONSENT_TEXT = `Doy mi consentimiento expreso para que el organizador del evento utilice mi nombre artístico, teléfono e imagen en flyers, carteles y material promocional digital o impreso de los eventos en los que participe como colaborador. Puedo retirar mi consentimiento en cualquier momento contactando con el organizador.`;
 
@@ -30,8 +17,8 @@ export default function CollaboratorSignupPage({
 
   const [status, setStatus] = useState<TokenStatus>("checking");
   const [kind, setKind] = useState<Kind>(null);
+  const [isUpdate, setIsUpdate] = useState(false);
 
-  // Campos
   const [name, setName] = useState("");
   const [role, setRole] = useState("");
   const [phone, setPhone] = useState("");
@@ -39,7 +26,6 @@ export default function CollaboratorSignupPage({
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [consent, setConsent] = useState(false);
 
-  // UI state
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -56,7 +42,18 @@ export default function CollaboratorSignupPage({
         if (res.status === 404 || data.reason === "not_found") return setStatus("not_found");
         if (data.reason === "expired") return setStatus("expired");
         if (data.reason === "already_used") return setStatus("used");
-        if (data.valid) return setStatus("valid");
+        if (data.valid) {
+          setStatus("valid");
+          // Si es re-invitación, forzar kind=person y pre-rellenar
+          if (data.isUpdate && data.previousData) {
+            setIsUpdate(true);
+            setKind("person");
+            setName(data.previousData.artistName ?? "");
+            setRole(data.previousData.role ?? "");
+            setPhone(data.previousData.phone ?? "");
+          }
+          return;
+        }
         setStatus("error");
       } catch {
         if (!cancelled) setStatus("error");
@@ -68,14 +65,8 @@ export default function CollaboratorSignupPage({
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      setError("El archivo debe ser una imagen");
-      return;
-    }
-    if (file.size > 15 * 1024 * 1024) {
-      setError("La imagen no puede pesar más de 15MB");
-      return;
-    }
+    if (!file.type.startsWith("image/")) return setError("El archivo debe ser una imagen");
+    if (file.size > 15 * 1024 * 1024) return setError("La imagen no puede pesar más de 15MB");
     setError(null);
     setPhoto(file);
     setPhotoPreview(URL.createObjectURL(file));
@@ -132,8 +123,6 @@ export default function CollaboratorSignupPage({
     }
   };
 
-  // ─── Estados de token ────────────────────────────────────────────────
-
   if (status === "checking") {
     return (
       <CenteredPanel>
@@ -142,7 +131,6 @@ export default function CollaboratorSignupPage({
       </CenteredPanel>
     );
   }
-
   if (status === "not_found" || status === "error") {
     return (
       <CenteredPanel>
@@ -152,7 +140,6 @@ export default function CollaboratorSignupPage({
       </CenteredPanel>
     );
   }
-
   if (status === "expired") {
     return (
       <CenteredPanel>
@@ -162,7 +149,6 @@ export default function CollaboratorSignupPage({
       </CenteredPanel>
     );
   }
-
   if (status === "used") {
     return (
       <CenteredPanel>
@@ -172,20 +158,21 @@ export default function CollaboratorSignupPage({
       </CenteredPanel>
     );
   }
-
   if (done) {
     return (
       <CenteredPanel>
         <div className="w-14 h-14 rounded-full bg-emerald-500/15 border border-emerald-500/40 flex items-center justify-center text-emerald-400 mb-4"><Check size={26} strokeWidth={2.5} /></div>
         <h2 className="text-xl font-bold text-white mb-2">¡Listo!</h2>
         <p className="text-sm text-gray-400 text-center max-w-sm">
-          Tus datos se enviaron correctamente al organizador. Ya puedes cerrar esta página.
+          {isUpdate
+            ? "Tus datos se actualizaron correctamente. Ya puedes cerrar esta página."
+            : "Tus datos se enviaron correctamente al organizador. Ya puedes cerrar esta página."}
         </p>
       </CenteredPanel>
     );
   }
 
-  // ─── Paso inicial: selector de tipo ──────────────────────────────────
+  // Selector inicial (no se muestra en re-invitación, ya viene forzado a person)
   if (!kind) {
     return (
       <div className="min-h-screen bg-[#0a0a18] text-white py-12 px-4">
@@ -196,9 +183,7 @@ export default function CollaboratorSignupPage({
               ArteGenIA
             </div>
             <h1 className="text-2xl font-black mb-2">Bienvenido</h1>
-            <p className="text-sm text-gray-400">
-              Antes de empezar, dinos quién eres
-            </p>
+            <p className="text-sm text-gray-400">Antes de empezar, dinos quién eres</p>
           </div>
 
           <div className="grid grid-cols-1 gap-3">
@@ -243,47 +228,51 @@ export default function CollaboratorSignupPage({
             </button>
           </div>
 
-          <p className="text-center text-[10px] text-gray-700 mt-6">
-            Caduca en 7 días
-          </p>
+          <p className="text-center text-[10px] text-gray-700 mt-6">Caduca en 7 días</p>
         </div>
       </div>
     );
   }
 
-  // ─── Formulario (persona o marca) ────────────────────────────────────
   const isBrand = kind === "brand";
   const labelImage = isBrand ? "Logo" : "Foto";
   const labelName = isBrand ? "Nombre de la marca" : "Nombre artístico";
   const placeholderName = isBrand ? "Ej: Brand Records" : "Ej: DJ Sofía";
-  const headerTitle = isBrand ? "Registra tu marca" : "Comparte tus datos";
-  const headerSubtitle = isBrand
-    ? "Tu marca aparecerá como colaboradora en los flyers"
-    : "Te van a incluir en flyers de eventos. Rellena estos datos una sola vez.";
+
+  const headerTitle = isUpdate
+    ? "Actualiza tus datos"
+    : isBrand ? "Registra tu marca" : "Comparte tus datos";
+
+  const headerSubtitle = isUpdate
+    ? "El organizador te pidió actualizar tus datos. Confirma o cambia lo necesario."
+    : isBrand
+      ? "Tu marca aparecerá como colaboradora en los flyers"
+      : "Te van a incluir en flyers de eventos. Rellena estos datos una sola vez.";
 
   return (
     <div className="min-h-screen bg-[#0a0a18] text-white py-12 px-4">
       <div className="max-w-md mx-auto">
-        {/* Header */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-300 text-xs font-semibold mb-4">
-            <Sparkles size={12} strokeWidth={2} />
-            ArteGenIA
+            {isUpdate
+              ? <><RotateCw size={12} strokeWidth={2} /> Actualización</>
+              : <><Sparkles size={12} strokeWidth={2} /> ArteGenIA</>}
           </div>
           <h1 className="text-2xl font-black mb-2">{headerTitle}</h1>
           <p className="text-sm text-gray-400">{headerSubtitle}</p>
         </div>
 
-        {/* Botón Atrás */}
-        <button
-          onClick={handleBack}
-          className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-white transition-colors mb-4"
-        >
-          <ArrowLeft size={14} strokeWidth={2} />
-          Cambiar tipo
-        </button>
+        {/* Botón Atrás solo si NO es re-invitación (la re-inv fuerza kind=person) */}
+        {!isUpdate && (
+          <button
+            onClick={handleBack}
+            className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-white transition-colors mb-4"
+          >
+            <ArrowLeft size={14} strokeWidth={2} />
+            Cambiar tipo
+          </button>
+        )}
 
-        {/* Card formulario */}
         <div
           className="rounded-3xl p-6 space-y-5"
           style={{
@@ -296,7 +285,6 @@ export default function CollaboratorSignupPage({
               : "0 0 60px rgba(168,85,247,0.15)",
           }}
         >
-          {/* Imagen (foto / logo) */}
           <div>
             <label className="block text-xs font-semibold text-gray-300 mb-2">
               {labelImage} <span className="text-red-400">*</span>
@@ -319,14 +307,15 @@ export default function CollaboratorSignupPage({
               ) : (
                 <>
                   <Camera size={28} strokeWidth={1.5} className="text-gray-500" />
-                  <p className="text-xs text-gray-500">Toca para añadir {isBrand ? "logo" : "foto"}</p>
+                  <p className="text-xs text-gray-500">
+                    {isUpdate ? "Sube una foto actualizada" : `Toca para añadir ${isBrand ? "logo" : "foto"}`}
+                  </p>
                   <p className="text-[10px] text-gray-700">JPG, PNG · Máx 15MB</p>
                 </>
               )}
             </button>
           </div>
 
-          {/* Nombre */}
           <div>
             <label className="block text-xs font-semibold text-gray-300 mb-2">
               {labelName} <span className="text-red-400">*</span>
@@ -340,7 +329,6 @@ export default function CollaboratorSignupPage({
             />
           </div>
 
-          {/* Campos solo persona */}
           {!isBrand && (
             <>
               <div>
@@ -387,9 +375,7 @@ export default function CollaboratorSignupPage({
             </>
           )}
 
-          {error && (
-            <p className="text-xs text-red-400 text-center">{error}</p>
-          )}
+          {error && <p className="text-xs text-red-400 text-center">{error}</p>}
 
           <button
             onClick={handleSubmit}
@@ -409,7 +395,11 @@ export default function CollaboratorSignupPage({
                 : "0 0 25px rgba(168,85,247,0.40)",
             }}
           >
-            {submitting ? "Enviando…" : (isBrand ? "Registrar marca" : "Enviar mis datos")}
+            {submitting
+              ? "Enviando…"
+              : isUpdate
+                ? "Actualizar mis datos"
+                : isBrand ? "Registrar marca" : "Enviar mis datos"}
           </button>
         </div>
 
