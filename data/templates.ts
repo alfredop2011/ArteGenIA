@@ -89,6 +89,57 @@ export type AudienceId =
     | "agencias"
     | "colegios";
 
+/**
+ * Tags internos del catálogo de plantillas. NO se muestran al usuario final;
+ * solo aparecen en /admin/templates para mantenimiento del catálogo.
+ *
+ * - wip:          Trabajo en progreso, todavía editándose
+ * - revision:     Pendiente de revisión visual / QA
+ * - premium-only: Reservada para plan Premium (cuando se monte el sistema)
+ * - beta:         Funcional pero todavía no se publica en el listado abierto
+ * - deprecated:   No se debe usar, candidata a eliminar
+ * - hero:         Plantilla destacada del catálogo (carrusel home, etc)
+ * - complete:     Marcada como terminada y testeada
+ */
+export type InternalTag =
+    | "wip"
+    | "revision"
+    | "premium-only"
+    | "beta"
+    | "deprecated"
+    | "hero"
+    | "complete";
+
+export const INTERNAL_TAGS: InternalTag[] = [
+    "wip",
+    "revision",
+    "premium-only",
+    "beta",
+    "deprecated",
+    "hero",
+    "complete",
+];
+
+export const INTERNAL_TAG_LABELS: Record<InternalTag, string> = {
+    "wip":          "Work in progress",
+    "revision":     "Revisión pendiente",
+    "premium-only": "Solo premium",
+    "beta":         "Beta",
+    "deprecated":   "Deprecated",
+    "hero":         "Destacada",
+    "complete":     "Completa",
+};
+
+export const INTERNAL_TAG_COLORS: Record<InternalTag, string> = {
+    "wip":          "bg-amber-500/15 text-amber-300 border-amber-500/40",
+    "revision":     "bg-purple-500/15 text-purple-300 border-purple-500/40",
+    "premium-only": "bg-fuchsia-500/15 text-fuchsia-300 border-fuchsia-500/40",
+    "beta":         "bg-blue-500/15 text-blue-300 border-blue-500/40",
+    "deprecated":   "bg-red-500/15 text-red-300 border-red-500/40",
+    "hero":         "bg-emerald-500/15 text-emerald-300 border-emerald-500/40",
+    "complete":     "bg-gray-500/15 text-gray-300 border-gray-500/40",
+};
+
 export type Template = {
     id: number;
     title: string;
@@ -97,6 +148,11 @@ export type Template = {
     premium: boolean;
     /** Audiencias objetivo (multi-select AND en /templates) */
     audience: AudienceId[];
+    /**
+     * Tags internos del catálogo. NO visibles al usuario final.
+     * Editables desde /admin/templates con generación de diff pegable.
+     */
+    internalTags?: InternalTag[];
     variants: TemplateVariant[];
 };
 

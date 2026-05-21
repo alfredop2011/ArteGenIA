@@ -6,6 +6,7 @@ import { useState } from "react";
 import { Zap, Bell, Crown, Image as ImageIcon, History, LogOut } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import AuthModal from "@/components/auth/AuthModal";
+import { isAdmin } from "@/lib/admin";
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
@@ -19,6 +20,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         { href: "/projects", label: "Mis flyers" },
         { href: "/colaboradores", label: "Colaboradores" },
         { href: "/history", label: "Historial" },
+        ...(isAdmin(user?.email) ? [{ href: "/admin/templates", label: "Admin" }] : []),
     ];
 
     const initials = profile?.name
