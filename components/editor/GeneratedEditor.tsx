@@ -32,6 +32,7 @@ import type { FormatId } from "@/data/formats";
 import { applyTemplateLayers } from "@/lib/fabricApplyTemplateLayers";
 import { ArtistLibraryModal, type ArtistEntry } from "@/components/wizard/ArtistLibrary";
 import { useProjects } from "@/hooks/useProjects";
+import { useUndoRedo } from "@/hooks/useUndoRedo";
 import { supabase } from "@/lib/supabase";
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
@@ -239,6 +240,9 @@ export default function GeneratedEditor({ templateId, formatId, projectId }: Gen
   const router = useRouter();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricRef = useRef<FabricCanvas | null>(null);
+
+  // Sistema Undo/Redo (Cmd+Z / Cmd+Shift+Z)
+  const { captureInitial, pushSnapshot, pushSnapshotDebounced, undo, redo, canUndo, canRedo, reset: resetHistory } = useUndoRedo(fabricRef);
 
   const [data, setData] = useState<GeneratedData | null>(null);
   const [template, setTemplate] = useState<Template | null>(null);
@@ -479,10 +483,16 @@ export default function GeneratedEditor({ templateId, formatId, projectId }: Gen
         canvas.on("selection:created", e => { const o = e.selected?.[0]; if (o) handleSelTpl(o); updateFloatingToolbar(); });
         canvas.on("selection:updated", e => { const o = e.selected?.[0]; if (o) handleSelTpl(o); updateFloatingToolbar(); });
         canvas.on("selection:cleared", () => { setSelectedLayer(null); setFloatingToolbar(p => ({ ...p, visible: false, alignOpen: false, moreOpen: false })); });
-        canvas.on("object:modified", () => { const o = canvas?.getActiveObject(); if (o) handleSelTpl(o); setSaveState("unsaved"); updateFloatingToolbar(); });
-        canvas.on("object:moving", () => updateFloatingToolbar());
-        canvas.on("object:scaling", () => updateFloatingToolbar());
+        canvas.on("object:modified", () => { const o = canvas?.getActiveObject(); if (o) handleSelTpl(o); setSaveState("unsaved"); updateFloatingToolbar(); pushSnapshot(); });
+        canvas.on("object:added",    () => { pushSnapshot(); });
+        canvas.on("object:removed",  () => { pushSnapshot(); });
+        canvas.on("text:changed",    () => { pushSnapshotDebounced(); });
+        canvas.on("object:moving",   () => updateFloatingToolbar());
+        canvas.on("object:scaling",  () => updateFloatingToolbar());
         canvas.on("object:rotating", () => updateFloatingToolbar());
+
+        // Estado inicial limpio para el historial
+        captureInitial();
         return;
       }
 
@@ -649,13 +659,19 @@ export default function GeneratedEditor({ templateId, formatId, projectId }: Gen
       canvas.on("selection:created", e => { const o = e.selected?.[0]; if (o) handleSel(o); updateFloatingToolbar(); });
       canvas.on("selection:updated", e => { const o = e.selected?.[0]; if (o) handleSel(o); updateFloatingToolbar(); });
       canvas.on("selection:cleared", () => { setSelectedLayer(null); setFloatingToolbar(p => ({ ...p, visible: false, alignOpen: false, moreOpen: false })); });
-      canvas.on("object:modified", () => { const o = canvas?.getActiveObject(); if (o) handleSel(o); setSaveState("unsaved"); updateFloatingToolbar(); });
-      canvas.on("object:moving", () => updateFloatingToolbar());
-      canvas.on("object:scaling", () => updateFloatingToolbar());
+      canvas.on("object:modified", () => { const o = canvas?.getActiveObject(); if (o) handleSel(o); setSaveState("unsaved"); updateFloatingToolbar(); pushSnapshot(); });
+      canvas.on("object:added",    () => { pushSnapshot(); });
+      canvas.on("object:removed",  () => { pushSnapshot(); });
+      canvas.on("text:changed",    () => { pushSnapshotDebounced(); });
+      canvas.on("object:moving",   () => updateFloatingToolbar());
+      canvas.on("object:scaling",  () => updateFloatingToolbar());
       canvas.on("object:rotating", () => updateFloatingToolbar());
+
+      // Estado inicial limpio para el historial
+      captureInitial();
     })();
 
-    return () => { isMounted = false; canvas?.dispose(); fabricRef.current = null; };
+    return () => { isMounted = false; resetHistory(); canvas?.dispose(); fabricRef.current = null; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data, template]);
 
@@ -1074,11 +1090,19 @@ export default function GeneratedEditor({ templateId, formatId, projectId }: Gen
 
         <div className="flex-1"/>
 
-        {/* Undo/redo (placeholder for now — coming in fase 2 functional) */}
-        <button title="Deshacer (próximamente)" className="ag-icon-btn opacity-50 cursor-not-allowed">
+        {/* Undo/redo */}
+        <button
+          onClick={undo}
+          disabled={!canUndo}
+          title="Deshacer (⌘Z)"
+          className={`ag-icon-btn ${canUndo ? "" : "opacity-30 cursor-not-allowed"}`}>
           <Undo2 className="w-4 h-4" strokeWidth={2} />
         </button>
-        <button title="Rehacer (próximamente)" className="ag-icon-btn opacity-50 cursor-not-allowed">
+        <button
+          onClick={redo}
+          disabled={!canRedo}
+          title="Rehacer (⌘⇧Z)"
+          className={`ag-icon-btn ${canRedo ? "" : "opacity-30 cursor-not-allowed"}`}>
           <Redo2 className="w-4 h-4" strokeWidth={2} />
         </button>
 
@@ -1686,6 +1710,8 @@ export default function GeneratedEditor({ templateId, formatId, projectId }: Gen
           commands={[
             // ── Acciones ────────────────────────────────────
             { id: "save", label: "Guardar diseño", desc: "Subir a la nube (⌘S)", group: "Acciones", icon: <Save className="w-4 h-4" strokeWidth={2} />, run: handleSave },
+            { id: "undo", label: "Deshacer", desc: "Revertir el último cambio (⌘Z)", group: "Acciones", icon: <Undo2 className="w-4 h-4" strokeWidth={2} />, disabled: !canUndo, run: undo },
+            { id: "redo", label: "Rehacer", desc: "Rehacer el último deshacer (⌘⇧Z)", group: "Acciones", icon: <Redo2 className="w-4 h-4" strokeWidth={2} />, disabled: !canRedo, run: redo },
             { id: "add-text", label: "Añadir texto", desc: "Insertar un nuevo texto", group: "Acciones", icon: <Type className="w-4 h-4" strokeWidth={2} />, run: addText },
             { id: "open-photos", label: "Abrir biblioteca de fotos", desc: "Subir artista o logo", group: "Acciones", icon: <Camera className="w-4 h-4" strokeWidth={2} />, run: () => setArtistsModalOpen(true) },
             { id: "duplicate", label: "Duplicar elemento", desc: "Clonar la capa seleccionada", group: "Acciones", icon: <Copy className="w-4 h-4" strokeWidth={2} />, disabled: !selectedLayer, run: duplicateActiveObject },
