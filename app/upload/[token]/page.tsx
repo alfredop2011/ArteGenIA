@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, use } from "react";
 import { Camera, Check, Sparkles, ShieldCheck, Loader2, User, Tag, ArrowLeft, RotateCw } from "lucide-react";
+import { compressImage } from "@/lib/imageCompression";
 
 const CONSENT_TEXT = `Doy mi consentimiento expreso para que el organizador del evento utilice mi nombre artístico, teléfono e imagen en flyers, carteles y material promocional digital o impreso de los eventos en los que participe como colaborador. Puedo retirar mi consentimiento en cualquier momento contactando con el organizador.`;
 
@@ -62,14 +63,16 @@ export default function CollaboratorSignupPage({
     return () => { cancelled = true; };
   }, [token]);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith("image/")) return setError("El archivo debe ser una imagen");
-    if (file.size > 15 * 1024 * 1024) return setError("La imagen no puede pesar más de 15MB");
+    if (file.size > 5 * 1024 * 1024) return setError("La imagen no puede pesar más de 5MB");
     setError(null);
-    setPhoto(file);
-    setPhotoPreview(URL.createObjectURL(file));
+    // Comprimir según el tipo (persona vs marca)
+    const compressed = await compressImage(file, { mode: kind === "brand" ? "brand" : "person" });
+    setPhoto(compressed);
+    setPhotoPreview(URL.createObjectURL(compressed));
   };
 
   const resetFormFields = () => {
@@ -310,7 +313,7 @@ export default function CollaboratorSignupPage({
                   <p className="text-xs text-gray-500">
                     {isUpdate ? "Sube una foto actualizada" : `Toca para añadir ${isBrand ? "logo" : "foto"}`}
                   </p>
-                  <p className="text-[10px] text-gray-700">JPG, PNG · Máx 15MB</p>
+                  <p className="text-[10px] text-gray-700">JPG, PNG · Máx 5MB</p>
                 </>
               )}
             </button>

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import sharp from "sharp";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { uploadToR2 } from "@/lib/r2";
@@ -42,8 +43,8 @@ export async function POST(req: NextRequest) {
     if (!photo.type.startsWith("image/")) {
       return NextResponse.json({ error: "Solo imágenes" }, { status: 400 });
     }
-    if (photo.size > 15 * 1024 * 1024) {
-      return NextResponse.json({ error: "Máximo 15MB" }, { status: 400 });
+    if (photo.size > 5 * 1024 * 1024) {
+      return NextResponse.json({ error: "Máximo 5MB" }, { status: 400 });
     }
     if (kindRaw !== "person" && kindRaw !== "brand") {
       return NextResponse.json({ error: "Tipo inválido" }, { status: 400 });
@@ -76,13 +77,44 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Este link ha caducado" }, { status: 410 });
     }
 
-    // Subir imagen a R2
-    const ext = photo.name.split(".").pop()?.toLowerCase() || "jpg";
+    // Subir imagen a R2 (con compresión defensiva server-side)
     const safeName = artistName.toLowerCase().replace(/[^a-z0-9]/g, "-").slice(0, 30);
     const prefix = kind === "brand" ? "brands" : "collaborators";
-    const key = `${prefix}/${invite.owner_id}/${token}-${safeName}.${ext}`;
-    const bytes = Buffer.from(await photo.arrayBuffer());
-    const { url: photoUrl } = await uploadToR2(bytes, key, photo.type);
+    const inputBytes = Buffer.from(await photo.arrayBuffer());
+
+    let outBytes: Buffer;
+    let outMime: string;
+    let outExt: string;
+
+    try {
+      if (kind === "brand") {
+        // Marcas: PNG 800px preservando transparencia
+        outBytes = await sharp(inputBytes)
+          .rotate()
+          .resize(800, 800, { fit: "inside", withoutEnlargement: true })
+          .png({ compressionLevel: 9 })
+          .toBuffer();
+        outMime = "image/png";
+        outExt = "png";
+      } else {
+        // Personas: JPEG 1080px 80%
+        outBytes = await sharp(inputBytes)
+          .rotate()
+          .resize(1080, 1080, { fit: "inside", withoutEnlargement: true })
+          .jpeg({ quality: 80, mozjpeg: true })
+          .toBuffer();
+        outMime = "image/jpeg";
+        outExt = "jpg";
+      }
+    } catch (sharpErr) {
+      console.warn("[collaborators POST] sharp failed, using original:", sharpErr);
+      outBytes = inputBytes;
+      outMime = photo.type;
+      outExt = photo.name.split(".").pop()?.toLowerCase() || "jpg";
+    }
+
+    const key = `${prefix}/${invite.owner_id}/${token}-${safeName}.${outExt}`;
+    const { url: photoUrl } = await uploadToR2(outBytes, key, outMime);
 
     const ip = kind === "person"
       ? (req.headers.get("x-forwarded-for")?.split(",")[0].trim()
