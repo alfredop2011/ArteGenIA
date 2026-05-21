@@ -1,7 +1,31 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
+import {
+  // Sidebar / Dock (categorías)
+  LayoutGrid, Type, Sparkles as SparklesIcon, Image as ImageIcon, Mountain,
+  Layers as LayersIcon, Wand2, Tag, Heart,
+  // Toolbar / Top bar
+  ArrowLeft, Undo2, Redo2, Search, Share2, Save, Download,
+  // Layers panel
+  GripVertical, Eye, EyeOff, Lock, Unlock, Trash2,
+  // Layer type indicators
+  Square,
+  // Properties / Align
+  AlignStartHorizontal, AlignCenterHorizontal, AlignEndHorizontal,
+  AlignStartVertical, AlignCenterVertical, AlignEndVertical,
+  // FAB
+  Edit3, MoreHorizontal,
+  // Collapsible
+  ChevronDown,
+  // Command palette icons
+  Camera, Copy, Trash, FlipHorizontal, FlipVertical,
+  MoveUp, MoveDown, PanelLeft, PanelBottom, Minimize2, Maximize2,
+  FolderOpen, ArrowLeftCircle,
+  // Empty / misc
+  MousePointer2,
+} from "lucide-react";
 import type { Canvas as FabricCanvas, FabricObject, IText } from "fabric";
 import { templates, type Template, getVariant } from "@/data/templates";
 import type { FormatId } from "@/data/formats";
@@ -195,9 +219,9 @@ function computeArtistCompositions(
 // ─── LAYER ICON ───────────────────────────────────────────────────────────────
 
 function LayerIcon({ type }: { type: LayerType }) {
-  if (type === "text") return <svg className="w-3.5 h-3.5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg>;
-  if (type === "background") return <svg className="w-3.5 h-3.5 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>;
-  return <svg className="w-3.5 h-3.5 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>;
+  if (type === "text")       return <Type      className="w-3.5 h-3.5 text-blue-400"   strokeWidth={2} />;
+  if (type === "background") return <Mountain  className="w-3.5 h-3.5 text-green-400"  strokeWidth={2} />;
+  return                            <ImageIcon className="w-3.5 h-3.5 text-purple-400" strokeWidth={2} />;
 }
 
 // ─── MAIN EDITOR ──────────────────────────────────────────────────────────────
@@ -991,15 +1015,15 @@ export default function GeneratedEditor({ templateId, formatId, projectId }: Gen
   // ─── LEFT TOOLS ───────────────────────────────────────────────────────────
 
   const TOOLS: Array<{ id: LeftTool; label: string; icon: React.ReactNode; comingSoon?: boolean }> = [
-    { id: "design",    label: "Diseño",    icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg> },
-    { id: "text",      label: "Texto",     icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg> },
-    { id: "elements",  label: "Elementos", icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></svg>, comingSoon: true },
-    { id: "photos",    label: "Fotos",     icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg> },
-    { id: "background",label: "Fondo",     icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg> },
-    { id: "layers",    label: "Capas",     icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg> },
-    { id: "ai",        label: "IA Tools",  icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 16.8 5.8 21.3l2.4-7.4L2 9.4h7.6z"/></svg>, comingSoon: true },
-    { id: "brand",     label: "Brand Kit", icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>, comingSoon: true },
-    { id: "favorites", label: "Favoritos", icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0016.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 002 8.5c0 2.29 1.51 4.04 3 5.5l7 7z"/></svg>, comingSoon: true },
+    { id: "design",    label: "Diseño",    icon: <LayoutGrid className="w-5 h-5" strokeWidth={1.5} /> },
+    { id: "text",      label: "Texto",     icon: <Type className="w-5 h-5" strokeWidth={1.5} /> },
+    { id: "elements",  label: "Elementos", icon: <SparklesIcon className="w-5 h-5" strokeWidth={1.5} />, comingSoon: true },
+    { id: "photos",    label: "Fotos",     icon: <ImageIcon className="w-5 h-5" strokeWidth={1.5} /> },
+    { id: "background",label: "Fondo",     icon: <Mountain className="w-5 h-5" strokeWidth={1.5} /> },
+    { id: "layers",    label: "Capas",     icon: <LayersIcon className="w-5 h-5" strokeWidth={1.5} /> },
+    { id: "ai",        label: "IA Tools",  icon: <Wand2 className="w-5 h-5" strokeWidth={1.5} />, comingSoon: true },
+    { id: "brand",     label: "Brand Kit", icon: <Tag className="w-5 h-5" strokeWidth={1.5} />, comingSoon: true },
+    { id: "favorites", label: "Favoritos", icon: <Heart className="w-5 h-5" strokeWidth={1.5} />, comingSoon: true },
   ];
 
   const isBackground = selectedLayer?.type === "background";
@@ -1017,7 +1041,7 @@ export default function GeneratedEditor({ templateId, formatId, projectId }: Gen
         <button onClick={() => router.push(template ? "/templates" : "/create")}
           title="Volver"
           className="ag-icon-btn">
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+          <ArrowLeft className="w-4 h-4" strokeWidth={2} />
         </button>
 
         {/* Logo */}
@@ -1052,10 +1076,10 @@ export default function GeneratedEditor({ templateId, formatId, projectId }: Gen
 
         {/* Undo/redo (placeholder for now — coming in fase 2 functional) */}
         <button title="Deshacer (próximamente)" className="ag-icon-btn opacity-50 cursor-not-allowed">
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M3 7v6h6M21 17a9 9 0 00-15-6.7L3 13"/></svg>
+          <Undo2 className="w-4 h-4" strokeWidth={2} />
         </button>
         <button title="Rehacer (próximamente)" className="ag-icon-btn opacity-50 cursor-not-allowed">
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M21 7v6h-6M3 17a9 9 0 0115-6.7l3 2.7"/></svg>
+          <Redo2 className="w-4 h-4" strokeWidth={2} />
         </button>
 
         <div className="w-px h-5 bg-white/[0.07] mx-0.5"/>
@@ -1082,7 +1106,7 @@ export default function GeneratedEditor({ templateId, formatId, projectId }: Gen
                 ? "bg-purple-600/30 text-purple-200 shadow-sm shadow-purple-500/30"
                 : "text-gray-500 hover:text-gray-300"
             }`}>
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><rect x="3" y="3" width="6" height="18" rx="2"/><line x1="6" y1="7" x2="6" y2="7.01"/><line x1="6" y1="11" x2="6" y2="11.01"/><line x1="6" y1="15" x2="6" y2="15.01"/></svg>
+            <PanelLeft className="w-3.5 h-3.5" strokeWidth={1.5} />
             Sidebar
           </button>
           <button
@@ -1093,7 +1117,7 @@ export default function GeneratedEditor({ templateId, formatId, projectId }: Gen
                 ? "bg-purple-600/30 text-purple-200 shadow-sm shadow-purple-500/30"
                 : "text-gray-500 hover:text-gray-300"
             }`}>
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><rect x="3" y="14" width="18" height="6" rx="2"/><circle cx="8" cy="17" r="0.7" fill="currentColor"/><circle cx="12" cy="17" r="0.7" fill="currentColor"/><circle cx="16" cy="17" r="0.7" fill="currentColor"/></svg>
+            <PanelBottom className="w-3.5 h-3.5" strokeWidth={1.5} />
             Dock
           </button>
         </div>
@@ -1103,14 +1127,14 @@ export default function GeneratedEditor({ templateId, formatId, projectId }: Gen
           onClick={() => setPaletteOpen(true)}
           title="Buscar comando (⌘K)"
           className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/[0.04] border border-white/[0.08] text-[11px] text-gray-400 hover:text-white hover:bg-white/[0.06] transition-all">
-          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <Search className="w-3.5 h-3.5" strokeWidth={2} />
           <span>Buscar</span>
           <kbd className="ml-1 px-1.5 py-0.5 rounded bg-white/[0.06] text-[9px] text-gray-500 border border-white/5 font-mono">⌘K</kbd>
         </button>
 
         {/* Share (placeholder) */}
         <button title="Compartir (próximamente)" className="ag-icon-btn opacity-60">
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+          <Share2 className="w-4 h-4" strokeWidth={1.5} />
         </button>
 
         {/* Save */}
@@ -1122,14 +1146,14 @@ export default function GeneratedEditor({ templateId, formatId, projectId }: Gen
           {savingProject ? (
             <><div className="w-3 h-3 border border-gray-400 border-t-white rounded-full animate-spin"/><span>Guardando…</span></>
           ) : (
-            <><svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg><span>{currentProjectId ? "Guardar" : "Guardar"}</span></>
+            <><Save className="w-3.5 h-3.5" strokeWidth={2} /><span>{currentProjectId ? "Guardar" : "Guardar"}</span></>
           )}
         </button>
 
         {/* Export */}
         <div className="relative group">
           <button className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-fuchsia-600 hover:from-purple-500 hover:to-fuchsia-500 text-white text-xs font-semibold transition-all shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50">
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+            <Download className="w-3.5 h-3.5" strokeWidth={2} />
             Exportar
           </button>
           <div className="absolute right-0 top-full mt-1 w-36 ag-glass border border-white/10 rounded-xl shadow-2xl overflow-hidden opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-all z-50">
@@ -1189,15 +1213,19 @@ export default function GeneratedEditor({ templateId, formatId, projectId }: Gen
               {layers.map(layer => (
                 <div key={layer.id} onClick={() => selectLayerFromPanel(layer)}
                   className={`group flex items-center gap-2 px-3 py-2 cursor-pointer border-b border-white/[0.04] transition-all ${selectedLayer?.id === layer.id ? "bg-purple-600/15 border-l-2 border-l-purple-500" : "hover:bg-white/4"}`}>
-                  <svg className="w-3 h-3 text-gray-700 shrink-0 cursor-grab" fill="currentColor" viewBox="0 0 24 24"><circle cx="9" cy="5" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="9" cy="19" r="1.5"/><circle cx="15" cy="5" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="15" cy="19" r="1.5"/></svg>
+                  <GripVertical className="w-3 h-3 text-gray-700 shrink-0 cursor-grab" strokeWidth={2} />
                   <LayerIcon type={layer.type}/>
                   <span className={`flex-1 text-xs truncate ${selectedLayer?.id === layer.id ? "text-white" : "text-gray-400"}`}>{layer.name}</span>
                   <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button onClick={e => { e.stopPropagation(); toggleVisibility(layer.id); }} className={`p-0.5 rounded ${layer.visible ? "text-gray-500 hover:text-white" : "text-gray-700"}`}>
-                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>{layer.visible ? <><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></> : <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24M1 1l22 22"/>}</svg>
+                      {layer.visible
+                        ? <Eye    className="w-3 h-3" strokeWidth={2} />
+                        : <EyeOff className="w-3 h-3" strokeWidth={2} />}
                     </button>
                     <button onClick={e => { e.stopPropagation(); toggleLock(layer.id); }} className={`p-0.5 rounded ${layer.locked ? "text-yellow-500" : "text-gray-500 hover:text-white"}`}>
-                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d={layer.locked ? "M7 11V7a5 5 0 0110 0v4" : "M7 11V7a5 5 0 019.9-1"}/></svg>
+                      {layer.locked
+                        ? <Lock   className="w-3 h-3" strokeWidth={2} />
+                        : <Unlock className="w-3 h-3" strokeWidth={2} />}
                     </button>
                   </div>
                 </div>
@@ -1239,7 +1267,7 @@ export default function GeneratedEditor({ templateId, formatId, projectId }: Gen
           {!selectedLayer ? (
             <div className="flex-1 flex flex-col items-center justify-center p-6 text-center gap-3">
               <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/5 flex items-center justify-center">
-                <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5"/></svg>
+                <MousePointer2 className="w-5 h-5 text-gray-600" strokeWidth={1.5} />
               </div>
               <p className="text-xs text-gray-600">Selecciona un elemento<br/>para editar sus propiedades</p>
             </div>
@@ -1249,9 +1277,9 @@ export default function GeneratedEditor({ templateId, formatId, projectId }: Gen
               <div className="px-3.5 py-3 border-b border-white/[0.06] flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className={`w-6 h-6 rounded-lg flex items-center justify-center ${isText ? "bg-blue-500/20 text-blue-300" : isBackground ? "bg-emerald-500/20 text-emerald-300" : "bg-purple-500/20 text-purple-300"}`}>
-                    {isText ? <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg>
-                     : isBackground ? <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M3 3h18v18H3z"/></svg>
-                     : <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>}
+                    {isText       ? <Type      className="w-3 h-3" strokeWidth={2} />
+                     : isBackground ? <Square    className="w-3 h-3" strokeWidth={2} />
+                     :                <ImageIcon className="w-3 h-3" strokeWidth={2} />}
                   </div>
                   <p className="text-[11px] font-semibold text-white/90">
                     {isText ? "Texto" : isBackground ? "Fondo" : "Imagen"}
@@ -1259,7 +1287,7 @@ export default function GeneratedEditor({ templateId, formatId, projectId }: Gen
                 </div>
                 {!isBackground && (
                   <button onClick={() => deleteLayer(selectedLayer.id)} title="Eliminar capa" className="text-gray-600 hover:text-red-400 transition-colors p-1 rounded-lg hover:bg-white/5">
-                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+                    <Trash2 className="w-3.5 h-3.5" strokeWidth={2} />
                   </button>
                 )}
               </div>
@@ -1382,22 +1410,22 @@ export default function GeneratedEditor({ templateId, formatId, projectId }: Gen
                   <div><label className="text-[10px] text-gray-500 mb-1.5 block">Alinear en canvas</label>
                     <div className="grid grid-cols-3 gap-1">
                       <button onClick={() => alignSelectedTo("left")} title="Alinear izquierda" className="py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all flex items-center justify-center">
-                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><line x1="3" y1="3" x2="3" y2="21"/><rect x="7" y="8" width="10" height="3"/><rect x="7" y="14" width="6" height="3"/></svg>
+                        <AlignStartVertical className="w-3.5 h-3.5" strokeWidth={2} />
                       </button>
                       <button onClick={() => alignSelectedTo("center-h")} title="Centrar horizontal" className="py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all flex items-center justify-center">
-                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><line x1="12" y1="3" x2="12" y2="21"/><rect x="7" y="8" width="10" height="3"/><rect x="9" y="14" width="6" height="3"/></svg>
+                        <AlignCenterVertical className="w-3.5 h-3.5" strokeWidth={2} />
                       </button>
                       <button onClick={() => alignSelectedTo("right")} title="Alinear derecha" className="py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all flex items-center justify-center">
-                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><line x1="21" y1="3" x2="21" y2="21"/><rect x="7" y="8" width="10" height="3"/><rect x="11" y="14" width="6" height="3"/></svg>
+                        <AlignEndVertical className="w-3.5 h-3.5" strokeWidth={2} />
                       </button>
                       <button onClick={() => alignSelectedTo("top")} title="Alinear arriba" className="py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all flex items-center justify-center">
-                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><line x1="3" y1="3" x2="21" y2="3"/><rect x="8" y="7" width="3" height="10"/><rect x="14" y="7" width="3" height="6"/></svg>
+                        <AlignStartHorizontal className="w-3.5 h-3.5" strokeWidth={2} />
                       </button>
                       <button onClick={() => alignSelectedTo("center-v")} title="Centrar vertical" className="py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all flex items-center justify-center">
-                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><line x1="3" y1="12" x2="21" y2="12"/><rect x="8" y="7" width="3" height="10"/><rect x="14" y="9" width="3" height="6"/></svg>
+                        <AlignCenterHorizontal className="w-3.5 h-3.5" strokeWidth={2} />
                       </button>
                       <button onClick={() => alignSelectedTo("bottom")} title="Alinear abajo" className="py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all flex items-center justify-center">
-                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><line x1="3" y1="21" x2="21" y2="21"/><rect x="8" y="7" width="3" height="10"/><rect x="14" y="11" width="3" height="6"/></svg>
+                        <AlignEndHorizontal className="w-3.5 h-3.5" strokeWidth={2} />
                       </button>
                     </div>
                   </div>
@@ -1459,7 +1487,7 @@ export default function GeneratedEditor({ templateId, formatId, projectId }: Gen
           <button onClick={() => exportFlyer("png")}
             title="Exportar PNG"
             className="group relative w-12 h-12 rounded-2xl flex items-center justify-center transition-all bg-gradient-to-br from-purple-600 to-fuchsia-600 hover:from-purple-500 hover:to-fuchsia-500 text-white shadow-lg shadow-purple-500/40 hover:-translate-y-0.5 active:scale-95">
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+            <Download className="w-5 h-5" strokeWidth={2} />
             <span className="absolute bottom-full mb-2 px-2 py-1 rounded-md bg-black/85 border border-white/10 text-[10px] text-white whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity">Exportar</span>
           </button>
         </div>
@@ -1554,7 +1582,7 @@ export default function GeneratedEditor({ templateId, formatId, projectId }: Gen
                 }
               }}
               title="Editar"
-              className="ag-fab-btn"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 113 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              className="ag-fab-btn"><Edit3 className="w-4 h-4" strokeWidth={2} />
               <span>Editar</span>
             </button>
 
@@ -1562,7 +1590,7 @@ export default function GeneratedEditor({ templateId, formatId, projectId }: Gen
             <button
               onClick={() => setOpenSections(p => ({ ...p, style: true }))}
               title="Abrir panel de estilos"
-              className="ag-fab-btn"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 011.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>
+              className="ag-fab-btn"><SparklesIcon className="w-4 h-4" strokeWidth={2} />
               <span>Estilos</span>
             </button>
 
@@ -1572,19 +1600,19 @@ export default function GeneratedEditor({ templateId, formatId, projectId }: Gen
                 onClick={() => setFloatingToolbar(p => ({ ...p, alignOpen: !p.alignOpen, moreOpen: false }))}
                 title="Alinear"
                 className={`ag-fab-btn ${floatingToolbar.alignOpen ? "bg-purple-600/20 text-purple-200" : ""}`}>
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><line x1="3" y1="12" x2="21" y2="12"/><rect x="8" y="7" width="3" height="10"/><rect x="14" y="9" width="3" height="6"/></svg>
+                <AlignCenterHorizontal className="w-4 h-4" strokeWidth={2} />
                 <span>Alinear</span>
               </button>
               {floatingToolbar.alignOpen && (
                 <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 ag-glass border border-white/[0.08] rounded-xl p-1.5 shadow-2xl">
                   <div className="grid grid-cols-3 gap-1 w-32">
                     {[
-                      { pos: "left", label: "Izq", icon: <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><line x1="3" y1="3" x2="3" y2="21"/><rect x="7" y="8" width="10" height="3"/><rect x="7" y="14" width="6" height="3"/></svg> },
-                      { pos: "center-h", label: "C·H", icon: <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><line x1="12" y1="3" x2="12" y2="21"/><rect x="7" y="8" width="10" height="3"/><rect x="9" y="14" width="6" height="3"/></svg> },
-                      { pos: "right", label: "Der", icon: <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><line x1="21" y1="3" x2="21" y2="21"/><rect x="7" y="8" width="10" height="3"/><rect x="11" y="14" width="6" height="3"/></svg> },
-                      { pos: "top", label: "Arr", icon: <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><line x1="3" y1="3" x2="21" y2="3"/><rect x="8" y="7" width="3" height="10"/><rect x="14" y="7" width="3" height="6"/></svg> },
-                      { pos: "center-v", label: "C·V", icon: <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><line x1="3" y1="12" x2="21" y2="12"/><rect x="8" y="7" width="3" height="10"/><rect x="14" y="9" width="3" height="6"/></svg> },
-                      { pos: "bottom", label: "Aba", icon: <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><line x1="3" y1="21" x2="21" y2="21"/><rect x="8" y="7" width="3" height="10"/><rect x="14" y="11" width="3" height="6"/></svg> },
+                      { pos: "left",     label: "Izq", icon: <AlignStartVertical    className="w-3.5 h-3.5" strokeWidth={2} /> },
+                      { pos: "center-h", label: "C·H", icon: <AlignCenterVertical   className="w-3.5 h-3.5" strokeWidth={2} /> },
+                      { pos: "right",    label: "Der", icon: <AlignEndVertical      className="w-3.5 h-3.5" strokeWidth={2} /> },
+                      { pos: "top",      label: "Arr", icon: <AlignStartHorizontal  className="w-3.5 h-3.5" strokeWidth={2} /> },
+                      { pos: "center-v", label: "C·V", icon: <AlignCenterHorizontal className="w-3.5 h-3.5" strokeWidth={2} /> },
+                      { pos: "bottom",   label: "Aba", icon: <AlignEndHorizontal    className="w-3.5 h-3.5" strokeWidth={2} /> },
                     ].map(item => (
                       <button key={item.pos} onClick={() => { alignSelectedTo(item.pos as "left" | "center-h" | "right" | "top" | "center-v" | "bottom"); setFloatingToolbar(p => ({ ...p, alignOpen: false })); }} title={item.label} className="aspect-square rounded-lg bg-white/5 hover:bg-purple-600/20 text-gray-400 hover:text-purple-200 transition-all flex items-center justify-center">
                         {item.icon}
@@ -1601,8 +1629,8 @@ export default function GeneratedEditor({ templateId, formatId, projectId }: Gen
               title={selectedLayer.locked ? "Desbloquear" : "Bloquear"}
               className={`ag-fab-btn ${selectedLayer.locked ? "bg-amber-500/20 text-amber-300" : ""}`}>
               {selectedLayer.locked
-                ? <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
-                : <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 019.9-1"/></svg>}
+                ? <Lock   className="w-4 h-4" strokeWidth={2} />
+                : <Unlock className="w-4 h-4" strokeWidth={2} />}
               <span>{selectedLayer.locked ? "Desbloq." : "Bloquear"}</span>
             </button>
 
@@ -1611,7 +1639,7 @@ export default function GeneratedEditor({ templateId, formatId, projectId }: Gen
               onClick={() => deleteLayer(selectedLayer.id)}
               title="Eliminar"
               className="ag-fab-btn ag-fab-btn-danger">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+              <Trash2 className="w-4 h-4" strokeWidth={2} />
               <span>Eliminar</span>
             </button>
 
@@ -1623,7 +1651,7 @@ export default function GeneratedEditor({ templateId, formatId, projectId }: Gen
                 onClick={() => setFloatingToolbar(p => ({ ...p, moreOpen: !p.moreOpen, alignOpen: false }))}
                 title="Más opciones"
                 className={`ag-fab-btn ${floatingToolbar.moreOpen ? "bg-white/10 text-white" : ""}`}>
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>
+                <MoreHorizontal className="w-4 h-4" strokeWidth={2} />
               </button>
               {floatingToolbar.moreOpen && (
                 <div className="absolute top-full right-0 mt-2 ag-glass border border-white/[0.08] rounded-xl py-1 shadow-2xl min-w-[180px]">
@@ -1657,40 +1685,40 @@ export default function GeneratedEditor({ templateId, formatId, projectId }: Gen
           hasSelection={!!selectedLayer}
           commands={[
             // ── Acciones ────────────────────────────────────
-            { id: "save", label: "Guardar diseño", desc: "Subir a la nube (⌘S)", group: "Acciones", icon: "💾", run: handleSave },
-            { id: "add-text", label: "Añadir texto", desc: "Insertar un nuevo texto", group: "Acciones", icon: "T", run: addText },
-            { id: "open-photos", label: "Abrir biblioteca de fotos", desc: "Subir artista o logo", group: "Acciones", icon: "📷", run: () => setArtistsModalOpen(true) },
-            { id: "duplicate", label: "Duplicar elemento", desc: "Clonar la capa seleccionada", group: "Acciones", icon: "⧉", disabled: !selectedLayer, run: duplicateActiveObject },
-            { id: "delete", label: "Eliminar elemento", desc: "Borra la capa seleccionada", group: "Acciones", icon: "🗑", disabled: !selectedLayer, run: () => selectedLayer && deleteLayer(selectedLayer.id) },
-            { id: "lock", label: selectedLayer?.locked ? "Desbloquear elemento" : "Bloquear elemento", desc: "Evitar modificaciones", group: "Acciones", icon: "🔒", disabled: !selectedLayer, run: () => selectedLayer && toggleLock(selectedLayer.id) },
-            { id: "flip-h", label: "Voltear horizontal", desc: "Espejo en eje X", group: "Acciones", icon: "↔", disabled: !isImage, run: () => { const obj = fabricRef.current?.getActiveObject(); if (obj) { obj.set("flipX", !obj.flipX); fabricRef.current?.renderAll(); setSaveState("unsaved"); } } },
-            { id: "flip-v", label: "Voltear vertical", desc: "Espejo en eje Y", group: "Acciones", icon: "↕", disabled: !isImage, run: () => { const obj = fabricRef.current?.getActiveObject(); if (obj) { obj.set("flipY", !obj.flipY); fabricRef.current?.renderAll(); setSaveState("unsaved"); } } },
+            { id: "save", label: "Guardar diseño", desc: "Subir a la nube (⌘S)", group: "Acciones", icon: <Save className="w-4 h-4" strokeWidth={2} />, run: handleSave },
+            { id: "add-text", label: "Añadir texto", desc: "Insertar un nuevo texto", group: "Acciones", icon: <Type className="w-4 h-4" strokeWidth={2} />, run: addText },
+            { id: "open-photos", label: "Abrir biblioteca de fotos", desc: "Subir artista o logo", group: "Acciones", icon: <Camera className="w-4 h-4" strokeWidth={2} />, run: () => setArtistsModalOpen(true) },
+            { id: "duplicate", label: "Duplicar elemento", desc: "Clonar la capa seleccionada", group: "Acciones", icon: <Copy className="w-4 h-4" strokeWidth={2} />, disabled: !selectedLayer, run: duplicateActiveObject },
+            { id: "delete", label: "Eliminar elemento", desc: "Borra la capa seleccionada", group: "Acciones", icon: <Trash className="w-4 h-4" strokeWidth={2} />, disabled: !selectedLayer, run: () => selectedLayer && deleteLayer(selectedLayer.id) },
+            { id: "lock", label: selectedLayer?.locked ? "Desbloquear elemento" : "Bloquear elemento", desc: "Evitar modificaciones", group: "Acciones", icon: <Lock className="w-4 h-4" strokeWidth={2} />, disabled: !selectedLayer, run: () => selectedLayer && toggleLock(selectedLayer.id) },
+            { id: "flip-h", label: "Voltear horizontal", desc: "Espejo en eje X", group: "Acciones", icon: <FlipHorizontal className="w-4 h-4" strokeWidth={2} />, disabled: !isImage, run: () => { const obj = fabricRef.current?.getActiveObject(); if (obj) { obj.set("flipX", !obj.flipX); fabricRef.current?.renderAll(); setSaveState("unsaved"); } } },
+            { id: "flip-v", label: "Voltear vertical", desc: "Espejo en eje Y", group: "Acciones", icon: <FlipVertical className="w-4 h-4" strokeWidth={2} />, disabled: !isImage, run: () => { const obj = fabricRef.current?.getActiveObject(); if (obj) { obj.set("flipY", !obj.flipY); fabricRef.current?.renderAll(); setSaveState("unsaved"); } } },
 
             // ── Alinear ────────────────────────────────────
-            { id: "center-h", label: "Centrar horizontal", desc: "Eje X del canvas", group: "Alinear", icon: "⇔", disabled: !selectedLayer, run: () => alignSelectedTo("center-h") },
-            { id: "center-v", label: "Centrar vertical", desc: "Eje Y del canvas", group: "Alinear", icon: "⇕", disabled: !selectedLayer, run: () => alignSelectedTo("center-v") },
-            { id: "align-left", label: "Alinear izquierda", desc: "Pegado al borde izq", group: "Alinear", icon: "⇤", disabled: !selectedLayer, run: () => alignSelectedTo("left") },
-            { id: "align-right", label: "Alinear derecha", desc: "Pegado al borde der", group: "Alinear", icon: "⇥", disabled: !selectedLayer, run: () => alignSelectedTo("right") },
-            { id: "align-top", label: "Alinear arriba", desc: "Pegado al borde superior", group: "Alinear", icon: "⇡", disabled: !selectedLayer, run: () => alignSelectedTo("top") },
-            { id: "align-bottom", label: "Alinear abajo", desc: "Pegado al borde inferior", group: "Alinear", icon: "⇣", disabled: !selectedLayer, run: () => alignSelectedTo("bottom") },
+            { id: "center-h", label: "Centrar horizontal", desc: "Eje X del canvas", group: "Alinear", icon: <AlignCenterVertical className="w-4 h-4" strokeWidth={2} />, disabled: !selectedLayer, run: () => alignSelectedTo("center-h") },
+            { id: "center-v", label: "Centrar vertical", desc: "Eje Y del canvas", group: "Alinear", icon: <AlignCenterHorizontal className="w-4 h-4" strokeWidth={2} />, disabled: !selectedLayer, run: () => alignSelectedTo("center-v") },
+            { id: "align-left", label: "Alinear izquierda", desc: "Pegado al borde izq", group: "Alinear", icon: <AlignStartVertical className="w-4 h-4" strokeWidth={2} />, disabled: !selectedLayer, run: () => alignSelectedTo("left") },
+            { id: "align-right", label: "Alinear derecha", desc: "Pegado al borde der", group: "Alinear", icon: <AlignEndVertical className="w-4 h-4" strokeWidth={2} />, disabled: !selectedLayer, run: () => alignSelectedTo("right") },
+            { id: "align-top", label: "Alinear arriba", desc: "Pegado al borde superior", group: "Alinear", icon: <AlignStartHorizontal className="w-4 h-4" strokeWidth={2} />, disabled: !selectedLayer, run: () => alignSelectedTo("top") },
+            { id: "align-bottom", label: "Alinear abajo", desc: "Pegado al borde inferior", group: "Alinear", icon: <AlignEndHorizontal className="w-4 h-4" strokeWidth={2} />, disabled: !selectedLayer, run: () => alignSelectedTo("bottom") },
 
             // ── Capa ────────────────────────────────────
-            { id: "layer-up", label: "Subir capa", desc: "Mover hacia adelante", group: "Capa", icon: "▲", disabled: !selectedLayer, run: () => selectedLayer && moveLayer(selectedLayer.id, "up") },
-            { id: "layer-down", label: "Bajar capa", desc: "Mover hacia atrás", group: "Capa", icon: "▼", disabled: !selectedLayer, run: () => selectedLayer && moveLayer(selectedLayer.id, "down") },
+            { id: "layer-up", label: "Subir capa", desc: "Mover hacia adelante", group: "Capa", icon: <MoveUp className="w-4 h-4" strokeWidth={2} />, disabled: !selectedLayer, run: () => selectedLayer && moveLayer(selectedLayer.id, "up") },
+            { id: "layer-down", label: "Bajar capa", desc: "Mover hacia atrás", group: "Capa", icon: <MoveDown className="w-4 h-4" strokeWidth={2} />, disabled: !selectedLayer, run: () => selectedLayer && moveLayer(selectedLayer.id, "down") },
 
             // ── Vista ────────────────────────────────────
-            { id: "view-sidebar", label: "Vista Sidebar", desc: "Barra lateral con categorías", group: "Vista", icon: "▥", run: () => setViewMode("sidebar") },
-            { id: "view-dock", label: "Vista Dock", desc: "Dock flotante inferior", group: "Vista", icon: "▤", run: () => setViewMode("dock") },
-            { id: "zoom-fit", label: "Zoom 50%", desc: "Ajustar al área visible", group: "Vista", icon: "⊟", run: () => setZoom(50) },
-            { id: "zoom-100", label: "Zoom 100%", desc: "Tamaño real", group: "Vista", icon: "⊞", run: () => setZoom(100) },
+            { id: "view-sidebar", label: "Vista Sidebar", desc: "Barra lateral con categorías", group: "Vista", icon: <PanelLeft className="w-4 h-4" strokeWidth={2} />, run: () => setViewMode("sidebar") },
+            { id: "view-dock", label: "Vista Dock", desc: "Dock flotante inferior", group: "Vista", icon: <PanelBottom className="w-4 h-4" strokeWidth={2} />, run: () => setViewMode("dock") },
+            { id: "zoom-fit", label: "Zoom 50%", desc: "Ajustar al área visible", group: "Vista", icon: <Minimize2 className="w-4 h-4" strokeWidth={2} />, run: () => setZoom(50) },
+            { id: "zoom-100", label: "Zoom 100%", desc: "Tamaño real", group: "Vista", icon: <Maximize2 className="w-4 h-4" strokeWidth={2} />, run: () => setZoom(100) },
 
             // ── Exportar ────────────────────────────────────
-            { id: "export-png", label: "Exportar como PNG", desc: "Descargar imagen PNG", group: "Exportar", icon: "⬇", run: () => exportFlyer("png") },
-            { id: "export-jpg", label: "Exportar como JPG", desc: "Descargar imagen JPG", group: "Exportar", icon: "⬇", run: () => exportFlyer("jpg") },
+            { id: "export-png", label: "Exportar como PNG", desc: "Descargar imagen PNG", group: "Exportar", icon: <Download className="w-4 h-4" strokeWidth={2} />, run: () => exportFlyer("png") },
+            { id: "export-jpg", label: "Exportar como JPG", desc: "Descargar imagen JPG", group: "Exportar", icon: <Download className="w-4 h-4" strokeWidth={2} />, run: () => exportFlyer("jpg") },
 
             // ── Navegación ────────────────────────────────────
-            { id: "go-projects", label: "Mis diseños", desc: "Ver mis diseños guardados", group: "Navegación", icon: "📁", run: () => router.push("/projects") },
-            { id: "go-templates", label: "Ver todas las plantillas", desc: "Volver al listado", group: "Navegación", icon: "←", run: () => router.push("/templates") },
+            { id: "go-projects", label: "Mis diseños", desc: "Ver mis diseños guardados", group: "Navegación", icon: <FolderOpen className="w-4 h-4" strokeWidth={2} />, run: () => router.push("/projects") },
+            { id: "go-templates", label: "Ver todas las plantillas", desc: "Volver al listado", group: "Navegación", icon: <ArrowLeftCircle className="w-4 h-4" strokeWidth={2} />, run: () => router.push("/templates") },
           ]}
         />
       )}
@@ -1735,9 +1763,7 @@ function CollapsibleSection({
             </span>
           )}
         </div>
-        <svg className={`w-3.5 h-3.5 text-gray-500 transition-transform ${isOpen ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <polyline points="6 9 12 15 18 9"/>
-        </svg>
+        <ChevronDown className={`w-3.5 h-3.5 text-gray-500 transition-transform ${isOpen ? "rotate-180" : ""}`} strokeWidth={2} />
       </button>
       {isOpen && (
         <div className="px-3.5 pb-3 space-y-2.5 animate-in fade-in slide-in-from-top-1 duration-150">
@@ -1755,7 +1781,7 @@ type PaletteCommand = {
   label: string;
   desc: string;
   group: string;
-  icon: string;
+  icon: ReactNode;
   disabled?: boolean;
   run: () => void;
 };
@@ -1818,7 +1844,7 @@ function CommandPalette({
         className="w-full max-w-xl ag-glass border border-white/[0.08] rounded-2xl shadow-2xl shadow-purple-500/20 overflow-hidden animate-in slide-in-from-top-2 duration-200"
         onClick={e => e.stopPropagation()}>
         <div className="flex items-center gap-3 px-4 py-3.5 border-b border-white/[0.06]">
-          <svg className="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <Search className="w-4 h-4 text-gray-500" strokeWidth={2} />
           <input
             ref={inputRef}
             value={query}
