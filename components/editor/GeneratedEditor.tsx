@@ -98,6 +98,46 @@ const SAFE_MARGIN = 72;
 
 function uid() { return Math.random().toString(36).slice(2, 8); }
 
+/**
+ * Detecta si una URL de imagen tiene canales transparentes muestreando píxeles.
+ * Carga la imagen, la dibuja en un canvas 64x64 y comprueba alpha < 250
+ * en cualquier píxel.
+ *
+ * Se usa antes de invocar remove-bg para evitar procesar imágenes que ya
+ * son PNGs sin fondo (remove.bg a veces les añade fondo blanco al re-procesarlas).
+ */
+async function isImageTransparent(src: string): Promise<boolean> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      try {
+        const canvas = document.createElement("canvas");
+        const size = 64;
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return resolve(false);
+
+        const ratio = Math.min(size / img.width, size / img.height);
+        const sw = Math.max(1, Math.floor(img.width * ratio));
+        const sh = Math.max(1, Math.floor(img.height * ratio));
+        ctx.drawImage(img, 0, 0, sw, sh);
+
+        const data = ctx.getImageData(0, 0, sw, sh).data;
+        for (let i = 3; i < data.length; i += 4) {
+          if (data[i] < 250) return resolve(true);
+        }
+        resolve(false);
+      } catch {
+        resolve(false);
+      }
+    };
+    img.onerror = () => reject(new Error("No se pudo cargar la imagen"));
+    img.src = src;
+  });
+}
+
 // ─── TEXT LAYOUT ──────────────────────────────────────────────────────────────
 
 function buildTextLayout(data: GeneratedData, dims: { w: number; h: number }, hasArtists: boolean) {
@@ -832,20 +872,28 @@ export default function GeneratedEditor({ templateId, formatId, projectId }: Gen
     for (const entry of entries) {
       try {
         // Si la entry quiere quitar fondo, llamar al endpoint primero
+        // PERO antes verificamos si la imagen YA es transparente (PNG sin fondo).
+        // Si lo es, saltamos remove-bg para no estropearla (remove.bg sobre PNGs
+        // sin fondo a veces devuelve la imagen con fondo blanco generado).
         let srcUrl = entry.imageSrc;
         if (entry.removeBackground) {
-          try {
-            const res = await fetch("/api/remove-bg", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ imageUrl: entry.imageSrc }),
-            });
-            if (res.ok) {
-              const json = await res.json();
-              if (json.url) srcUrl = json.url;
+          const alreadyTransparent = await isImageTransparent(entry.imageSrc).catch(() => false);
+          if (alreadyTransparent) {
+            console.log("[editor] Imagen ya transparente, saltando remove-bg:", entry.id);
+          } else {
+            try {
+              const res = await fetch("/api/remove-bg", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ imageUrl: entry.imageSrc }),
+              });
+              if (res.ok) {
+                const json = await res.json();
+                if (json.url) srcUrl = json.url;
+              }
+            } catch (e) {
+              console.warn("remove-bg falló, usando imagen original:", e);
             }
-          } catch (e) {
-            console.warn("remove-bg falló, usando imagen original:", e);
           }
         }
 
