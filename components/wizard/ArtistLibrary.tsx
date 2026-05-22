@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
-import { compressImage } from "@/lib/imageCompression";
+import { compressImageWithMeta } from "@/lib/imageCompression";
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
 
@@ -194,8 +194,11 @@ export function ArtistLibraryModal({
     }
     setUploading(true);
     try {
-      // Comprimir en cliente antes de convertir a dataURL
-      const compressed = await compressImage(file, {
+      // Comprimir en cliente antes de convertir a dataURL.
+      // El helper ahora detecta si la imagen RESULTANTE tiene transparencia
+      // (PNG con canal alpha). Si la tiene, marcamos el entry para SALTAR
+      // remove-bg downstream (no estropear una imagen que ya viene sin fondo).
+      const { file: compressed, hasTransparency: alreadyTransparent } = await compressImageWithMeta(file, {
         mode: type === "logo" ? "brand" : "person",
       });
 
@@ -220,7 +223,9 @@ export function ArtistLibraryModal({
         id: libItem.id, type, name,
         role: selected.length === 0 && type === "artist" ? "main" : defaultRole(type),
         imageSrc: src, uploadedByUser: true,
-        removeBackground: type === "artist",
+        // Si la imagen YA es transparente (PNG sin fondo subido por el usuario)
+        // NO pedimos remove-bg downstream. En logos siempre se respeta el fondo.
+        removeBackground: type === "artist" && !alreadyTransparent,
         order: selected.length + 1,
       };
       setSelected(prev => [...prev, entry]);
