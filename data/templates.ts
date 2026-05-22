@@ -10,6 +10,7 @@ export type TemplateLayer =
     fontFamily: string;
     color: string;
     fontWeight?: "normal" | "bold" | "black" | string;
+    fontStyle?: "normal" | "italic" | "oblique";
     textAlign?: "left" | "center" | "right";
     originX?: "left" | "center" | "right";
     originY?: "top" | "center" | "bottom";
@@ -914,6 +915,336 @@ export const templates: Template[] = [
                 { id: "price", type: "text", text: "ENTRADA: 15\u20ac EN PUERTA (1 COPA / 2 REFRESCOS)", x: 0, y: 1265, width: 1080, fontSize: 20, fontFamily: "Arial", color: "#ffffff", fontWeight: "bold", textAlign: "center" },
                 { id: "venue", type: "text", text: "C/ VICTORIA 6 \u00b7 DISCOTECA EL SON \u00b7 METRO SOL", x: 0, y: 1300, width: 1080, fontSize: 18, fontFamily: "Arial", color: "#fca5a5", textAlign: "center" },
                 { id: "phone", type: "text", text: "RESERVAS: +34 600 000 000", x: 0, y: 1325, width: 1080, fontSize: 16, fontFamily: "Arial", color: "#fca5a5", textAlign: "center" },
+            ] },
+        ],
+    },
+
+// ═════════════════════════════════════════════════════════════════════
+// FAMILIA CONCIERTOS — 6 plantillas para musica en vivo
+// ═════════════════════════════════════════════════════════════════════
+
+// ─────────────────────────────────────────────────────────────────────
+// 16 — Concierto Rock — solista, escenario rojo cinematografico
+//      Receta validada: foto ambiente Unsplash + tinte rojo + foco en artista
+// ─────────────────────────────────────────────────────────────────────
+    {
+        id: 16,
+        title: "Concierto Rock",
+        category: "Conciertos",
+        image: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Musica/Cantantes/Cantante-%20(10).png",
+        premium: false,
+        audience: ["productoras", "academias"],
+        internalTags: ["beta"],
+        variants: [
+            { format: "portrait", width: 1080, height: 1350, layers: [
+                // ── FONDO base negro ──────────────────────────────────────
+                { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1350, fill: "#080404", selectable: false },
+                // FOTO ambiente: concierto rock con luces (Unsplash, libre comercial)
+                { id: "bg-photo", type: "image", src: "https://images.unsplash.com/photo-1501386761578-eac5c94b800a?q=80&w=1400", x: 0, y: 0, scaleX: 0.9, scaleY: 0.9, opacity: 0.45 },
+                // Tinte rojo sobre toda la composicion (color grading)
+                { id: "tint-red", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1350, fill: "rgba(139,0,15,0.55)", selectable: false },
+
+                // ── FOCOS DE ESCENARIO (4 luces puntuales detras del artista) ──
+                { id: "spot-back-1", type: "shape", shape: "circle", x: 280, y: 100, width: 240, height: 240, fill: "rgba(255,80,80,0.40)", opacity: 0.8, selectable: false },
+                { id: "spot-back-2", type: "shape", shape: "circle", x: 560, y: 80, width: 280, height: 280, fill: "rgba(220,38,38,0.45)", opacity: 0.85, selectable: false },
+                // Halo amplio detras del artista (efecto rim light)
+                { id: "halo-artist", type: "shape", shape: "circle", x: 240, y: 200, width: 600, height: 600, fill: "rgba(255,255,255,0.08)", opacity: 0.7, selectable: false },
+
+                // ── ETIQUETA SUPERIOR (chip "EN VIVO") ────────────────────
+                { id: "chip-bg", type: "shape", shape: "rect", x: 460, y: 60, width: 160, height: 38, fill: "#dc2626", radius: 4, selectable: false },
+                { id: "chip-label", type: "text", text: "EN VIVO", x: 0, y: 67, width: 1080, fontSize: 22, fontFamily: "Bebas Neue, Impact, sans-serif", color: "#ffffff", textAlign: "center", charSpacing: 400 },
+
+                // ── ARTISTA (escala validada 0.72, posicion centrada) ─────
+                { id: "artist", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Musica/Cantantes/Cantante-%20(10).png", x: 540, y: 150, scaleX: 0.72, scaleY: 0.72, originX: "center", originY: "top", shadow: { color: "rgba(255,40,40,0.65)", blur: 70, offsetX: 0, offsetY: 0 } },
+
+                // ── VINETA inferior para legibilidad de textos ────────────
+                { id: "vignette", type: "shape", shape: "rect", x: 0, y: 870, width: 1080, height: 480, fill: "rgba(8,4,4,0.78)", selectable: false },
+
+                // ── TITULO principal con sub y dividers ───────────────────
+                // Linea decorativa arriba del titulo
+                { id: "title-deco-l", type: "shape", shape: "rect", x: 240, y: 935, width: 180, height: 1, fill: "#dc2626", selectable: false },
+                { id: "title-deco-star", type: "text", text: "\u2605", x: 0, y: 918, width: 1080, fontSize: 22, fontFamily: "Arial", color: "#dc2626", textAlign: "center" },
+                { id: "title-deco-r", type: "shape", shape: "rect", x: 660, y: 935, width: 180, height: 1, fill: "#dc2626", selectable: false },
+
+                { id: "title", type: "text", text: "ROCK STAR", x: 0, y: 960, width: 1080, fontSize: 156, fontFamily: "Bebas Neue, Impact, sans-serif", color: "#ffffff", textAlign: "center", charSpacing: 120, stroke: "#dc2626", strokeWidth: 0 },
+                { id: "subtitle", type: "text", text: "WORLD TOUR 2026", x: 0, y: 1130, width: 1080, fontSize: 30, fontFamily: "Bebas Neue, Impact, sans-serif", color: "#fca5a5", textAlign: "center", charSpacing: 900 },
+
+                // ── DIVIDER + BLOQUE INFO ────────────────────────────────
+                { id: "divider", type: "shape", shape: "rect", x: 440, y: 1190, width: 200, height: 2, fill: "#dc2626", selectable: false },
+                { id: "date", type: "text", text: "S\u00c1BADO 12 DE JULIO  \u00b7  21:00 H", x: 0, y: 1210, width: 1080, fontSize: 26, fontFamily: "Bebas Neue, Impact, sans-serif", color: "#ffffff", textAlign: "center", charSpacing: 350 },
+                { id: "venue", type: "text", text: "PALACIO VISTALEGRE  \u00b7  MADRID", x: 0, y: 1250, width: 1080, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "#fca5a5", fontWeight: "500", textAlign: "center", charSpacing: 250 },
+
+                // ── CTA pie ──────────────────────────────────────────────
+                { id: "ticket-cta", type: "text", text: "ENTRADAS EN  WWW.TICKETMASTER.ES", x: 0, y: 1300, width: 1080, fontSize: 16, fontFamily: "Bebas Neue, Impact, sans-serif", color: "#dc2626", textAlign: "center", charSpacing: 500 },
+            ] },
+        ],
+    },
+
+// ─────────────────────────────────────────────────────────────────────
+// 17 — Concierto Urban — DJ, club nocturno, neon morado/rosa/cyan
+//      Foto ambiente discoteca + tinte morado + barras neon diagonales
+// ─────────────────────────────────────────────────────────────────────
+    {
+        id: 17,
+        title: "Concierto Urban",
+        category: "Conciertos",
+        image: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dj/Dj-2.png",
+        premium: false,
+        audience: ["productoras", "academias"],
+        internalTags: ["beta"],
+        variants: [
+            { format: "portrait", width: 1080, height: 1350, layers: [
+                // ── FONDO base morado profundo ────────────────────────────
+                { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1350, fill: "#0a0418", selectable: false },
+                // FOTO ambiente: discoteca nocturna con luces (Unsplash)
+                { id: "bg-photo", type: "image", src: "https://images.unsplash.com/photo-1571266028243-d220c6a82b8d?q=80&w=1400", x: 0, y: 0, scaleX: 0.9, scaleY: 0.9, opacity: 0.38 },
+                // Tinte morado para color grading uniforme
+                { id: "tint-purple", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1350, fill: "rgba(76,29,149,0.55)", selectable: false },
+
+                // ── BARRAS NEON DIAGONALES (simulan luces de club) ────────
+                // Barra magenta diagonal arriba-izquierda
+                { id: "neon-bar-1", type: "shape", shape: "rect", x: -100, y: 280, width: 700, height: 6, fill: "#ec4899", opacity: 0.9, angle: -25, selectable: false },
+                // Barra cyan diagonal arriba-derecha
+                { id: "neon-bar-2", type: "shape", shape: "rect", x: 380, y: 200, width: 800, height: 6, fill: "#22d3ee", opacity: 0.85, angle: 28, selectable: false },
+                // Barra morada vertical-diagonal a la izquierda
+                { id: "neon-bar-3", type: "shape", shape: "rect", x: 100, y: 100, width: 4, height: 500, fill: "#a855f7", opacity: 0.7, angle: 15, selectable: false },
+                // Barra magenta vertical-diagonal a la derecha
+                { id: "neon-bar-4", type: "shape", shape: "rect", x: 960, y: 130, width: 4, height: 480, fill: "#ec4899", opacity: 0.7, angle: -12, selectable: false },
+
+                // ── HALO DETRAS DEL DJ (focos) ────────────────────────────
+                { id: "spot-back-1", type: "shape", shape: "circle", x: 340, y: 220, width: 200, height: 200, fill: "rgba(168,85,247,0.55)", opacity: 0.9, selectable: false },
+                { id: "spot-back-2", type: "shape", shape: "circle", x: 540, y: 180, width: 220, height: 220, fill: "rgba(236,72,153,0.50)", opacity: 0.9, selectable: false },
+                { id: "halo-rim", type: "shape", shape: "circle", x: 280, y: 220, width: 520, height: 520, fill: "rgba(34,211,238,0.10)", opacity: 0.85, selectable: false },
+
+                // ── ETIQUETA SUPERIOR (chip "SHOW UNICO") ─────────────────
+                { id: "chip-bg", type: "shape", shape: "rect", x: 420, y: 60, width: 240, height: 40, fill: "transparent", radius: 20, stroke: "#22d3ee", strokeWidth: 2, selectable: false },
+                { id: "chip-label", type: "text", text: "\u2022 SHOW \u00daNICO \u2022", x: 0, y: 70, width: 1080, fontSize: 18, fontFamily: "Anton, Impact, sans-serif", color: "#22d3ee", textAlign: "center", charSpacing: 500 },
+
+                // ── DJ (escala validada 0.75) ─────────────────────────────
+                { id: "artist", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dj/Dj-2.png", x: 540, y: 160, scaleX: 0.75, scaleY: 0.75, originX: "center", originY: "top", shadow: { color: "rgba(236,72,153,0.85)", blur: 80, offsetX: 0, offsetY: 0 } },
+
+                // ── VINETA inferior para legibilidad ──────────────────────
+                { id: "vignette", type: "shape", shape: "rect", x: 0, y: 880, width: 1080, height: 470, fill: "rgba(10,4,24,0.78)", selectable: false },
+
+                // ── TITULO con dividers neon ─────────────────────────────
+                { id: "title-deco-l", type: "shape", shape: "rect", x: 220, y: 945, width: 180, height: 2, fill: "#22d3ee", selectable: false },
+                { id: "title-deco-r", type: "shape", shape: "rect", x: 680, y: 945, width: 180, height: 2, fill: "#ec4899", selectable: false },
+
+                { id: "title", type: "text", text: "URBAN NIGHT", x: 0, y: 965, width: 1080, fontSize: 132, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "center", charSpacing: 60 },
+                { id: "subtitle", type: "text", text: "REGGAETON  \u00b7  TRAP  \u00b7  LATIN HITS", x: 0, y: 1115, width: 1080, fontSize: 22, fontFamily: "Montserrat, sans-serif", color: "#ec4899", fontWeight: "700", textAlign: "center", charSpacing: 350 },
+
+                // ── INFO BOX rounded con borde neon ──────────────────────
+                { id: "info-box", type: "shape", shape: "rect", x: 110, y: 1170, width: 860, height: 130, fill: "rgba(0,0,0,0.55)", radius: 18, stroke: "rgba(168,85,247,0.4)", strokeWidth: 1, selectable: false },
+                { id: "date", type: "text", text: "VIERNES 18 JULIO  \u00b7  22:30 H", x: 0, y: 1192, width: 1080, fontSize: 28, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "center", charSpacing: 200 },
+                { id: "venue", type: "text", text: "SALA RIVIERA  \u00b7  MADRID", x: 0, y: 1238, width: 1080, fontSize: 18, fontFamily: "Montserrat, sans-serif", color: "#22d3ee", fontWeight: "600", textAlign: "center", charSpacing: 300 },
+                { id: "price", type: "text", text: "ENTRADAS DESDE 25\u20ac  \u00b7  ENTRADIUM.COM", x: 0, y: 1268, width: 1080, fontSize: 14, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.7)", fontWeight: "500", textAlign: "center", charSpacing: 200 },
+            ] },
+        ],
+    },
+
+// ─────────────────────────────────────────────────────────────────────
+// 18 — Concierto Premium — solista, paleta oro/burdeos elegante
+//      Estilo evento privado/gala. Tipografia Playfair Display serifa.
+// ─────────────────────────────────────────────────────────────────────
+    {
+        id: 18,
+        title: "Concierto Premium",
+        category: "Conciertos",
+        image: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Musica/Cantantes/Cantante-%20(14).png",
+        premium: true,
+        audience: ["productoras", "academias"],
+        internalTags: ["beta"],
+        variants: [
+            { format: "portrait", width: 1080, height: 1350, layers: [
+                // FONDO burdeos profundo
+                { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1350, fill: "#1a0508", selectable: false },
+                // Halos calidos burdeos/oro
+                { id: "halo-warm", type: "shape", shape: "circle", x: -100, y: 100, width: 750, height: 750, fill: "rgba(127,29,29,0.45)", opacity: 0.7, selectable: false },
+                { id: "halo-gold", type: "shape", shape: "circle", x: 500, y: 200, width: 700, height: 700, fill: "rgba(180,135,68,0.25)", opacity: 0.65, selectable: false },
+                // Overlay sutil
+                { id: "overlay-bottom", type: "shape", shape: "rect", x: 0, y: 850, width: 1080, height: 500, fill: "rgba(10,3,5,0.7)", selectable: false },
+
+                // ARTISTA principal (cantante 6)
+                { id: "artist", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Musica/Cantantes/Cantante-%20(14).png", x: 540, y: 170, scaleX: 0.70, scaleY: 0.70, originX: "center", originY: "top", shadow: { color: "rgba(217,165,89,0.5)", blur: 50, offsetX: 0, offsetY: 0 } },
+
+                // Decoracion oro - lineas finas arriba y abajo del titulo
+                { id: "ornament-top", type: "shape", shape: "rect", x: 340, y: 905, width: 400, height: 1, fill: "#d4a058", selectable: false },
+                // SUPRATITULO oro
+                { id: "supratitle", type: "text", text: "U N A   V E L A D A   D E   M \u00da S I C A", x: 0, y: 925, width: 1080, fontSize: 18, fontFamily: "Cormorant Garamond, serif", color: "#d4a058", fontWeight: "500", textAlign: "center", charSpacing: 600 },
+
+                // TITULO Playfair serifa elegante
+                { id: "title", type: "text", text: "Gala Privada", x: 0, y: 965, width: 1080, fontSize: 95, fontFamily: "Playfair Display, serif", color: "#ffffff", textAlign: "center", fontStyle: "italic" },
+                { id: "ornament-bottom", type: "shape", shape: "rect", x: 340, y: 1100, width: 400, height: 1, fill: "#d4a058", selectable: false },
+
+                // BLOQUE INFO - todo con Cormorant
+                { id: "date", type: "text", text: "S\u00c1BADO  \u00b7  4 DE OCTUBRE  \u00b7  21:00 H", x: 0, y: 1135, width: 1080, fontSize: 26, fontFamily: "Cormorant Garamond, serif", color: "#ffffff", fontWeight: "500", textAlign: "center", charSpacing: 300 },
+                { id: "venue", type: "text", text: "HOTEL RITZ \u00b7 SAL\u00d3N REAL \u00b7 MADRID", x: 0, y: 1190, width: 1080, fontSize: 20, fontFamily: "Cormorant Garamond, serif", color: "#d4a058", fontWeight: "400", textAlign: "center", fontStyle: "italic", charSpacing: 300 },
+                { id: "dresscode", type: "text", text: "ETIQUETA RIGUROSA  \u00b7  PLAZAS LIMITADAS", x: 0, y: 1235, width: 1080, fontSize: 16, fontFamily: "Cormorant Garamond, serif", color: "rgba(255,255,255,0.65)", fontWeight: "500", textAlign: "center", charSpacing: 400 },
+                { id: "rsvp", type: "text", text: "RSVP  \u00b7  reservas@galaprivada.es", x: 0, y: 1290, width: 1080, fontSize: 16, fontFamily: "Cormorant Garamond, serif", color: "rgba(212,160,88,0.85)", fontWeight: "500", textAlign: "center", charSpacing: 200 },
+            ] },
+        ],
+    },
+
+// ─────────────────────────────────────────────────────────────────────
+// 19 — Festival Grupos — multi-banda jerarquia, fondo nocturno energetico
+//      Cartelera con varios nombres en distintos tamanos. Anton chunky.
+// ─────────────────────────────────────────────────────────────────────
+    {
+        id: 19,
+        title: "Festival Multi-Banda",
+        category: "Conciertos",
+        image: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Musica/Grupos-musica/Grupos-%20(3).png",
+        premium: false,
+        audience: ["productoras", "academias"],
+        internalTags: ["beta"],
+        variants: [
+            { format: "portrait", width: 1080, height: 1350, layers: [
+                // FONDO degradado simulado con capas
+                { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1350, fill: "#0a0a1a", selectable: false },
+                // Halos neon multicolor para sensacion festival
+                { id: "halo-orange", type: "shape", shape: "circle", x: -100, y: 0, width: 600, height: 600, fill: "rgba(251,146,60,0.30)", opacity: 0.65, selectable: false },
+                { id: "halo-pink", type: "shape", shape: "circle", x: 580, y: 100, width: 700, height: 700, fill: "rgba(236,72,153,0.30)", opacity: 0.6, selectable: false },
+                { id: "halo-blue", type: "shape", shape: "circle", x: 200, y: 600, width: 700, height: 700, fill: "rgba(59,130,246,0.30)", opacity: 0.55, selectable: false },
+                // Bandera superior con nombre del festival
+                { id: "top-banner", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 110, fill: "rgba(0,0,0,0.7)", selectable: false },
+                { id: "fest-name", type: "text", text: "S U M M E R   M U S I C   F E S T", x: 0, y: 40, width: 1080, fontSize: 28, fontFamily: "Anton, Impact, sans-serif", color: "#fbbf24", textAlign: "center", charSpacing: 800 },
+
+                // GRUPO principal centrado (grupo 7)
+                { id: "band", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Musica/Grupos-musica/Grupos-%20(3).png", x: 540, y: 200, scaleX: 0.68, scaleY: 0.68, originX: "center", originY: "top", shadow: { color: "rgba(251,191,36,0.5)", blur: 50, offsetX: 0, offsetY: 0 } },
+
+                // FECHA grande
+                { id: "date-big", type: "text", text: "26 \u00b7 27 \u00b7 28", x: 0, y: 770, width: 1080, fontSize: 110, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "center", charSpacing: 200 },
+                { id: "month", type: "text", text: "JULIO 2026", x: 0, y: 895, width: 1080, fontSize: 32, fontFamily: "Anton, Impact, sans-serif", color: "#fbbf24", textAlign: "center", charSpacing: 600 },
+
+                // CARTELERA - 3 niveles jerarquia
+                { id: "tier-divider-1", type: "shape", shape: "rect", x: 90, y: 955, width: 900, height: 1, fill: "rgba(255,255,255,0.3)", selectable: false },
+                { id: "headliners", type: "text", text: "HEADLINERS", x: 0, y: 975, width: 1080, fontSize: 14, fontFamily: "Montserrat, sans-serif", color: "#fbbf24", fontWeight: "700", textAlign: "center", charSpacing: 400 },
+                { id: "tier1-names", type: "text", text: "QUANTUM  \u00b7  ECHO RIVALS  \u00b7  STARLINE", x: 0, y: 1005, width: 1080, fontSize: 30, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "center", charSpacing: 100 },
+
+                { id: "tier2-names", type: "text", text: "Nebula  \u00b7  Vinyl Riot  \u00b7  Aurora Live  \u00b7  Kiosko 9", x: 0, y: 1060, width: 1080, fontSize: 22, fontFamily: "Montserrat, sans-serif", color: "#ffffff", fontWeight: "600", textAlign: "center", charSpacing: 100 },
+                { id: "tier3-names", type: "text", text: "DJ Atlas \u00b7 Mirena \u00b7 Lila Sound \u00b7 Outlier \u00b7 Pulse Co.", x: 0, y: 1100, width: 1080, fontSize: 16, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.7)", fontWeight: "400", textAlign: "center" },
+
+                // INFO pie - venue + entradas
+                { id: "venue-bar", type: "shape", shape: "rect", x: 0, y: 1180, width: 1080, height: 80, fill: "rgba(251,191,36,0.9)", selectable: false },
+                { id: "venue", type: "text", text: "RECINTO FERIAL IFEMA \u00b7 MADRID", x: 0, y: 1200, width: 1080, fontSize: 22, fontFamily: "Anton, Impact, sans-serif", color: "#0a0a1a", textAlign: "center", charSpacing: 300 },
+                { id: "ticket", type: "text", text: "ABONO 3 D\u00cdAS DESDE 75\u20ac  \u00b7  TICKETMASTER", x: 0, y: 1232, width: 1080, fontSize: 16, fontFamily: "Montserrat, sans-serif", color: "#0a0a1a", fontWeight: "700", textAlign: "center", charSpacing: 200 },
+                { id: "web", type: "text", text: "WWW.SUMMERMUSICFEST.ES", x: 0, y: 1295, width: 1080, fontSize: 16, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "center", charSpacing: 400 },
+            ] },
+        ],
+    },
+
+// ─────────────────────────────────────────────────────────────────────
+// 20 — Gira Tour — un grupo, lista de fechas (tour dates) abajo
+//      Estilo cartel de banda con cities. Mix Anton + Montserrat.
+// ─────────────────────────────────────────────────────────────────────
+    {
+        id: 20,
+        title: "Gira Nacional",
+        category: "Conciertos",
+        image: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Musica/Grupos-musica/Grupos-%20(8).png",
+        premium: false,
+        audience: ["productoras", "academias"],
+        internalTags: ["beta"],
+        variants: [
+            { format: "portrait", width: 1080, height: 1350, layers: [
+                // FONDO casi negro con tinte azul medianoche
+                { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1350, fill: "#070914", selectable: false },
+                // Halos azul/blanco simulando escenario
+                { id: "stage-light-left", type: "shape", shape: "circle", x: -150, y: -100, width: 700, height: 700, fill: "rgba(59,130,246,0.35)", opacity: 0.6, selectable: false },
+                { id: "stage-light-right", type: "shape", shape: "circle", x: 530, y: -50, width: 700, height: 700, fill: "rgba(96,165,250,0.30)", opacity: 0.6, selectable: false },
+                { id: "stage-light-center", type: "shape", shape: "circle", x: 240, y: 200, width: 600, height: 600, fill: "rgba(255,255,255,0.15)", opacity: 0.5, selectable: false },
+
+                // GRUPO (grupo 8)
+                { id: "band", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Musica/Grupos-musica/Grupos-%20(8).png", x: 540, y: 170, scaleX: 0.72, scaleY: 0.72, originX: "center", originY: "top", shadow: { color: "rgba(96,165,250,0.5)", blur: 55, offsetX: 0, offsetY: 0 } },
+
+                // TITULO banda (mock)
+                { id: "band-name", type: "text", text: "LOS DEL VIEJO TREN", x: 0, y: 745, width: 1080, fontSize: 65, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "center", charSpacing: 100 },
+                // Divider
+                { id: "divider", type: "shape", shape: "rect", x: 390, y: 825, width: 300, height: 1, fill: "rgba(96,165,250,0.8)", selectable: false },
+                // Subtitulo tour
+                { id: "tour-name", type: "text", text: "GIRA NACIONAL 2026", x: 0, y: 850, width: 1080, fontSize: 26, fontFamily: "Montserrat, sans-serif", color: "#60a5fa", fontWeight: "700", textAlign: "center", charSpacing: 500 },
+
+                // LISTA DE FECHAS - 6 ciudades en 2 columnas
+                { id: "dates-header", type: "text", text: "TOUR DATES", x: 0, y: 905, width: 1080, fontSize: 14, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.5)", fontWeight: "600", textAlign: "center", charSpacing: 600 },
+
+                // Columna izquierda
+                { id: "date-1", type: "text", text: "15 ABR \u2014 MADRID", x: 100, y: 950, width: 440, fontSize: 22, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "left", charSpacing: 80 },
+                { id: "venue-1", type: "text", text: "Sala La Riviera", x: 100, y: 985, width: 440, fontSize: 14, fontFamily: "Montserrat, sans-serif", color: "rgba(96,165,250,0.85)", fontWeight: "500", textAlign: "left" },
+
+                { id: "date-2", type: "text", text: "22 ABR \u2014 BARCELONA", x: 100, y: 1030, width: 440, fontSize: 22, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "left", charSpacing: 80 },
+                { id: "venue-2", type: "text", text: "Sala Apolo", x: 100, y: 1065, width: 440, fontSize: 14, fontFamily: "Montserrat, sans-serif", color: "rgba(96,165,250,0.85)", fontWeight: "500", textAlign: "left" },
+
+                { id: "date-3", type: "text", text: "29 ABR \u2014 VALENCIA", x: 100, y: 1110, width: 440, fontSize: 22, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "left", charSpacing: 80 },
+                { id: "venue-3", type: "text", text: "Roxy Club", x: 100, y: 1145, width: 440, fontSize: 14, fontFamily: "Montserrat, sans-serif", color: "rgba(96,165,250,0.85)", fontWeight: "500", textAlign: "left" },
+
+                // Columna derecha
+                { id: "date-4", type: "text", text: "6 MAY \u2014 SEVILLA", x: 540, y: 950, width: 440, fontSize: 22, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "left", charSpacing: 80 },
+                { id: "venue-4", type: "text", text: "Custom", x: 540, y: 985, width: 440, fontSize: 14, fontFamily: "Montserrat, sans-serif", color: "rgba(96,165,250,0.85)", fontWeight: "500", textAlign: "left" },
+
+                { id: "date-5", type: "text", text: "13 MAY \u2014 BILBAO", x: 540, y: 1030, width: 440, fontSize: 22, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "left", charSpacing: 80 },
+                { id: "venue-5", type: "text", text: "Kafe Antzokia", x: 540, y: 1065, width: 440, fontSize: 14, fontFamily: "Montserrat, sans-serif", color: "rgba(96,165,250,0.85)", fontWeight: "500", textAlign: "left" },
+
+                { id: "date-6", type: "text", text: "20 MAY \u2014 M\u00c1LAGA", x: 540, y: 1110, width: 440, fontSize: 22, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "left", charSpacing: 80 },
+                { id: "venue-6", type: "text", text: "Sala Paris 15", x: 540, y: 1145, width: 440, fontSize: 14, fontFamily: "Montserrat, sans-serif", color: "rgba(96,165,250,0.85)", fontWeight: "500", textAlign: "left" },
+
+                // CTA pie
+                { id: "cta-line", type: "shape", shape: "rect", x: 90, y: 1220, width: 900, height: 1, fill: "rgba(255,255,255,0.2)", selectable: false },
+                { id: "cta", type: "text", text: "ENTRADAS EN  WWW.LOSDELVIEJOTREN.COM", x: 0, y: 1250, width: 1080, fontSize: 20, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "center", charSpacing: 300 },
+                { id: "price", type: "text", text: "Desde 18\u20ac \u00b7 Aforo limitado", x: 0, y: 1295, width: 1080, fontSize: 14, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.6)", fontWeight: "500", textAlign: "center" },
+            ] },
+        ],
+    },
+
+// ─────────────────────────────────────────────────────────────────────
+// 21 — Concierto Único Premium — un solo evento, formato lujo
+//      Estilo album cover/teatro. Serifa Playfair + sans elegante.
+// ─────────────────────────────────────────────────────────────────────
+    {
+        id: 21,
+        title: "Concierto \u00danico",
+        category: "Conciertos",
+        image: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Musica/Grupos-musica/Grupos-%20(7).png",
+        premium: true,
+        audience: ["productoras", "academias"],
+        internalTags: ["beta"],
+        variants: [
+            { format: "portrait", width: 1080, height: 1350, layers: [
+                // FONDO crema oscuro elegante
+                { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1350, fill: "#16110a", selectable: false },
+                // Halo dorado central muy sutil
+                { id: "halo-center", type: "shape", shape: "circle", x: 240, y: 150, width: 600, height: 600, fill: "rgba(217,165,89,0.30)", opacity: 0.55, selectable: false },
+                { id: "halo-warm-bottom", type: "shape", shape: "circle", x: 200, y: 750, width: 680, height: 680, fill: "rgba(127,29,29,0.25)", opacity: 0.55, selectable: false },
+
+                // Texto vertical lateral izquierdo - sello premium
+                { id: "side-label", type: "text", text: "AN EXCLUSIVE EVENING  \u00b7  ONE NIGHT ONLY", x: 30, y: 670, width: 50, fontSize: 14, fontFamily: "Montserrat, sans-serif", color: "#d4a058", fontWeight: "600", textAlign: "left", angle: -90, charSpacing: 400 },
+
+                // GRUPO (grupo 3) - centrado mas alto
+                { id: "band", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Musica/Grupos-musica/Grupos-%20(7).png", x: 540, y: 180, scaleX: 0.68, scaleY: 0.68, originX: "center", originY: "top", shadow: { color: "rgba(217,165,89,0.45)", blur: 45, offsetX: 0, offsetY: 0 } },
+
+                // Ornamento sup
+                { id: "orn-top-left", type: "shape", shape: "rect", x: 270, y: 800, width: 220, height: 1, fill: "#d4a058", selectable: false },
+                { id: "orn-top-right", type: "shape", shape: "rect", x: 590, y: 800, width: 220, height: 1, fill: "#d4a058", selectable: false },
+                { id: "orn-diamond", type: "shape", shape: "circle", x: 525, y: 791, width: 18, height: 18, fill: "transparent", stroke: "#d4a058", strokeWidth: 1, selectable: false },
+
+                // SUPRATITULO
+                { id: "supratitle", type: "text", text: "presenta", x: 0, y: 830, width: 1080, fontSize: 20, fontFamily: "Cormorant Garamond, serif", color: "#d4a058", fontWeight: "400", fontStyle: "italic", textAlign: "center", charSpacing: 400 },
+
+                // TITULO principal serifa
+                { id: "title-1", type: "text", text: "Sinfon\u00eda", x: 0, y: 870, width: 1080, fontSize: 80, fontFamily: "Playfair Display, serif", color: "#ffffff", textAlign: "center", fontStyle: "italic" },
+                { id: "title-2", type: "text", text: "de Otoño", x: 0, y: 955, width: 1080, fontSize: 80, fontFamily: "Playfair Display, serif", color: "#d4a058", textAlign: "center", fontStyle: "italic" },
+
+                // Ornamento inf
+                { id: "orn-bot-left", type: "shape", shape: "rect", x: 270, y: 1060, width: 220, height: 1, fill: "#d4a058", selectable: false },
+                { id: "orn-bot-right", type: "shape", shape: "rect", x: 590, y: 1060, width: 220, height: 1, fill: "#d4a058", selectable: false },
+
+                // BLOQUE INFO
+                { id: "date", type: "text", text: "S\u00c1BADO 24 DE OCTUBRE \u00b7 21:00 H", x: 0, y: 1090, width: 1080, fontSize: 22, fontFamily: "Cormorant Garamond, serif", color: "#ffffff", fontWeight: "500", textAlign: "center", charSpacing: 300 },
+                { id: "venue", type: "text", text: "TEATRO REAL  \u00b7  MADRID", x: 0, y: 1135, width: 1080, fontSize: 26, fontFamily: "Playfair Display, serif", color: "#ffffff", textAlign: "center", charSpacing: 200 },
+
+                // Detalle pie
+                { id: "detail-1", type: "text", text: "Programa: cl\u00e1sicos contempor\u00e1neos y obra in\u00e9dita", x: 0, y: 1190, width: 1080, fontSize: 16, fontFamily: "Cormorant Garamond, serif", color: "rgba(212,160,88,0.85)", fontStyle: "italic", textAlign: "center", charSpacing: 100 },
+                { id: "detail-2", type: "text", text: "DURACI\u00d3N 90 MINUTOS  \u00b7  SIN DESCANSO", x: 0, y: 1230, width: 1080, fontSize: 14, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.6)", fontWeight: "500", textAlign: "center", charSpacing: 400 },
+                { id: "rsvp", type: "text", text: "ENTRADAS DESDE 45\u20ac  \u00b7  TEATRO-REAL.COM", x: 0, y: 1295, width: 1080, fontSize: 16, fontFamily: "Montserrat, sans-serif", color: "#d4a058", fontWeight: "700", textAlign: "center", charSpacing: 300 },
             ] },
         ],
     },
