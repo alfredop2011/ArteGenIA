@@ -863,4 +863,58 @@ export const templates: Template[] = [
             ] },
         ],
     },
+
+// ─────────────────────────────────────────────────────────────────────
+// 15 — Crossover 5 Artistas Demo — con fotos REALES sin fondo en R2
+//      Layout diamante (igual que #13) pero con fotos de modelos demo
+//      en lugar de placeholders Unsplash. Las fotos estan en
+//      pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/
+// ─────────────────────────────────────────────────────────────────────
+    {
+        id: 15,
+        title: "Crossover 5 Artistas Demo",
+        category: "Fiesta",
+        image: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/02_damian_reyes_perfil.png",
+        premium: false,
+        audience: ["productoras", "academias"],
+        internalTags: ["beta"],
+        variants: [
+            { format: "portrait", width: 1080, height: 1350, layers: [
+                // ── FONDO ──────────────────────────────────────────────────
+                { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1350, fill: "#1a0000", selectable: false },
+                { id: "bg-photo", type: "image", src: "https://images.unsplash.com/photo-1543351611-58f69d7c1781?q=80&w=1200", x: 0, y: 0, scaleX: 0.9, scaleY: 0.9, opacity: 0.35 },
+                { id: "overlay-red", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1350, fill: "rgba(180,30,30,0.35)", selectable: false },
+
+                // ── DECORACIONES SUPERIORES ────────────────────────────────
+                { id: "deco-top-left", type: "shape", shape: "circle", x: 0, y: 0, width: 280, height: 280, fill: "rgba(220,38,38,0.4)", opacity: 0.65, selectable: false },
+                { id: "deco-top-right", type: "shape", shape: "circle", x: 800, y: 0, width: 280, height: 280, fill: "rgba(220,38,38,0.4)", opacity: 0.65, selectable: false },
+
+                // ── SLOTS DE ARTISTAS (5 en composición diamante con fotos reales) ──
+                // 2 arriba a los lados (individuales Nia y Malik)
+                { id: "artist-1", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/03_nia_batista_perfil.png", x: 200, y: 200, scaleX: 0.48, scaleY: 0.48, originX: "center", originY: "top", shadow: { color: "rgba(255,255,255,0.9)", blur: 32, offsetX: 0, offsetY: 0 } },
+                { id: "artist-2", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/04_malik_santos_perfil.png", x: 880, y: 200, scaleX: 0.48, scaleY: 0.48, originX: "center", originY: "top", shadow: { color: "rgba(255,255,255,0.9)", blur: 32, offsetX: 0, offsetY: 0 } },
+                // 2 abajo a los lados (PAREJAS)
+                { id: "artist-3", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/05_valentina_damian_pareja.png", x: 180, y: 500, scaleX: 0.48, scaleY: 0.48, originX: "center", originY: "top", shadow: { color: "rgba(255,255,255,0.9)", blur: 32, offsetX: 0, offsetY: 0 } },
+                { id: "artist-4", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/06_isabela_alejandro_pareja.png", x: 900, y: 500, scaleX: 0.48, scaleY: 0.48, originX: "center", originY: "top", shadow: { color: "rgba(255,255,255,0.9)", blur: 32, offsetX: 0, offsetY: 0 } },
+                // Headliner en centro (Damian, foto individual mas prominente)
+                { id: "artist-5", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/02_damian_reyes_perfil.png", x: 540, y: 320, scaleX: 0.72, scaleY: 0.72, originX: "center", originY: "top", shadow: { color: "rgba(255,255,255,0.95)", blur: 45, offsetX: 0, offsetY: 0 } },
+
+                // ── BLOQUE DE TÍTULO/INFO ──────────────────────────────────
+                { id: "title-bg", type: "shape", shape: "rect", x: 80, y: 880, width: 920, height: 320, fill: "rgba(13,0,0,0.7)", radius: 12, selectable: false },
+                { id: "date", type: "text", text: "S\u00c1BADO 16 DE MAYO  |  18:00 A 23:00", x: 0, y: 900, width: 1080, fontSize: 30, fontFamily: "Arial", color: "#ffffff", fontWeight: "bold", textAlign: "center" },
+                { id: "title", type: "text", text: "TARDEO CROSSOVER", x: 0, y: 945, width: 1080, fontSize: 75, fontFamily: "Arial", color: "#ffffff", fontWeight: "bold", textAlign: "center" },
+                { id: "genres", type: "text", text: "BACHATA \u00b7 SALSA \u00b7 PERREO", x: 0, y: 1035, width: 1080, fontSize: 32, fontFamily: "Arial", color: "#fca5a5", textAlign: "center", charSpacing: 200 },
+                { id: "dj", type: "text", text: "DJ MAURO", x: 0, y: 1095, width: 1080, fontSize: 42, fontFamily: "Arial", color: "#ffffff", fontWeight: "bold", textAlign: "center" },
+
+                // ── BANDA HORARIOS ─────────────────────────────────────────
+                { id: "schedule-bg", type: "shape", shape: "rect", x: 60, y: 1180, width: 960, height: 70, fill: "rgba(255,255,255,0.95)", selectable: false },
+                { id: "schedule-1", type: "text", text: "18:00 TALLER DE BACHATA \u00b7 18:45 A 23:00 SOCIAL", x: 0, y: 1198, width: 1080, fontSize: 24, fontFamily: "Arial", color: "#7f1d1d", fontWeight: "bold", textAlign: "center" },
+
+                // ── INFO INFERIOR ──────────────────────────────────────────
+                { id: "price", type: "text", text: "ENTRADA: 15\u20ac EN PUERTA (1 COPA / 2 REFRESCOS)", x: 0, y: 1265, width: 1080, fontSize: 20, fontFamily: "Arial", color: "#ffffff", fontWeight: "bold", textAlign: "center" },
+                { id: "venue", type: "text", text: "C/ VICTORIA 6 \u00b7 DISCOTECA EL SON \u00b7 METRO SOL", x: 0, y: 1300, width: 1080, fontSize: 18, fontFamily: "Arial", color: "#fca5a5", textAlign: "center" },
+                { id: "phone", type: "text", text: "RESERVAS: +34 600 000 000", x: 0, y: 1325, width: 1080, fontSize: 16, fontFamily: "Arial", color: "#fca5a5", textAlign: "center" },
+            ] },
+        ],
+    },
 ];
