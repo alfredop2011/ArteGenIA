@@ -4,8 +4,13 @@
  * Reduce el tamaño y la resolución de imágenes ANTES de subirlas al servidor.
  * Ahorra ancho de banda y mejora la experiencia del usuario.
  *
- * Para fotos de personas: 1080px lado largo, JPEG 80% calidad (~150-300KB)
- * Para logos: 800px lado largo, PNG (~50-150KB)
+ * IMPORTANTE: Si el archivo entrante es PNG o WebP, lo preservamos como PNG
+ * para no perder transparencia (decisión conservadora: si subiste PNG asumimos
+ * que querías transparencia). Si es JPEG, se comprime como JPEG.
+ *
+ * Defaults por modo:
+ *   - person:  1080px max, PNG si entrante es PNG/WebP, JPEG 80% si entrante es JPEG
+ *   - brand:   800px max,  PNG siempre (logos requieren transparencia)
  *
  * El servidor también re-comprime como medida defensiva (ver sharp).
  */
@@ -18,78 +23,113 @@ export type CompressOptions = {
   maxSize?: number;
   /** Calidad JPEG 0-1 (default según mode). Ignorado para PNG. */
   quality?: number;
-  /** Forzar formato de salida */
+  /**
+   * Forzar formato de salida.
+   *  - "auto": decisión inteligente (PNG si entrante es PNG/WebP, JPEG si JPEG)
+   *  - "jpeg": forzar JPEG (pierde transparencia, fondo blanco si la tenía)
+   *  - "png":  forzar PNG  (preserva transparencia siempre)
+   */
   format?: "jpeg" | "png" | "auto";
 };
 
 const DEFAULTS: Record<CompressionMode, Required<Omit<CompressOptions, "mode">>> = {
-  // Personas: JPEG es mejor por compresión, no necesitan transparencia
-  person: { maxSize: 1080, quality: 0.80, format: "jpeg" },
-  // Marcas/logos: PNG para preservar transparencia del logo
-  brand: { maxSize: 800, quality: 0.92, format: "png" },
+  // Personas: auto-detección por mime type de entrada
+  person: { maxSize: 1080, quality: 0.80, format: "auto" },
+  // Marcas/logos: SIEMPRE PNG para preservar transparencia del logo
+  brand:  { maxSize: 800,  quality: 0.92, format: "png" },
+};
+
+export type CompressionResult = {
+  /** El archivo comprimido, listo para subir */
+  file: File;
+  /**
+   * true si el archivo resultante es PNG (puede tener transparencia).
+   * Downstream debe skipear remove-bg cuando esto sea true.
+   */
+  hasTransparency: boolean;
 };
 
 /**
- * Comprime un File de imagen y devuelve un nuevo File listo para subir.
- * Si la compresión falla por cualquier motivo, devuelve el File original.
+ * Comprime un File de imagen y devuelve el archivo comprimido + flag de transparencia.
+ * Si la compresión falla, devuelve el File original con hasTransparency=false.
  */
-export async function compressImage(file: File, opts: CompressOptions = {}): Promise<File> {
-  if (typeof window === "undefined") return file; // SSR safety
-  if (!file.type.startsWith("image/")) return file;
+export async function compressImageWithMeta(file: File, opts: CompressOptions = {}): Promise<CompressionResult> {
+  if (typeof window === "undefined") return { file, hasTransparency: false };
+  if (!file.type.startsWith("image/")) return { file, hasTransparency: false };
 
   const mode: CompressionMode = opts.mode ?? "person";
   const cfg = { ...DEFAULTS[mode], ...opts };
 
   try {
-    // 1. Cargar imagen
     const img = await loadImageFromFile(file);
-
-    // 2. Calcular dimensiones manteniendo aspect ratio
     const { width, height } = scaleDownToMax(img.width, img.height, cfg.maxSize);
 
-    // 3. Si la imagen ya es más pequeña y es JPEG, devolverla tal cual
-    //    (evita re-comprimir innecesariamente y perder calidad)
+    // Resolver formato final
+    let finalFormat: "jpeg" | "png" = cfg.format === "png" ? "png" : "jpeg";
+
+    if (cfg.format === "auto") {
+      // Decisión conservadora: cualquier PNG o WebP entrante → PNG saliente.
+      // Esto preserva transparencia siempre que el usuario sube un PNG (intención
+      // probable) sin depender de muestreos que pueden fallar.
+      if (file.type === "image/png" || file.type === "image/webp") {
+        finalFormat = "png";
+      } else {
+        finalFormat = "jpeg";
+      }
+    }
+
+    // Si la imagen ya es más pequeña y es JPEG, devolverla tal cual
     if (
       width === img.width
       && height === img.height
       && file.type === "image/jpeg"
       && file.size < 500 * 1024
-      && cfg.format !== "png"
+      && finalFormat === "jpeg"
     ) {
-      return file;
+      return { file, hasTransparency: false };
     }
 
-    // 4. Dibujar en canvas
     const canvas = document.createElement("canvas");
     canvas.width = width;
     canvas.height = height;
     const ctx = canvas.getContext("2d");
-    if (!ctx) return file;
+    if (!ctx) return { file, hasTransparency: finalFormat === "png" };
 
-    // Para JPEG, pintar fondo blanco para evitar transparencia → negro
-    if (cfg.format === "jpeg") {
+    if (finalFormat === "jpeg") {
+      // JPEG no soporta transparencia: pintar fondo blanco para evitar negro
       ctx.fillStyle = "#ffffff";
       ctx.fillRect(0, 0, width, height);
     }
     ctx.drawImage(img, 0, 0, width, height);
 
-    // 5. Exportar al formato elegido
-    const outMime = cfg.format === "png" ? "image/png" : "image/jpeg";
+    const outMime = finalFormat === "png" ? "image/png" : "image/jpeg";
     const blob = await canvasToBlob(canvas, outMime, cfg.quality);
-    if (!blob) return file;
+    if (!blob) return { file, hasTransparency: finalFormat === "png" };
 
-    // 6. Si el resultado es MÁS GRANDE que el original (caso raro de PNGs pequeños),
-    //    devolvemos el original.
-    if (blob.size >= file.size) return file;
+    if (blob.size >= file.size) {
+      // Devolver el original, pero respetando el flag (si format era PNG)
+      return { file, hasTransparency: finalFormat === "png" };
+    }
 
-    // 7. Reconstruir como File con nombre limpio
     const baseName = file.name.replace(/\.[^.]+$/, "");
-    const ext = cfg.format === "png" ? "png" : "jpg";
-    return new File([blob], `${baseName}.${ext}`, { type: outMime });
+    const ext = finalFormat === "png" ? "png" : "jpg";
+    const newFile = new File([blob], `${baseName}.${ext}`, { type: outMime });
+    return {
+      file: newFile,
+      hasTransparency: finalFormat === "png",
+    };
   } catch (err) {
     console.warn("[compressImage] fallback to original:", err);
-    return file;
+    return { file, hasTransparency: false };
   }
+}
+
+/**
+ * Wrapper retrocompatible para callers que solo necesitan el File comprimido.
+ */
+export async function compressImage(file: File, opts: CompressOptions = {}): Promise<File> {
+  const result = await compressImageWithMeta(file, opts);
+  return result.file;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────
@@ -98,14 +138,8 @@ function loadImageFromFile(file: File): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const url = URL.createObjectURL(file);
     const img = new Image();
-    img.onload = () => {
-      URL.revokeObjectURL(url);
-      resolve(img);
-    };
-    img.onerror = () => {
-      URL.revokeObjectURL(url);
-      reject(new Error("No se pudo cargar la imagen"));
-    };
+    img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("No se pudo cargar la imagen")); };
     img.src = url;
   });
 }

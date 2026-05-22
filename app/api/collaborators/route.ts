@@ -87,8 +87,12 @@ export async function POST(req: NextRequest) {
     let outExt: string;
 
     try {
+      // Detectar si la imagen tiene canal alpha (transparencia)
+      const meta = await sharp(inputBytes).metadata();
+      const hasAlpha = meta.hasAlpha === true;
+
       if (kind === "brand") {
-        // Marcas: PNG 800px preservando transparencia
+        // Marcas: SIEMPRE PNG 800px preservando transparencia
         outBytes = await sharp(inputBytes)
           .rotate()
           .resize(800, 800, { fit: "inside", withoutEnlargement: true })
@@ -96,8 +100,17 @@ export async function POST(req: NextRequest) {
           .toBuffer();
         outMime = "image/png";
         outExt = "png";
+      } else if (hasAlpha) {
+        // Persona CON transparencia (foto ya recortada sin fondo): PNG
+        outBytes = await sharp(inputBytes)
+          .rotate()
+          .resize(1080, 1080, { fit: "inside", withoutEnlargement: true })
+          .png({ compressionLevel: 9 })
+          .toBuffer();
+        outMime = "image/png";
+        outExt = "png";
       } else {
-        // Personas: JPEG 1080px 80%
+        // Persona SIN transparencia (foto normal): JPEG 1080px 80%
         outBytes = await sharp(inputBytes)
           .rotate()
           .resize(1080, 1080, { fit: "inside", withoutEnlargement: true })
