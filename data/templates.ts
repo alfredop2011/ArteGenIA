@@ -1248,4 +1248,58 @@ export const templates: Template[] = [
             ] },
         ],
     },
+
+// ═════════════════════════════════════════════════════════════════════
+// PILOTO REPLICA HOME — Plantillas que replican EXACTO el carrusel 3D
+// del home (TemplateCarousel3D.tsx). Look simple: foto + overlay + chip
+// + bloque inferior con nombre/fecha/venue. Si esta gusta, se replican
+// las otras 6 con el mismo patron.
+// ═════════════════════════════════════════════════════════════════════
+
+// ─────────────────────────────────────────────────────────────────────
+// 22 — Noche Latina (replica home id #1)
+// ─────────────────────────────────────────────────────────────────────
+    {
+        id: 22,
+        title: "Noche Latina",
+        category: "Fiesta",
+        image: "https://images.unsplash.com/photo-1504609773096-104ff2c73ba4?q=80&w=600",
+        premium: false,
+        audience: ["productoras", "academias"],
+        internalTags: ["beta"],
+        variants: [
+            { format: "portrait", width: 1080, height: 1350, layers: [
+                // ── FONDO: foto unica que cubre todo (igual que home) ────
+                { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1350, fill: "#0a0010", selectable: false },
+                { id: "photo", type: "image", src: "https://images.unsplash.com/photo-1504609773096-104ff2c73ba4?q=80&w=1400", x: 0, y: 0, scaleX: 1.4, scaleY: 1.4, opacity: 1.0 },
+
+                // ── OVERLAY degradado oscuro de abajo a arriba ────────────
+                // Replica el linear-gradient del home (rgba(0,0,0,0.90) bottom -> transparente top)
+                { id: "overlay-1", type: "shape", shape: "rect", x: 0, y: 600, width: 1080, height: 200, fill: "rgba(0,0,0,0.20)", selectable: false },
+                { id: "overlay-2", type: "shape", shape: "rect", x: 0, y: 800, width: 1080, height: 200, fill: "rgba(0,0,0,0.45)", selectable: false },
+                { id: "overlay-3", type: "shape", shape: "rect", x: 0, y: 1000, width: 1080, height: 350, fill: "rgba(0,0,0,0.90)", selectable: false },
+
+                // ── CHIP SUPERIOR "FIESTA" con accent color ───────────────
+                // Replica el chip del home: rounded-full, border accent, fondo negro semi
+                { id: "chip-bg", type: "shape", shape: "rect", x: 460, y: 80, width: 160, height: 44, fill: "rgba(0,0,0,0.55)", radius: 22, stroke: "rgba(192,132,252,0.55)", strokeWidth: 1, selectable: false },
+                { id: "chip-label", type: "text", text: "FIESTA", x: 0, y: 95, width: 1080, fontSize: 22, fontFamily: "Montserrat, sans-serif", color: "#c084fc", fontWeight: "700", textAlign: "center", charSpacing: 400 },
+
+                // ── BLOQUE INFERIOR (igual que home: linea accent + textos) ──
+                // Linea pequena del color accent (igual que el w-8 h-0.5 del home)
+                { id: "accent-line", type: "shape", shape: "rect", x: 90, y: 1080, width: 90, height: 6, fill: "#c084fc", radius: 3, selectable: false },
+
+                // Nombre del evento - grande, blanco (sin shadow para text)
+                { id: "title", type: "text", text: "NOCHE LATINA", x: 90, y: 1110, width: 900, fontSize: 82, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "left", charSpacing: 30 },
+
+                // Fecha en color accent
+                { id: "date", type: "text", text: "S\u00c1B 25 MAY  \u00b7  23:00 H", x: 90, y: 1205, width: 900, fontSize: 26, fontFamily: "Montserrat, sans-serif", color: "#c084fc", fontWeight: "700", textAlign: "left", charSpacing: 150 },
+
+                // Venue en gris
+                { id: "venue", type: "text", text: "DISCOTECA ELEGANCE  \u00b7  MADRID", x: 90, y: 1245, width: 900, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "#9ca3af", fontWeight: "500", textAlign: "left", charSpacing: 200 },
+
+                // CTA pie
+                { id: "cta", type: "text", text: "ENTRADAS EN ARTEGENIA.COM", x: 90, y: 1290, width: 900, fontSize: 16, fontFamily: "Montserrat, sans-serif", color: "#6b7280", fontWeight: "600", textAlign: "left", charSpacing: 300 },
+            ] },
+        ],
+    },
 ];
