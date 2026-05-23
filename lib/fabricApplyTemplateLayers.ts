@@ -75,6 +75,7 @@ export async function applyTemplateLayers(
                 fontFamily: layer.fontFamily,
                 fill: layer.color === "transparent" ? "" : layer.color,
                 fontWeight: layer.fontWeight ?? "normal",
+                fontStyle: layer.fontStyle ?? "normal",
                 textAlign: layer.textAlign ?? "left",
                 originX: layer.originX ?? "left",
                 originY: layer.originY ?? "top",
