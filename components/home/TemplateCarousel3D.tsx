@@ -10,12 +10,12 @@ const CATS = ["Todas","Fiesta","Concierto","Festival","Clases"];
 
 const TEMPLATES = [
     { id: 22, name: "NOCHE LATINA",        date: "SÁB 25 MAY",          venue: "Discoteca Elegance",       img: "https://images.unsplash.com/photo-1504609773096-104ff2c73ba4?q=80&w=600", accent: "#c084fc", tag: "FIESTA" },
-    { id: 2, name: "NEON NIGHT",          date: "VIE 31 MAYO · 11PM",  venue: "Club Kings · Madrid",      img: "https://images.unsplash.com/photo-1501386761578-eac5c94b800a?q=80&w=600", accent: "#a855f7", tag: "FIESTA" },
-    { id: 3, name: "FESTIVAL SUMMER",     date: "15 JUNIO 2024",       venue: "Parque Fundidora",         img: "https://images.unsplash.com/photo-1506157786151-b8491531f063?q=80&w=600", accent: "#fb923c", tag: "FESTIVAL" },
-    { id: 4, name: "NOCHE EN VIVO",       date: "VIE 24 MAYO · 11PM",  venue: "Club Latino · Madrid",     img: "https://images.unsplash.com/photo-1545959570-a94084071b5d?q=80&w=600", accent: "#facc15", tag: "FIESTA" },
-    { id: 5, name: "CONCIERTO ACÚSTICO",  date: "JUE 13 JUNIO",        venue: "Teatro Metropolitan",      img: "https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?q=80&w=600", accent: "#22d3ee", tag: "CONCIERTO" },
-    { id: 6, name: "CLASE ABIERTA",       date: "SÁB 08 JUNIO",        venue: "Estudio Movimiento",       img: "https://images.unsplash.com/photo-1429962714451-bb934ecdc4ec?q=80&w=600", accent: "#c084fc", tag: "CLASES" },
-    { id: 7, name: "GRAN GALA",           date: "SÁB 01 JUNIO",        venue: "Arena Monterrey",          img: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?q=80&w=600", accent: "#fb923c", tag: "FESTIVAL" },
+    { id: 23, name: "NEON NIGHT",          date: "VIE 31 MAYO · 11PM",  venue: "Club Kings · Madrid",      img: "https://images.unsplash.com/photo-1501386761578-eac5c94b800a?q=80&w=600", accent: "#a855f7", tag: "FIESTA" },
+    { id: 24, name: "FESTIVAL SUMMER",     date: "15 JUNIO 2026",       venue: "Parque Fundidora",         img: "https://images.unsplash.com/photo-1506157786151-b8491531f063?q=80&w=600", accent: "#fb923c", tag: "FESTIVAL" },
+    { id: 25, name: "NOCHE EN VIVO",       date: "VIE 24 MAYO · 11PM",  venue: "Club Latino · Madrid",     img: "https://images.unsplash.com/photo-1545959570-a94084071b5d?q=80&w=600", accent: "#facc15", tag: "FIESTA" },
+    { id: 26, name: "CONCIERTO ACÚSTICO",  date: "JUE 13 JUNIO",        venue: "Teatro Metropolitan",      img: "https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?q=80&w=600", accent: "#22d3ee", tag: "CONCIERTO" },
+    { id: 27, name: "CLASE ABIERTA",       date: "SÁB 08 JUNIO",        venue: "Estudio Movimiento",       img: "https://images.unsplash.com/photo-1429962714451-bb934ecdc4ec?q=80&w=600", accent: "#c084fc", tag: "CLASES" },
+    { id: 28, name: "GRAN GALA",           date: "SÁB 01 JUNIO",        venue: "Arena Monterrey",          img: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?q=80&w=600", accent: "#fb923c", tag: "FESTIVAL" },
 ];
 
 const CARD_W = 300;
