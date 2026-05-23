@@ -1302,4 +1302,196 @@ export const templates: Template[] = [
             ] },
         ],
     },
+
+// ─────────────────────────────────────────────────────────────────────
+// 23 — Neon Night (replica home id #2) - accent #a855f7
+// ─────────────────────────────────────────────────────────────────────
+    {
+        id: 23,
+        title: "Neon Night",
+        category: "Fiesta",
+        image: "https://images.unsplash.com/photo-1501386761578-eac5c94b800a?q=80&w=600",
+        premium: false,
+        audience: ["productoras", "academias"],
+        internalTags: ["beta"],
+        variants: [
+            { format: "portrait", width: 1080, height: 1350, layers: [
+                { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1350, fill: "#0a0010", selectable: false },
+                { id: "photo", type: "image", src: "https://images.unsplash.com/photo-1501386761578-eac5c94b800a?q=80&w=1400", x: 0, y: 0, scaleX: 1.4, scaleY: 1.4, opacity: 1.0 },
+
+                { id: "overlay-1", type: "shape", shape: "rect", x: 0, y: 600, width: 1080, height: 200, fill: "rgba(0,0,0,0.20)", selectable: false },
+                { id: "overlay-2", type: "shape", shape: "rect", x: 0, y: 800, width: 1080, height: 200, fill: "rgba(0,0,0,0.45)", selectable: false },
+                { id: "overlay-3", type: "shape", shape: "rect", x: 0, y: 1000, width: 1080, height: 350, fill: "rgba(0,0,0,0.90)", selectable: false },
+
+                { id: "chip-bg", type: "shape", shape: "rect", x: 460, y: 80, width: 160, height: 44, fill: "rgba(0,0,0,0.55)", radius: 22, stroke: "rgba(168,85,247,0.55)", strokeWidth: 1, selectable: false },
+                { id: "chip-label", type: "text", text: "FIESTA", x: 0, y: 95, width: 1080, fontSize: 22, fontFamily: "Montserrat, sans-serif", color: "#a855f7", fontWeight: "700", textAlign: "center", charSpacing: 400 },
+
+                { id: "accent-line", type: "shape", shape: "rect", x: 90, y: 1080, width: 90, height: 6, fill: "#a855f7", radius: 3, selectable: false },
+                { id: "title", type: "text", text: "NEON NIGHT", x: 90, y: 1110, width: 900, fontSize: 82, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "left", charSpacing: 30 },
+                { id: "date", type: "text", text: "VIE 31 MAYO  \u00b7  23:00 H", x: 90, y: 1205, width: 900, fontSize: 26, fontFamily: "Montserrat, sans-serif", color: "#a855f7", fontWeight: "700", textAlign: "left", charSpacing: 150 },
+                { id: "venue", type: "text", text: "CLUB KINGS  \u00b7  MADRID", x: 90, y: 1245, width: 900, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "#9ca3af", fontWeight: "500", textAlign: "left", charSpacing: 200 },
+                { id: "cta", type: "text", text: "ENTRADAS EN ARTEGENIA.COM", x: 90, y: 1290, width: 900, fontSize: 16, fontFamily: "Montserrat, sans-serif", color: "#6b7280", fontWeight: "600", textAlign: "left", charSpacing: 300 },
+            ] },
+        ],
+    },
+
+// ─────────────────────────────────────────────────────────────────────
+// 24 — Festival Summer (replica home id #3) - accent #fb923c
+// ─────────────────────────────────────────────────────────────────────
+    {
+        id: 24,
+        title: "Festival Summer",
+        category: "Fiesta",
+        image: "https://images.unsplash.com/photo-1506157786151-b8491531f063?q=80&w=600",
+        premium: false,
+        audience: ["productoras", "academias"],
+        internalTags: ["beta"],
+        variants: [
+            { format: "portrait", width: 1080, height: 1350, layers: [
+                { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1350, fill: "#0a0010", selectable: false },
+                { id: "photo", type: "image", src: "https://images.unsplash.com/photo-1506157786151-b8491531f063?q=80&w=1400", x: 0, y: 0, scaleX: 1.4, scaleY: 1.4, opacity: 1.0 },
+
+                { id: "overlay-1", type: "shape", shape: "rect", x: 0, y: 600, width: 1080, height: 200, fill: "rgba(0,0,0,0.20)", selectable: false },
+                { id: "overlay-2", type: "shape", shape: "rect", x: 0, y: 800, width: 1080, height: 200, fill: "rgba(0,0,0,0.45)", selectable: false },
+                { id: "overlay-3", type: "shape", shape: "rect", x: 0, y: 1000, width: 1080, height: 350, fill: "rgba(0,0,0,0.90)", selectable: false },
+
+                { id: "chip-bg", type: "shape", shape: "rect", x: 440, y: 80, width: 200, height: 44, fill: "rgba(0,0,0,0.55)", radius: 22, stroke: "rgba(251,146,60,0.55)", strokeWidth: 1, selectable: false },
+                { id: "chip-label", type: "text", text: "FESTIVAL", x: 0, y: 95, width: 1080, fontSize: 22, fontFamily: "Montserrat, sans-serif", color: "#fb923c", fontWeight: "700", textAlign: "center", charSpacing: 400 },
+
+                { id: "accent-line", type: "shape", shape: "rect", x: 90, y: 1080, width: 90, height: 6, fill: "#fb923c", radius: 3, selectable: false },
+                { id: "title", type: "text", text: "FESTIVAL SUMMER", x: 90, y: 1110, width: 900, fontSize: 72, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "left", charSpacing: 30 },
+                { id: "date", type: "text", text: "15 JUNIO 2026  \u00b7  17:00 H", x: 90, y: 1205, width: 900, fontSize: 26, fontFamily: "Montserrat, sans-serif", color: "#fb923c", fontWeight: "700", textAlign: "left", charSpacing: 150 },
+                { id: "venue", type: "text", text: "PARQUE FUNDIDORA  \u00b7  MONTERREY", x: 90, y: 1245, width: 900, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "#9ca3af", fontWeight: "500", textAlign: "left", charSpacing: 200 },
+                { id: "cta", type: "text", text: "ENTRADAS EN ARTEGENIA.COM", x: 90, y: 1290, width: 900, fontSize: 16, fontFamily: "Montserrat, sans-serif", color: "#6b7280", fontWeight: "600", textAlign: "left", charSpacing: 300 },
+            ] },
+        ],
+    },
+
+// ─────────────────────────────────────────────────────────────────────
+// 25 — Noche en Vivo (replica home id #4) - accent #facc15
+// ─────────────────────────────────────────────────────────────────────
+    {
+        id: 25,
+        title: "Noche en Vivo",
+        category: "Fiesta",
+        image: "https://images.unsplash.com/photo-1545959570-a94084071b5d?q=80&w=600",
+        premium: false,
+        audience: ["productoras", "academias"],
+        internalTags: ["beta"],
+        variants: [
+            { format: "portrait", width: 1080, height: 1350, layers: [
+                { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1350, fill: "#0a0010", selectable: false },
+                { id: "photo", type: "image", src: "https://images.unsplash.com/photo-1545959570-a94084071b5d?q=80&w=1400", x: 0, y: 0, scaleX: 1.4, scaleY: 1.4, opacity: 1.0 },
+
+                { id: "overlay-1", type: "shape", shape: "rect", x: 0, y: 600, width: 1080, height: 200, fill: "rgba(0,0,0,0.20)", selectable: false },
+                { id: "overlay-2", type: "shape", shape: "rect", x: 0, y: 800, width: 1080, height: 200, fill: "rgba(0,0,0,0.45)", selectable: false },
+                { id: "overlay-3", type: "shape", shape: "rect", x: 0, y: 1000, width: 1080, height: 350, fill: "rgba(0,0,0,0.90)", selectable: false },
+
+                { id: "chip-bg", type: "shape", shape: "rect", x: 460, y: 80, width: 160, height: 44, fill: "rgba(0,0,0,0.55)", radius: 22, stroke: "rgba(250,204,21,0.55)", strokeWidth: 1, selectable: false },
+                { id: "chip-label", type: "text", text: "FIESTA", x: 0, y: 95, width: 1080, fontSize: 22, fontFamily: "Montserrat, sans-serif", color: "#facc15", fontWeight: "700", textAlign: "center", charSpacing: 400 },
+
+                { id: "accent-line", type: "shape", shape: "rect", x: 90, y: 1080, width: 90, height: 6, fill: "#facc15", radius: 3, selectable: false },
+                { id: "title", type: "text", text: "NOCHE EN VIVO", x: 90, y: 1110, width: 900, fontSize: 78, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "left", charSpacing: 30 },
+                { id: "date", type: "text", text: "VIE 24 MAYO  \u00b7  23:00 H", x: 90, y: 1205, width: 900, fontSize: 26, fontFamily: "Montserrat, sans-serif", color: "#facc15", fontWeight: "700", textAlign: "left", charSpacing: 150 },
+                { id: "venue", type: "text", text: "CLUB LATINO  \u00b7  MADRID", x: 90, y: 1245, width: 900, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "#9ca3af", fontWeight: "500", textAlign: "left", charSpacing: 200 },
+                { id: "cta", type: "text", text: "ENTRADAS EN ARTEGENIA.COM", x: 90, y: 1290, width: 900, fontSize: 16, fontFamily: "Montserrat, sans-serif", color: "#6b7280", fontWeight: "600", textAlign: "left", charSpacing: 300 },
+            ] },
+        ],
+    },
+
+// ─────────────────────────────────────────────────────────────────────
+// 26 — Concierto Acústico (replica home id #5) - accent #22d3ee
+// ─────────────────────────────────────────────────────────────────────
+    {
+        id: 26,
+        title: "Concierto Ac\u00fastico",
+        category: "Conciertos",
+        image: "https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?q=80&w=600",
+        premium: false,
+        audience: ["productoras", "academias"],
+        internalTags: ["beta"],
+        variants: [
+            { format: "portrait", width: 1080, height: 1350, layers: [
+                { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1350, fill: "#0a0010", selectable: false },
+                { id: "photo", type: "image", src: "https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?q=80&w=1400", x: 0, y: 0, scaleX: 1.4, scaleY: 1.4, opacity: 1.0 },
+
+                { id: "overlay-1", type: "shape", shape: "rect", x: 0, y: 600, width: 1080, height: 200, fill: "rgba(0,0,0,0.20)", selectable: false },
+                { id: "overlay-2", type: "shape", shape: "rect", x: 0, y: 800, width: 1080, height: 200, fill: "rgba(0,0,0,0.45)", selectable: false },
+                { id: "overlay-3", type: "shape", shape: "rect", x: 0, y: 1000, width: 1080, height: 350, fill: "rgba(0,0,0,0.90)", selectable: false },
+
+                { id: "chip-bg", type: "shape", shape: "rect", x: 420, y: 80, width: 240, height: 44, fill: "rgba(0,0,0,0.55)", radius: 22, stroke: "rgba(34,211,238,0.55)", strokeWidth: 1, selectable: false },
+                { id: "chip-label", type: "text", text: "CONCIERTO", x: 0, y: 95, width: 1080, fontSize: 22, fontFamily: "Montserrat, sans-serif", color: "#22d3ee", fontWeight: "700", textAlign: "center", charSpacing: 400 },
+
+                { id: "accent-line", type: "shape", shape: "rect", x: 90, y: 1080, width: 90, height: 6, fill: "#22d3ee", radius: 3, selectable: false },
+                { id: "title", type: "text", text: "CONCIERTO AC\u00daSTICO", x: 90, y: 1110, width: 900, fontSize: 64, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "left", charSpacing: 30 },
+                { id: "date", type: "text", text: "JUE 13 JUNIO  \u00b7  21:00 H", x: 90, y: 1205, width: 900, fontSize: 26, fontFamily: "Montserrat, sans-serif", color: "#22d3ee", fontWeight: "700", textAlign: "left", charSpacing: 150 },
+                { id: "venue", type: "text", text: "TEATRO METROPOLITAN  \u00b7  CDMX", x: 90, y: 1245, width: 900, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "#9ca3af", fontWeight: "500", textAlign: "left", charSpacing: 200 },
+                { id: "cta", type: "text", text: "ENTRADAS EN ARTEGENIA.COM", x: 90, y: 1290, width: 900, fontSize: 16, fontFamily: "Montserrat, sans-serif", color: "#6b7280", fontWeight: "600", textAlign: "left", charSpacing: 300 },
+            ] },
+        ],
+    },
+
+// ─────────────────────────────────────────────────────────────────────
+// 27 — Clase Abierta (replica home id #6) - accent #c084fc
+// ─────────────────────────────────────────────────────────────────────
+    {
+        id: 27,
+        title: "Clase Abierta",
+        category: "Clases",
+        image: "https://images.unsplash.com/photo-1429962714451-bb934ecdc4ec?q=80&w=600",
+        premium: false,
+        audience: ["academias"],
+        internalTags: ["beta"],
+        variants: [
+            { format: "portrait", width: 1080, height: 1350, layers: [
+                { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1350, fill: "#0a0010", selectable: false },
+                { id: "photo", type: "image", src: "https://images.unsplash.com/photo-1429962714451-bb934ecdc4ec?q=80&w=1400", x: 0, y: 0, scaleX: 1.4, scaleY: 1.4, opacity: 1.0 },
+
+                { id: "overlay-1", type: "shape", shape: "rect", x: 0, y: 600, width: 1080, height: 200, fill: "rgba(0,0,0,0.20)", selectable: false },
+                { id: "overlay-2", type: "shape", shape: "rect", x: 0, y: 800, width: 1080, height: 200, fill: "rgba(0,0,0,0.45)", selectable: false },
+                { id: "overlay-3", type: "shape", shape: "rect", x: 0, y: 1000, width: 1080, height: 350, fill: "rgba(0,0,0,0.90)", selectable: false },
+
+                { id: "chip-bg", type: "shape", shape: "rect", x: 460, y: 80, width: 160, height: 44, fill: "rgba(0,0,0,0.55)", radius: 22, stroke: "rgba(192,132,252,0.55)", strokeWidth: 1, selectable: false },
+                { id: "chip-label", type: "text", text: "CLASES", x: 0, y: 95, width: 1080, fontSize: 22, fontFamily: "Montserrat, sans-serif", color: "#c084fc", fontWeight: "700", textAlign: "center", charSpacing: 400 },
+
+                { id: "accent-line", type: "shape", shape: "rect", x: 90, y: 1080, width: 90, height: 6, fill: "#c084fc", radius: 3, selectable: false },
+                { id: "title", type: "text", text: "CLASE ABIERTA", x: 90, y: 1110, width: 900, fontSize: 78, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "left", charSpacing: 30 },
+                { id: "date", type: "text", text: "S\u00c1B 08 JUNIO  \u00b7  11:00 H", x: 90, y: 1205, width: 900, fontSize: 26, fontFamily: "Montserrat, sans-serif", color: "#c084fc", fontWeight: "700", textAlign: "left", charSpacing: 150 },
+                { id: "venue", type: "text", text: "ESTUDIO MOVIMIENTO  \u00b7  MADRID", x: 90, y: 1245, width: 900, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "#9ca3af", fontWeight: "500", textAlign: "left", charSpacing: 200 },
+                { id: "cta", type: "text", text: "RESERVA EN ARTEGENIA.COM", x: 90, y: 1290, width: 900, fontSize: 16, fontFamily: "Montserrat, sans-serif", color: "#6b7280", fontWeight: "600", textAlign: "left", charSpacing: 300 },
+            ] },
+        ],
+    },
+
+// ─────────────────────────────────────────────────────────────────────
+// 28 — Gran Gala (replica home id #7) - accent #fb923c
+// ─────────────────────────────────────────────────────────────────────
+    {
+        id: 28,
+        title: "Gran Gala",
+        category: "Fiesta",
+        image: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?q=80&w=600",
+        premium: true,
+        audience: ["productoras", "academias"],
+        internalTags: ["beta"],
+        variants: [
+            { format: "portrait", width: 1080, height: 1350, layers: [
+                { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1350, fill: "#0a0010", selectable: false },
+                { id: "photo", type: "image", src: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?q=80&w=1400", x: 0, y: 0, scaleX: 1.4, scaleY: 1.4, opacity: 1.0 },
+
+                { id: "overlay-1", type: "shape", shape: "rect", x: 0, y: 600, width: 1080, height: 200, fill: "rgba(0,0,0,0.20)", selectable: false },
+                { id: "overlay-2", type: "shape", shape: "rect", x: 0, y: 800, width: 1080, height: 200, fill: "rgba(0,0,0,0.45)", selectable: false },
+                { id: "overlay-3", type: "shape", shape: "rect", x: 0, y: 1000, width: 1080, height: 350, fill: "rgba(0,0,0,0.90)", selectable: false },
+
+                { id: "chip-bg", type: "shape", shape: "rect", x: 440, y: 80, width: 200, height: 44, fill: "rgba(0,0,0,0.55)", radius: 22, stroke: "rgba(251,146,60,0.55)", strokeWidth: 1, selectable: false },
+                { id: "chip-label", type: "text", text: "FESTIVAL", x: 0, y: 95, width: 1080, fontSize: 22, fontFamily: "Montserrat, sans-serif", color: "#fb923c", fontWeight: "700", textAlign: "center", charSpacing: 400 },
+
+                { id: "accent-line", type: "shape", shape: "rect", x: 90, y: 1080, width: 90, height: 6, fill: "#fb923c", radius: 3, selectable: false },
+                { id: "title", type: "text", text: "GRAN GALA", x: 90, y: 1110, width: 900, fontSize: 96, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "left", charSpacing: 30 },
+                { id: "date", type: "text", text: "S\u00c1B 01 JUNIO  \u00b7  21:00 H", x: 90, y: 1205, width: 900, fontSize: 26, fontFamily: "Montserrat, sans-serif", color: "#fb923c", fontWeight: "700", textAlign: "left", charSpacing: 150 },
+                { id: "venue", type: "text", text: "ARENA MONTERREY  \u00b7  MX", x: 90, y: 1245, width: 900, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "#9ca3af", fontWeight: "500", textAlign: "left", charSpacing: 200 },
+                { id: "cta", type: "text", text: "ENTRADAS EN ARTEGENIA.COM", x: 90, y: 1290, width: 900, fontSize: 16, fontFamily: "Montserrat, sans-serif", color: "#6b7280", fontWeight: "600", textAlign: "left", charSpacing: 300 },
+            ] },
+        ],
+    },
 ];

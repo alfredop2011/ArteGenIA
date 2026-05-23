@@ -9,7 +9,7 @@ import "swiper/css/effect-coverflow";
 const CATS = ["Todas","Fiesta","Concierto","Festival","Clases"];
 
 const TEMPLATES = [
-    { id: 1, name: "NOCHE LATINA",        date: "SÁB 25 MAY",          venue: "Discoteca Elegance",       img: "https://images.unsplash.com/photo-1504609773096-104ff2c73ba4?q=80&w=600", accent: "#c084fc", tag: "FIESTA" },
+    { id: 22, name: "NOCHE LATINA",        date: "SÁB 25 MAY",          venue: "Discoteca Elegance",       img: "https://images.unsplash.com/photo-1504609773096-104ff2c73ba4?q=80&w=600", accent: "#c084fc", tag: "FIESTA" },
     { id: 2, name: "NEON NIGHT",          date: "VIE 31 MAYO · 11PM",  venue: "Club Kings · Madrid",      img: "https://images.unsplash.com/photo-1501386761578-eac5c94b800a?q=80&w=600", accent: "#a855f7", tag: "FIESTA" },
     { id: 3, name: "FESTIVAL SUMMER",     date: "15 JUNIO 2024",       venue: "Parque Fundidora",         img: "https://images.unsplash.com/photo-1506157786151-b8491531f063?q=80&w=600", accent: "#fb923c", tag: "FESTIVAL" },
     { id: 4, name: "NOCHE EN VIVO",       date: "VIE 24 MAYO · 11PM",  venue: "Club Latino · Madrid",     img: "https://images.unsplash.com/photo-1545959570-a94084071b5d?q=80&w=600", accent: "#facc15", tag: "FIESTA" },
