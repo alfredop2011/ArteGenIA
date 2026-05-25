@@ -1,4 +1,5 @@
 import Link from "next/link";
+import EditorRouter from "@/components/editor/EditorRouter";
 import GeneratedEditor from "@/components/editor/GeneratedEditor";
 import GeneratedEditorWrapper from "@/components/editor/GeneratedEditorWrapper";
 import { templates } from "@/data/templates";
@@ -17,9 +18,11 @@ export default async function EditorPage({ params, searchParams }: EditorPagePro
     const sp = await searchParams;
 
     // Modo "generated" — flyer generado desde el wizard, lee localStorage
+    // (TODO: mobile editor para este modo en proximas sesiones)
     if (id === "generated") return <GeneratedEditorWrapper />;
 
     // Modo "proyecto guardado" — id es un UUID de Supabase
+    // (TODO: mobile editor para proyectos guardados en proximas sesiones)
     if (UUID_RE.test(id)) {
         return <GeneratedEditor projectId={id} />;
     }
@@ -46,5 +49,6 @@ export default async function EditorPage({ params, searchParams }: EditorPagePro
             ? (requestedFormat as FormatId)
             : undefined;
 
-    return <GeneratedEditor templateId={templateId} formatId={formatId} />;
+    // EditorRouter elige MobileEditor (< 768px) o GeneratedEditor (desktop)
+    return <EditorRouter templateId={templateId} formatId={formatId} />;
 }
