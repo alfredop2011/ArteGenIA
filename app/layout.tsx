@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -15,6 +15,17 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "ArteGenIA — Generador de Flyers",
   description: "Crea flyers profesionales para tus eventos",
+};
+
+// Fix critico mobile: sin este export iOS Safari renderiza la pagina a
+// 980px y la escala, causando scroll horizontal y elementos minusculos.
+// Tambien previene zoom-in al enfocar inputs en iOS.
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  userScalable: true,
+  themeColor: "#0a0010",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

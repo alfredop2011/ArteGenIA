@@ -23,4 +23,8 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  /* Fix mobile: previene scroll horizontal si algun componente desborda */
+  overflow-x: hidden;
+  width: 100%;
+  -webkit-text-size-adjust: 100%; /* Evita que iOS ajuste tamano texto en landscape */
 }
