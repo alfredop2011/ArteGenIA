@@ -302,6 +302,48 @@ export default function GeneratedEditor({ templateId, formatId, projectId }: Gen
   const [savingProject, setSavingProject] = useState(false);
   const canvasWrapperRef = useRef<HTMLDivElement>(null);
 
+  const { saveProject } = useProjects();
+  const [saveState, setSaveState] = useState<SaveState>("saved");
+  const [canvasSize, setCanvasSize] = useState({ w: 1080, h: 1350 });
+
+  // ─── MOBILE DETECTION + PANELS ────────────────────────────────────────────
+  // Detecta viewport < 768px en cliente. Fuerza viewMode "dock" en mobile.
+  // Bottom sheets: "layers" (modal capas), "properties" (drawer propiedades)
+  const [isMobile, setIsMobile] = useState(false);
+  const [mobilePanelOpen, setMobilePanelOpen] = useState<"layers" | "properties" | "export" | null>(null);
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+  // ─── AUTO-FIT ZOOM EN MOBILE ───────────────────────────────────────
+  // Cuando se carga el canvas o cambia su tamano en mobile, ajustar zoom
+  // para que quepa en pantalla con margen comodo.
+  useEffect(() => {
+    if (!isMobile) return;
+    if (!canvasSize.w || !canvasSize.h) return;
+    // Ancho disponible: viewport - 24px padding (12 a cada lado)
+    const availableW = window.innerWidth - 24;
+    // Alto disponible: viewport - header (56) - dock bottom (~75) - margins (50)
+    const availableH = window.innerHeight - 56 - 75 - 50;
+    const zoomW = (availableW / canvasSize.w) * 100;
+    const zoomH = (availableH / canvasSize.h) * 100;
+    const fitZoom = Math.min(zoomW, zoomH);
+    setZoom(Math.max(10, Math.min(100, Math.floor(fitZoom))));
+  }, [isMobile, canvasSize.w, canvasSize.h]);
+
+  // Auto-open properties panel when user selects a layer on mobile
+  useEffect(() => {
+    if (isMobile && selectedLayer && !mobilePanelOpen) {
+      setMobilePanelOpen("properties");
+    }
+    if (!selectedLayer && mobilePanelOpen === "properties") {
+      setMobilePanelOpen(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedLayer, isMobile]);
+
   // Si la prop projectId cambia (HMR, navegacion interna), sincronizar el state
   // Sin esto, modificar un proyecto ya guardado podia crear duplicados en lugar de actualizar
   useEffect(() => {
@@ -309,10 +351,6 @@ export default function GeneratedEditor({ templateId, formatId, projectId }: Gen
       setCurrentProjectId(projectId);
     }
   }, [projectId, currentProjectId]);
-
-  const { saveProject } = useProjects();
-  const [saveState, setSaveState] = useState<SaveState>("saved");
-  const [canvasSize, setCanvasSize] = useState({ w: 1080, h: 1350 });
 
   const [textProps, setTextProps] = useState<TextProps>({
     text: "", fontFamily: "Montserrat", fontSize: 60, fill: "#ffffff",
@@ -327,6 +365,11 @@ export default function GeneratedEditor({ templateId, formatId, projectId }: Gen
 
   // ─── PERSIST VIEW MODE ────────────────────────────────────────────────────
   useEffect(() => {
+    // En mobile siempre dock (no se persiste preferencia)
+    if (window.innerWidth < 768) {
+      setViewMode("dock");
+      return;
+    }
     const saved = localStorage.getItem("artegenia-view-mode");
     if (saved === "sidebar" || saved === "dock") setViewMode(saved);
     const sections = localStorage.getItem("artegenia-open-sections");
@@ -335,7 +378,10 @@ export default function GeneratedEditor({ templateId, formatId, projectId }: Gen
     }
   }, []);
   useEffect(() => {
-    localStorage.setItem("artegenia-view-mode", viewMode);
+    // No persistir si es mobile (siempre forzamos dock al cargar)
+    if (window.innerWidth >= 768) {
+      localStorage.setItem("artegenia-view-mode", viewMode);
+    }
   }, [viewMode]);
   useEffect(() => {
     localStorage.setItem("artegenia-open-sections", JSON.stringify(openSections));
@@ -1100,7 +1146,7 @@ export default function GeneratedEditor({ templateId, formatId, projectId }: Gen
     <div className="h-screen bg-[#0a0a0f] text-white flex flex-col overflow-hidden">
 
       {/* HEADER — TOPBAR */}
-      <header className="h-14 ag-glass border-b border-white/[0.06] flex items-center px-4 gap-3 shrink-0 z-50">
+      <header className="h-14 ag-glass border-b border-white/[0.06] flex items-center px-2 sm:px-4 gap-2 sm:gap-3 shrink-0 z-50">
         {/* Back */}
         <button onClick={() => router.push(template ? "/templates" : "/create")}
           title="Volver"
@@ -1108,24 +1154,24 @@ export default function GeneratedEditor({ templateId, formatId, projectId }: Gen
           <ArrowLeft className="w-4 h-4" strokeWidth={2} />
         </button>
 
-        {/* Logo */}
-        <div className="flex items-center gap-2">
+        {/* Logo - oculto en mobile pequeno */}
+        <div className="hidden sm:flex items-center gap-2">
           <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-purple-500 via-fuchsia-500 to-indigo-600 flex items-center justify-center text-[11px] font-black shadow-lg shadow-purple-500/40">AG</div>
           <span className="text-[13px] font-bold hidden lg:block text-white/90 tracking-tight">Arte Gen</span>
         </div>
 
-        <div className="w-px h-6 bg-white/[0.07] mx-1"/>
+        <div className="hidden sm:block w-px h-6 bg-white/[0.07] mx-1"/>
 
         {/* Editable doc title */}
         <input
           value={docTitle}
           onChange={(e) => { setDocTitle(e.target.value); setSaveState("unsaved"); }}
-          className="bg-transparent text-sm font-semibold text-white/95 px-2 py-1 rounded-lg hover:bg-white/[0.04] focus:bg-white/[0.06] focus:outline-none focus:ring-1 focus:ring-purple-500/40 transition-all min-w-0 max-w-[200px]"
+          className="bg-transparent text-xs sm:text-sm font-semibold text-white/95 px-2 py-1 rounded-lg hover:bg-white/[0.04] focus:bg-white/[0.06] focus:outline-none focus:ring-1 focus:ring-purple-500/40 transition-all min-w-0 flex-1 sm:flex-none sm:max-w-[200px]"
           placeholder="Diseño sin título"
         />
 
-        {/* Save state */}
-        <div className="flex items-center gap-1.5 text-[11px] ml-1">
+        {/* Save state - oculto en mobile (se ve en bottom toolbar) */}
+        <div className="hidden sm:flex items-center gap-1.5 text-[11px] ml-1">
           {saveState === "saving"  && <><div className="w-2.5 h-2.5 border border-gray-500 border-t-purple-400 rounded-full animate-spin"/><span className="text-gray-500">Guardando…</span></>}
           {saveState === "saved"   && <><div className="w-2 h-2 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400/50"/><span className="text-gray-500">Guardado</span></>}
           {saveState === "unsaved" && <><div className="w-2 h-2 rounded-full bg-amber-400 shadow-sm shadow-amber-400/50"/><span className="text-gray-500">Sin guardar</span></>}
@@ -1138,7 +1184,7 @@ export default function GeneratedEditor({ templateId, formatId, projectId }: Gen
 
         <div className="flex-1"/>
 
-        {/* Undo/redo */}
+        {/* Undo/redo - visible siempre (esenciales) */}
         <button
           onClick={undo}
           disabled={!canUndo}
@@ -1154,10 +1200,10 @@ export default function GeneratedEditor({ templateId, formatId, projectId }: Gen
           <Redo2 className="w-4 h-4" strokeWidth={2} />
         </button>
 
-        <div className="w-px h-5 bg-white/[0.07] mx-0.5"/>
+        <div className="hidden sm:block w-px h-5 bg-white/[0.07] mx-0.5"/>
 
-        {/* Zoom selector */}
-        <div className="flex items-center bg-white/[0.03] border border-white/[0.07] rounded-lg overflow-hidden">
+        {/* Zoom selector - oculto en mobile (zoom via pinch nativo + dock) */}
+        <div className="hidden sm:flex items-center bg-white/[0.03] border border-white/[0.07] rounded-lg overflow-hidden">
           <button onClick={() => setZoom(z => Math.max(10, z - 10))} className="px-2 py-1 text-gray-400 hover:text-white hover:bg-white/5 transition-colors text-sm">−</button>
           <select value={zoom} onChange={(e) => setZoom(parseInt(e.target.value))}
             className="bg-transparent text-[11px] text-white/90 px-1.5 py-1 outline-none cursor-pointer">
@@ -1166,10 +1212,10 @@ export default function GeneratedEditor({ templateId, formatId, projectId }: Gen
           <button onClick={() => setZoom(z => Math.min(200, z + 10))} className="px-2 py-1 text-gray-400 hover:text-white hover:bg-white/5 transition-colors text-sm">+</button>
         </div>
 
-        <div className="w-px h-5 bg-white/[0.07] mx-0.5"/>
+        <div className="hidden md:block w-px h-5 bg-white/[0.07] mx-0.5"/>
 
-        {/* View mode toggle — pill */}
-        <div className="flex items-center bg-white/[0.04] border border-white/[0.08] rounded-lg overflow-hidden p-0.5">
+        {/* View mode toggle - SOLO DESKTOP (mobile siempre dock forzado) */}
+        <div className="hidden md:flex items-center bg-white/[0.04] border border-white/[0.08] rounded-lg overflow-hidden p-0.5">
           <button
             onClick={() => setViewMode("sidebar")}
             title="Vista con barra lateral fija"
@@ -1194,7 +1240,7 @@ export default function GeneratedEditor({ templateId, formatId, projectId }: Gen
           </button>
         </div>
 
-        {/* Command palette trigger */}
+        {/* Command palette - SOLO DESKTOP */}
         <button
           onClick={() => setPaletteOpen(true)}
           title="Buscar comando (⌘K)"
@@ -1204,31 +1250,34 @@ export default function GeneratedEditor({ templateId, formatId, projectId }: Gen
           <kbd className="ml-1 px-1.5 py-0.5 rounded bg-white/[0.06] text-[9px] text-gray-500 border border-white/5 font-mono">⌘K</kbd>
         </button>
 
-        {/* Share (placeholder) */}
-        <button title="Compartir (próximamente)" className="ag-icon-btn opacity-60">
+        {/* Share - SOLO DESKTOP */}
+        <button title="Compartir (próximamente)" className="ag-icon-btn opacity-60 hidden md:flex">
           <Share2 className="w-4 h-4" strokeWidth={1.5} />
         </button>
 
-        {/* Save */}
+        {/* Save - icono solo en mobile */}
         <button
           onClick={handleSave}
           disabled={savingProject}
           title={currentProjectId ? "Guardar cambios (⌘S)" : "Guardar nuevo diseño"}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.08] border border-white/[0.08] text-white text-xs font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+          className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.08] border border-white/[0.08] text-white text-xs font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed">
           {savingProject ? (
-            <><div className="w-3 h-3 border border-gray-400 border-t-white rounded-full animate-spin"/><span>Guardando…</span></>
+            <><div className="w-3 h-3 border border-gray-400 border-t-white rounded-full animate-spin"/><span className="hidden sm:inline">Guardando…</span></>
           ) : (
-            <><Save className="w-3.5 h-3.5" strokeWidth={2} /><span>{currentProjectId ? "Guardar" : "Guardar"}</span></>
+            <><Save className="w-3.5 h-3.5" strokeWidth={2} /><span className="hidden sm:inline">{currentProjectId ? "Guardar" : "Guardar"}</span></>
           )}
         </button>
 
-        {/* Export */}
+        {/* Export - en mobile abre bottom sheet de export */}
         <div className="relative group">
-          <button className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-fuchsia-600 hover:from-purple-500 hover:to-fuchsia-500 text-white text-xs font-semibold transition-all shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50">
+          <button
+            onClick={() => isMobile && setMobilePanelOpen("export")}
+            className="flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-fuchsia-600 hover:from-purple-500 hover:to-fuchsia-500 text-white text-xs font-semibold transition-all shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50">
             <Download className="w-3.5 h-3.5" strokeWidth={2} />
-            Exportar
+            <span className="hidden sm:inline">Exportar</span>
           </button>
-          <div className="absolute right-0 top-full mt-1 w-36 ag-glass border border-white/10 rounded-xl shadow-2xl overflow-hidden opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-all z-50">
+          {/* Dropdown hover - SOLO DESKTOP */}
+          <div className="hidden md:block absolute right-0 top-full mt-1 w-36 ag-glass border border-white/10 rounded-xl shadow-2xl overflow-hidden opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-all z-50">
             {[["PNG","png"],["JPG","jpg"]].map(([label, fmt]) => (
               <button key={fmt} onClick={() => exportFlyer(fmt as "png"|"jpg")}
                 className="w-full px-4 py-2.5 text-left text-xs text-gray-300 hover:bg-white/8 hover:text-white transition-all">
@@ -1238,14 +1287,14 @@ export default function GeneratedEditor({ templateId, formatId, projectId }: Gen
           </div>
         </div>
 
-        {/* User avatar */}
-        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-zinc-700 to-zinc-900 border border-white/[0.07] flex items-center justify-center text-[11px] font-bold text-white/80 cursor-pointer hover:border-white/20 transition-all ml-1">AG</div>
+        {/* User avatar - oculto en mobile */}
+        <div className="hidden sm:flex w-8 h-8 rounded-full bg-gradient-to-br from-zinc-700 to-zinc-900 border border-white/[0.07] items-center justify-center text-[11px] font-bold text-white/80 cursor-pointer hover:border-white/20 transition-all ml-1">AG</div>
       </header>
 
       <div className="flex-1 flex overflow-hidden bg-[#070711]">
 
-        {/* LEFT SIDEBAR — only when viewMode = sidebar */}
-        {viewMode === "sidebar" && (
+        {/* LEFT SIDEBAR — only when viewMode = sidebar AND desktop */}
+        {viewMode === "sidebar" && !isMobile && (
           <div className="w-[68px] ag-glass border-r border-white/[0.06] flex flex-col items-center py-3 gap-1.5 shrink-0 z-30">
             {TOOLS.map(tool => {
               const isActive = activeTool === tool.id;
@@ -1275,8 +1324,8 @@ export default function GeneratedEditor({ templateId, formatId, projectId }: Gen
           </div>
         )}
 
-        {/* LAYERS PANEL */}
-        {activeTool === "layers" && (
+        {/* LAYERS PANEL - oculto en mobile (se accede por bottom sheet) */}
+        {activeTool === "layers" && !isMobile && (
           <div className="w-52 ag-glass border-r border-white/[0.06] flex flex-col shrink-0">
             <div className="px-3 py-2.5 border-b border-white/[0.06]">
               <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-widest">Capas</p>
@@ -1309,8 +1358,8 @@ export default function GeneratedEditor({ templateId, formatId, projectId }: Gen
         {/* CANVAS — centered in dark workspace */}
         <div className="flex-1 flex flex-col bg-transparent overflow-hidden">
           <div className="flex-1 overflow-auto">
-            {/* Center the canvas both horizontally and vertically */}
-            <div className="min-h-full flex items-center justify-center p-8">
+            {/* Center the canvas both horizontally and vertically. Padding bottom en mobile para dejar espacio al dock */}
+            <div className={`min-h-full flex items-center justify-center ${isMobile ? "p-3 pb-24" : "p-8"}`}>
               <div ref={canvasWrapperRef} className="relative shadow-2xl shadow-black/70"
                 style={{ width: canvasSize.w * zoom / 100, height: canvasSize.h * zoom / 100, flexShrink: 0 }}>
                 <canvas ref={canvasRef} />
@@ -1323,8 +1372,8 @@ export default function GeneratedEditor({ templateId, formatId, projectId }: Gen
             </div>
           </div>
 
-          {/* ZOOM BAR */}
-          <div className="h-10 ag-glass border-t border-white/[0.06] flex items-center justify-center gap-3 px-4 shrink-0">
+          {/* ZOOM BAR - oculta en mobile (zoom via pinch nativo + el dock ya esta abajo) */}
+          <div className="hidden md:flex h-10 ag-glass border-t border-white/[0.06] items-center justify-center gap-3 px-4 shrink-0">
             <button onClick={() => setZoom(z => Math.max(10, z - 10))} className="w-6 h-6 rounded flex items-center justify-center text-gray-500 hover:text-white hover:bg-white/8 transition-all text-lg">−</button>
             <span className="text-xs text-gray-500 w-12 text-center">{zoom}%</span>
             <button onClick={() => setZoom(z => Math.min(200, z + 10))} className="w-6 h-6 rounded flex items-center justify-center text-gray-500 hover:text-white hover:bg-white/8 transition-all text-lg">+</button>
@@ -1334,8 +1383,27 @@ export default function GeneratedEditor({ templateId, formatId, projectId }: Gen
           </div>
         </div>
 
-        {/* RIGHT PROPERTIES PANEL */}
-        <div className="w-72 ag-glass border-l border-white/[0.06] flex flex-col shrink-0 overflow-hidden">
+        {/* RIGHT PROPERTIES PANEL - desktop fijo lateral, mobile bottom sheet */}
+        <div className={`
+          ${isMobile
+            ? `${mobilePanelOpen === "properties" ? "translate-y-0" : "translate-y-full"}
+               fixed bottom-0 left-0 right-0 z-40 max-h-[70vh] rounded-t-3xl
+               transition-transform duration-300 ease-out`
+            : "w-72 shrink-0"
+          }
+          ag-glass border-l border-white/[0.06] flex flex-col overflow-hidden
+        `}>
+          {/* Handle bar - SOLO MOBILE */}
+          {isMobile && (
+            <div className="flex items-center justify-between px-4 pt-3 pb-2 border-b border-white/[0.06]">
+              <div className="w-12 h-1 bg-white/20 rounded-full mx-auto absolute left-1/2 -translate-x-1/2 top-2"/>
+              <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-widest">Propiedades</span>
+              <button
+                onClick={() => setMobilePanelOpen(null)}
+                className="text-gray-400 active:text-white text-xl leading-none"
+              >×</button>
+            </div>
+          )}
           {!selectedLayer ? (
             <div className="flex-1 flex flex-col items-center justify-center p-6 text-center gap-3">
               <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/5 flex items-center justify-center">
@@ -1530,7 +1598,13 @@ export default function GeneratedEditor({ templateId, formatId, projectId }: Gen
 
       {/* DOCK INFERIOR — only when viewMode = dock */}
       {viewMode === "dock" && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 ag-glass border border-white/[0.08] rounded-3xl px-3 py-2 flex items-center gap-1.5 shadow-2xl shadow-purple-500/10">
+        <div className={`
+          ${isMobile
+            ? "fixed bottom-0 left-0 right-0 z-30 px-2 py-2 border-t border-white/[0.08] ag-glass safe-area-bottom"
+            : "fixed bottom-6 left-1/2 -translate-x-1/2 z-40 ag-glass border border-white/[0.08] rounded-3xl px-3 py-2 shadow-2xl shadow-purple-500/10"
+          }
+          flex items-center gap-1.5 ${isMobile ? "justify-around" : ""}
+        `}>
           {TOOLS.filter(t => ["design","text","photos","layers","ai","background"].includes(t.id)).map(tool => {
             const isActive = activeTool === tool.id;
             return (
@@ -1538,30 +1612,121 @@ export default function GeneratedEditor({ templateId, formatId, projectId }: Gen
                 onClick={() => {
                   if (tool.comingSoon) return;
                   if (tool.id === "photos") { setArtistsModalOpen(true); return; }
+                  if (tool.id === "layers" && isMobile) {
+                    setMobilePanelOpen(mobilePanelOpen === "layers" ? null : "layers");
+                    return;
+                  }
                   setActiveTool(tool.id);
                   if (tool.id === "text") addText();
                 }}
                 title={tool.comingSoon ? `${tool.label} · próximamente` : tool.label}
-                className={`group relative w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${
+                className={`group relative ${isMobile ? "w-11 h-11" : "w-12 h-12"} rounded-2xl flex items-center justify-center transition-all ${
                   isActive
                     ? "bg-gradient-to-br from-purple-600/30 to-fuchsia-600/20 text-purple-300 border border-purple-500/40 shadow-lg shadow-purple-500/30"
                     : tool.comingSoon
                     ? "text-gray-600 cursor-default"
-                    : "text-gray-400 hover:text-white hover:bg-white/[0.06] hover:-translate-y-0.5 active:scale-95"
+                    : "text-gray-400 active:text-white hover:text-white hover:bg-white/[0.06] hover:-translate-y-0.5 active:scale-95"
                 }`}>
                 {tool.icon}
                 {tool.comingSoon && <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-amber-400 shadow-sm shadow-amber-400/60"/>}
-                <span className="absolute bottom-full mb-2 px-2 py-1 rounded-md bg-black/85 border border-white/10 text-[10px] text-white whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity">{tool.label}</span>
+                {!isMobile && (
+                  <span className="absolute bottom-full mb-2 px-2 py-1 rounded-md bg-black/85 border border-white/10 text-[10px] text-white whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity">{tool.label}</span>
+                )}
               </button>
             );
           })}
-          <div className="w-px h-7 bg-white/[0.08] mx-1"/>
-          <button onClick={() => exportFlyer("png")}
-            title="Exportar PNG"
-            className="group relative w-12 h-12 rounded-2xl flex items-center justify-center transition-all bg-gradient-to-br from-purple-600 to-fuchsia-600 hover:from-purple-500 hover:to-fuchsia-500 text-white shadow-lg shadow-purple-500/40 hover:-translate-y-0.5 active:scale-95">
-            <Download className="w-5 h-5" strokeWidth={2} />
-            <span className="absolute bottom-full mb-2 px-2 py-1 rounded-md bg-black/85 border border-white/10 text-[10px] text-white whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity">Exportar</span>
-          </button>
+          {!isMobile && <div className="w-px h-7 bg-white/[0.08] mx-1"/>}
+          {/* En mobile el boton export esta en el header. Solo se muestra aqui en desktop dock */}
+          {!isMobile && (
+            <button onClick={() => exportFlyer("png")}
+              title="Exportar PNG"
+              className="group relative w-12 h-12 rounded-2xl flex items-center justify-center transition-all bg-gradient-to-br from-purple-600 to-fuchsia-600 hover:from-purple-500 hover:to-fuchsia-500 text-white shadow-lg shadow-purple-500/40 hover:-translate-y-0.5 active:scale-95">
+              <Download className="w-5 h-5" strokeWidth={2} />
+              <span className="absolute bottom-full mb-2 px-2 py-1 rounded-md bg-black/85 border border-white/10 text-[10px] text-white whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity">Exportar</span>
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════════════
+          MOBILE BOTTOM SHEETS (capas + export)
+          Se renderizan SOLO en mobile. Backdrop tap cierra.
+          ═══════════════════════════════════════════════════════════════════ */}
+      {isMobile && (mobilePanelOpen === "layers" || mobilePanelOpen === "export") && (
+        <div
+          onClick={() => setMobilePanelOpen(null)}
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+        />
+      )}
+
+      {/* MOBILE BOTTOM SHEET: CAPAS */}
+      {isMobile && (
+        <div className={`
+          ${mobilePanelOpen === "layers" ? "translate-y-0" : "translate-y-full"}
+          fixed bottom-0 left-0 right-0 z-50 max-h-[70vh] rounded-t-3xl ag-glass
+          border-t border-white/10 shadow-2xl flex flex-col
+          transition-transform duration-300 ease-out safe-area-bottom
+        `}>
+          <div className="relative px-4 pt-3 pb-2 border-b border-white/[0.06]">
+            <div className="w-12 h-1 bg-white/20 rounded-full mx-auto mb-2"/>
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-widest">Capas</span>
+              <button onClick={() => setMobilePanelOpen(null)} className="text-gray-400 active:text-white text-xl leading-none">×</button>
+            </div>
+          </div>
+          <div className="flex-1 overflow-y-auto">
+            {layers.map(layer => (
+              <div key={layer.id}
+                onClick={() => { selectLayerFromPanel(layer); }}
+                className={`flex items-center gap-3 px-4 py-3 border-b border-white/[0.04] transition-all ${selectedLayer?.id === layer.id ? "bg-purple-600/15 border-l-2 border-l-purple-500" : "active:bg-white/5"}`}>
+                <LayerIcon type={layer.type}/>
+                <span className={`flex-1 text-sm truncate ${selectedLayer?.id === layer.id ? "text-white" : "text-gray-300"}`}>{layer.name}</span>
+                <button onClick={e => { e.stopPropagation(); toggleVisibility(layer.id); }} className={`p-2 rounded-lg ${layer.visible ? "text-gray-400 active:text-white" : "text-gray-700"}`}>
+                  {layer.visible ? <Eye className="w-4 h-4" strokeWidth={2} /> : <EyeOff className="w-4 h-4" strokeWidth={2} />}
+                </button>
+                <button onClick={e => { e.stopPropagation(); toggleLock(layer.id); }} className={`p-2 rounded-lg ${layer.locked ? "text-yellow-500" : "text-gray-400 active:text-white"}`}>
+                  {layer.locked ? <Lock className="w-4 h-4" strokeWidth={2} /> : <Unlock className="w-4 h-4" strokeWidth={2} />}
+                </button>
+              </div>
+            ))}
+            {layers.length === 0 && (
+              <div className="text-center text-gray-500 text-sm py-8">No hay capas todavia</div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* MOBILE BOTTOM SHEET: EXPORT */}
+      {isMobile && (
+        <div className={`
+          ${mobilePanelOpen === "export" ? "translate-y-0" : "translate-y-full"}
+          fixed bottom-0 left-0 right-0 z-50 rounded-t-3xl ag-glass
+          border-t border-white/10 shadow-2xl
+          transition-transform duration-300 ease-out safe-area-bottom
+        `}>
+          <div className="relative px-4 pt-3 pb-2 border-b border-white/[0.06]">
+            <div className="w-12 h-1 bg-white/20 rounded-full mx-auto mb-2"/>
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-widest">Exportar</span>
+              <button onClick={() => setMobilePanelOpen(null)} className="text-gray-400 active:text-white text-xl leading-none">×</button>
+            </div>
+          </div>
+          <div className="p-4 space-y-2">
+            <button
+              onClick={() => { exportFlyer("png"); setMobilePanelOpen(null); }}
+              className="w-full px-4 py-4 rounded-2xl bg-gradient-to-r from-purple-600 to-fuchsia-600 active:from-purple-700 active:to-fuchsia-700 text-white font-bold text-base flex items-center justify-center gap-2"
+            >
+              <Download className="w-5 h-5" strokeWidth={2}/>
+              Descargar PNG
+            </button>
+            <button
+              onClick={() => { exportFlyer("jpg"); setMobilePanelOpen(null); }}
+              className="w-full px-4 py-4 rounded-2xl bg-white/[0.06] active:bg-white/[0.10] border border-white/[0.10] text-white font-semibold text-base flex items-center justify-center gap-2"
+            >
+              <Download className="w-5 h-5" strokeWidth={2}/>
+              Descargar JPG
+            </button>
+          </div>
         </div>
       )}
 
