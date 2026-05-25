@@ -14,16 +14,19 @@ import { applyTemplateLayers } from "@/lib/fabricApplyTemplateLayers";
 // ════════════════════════════════════════════════════════════════════════════
 //  MobileEditor — editor mobile-first separado del desktop
 //
-//  SESION 2 entrega (acumulado sobre V1):
-//    - Sheet "Texto" funcional: input + sliders fontSize/spacing + bold/italic
-//      + align + propiedades comunes
-//    - Sheet "Color" funcional: paleta tactil + native color picker
-//    - Auto-open sheet "Texto" al seleccionar capa de tipo texto
-//    - Doble tap en capa texto del canvas -> fullscreen editor con teclado iPhone
-//    - Funcion updateProp que aplica cambios a Fabric en tiempo real
+//  SESION 3 entrega (acumulado sobre V1+V2):
+//    - Pinch zoom 2 dedos: zoom in/out centrado en el punto medio entre dedos
+//      Min 10%, max 500%
+//    - Pan 1 dedo en zona vacia: arrastra y mueve la vista del canvas
+//    - Pan/zoom respetan la seleccion (los gestures sobre objetos siguen
+//      siendo gestionados por Fabric -> drag de capa)
+//    - Boton flotante "ajustar a pantalla" (esquina inferior derecha)
+//      resetea zoom + viewport al estado inicial
+//    - Export PNG sigue funcionando: resetea zoom/viewport interno, exporta
+//      el flyer a tamano nativo, restaura estado del usuario
 //
-//  Pendiente proximas sesiones: pinch zoom, rotate, handles tactiles 40px,
-//    drag-reorder capas, anadir texto/imagen, snapping, undo/redo.
+//  Pendiente proximas sesiones: handles tactiles 40px, rotate, drag-reorder
+//    capas, anadir texto/imagen, snapping, undo/redo.
 // ════════════════════════════════════════════════════════════════════════════
 
 type Props = {
@@ -49,7 +52,6 @@ export default function MobileEditor({ templateId, formatId }: Props) {
 
   const [template, setTemplate] = useState<Template | null>(null);
   const [canvasSize, setCanvasSize] = useState({ w: 1080, h: 1350 });
-  const [scale, setScale] = useState(0.35);
   const [layers, setLayers] = useState<LayerItem[]>([]);
   const [selectedLayer, setSelectedLayer] = useState<LayerItem | null>(null);
   const [activeSheet, setActiveSheet] = useState<ToolId | null>(null);
@@ -90,27 +92,30 @@ export default function MobileEditor({ templateId, formatId }: Props) {
     if (t) setTemplate(t);
   }, [templateId]);
 
-  // ─── 2. Calcular scale para que el canvas quepa en el viewport ──────────
-  // El canvas Fabric se renderiza al tamano REAL (1080x1350) pero CSS lo escala.
-  // Asi mantenemos calidad export sin sacrificar performance touch.
-  const computeScale = useCallback(() => {
+  // ─── 2. Calcular el AREA DISPONIBLE para el canvas (no el scale) ───────
+  // SESION 3: cambio approach. El canvas DOM ocupa toda el area disponible.
+  // El zoom inicial se calcula con setZoom + setViewportTransform para centrar
+  // el flyer dentro. El pinch zoom puede aumentar/disminuir libremente despues.
+  const [canvasArea, setCanvasArea] = useState({ w: 300, h: 500 });
+
+  const computeArea = useCallback(() => {
     if (!template) return;
     const variant = getVariant(template, formatId);
     if (!variant) return;
-    const availW = window.innerWidth - 16; // 8px padding cada lado
-    const availH = window.innerHeight - 56 - 72 - 16; // header + bottom toolbar + margins
-    const sX = availW / variant.width;
-    const sY = availH / variant.height;
-    const s = Math.min(sX, sY, 1);
-    setScale(s);
+    const availW = window.innerWidth - 16;
+    const availH = window.innerHeight - 56 - 72 - 16;
+    setCanvasArea({ w: availW, h: availH });
     setCanvasSize({ w: variant.width, h: variant.height });
   }, [template, formatId]);
 
   useEffect(() => {
-    computeScale();
-    window.addEventListener("resize", computeScale);
-    return () => window.removeEventListener("resize", computeScale);
-  }, [computeScale]);
+    computeArea();
+    window.addEventListener("resize", computeArea);
+    return () => window.removeEventListener("resize", computeArea);
+  }, [computeArea]);
+
+  // Track del zoom actual (puede cambiar con pinch). Inicialmente auto-fit.
+  const [, setZoomDisplay] = useState(1); // solo para re-render del display si lo mostramos
 
   // ─── 3. Inicializar Fabric con touch habilitado ─────────────────────────
   useEffect(() => {
@@ -162,19 +167,160 @@ export default function MobileEditor({ templateId, formatId }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [template, formatId]);
 
-  // ─── 3b. Aplicar zoom visual cuando cambia scale ────────────────────────
-  // Fabric.setZoom maneja internamente las coordenadas touch correctamente.
-  // El canvas DOM se reduce visualmente pero el touch funciona perfecto.
+  // ─── 3b. Ajustar canvas DOM al area disponible + auto-fit zoom inicial
+  // SESION 3: el canvas DOM ocupa toda el area disponible. El zoom + viewport
+  // se ajusta para centrar el flyer dentro. Luego pinch puede modificarlo.
   useEffect(() => {
     const fc = fabricRef.current;
     if (!fc) return;
-    fc.setZoom(scale);
-    fc.setDimensions({
-      width: canvasSize.w * scale,
-      height: canvasSize.h * scale,
-    });
-    fc.renderAll();
-  }, [scale, canvasSize.w, canvasSize.h]);
+    // Dimensionar el canvas DOM al area disponible
+    fc.setDimensions({ width: canvasArea.w, height: canvasArea.h });
+    // Auto-fit: calcula zoom que entra ancho+alto y centra
+    const zoomW = canvasArea.w / canvasSize.w;
+    const zoomH = canvasArea.h / canvasSize.h;
+    const fitZoom = Math.min(zoomW, zoomH) * 0.98; // 2% margen visual
+    fc.setZoom(fitZoom);
+    // Centrar viewport: traslada para que el flyer quede centrado
+    const tx = (canvasArea.w - canvasSize.w * fitZoom) / 2;
+    const ty = (canvasArea.h - canvasSize.h * fitZoom) / 2;
+    fc.setViewportTransform([fitZoom, 0, 0, fitZoom, tx, ty]);
+    setZoomDisplay(fitZoom);
+    fc.requestRenderAll();
+  }, [canvasArea.w, canvasArea.h, canvasSize.w, canvasSize.h]);
+
+  // ─── 3b-bis. PINCH ZOOM + PAN (sesion 3) ────────────────────────────────
+  // Listener nativo de touch porque Fabric.js no gestiona pinch internamente.
+  // Estrategia:
+  //   - 1 dedo sobre objeto: lo gestiona Fabric (drag capa, ya funciona)
+  //   - 1 dedo sobre area vacia: PAN del viewport (mover vista)
+  //   - 2 dedos: PINCH ZOOM (zoom centrado en el punto medio entre dedos)
+  useEffect(() => {
+    const fc = fabricRef.current;
+    if (!fc) return;
+    const el = fc.upperCanvasEl;
+    if (!el) return;
+
+    // Estado del gesto en curso
+    let mode: "none" | "pan" | "pinch" = "none";
+    let lastPanX = 0, lastPanY = 0;
+    let initialDist = 0;
+    let initialZoom = 1;
+    let initialMidX = 0, initialMidY = 0;
+    let initialVptX = 0, initialVptY = 0;
+
+    const distance = (t1: Touch, t2: Touch) => {
+      const dx = t2.clientX - t1.clientX;
+      const dy = t2.clientY - t1.clientY;
+      return Math.hypot(dx, dy);
+    };
+
+    const onTouchStart = (e: TouchEvent) => {
+      if (e.touches.length === 2) {
+        // Empieza pinch: cancela cualquier seleccion activa para que Fabric no estorbe
+        e.preventDefault();
+        fc.discardActiveObject();
+        mode = "pinch";
+        const [t1, t2] = [e.touches[0], e.touches[1]];
+        initialDist = distance(t1, t2);
+        initialZoom = fc.getZoom();
+        const vpt = fc.viewportTransform;
+        if (!vpt) return;
+        initialVptX = vpt[4];
+        initialVptY = vpt[5];
+        // Punto medio en coords del canvas DOM
+        const rect = el.getBoundingClientRect();
+        initialMidX = ((t1.clientX + t2.clientX) / 2) - rect.left;
+        initialMidY = ((t1.clientY + t2.clientY) / 2) - rect.top;
+      } else if (e.touches.length === 1) {
+        // Verificar si toco objeto - si no, modo PAN
+        const t = e.touches[0];
+        const rect = el.getBoundingClientRect();
+        const target = fc.findTarget({ clientX: t.clientX, clientY: t.clientY } as unknown as MouseEvent);
+        if (!target) {
+          // Zona vacia -> pan
+          mode = "pan";
+          lastPanX = t.clientX - rect.left;
+          lastPanY = t.clientY - rect.top;
+        } else {
+          // Hay objeto -> Fabric gestiona drag, no interferir
+          mode = "none";
+        }
+      } else {
+        mode = "none";
+      }
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      if (mode === "pinch" && e.touches.length === 2) {
+        e.preventDefault();
+        const [t1, t2] = [e.touches[0], e.touches[1]];
+        const newDist = distance(t1, t2);
+        const ratio = newDist / initialDist;
+        let newZoom = initialZoom * ratio;
+        // Limitar zoom min/max
+        newZoom = Math.max(0.1, Math.min(5, newZoom));
+        // Aplicar zoom manteniendo el punto medio inicial fijo:
+        // newVptX = initialMidX - (initialMidX - initialVptX) * (newZoom / initialZoom)
+        const zoomRatio = newZoom / initialZoom;
+        const newVptX = initialMidX - (initialMidX - initialVptX) * zoomRatio;
+        const newVptY = initialMidY - (initialMidY - initialVptY) * zoomRatio;
+        fc.setViewportTransform([newZoom, 0, 0, newZoom, newVptX, newVptY]);
+        setZoomDisplay(newZoom);
+        fc.requestRenderAll();
+      } else if (mode === "pan" && e.touches.length === 1) {
+        e.preventDefault();
+        const t = e.touches[0];
+        const rect = el.getBoundingClientRect();
+        const x = t.clientX - rect.left;
+        const y = t.clientY - rect.top;
+        const dx = x - lastPanX;
+        const dy = y - lastPanY;
+        const vpt = fc.viewportTransform;
+        if (!vpt) return;
+        vpt[4] += dx;
+        vpt[5] += dy;
+        fc.setViewportTransform(vpt);
+        fc.requestRenderAll();
+        lastPanX = x;
+        lastPanY = y;
+      }
+    };
+
+    const onTouchEnd = (e: TouchEvent) => {
+      if (e.touches.length === 0) {
+        mode = "none";
+      } else if (e.touches.length === 1 && mode === "pinch") {
+        // De pinch a single touch: terminar el gesto
+        mode = "none";
+      }
+    };
+
+    el.addEventListener("touchstart", onTouchStart, { passive: false });
+    el.addEventListener("touchmove", onTouchMove, { passive: false });
+    el.addEventListener("touchend", onTouchEnd);
+    el.addEventListener("touchcancel", onTouchEnd);
+
+    return () => {
+      el.removeEventListener("touchstart", onTouchStart);
+      el.removeEventListener("touchmove", onTouchMove);
+      el.removeEventListener("touchend", onTouchEnd);
+      el.removeEventListener("touchcancel", onTouchEnd);
+    };
+  }, [loaded]);
+
+  // ─── 3b-tris. RESET VIEW (zoom + pan al original) ──────────────────────
+  const resetView = useCallback(() => {
+    const fc = fabricRef.current;
+    if (!fc) return;
+    const zoomW = canvasArea.w / canvasSize.w;
+    const zoomH = canvasArea.h / canvasSize.h;
+    const fitZoom = Math.min(zoomW, zoomH) * 0.98;
+    const tx = (canvasArea.w - canvasSize.w * fitZoom) / 2;
+    const ty = (canvasArea.h - canvasSize.h * fitZoom) / 2;
+    fc.setViewportTransform([fitZoom, 0, 0, fitZoom, tx, ty]);
+    setZoomDisplay(fitZoom);
+    fc.requestRenderAll();
+  }, [canvasArea.w, canvasArea.h, canvasSize.w, canvasSize.h]);
 
   // ─── 3c. Selection handlers ─────────────────────────────────────────────
   useEffect(() => {
@@ -264,19 +410,24 @@ export default function MobileEditor({ templateId, formatId }: Props) {
     if (!fc) return;
     fc.discardActiveObject();
 
-    // Guardar el zoom actual y resetear a 1 para exportar a tamano nativo
+    // Guardar zoom + viewport + dimensions (usuario puede haber zoomeado/paneado)
     const prevZoom = fc.getZoom();
     const prevW = fc.getWidth();
     const prevH = fc.getHeight();
+    const prevVpt = fc.viewportTransform ? [...fc.viewportTransform] : [1, 0, 0, 1, 0, 0];
+
+    // Resetear todo al estado nativo del flyer (zoom 1, viewport identity, tamano original)
     fc.setZoom(1);
+    fc.setViewportTransform([1, 0, 0, 1, 0, 0]);
     fc.setDimensions({ width: canvasSize.w, height: canvasSize.h });
     fc.renderAll();
 
     const url = fc.toDataURL({ format: "png", multiplier: 2 });
 
-    // Restaurar
-    fc.setZoom(prevZoom);
+    // Restaurar exactamente como estaba
     fc.setDimensions({ width: prevW, height: prevH });
+    fc.setZoom(prevZoom);
+    fc.setViewportTransform(prevVpt as [number, number, number, number, number, number]);
     fc.renderAll();
 
     const a = document.createElement("a");
@@ -332,18 +483,18 @@ export default function MobileEditor({ templateId, formatId }: Props) {
         </button>
       </header>
 
-      {/* ═══ CANVAS AREA ══════════════════════════════════════════════════ */}
-      <div className="flex-1 overflow-hidden flex items-center justify-center p-2">
+      {/* ═══ CANVAS AREA (sesion 3: ocupa toda el area disponible) ════════ */}
+      <div className="flex-1 overflow-hidden flex items-center justify-center p-2 relative">
         <div
           ref={wrapperRef}
-          className="relative shadow-2xl shadow-black/70 bg-[#1a1a2e] rounded-sm"
+          className="relative shadow-2xl shadow-black/70 bg-[#1a1a2e] rounded-sm overflow-hidden"
           style={{
-            width: canvasSize.w * scale,
-            height: canvasSize.h * scale,
+            width: canvasArea.w,
+            height: canvasArea.h,
           }}
         >
-          {/* Canvas dimensionado al tamano visual final - touch funciona nativo
-              La calidad de export se mantiene con multiplier al exportar */}
+          {/* Canvas DOM ocupa todo el wrapper. El flyer interno se posiciona
+              y escala con setZoom + setViewportTransform (gestionado por gestures). */}
           <canvas ref={canvasRef}/>
 
           {!loaded && (
@@ -352,6 +503,19 @@ export default function MobileEditor({ templateId, formatId }: Props) {
             </div>
           )}
         </div>
+
+        {/* Boton flotante RESET ZOOM (visible solo cuando hay zoom o pan diferente al inicial) */}
+        {loaded && (
+          <button
+            onClick={resetView}
+            aria-label="Ajustar a pantalla"
+            className="absolute bottom-3 right-3 w-11 h-11 rounded-full bg-[#1a1a2e]/90 backdrop-blur border border-white/15 text-gray-300 active:bg-purple-500/30 active:text-purple-200 flex items-center justify-center shadow-lg z-10"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 7V3h4M21 7V3h-4M3 17v4h4M21 17v4h-4"/>
+            </svg>
+          </button>
+        )}
       </div>
 
       {/* ═══ BOTTOM TOOLBAR ════════════════════════════════════════════════ */}
