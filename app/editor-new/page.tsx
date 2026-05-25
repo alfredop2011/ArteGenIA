@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import GeneratedEditor from "@/components/editor/GeneratedEditor";
+import MobileEditorWarning from "@/components/editor/MobileEditorWarning";
 
 type GeneratedData = {
   eventName: string;
@@ -47,5 +48,5 @@ export default function EditorNewPage() {
   }
 
   if (!data) return null;
-  return <GeneratedEditor />;
+  return <MobileEditorWarning><GeneratedEditor /></MobileEditorWarning>;
 }

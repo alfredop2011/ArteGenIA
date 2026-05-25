@@ -1,6 +1,7 @@
 import Link from "next/link";
 import GeneratedEditor from "@/components/editor/GeneratedEditor";
 import GeneratedEditorWrapper from "@/components/editor/GeneratedEditorWrapper";
+import MobileEditorWarning from "@/components/editor/MobileEditorWarning";
 import { templates } from "@/data/templates";
 import { isValidFormatId, type FormatId } from "@/data/formats";
 
@@ -17,11 +18,11 @@ export default async function EditorPage({ params, searchParams }: EditorPagePro
     const sp = await searchParams;
 
     // Modo "generated" — flyer generado desde el wizard, lee localStorage
-    if (id === "generated") return <GeneratedEditorWrapper />;
+    if (id === "generated") return <MobileEditorWarning><GeneratedEditorWrapper /></MobileEditorWarning>;
 
     // Modo "proyecto guardado" — id es un UUID de Supabase
     if (UUID_RE.test(id)) {
-        return <GeneratedEditor projectId={id} />;
+        return <MobileEditorWarning><GeneratedEditor projectId={id} /></MobileEditorWarning>;
     }
 
     // Modo plantilla — id numérico, busca en data/templates.ts
@@ -46,5 +47,5 @@ export default async function EditorPage({ params, searchParams }: EditorPagePro
             ? (requestedFormat as FormatId)
             : undefined;
 
-    return <GeneratedEditor templateId={templateId} formatId={formatId} />;
+    return <MobileEditorWarning><GeneratedEditor templateId={templateId} formatId={formatId} /></MobileEditorWarning>;
 }

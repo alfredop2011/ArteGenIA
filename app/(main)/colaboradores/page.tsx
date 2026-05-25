@@ -79,16 +79,16 @@ export default function CollaboratorsPage() {
   }), [collaborators]);
 
   return (
-    <div className="min-h-screen px-6 py-8 max-w-5xl mx-auto">
+    <div className="min-h-screen px-3 sm:px-6 py-4 sm:py-8 max-w-5xl mx-auto">
       {/* Header */}
-      <div className="flex items-start justify-between mb-8 gap-4 flex-wrap">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-5 sm:mb-8 gap-3">
         <div>
-          <h1 className="text-3xl font-black text-white mb-1">Colaboradores</h1>
-          <p className="text-sm text-gray-400">Personas y marcas que aparecen en tus flyers</p>
+          <h1 className="text-2xl sm:text-3xl font-black text-white mb-1">Colaboradores</h1>
+          <p className="text-xs sm:text-sm text-gray-400">Personas y marcas que aparecen en tus flyers</p>
         </div>
         <button
           onClick={() => setInviteModalOpen(true)}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white transition-all hover:scale-[1.02]"
+          className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white transition-all hover:scale-[1.02] w-full sm:w-auto"
           style={{
             background: "linear-gradient(135deg, #7c3aed, #c026d3)",
             boxShadow: "0 0 25px rgba(168,85,247,0.40)",
@@ -99,8 +99,8 @@ export default function CollaboratorsPage() {
         </button>
       </div>
 
-      {/* Tabs */}
-      <div className="flex items-center gap-1 mb-5 p-1 bg-white/[0.03] border border-white/5 rounded-xl w-fit">
+      {/* Tabs - en mobile ocupan todo el ancho */}
+      <div className="flex items-center gap-1 mb-4 sm:mb-5 p-1 bg-white/[0.03] border border-white/5 rounded-xl w-full sm:w-fit">
         <TabButton active={activeTab === "person"} onClick={() => setActiveTab("person")}>
           <Users size={14} strokeWidth={2} />
           Personas <span className="text-gray-500 font-normal">· {counts.person}</span>
@@ -112,8 +112,8 @@ export default function CollaboratorsPage() {
       </div>
 
       {/* Toolbar: buscador + sort */}
-      <div className="flex gap-2 mb-5 flex-wrap">
-        <div className="flex-1 min-w-[200px] relative">
+      <div className="flex gap-2 mb-4 sm:mb-5 flex-wrap">
+        <div className="flex-1 min-w-0 relative">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-600" />
           <input
             value={query}
@@ -124,10 +124,11 @@ export default function CollaboratorsPage() {
         </div>
         <button
           onClick={() => setSort(s => s === "recent" ? "alpha" : "recent")}
-          className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-gray-300 bg-white/[0.04] border border-white/10 hover:bg-white/[0.08] transition-colors"
+          className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-2.5 rounded-xl text-xs font-semibold text-gray-300 bg-white/[0.04] border border-white/10 hover:bg-white/[0.08] transition-colors shrink-0"
         >
           <ArrowUpDown size={13} strokeWidth={2} />
-          {sort === "recent" ? "Más recientes" : "Alfabético"}
+          <span className="hidden xs:inline">{sort === "recent" ? "Más recientes" : "Alfabético"}</span>
+          <span className="xs:hidden">{sort === "recent" ? "Recientes" : "A-Z"}</span>
         </button>
       </div>
 
