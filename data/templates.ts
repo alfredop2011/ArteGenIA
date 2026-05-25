@@ -390,14 +390,14 @@ export const templates: Template[] = [
             { format: "portrait", width: 1080, height: 1350, layers: [
             { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 2713, height: 3375, fill: "#0D0D0D", selectable: false },
             { id: "stripes", type: "shape-pattern", shape: "rect", x: 1683, y: -150, width: 55, height: 850, fill: "#F5C518", count: 6, offsetX: 38, angle: -15 },
-            { id: "studio-bg", type: "shape", shape: "rect", x: 121, y: 130, width: 1306, height: 140, fill: "#F5C518", selectable: false },
-            { id: "studio-name", type: "text", text: "NOMBRE DEL ESTUDIO", x: 201, y: 150, width: 1206, fontSize: 70, fontFamily: "Montserrat, sans-serif", color: "#0D0D0D", fontWeight: "800", textAlign: "left", charSpacing: 20 },
-            { id: "title1", type: "text", text: "DANCE", x: 121, y: 370, width: 2461, fontSize: 502, fontFamily: "Anton, Impact, sans-serif", color: "#FFFFFF", fontWeight: "900", textAlign: "left", charSpacing: -8 },
-            { id: "title2", type: "text", text: "CLASS", x: 121, y: 850, width: 2461, fontSize: 502, fontFamily: "Anton, Impact, sans-serif", color: "transparent", stroke: "#F5C518", strokeWidth: 10, fontWeight: "900", textAlign: "left", charSpacing: -8 },
-            { id: "description", type: "text", text: "Encuentra la libertad en el movimiento.\nÚnete a nuestra clase de baile.", x: 121, y: 1450, width: 1206, fontSize: 75, fontFamily: "Montserrat, sans-serif", color: "#FFFFFF", fontWeight: "400", textAlign: "left", lineHeight: 1.4 },
-            { id: "price-bg", type: "shape", shape: "rect", x: 121, y: 1800, width: 553, height: 250, fill: "#F5C518", selectable: false },
-            { id: "price", type: "text", text: "$75", x: 201, y: 1825, width: 502, fontSize: 131, fontFamily: "Anton, Impact, sans-serif", color: "#0D0D0D", fontWeight: "900", textAlign: "left" },
-            { id: "price-label", type: "text", text: "/ PERSONA", x: 201, y: 1975, width: 502, fontSize: 45, fontFamily: "Montserrat, sans-serif", color: "#0D0D0D", fontWeight: "600", textAlign: "left" },
+            { id: "studio-bg", type: "shape", shape: "rect", x: 110, y: 130, width: 1306, height: 140, fill: "#F5C518", selectable: true },
+            { id: "studio-name", type: "text", text: "NOMBRE DEL ESTUDIO", x: 120, y: 150, width: 900, fontSize: 70, fontFamily: "Montserrat, sans-serif", color: "#0D0D0D", fontWeight: "800", textAlign: "left", charSpacing: 20 },
+            { id: "title1", type: "text", text: "CLASES DE", x: 121, y: 370, width: 800, fontSize: 180, fontFamily: "Anton, Impact, sans-serif", color: "#FFFFFF", fontWeight: "900", textAlign: "left", charSpacing: -8 },
+            { id: "title2", type: "text", text: "BAILE", x: 600, y: 550, width: 400, fontSize: 150, fontFamily: "Anton, Impact, sans-serif", color: "transparent", stroke: "#F5C518", strokeWidth: 10, fontWeight: "900", textAlign: "left", charSpacing: -8 },
+            { id: "description", type: "text", text: "Encuentra la libertad en el movimiento.\nÚnete a nuestra clase de baile.", x: 121, y: 700, width: 900, fontSize: 30, fontFamily: "Montserrat, sans-serif", color: "#FFFFFF", fontWeight: "400", textAlign: "left", lineHeight: 1.4 },
+            { id: "price-bg", type: "shape", shape: "rect", x: 0, y: 800, width: 450, height: 125, fill: "#F5C518", selectable: false },
+            { id: "price", type: "text", text: "75€", x: 201, y: 825, width: 200, fontSize: 60, fontFamily: "Anton, Impact, sans-serif", color: "#0D0D0D", fontWeight: "900", textAlign: "left" },
+            { id: "price-label", type: "text", text: "/ PERSONA", x: 180, y: 850, width: 450, fontSize: 35, fontFamily: "Montserrat, sans-serif", color: "#0D0D0D", fontWeight: "600", textAlign: "left" },
             { id: "schedule-bg", type: "shape", shape: "rect", x: 723, y: 1800, width: 854, height: 250, fill: "#F5C518", selectable: false },
             { id: "schedule", type: "text", text: "TODOS LOS DOMINGOS", x: 774, y: 1820, width: 804, fontSize: 55, fontFamily: "Montserrat, sans-serif", color: "#0D0D0D", fontWeight: "700", textAlign: "left" },
             { id: "time", type: "text", text: "9:00 AM", x: 774, y: 1905, width: 804, fontSize: 111, fontFamily: "Anton, Impact, sans-serif", color: "#0D0D0D", fontWeight: "900", textAlign: "left" },
@@ -940,7 +940,7 @@ export const templates: Template[] = [
                 // ── FONDO base negro ──────────────────────────────────────
                 { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1350, fill: "#080404", selectable: false },
                 // FOTO ambiente: concierto rock con luces (Unsplash, libre comercial)
-                { id: "bg-photo", type: "image", src: "https://images.unsplash.com/photo-1501386761578-eac5c94b800a?q=80&w=1400", x: 0, y: 0, scaleX: 0.9, scaleY: 0.9, opacity: 0.45 },
+                { id: "bg-photo", type: "image", src: "https://images.unsplash.com/photo-1501386761578-eac5c94b800a?q=80&w=1400", x: 0, y: 10, scaleX: 1.90, scaleY: 1.90, opacity: 0.45 },
                 // Tinte rojo sobre toda la composicion (color grading)
                 { id: "tint-red", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1350, fill: "rgba(139,0,15,0.55)", selectable: false },
 
@@ -955,7 +955,7 @@ export const templates: Template[] = [
                 { id: "chip-label", type: "text", text: "EN VIVO", x: 0, y: 67, width: 1080, fontSize: 22, fontFamily: "Bebas Neue, Impact, sans-serif", color: "#ffffff", textAlign: "center", charSpacing: 400 },
 
                 // ── ARTISTA (escala validada 0.72, posicion centrada) ─────
-                { id: "artist", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Musica/Cantantes/Cantante-%20(10).png", x: 540, y: 150, scaleX: 0.72, scaleY: 0.72, originX: "center", originY: "top", shadow: { color: "rgba(255,40,40,0.65)", blur: 70, offsetX: 0, offsetY: 0 } },
+                { id: "artist", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Musica/Cantantes/Cantante-%20(10).png", x: 540, y: 20, scaleX: 1.72, scaleY: 1.72, originX: "center", originY: "top", shadow: { color: "rgba(255,40,40,0.65)", blur: 70, offsetX: 0, offsetY: 0 } },
 
                 // ── VINETA inferior para legibilidad de textos ────────────
                 { id: "vignette", type: "shape", shape: "rect", x: 0, y: 870, width: 1080, height: 480, fill: "rgba(8,4,4,0.78)", selectable: false },
@@ -997,7 +997,7 @@ export const templates: Template[] = [
                 // ── FONDO base morado profundo ────────────────────────────
                 { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1350, fill: "#0a0418", selectable: false },
                 // FOTO ambiente: discoteca nocturna con luces (Unsplash)
-                { id: "bg-photo", type: "image", src: "https://images.unsplash.com/photo-1571266028243-d220c6a82b8d?q=80&w=1400", x: 0, y: 0, scaleX: 0.9, scaleY: 0.9, opacity: 0.38 },
+                { id: "bg-photo", type: "image", src: "https://images.unsplash.com/photo-1571266028243-d220c6a82b8d?q=80&w=1400", x: 0, y: 0, scaleX: 1.90, scaleY: 1.90, opacity: 0.38 },
                 // Tinte morado para color grading uniforme
                 { id: "tint-purple", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1350, fill: "rgba(76,29,149,0.55)", selectable: false },
 
@@ -1021,7 +1021,7 @@ export const templates: Template[] = [
                 { id: "chip-label", type: "text", text: "\u2022 SHOW \u00daNICO \u2022", x: 0, y: 70, width: 1080, fontSize: 18, fontFamily: "Anton, Impact, sans-serif", color: "#22d3ee", textAlign: "center", charSpacing: 500 },
 
                 // ── DJ (escala validada 0.75) ─────────────────────────────
-                { id: "artist", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dj/Dj-2.png", x: 540, y: 160, scaleX: 0.75, scaleY: 0.75, originX: "center", originY: "top", shadow: { color: "rgba(236,72,153,0.85)", blur: 80, offsetX: 0, offsetY: 0 } },
+                { id: "artist", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dj/Dj-2.png", x: 540, y: 160, scaleX: 1.7, scaleY: 1.7, originX: "center", originY: "top", shadow: { color: "rgba(236,72,153,0.85)", blur: 80, offsetX: 0, offsetY: 0 } },
 
                 // ── VINETA inferior para legibilidad ──────────────────────
                 { id: "vignette", type: "shape", shape: "rect", x: 0, y: 880, width: 1080, height: 470, fill: "rgba(10,4,24,0.78)", selectable: false },
@@ -1065,7 +1065,7 @@ export const templates: Template[] = [
                 { id: "overlay-bottom", type: "shape", shape: "rect", x: 0, y: 850, width: 1080, height: 500, fill: "rgba(10,3,5,0.7)", selectable: false },
 
                 // ARTISTA principal (cantante 6)
-                { id: "artist", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Musica/Cantantes/Cantante-%20(14).png", x: 540, y: 170, scaleX: 0.70, scaleY: 0.70, originX: "center", originY: "top", shadow: { color: "rgba(217,165,89,0.5)", blur: 50, offsetX: 0, offsetY: 0 } },
+                { id: "artist", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Musica/Cantantes/Cantante-%20(14).png", x: 540, y: 0, scaleX: 1.70, scaleY: 1.70, originX: "center", originY: "top", shadow: { color: "rgba(217,165,89,0.5)", blur: 50, offsetX: 0, offsetY: 0 } },
 
                 // Decoracion oro - lineas finas arriba y abajo del titulo
                 { id: "ornament-top", type: "shape", shape: "rect", x: 340, y: 905, width: 400, height: 1, fill: "#d4a058", selectable: false },
@@ -1110,7 +1110,7 @@ export const templates: Template[] = [
                 { id: "fest-name", type: "text", text: "S U M M E R   M U S I C   F E S T", x: 0, y: 40, width: 1080, fontSize: 28, fontFamily: "Anton, Impact, sans-serif", color: "#fbbf24", textAlign: "center", charSpacing: 800 },
 
                 // GRUPO principal centrado (grupo 7)
-                { id: "band", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Musica/Grupos-musica/Grupos-%20(3).png", x: 540, y: 200, scaleX: 0.68, scaleY: 0.68, originX: "center", originY: "top", shadow: { color: "rgba(251,191,36,0.5)", blur: 50, offsetX: 0, offsetY: 0 } },
+                { id: "band", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Musica/Grupos-musica/Grupos-%20(3).png", x: 540, y: 200, scaleX: 1.68, scaleY: 1.68, originX: "center", originY: "top", shadow: { color: "rgba(251,191,36,0.5)", blur: 50, offsetX: 0, offsetY: 0 } },
 
                 // FECHA grande
                 { id: "date-big", type: "text", text: "26 \u00b7 27 \u00b7 28", x: 0, y: 770, width: 1080, fontSize: 110, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "center", charSpacing: 200 },
@@ -1155,7 +1155,7 @@ export const templates: Template[] = [
                 { id: "stage-light-center", type: "shape", shape: "circle", x: 240, y: 200, width: 600, height: 600, fill: "rgba(255,255,255,0.15)", opacity: 0.5, selectable: false },
 
                 // GRUPO (grupo 8)
-                { id: "band", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Musica/Grupos-musica/Grupos-%20(8).png", x: 540, y: 170, scaleX: 0.72, scaleY: 0.72, originX: "center", originY: "top", shadow: { color: "rgba(96,165,250,0.5)", blur: 55, offsetX: 0, offsetY: 0 } },
+                { id: "band", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Musica/Grupos-musica/Grupos-%20(8).png", x: 540, y: 170, scaleX: 1.72, scaleY: 1.72, originX: "center", originY: "top", shadow: { color: "rgba(96,165,250,0.5)", blur: 55, offsetX: 0, offsetY: 0 } },
 
                 // TITULO banda (mock)
                 { id: "band-name", type: "text", text: "LOS DEL VIEJO TREN", x: 0, y: 745, width: 1080, fontSize: 65, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "center", charSpacing: 100 },
@@ -1219,7 +1219,7 @@ export const templates: Template[] = [
                 { id: "side-label", type: "text", text: "AN EXCLUSIVE EVENING  \u00b7  ONE NIGHT ONLY", x: 30, y: 670, width: 50, fontSize: 14, fontFamily: "Montserrat, sans-serif", color: "#d4a058", fontWeight: "600", textAlign: "left", angle: -90, charSpacing: 400 },
 
                 // GRUPO (grupo 3) - centrado mas alto
-                { id: "band", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Musica/Grupos-musica/Grupos-%20(7).png", x: 540, y: 180, scaleX: 0.68, scaleY: 0.68, originX: "center", originY: "top", shadow: { color: "rgba(217,165,89,0.45)", blur: 45, offsetX: 0, offsetY: 0 } },
+                { id: "band", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Musica/Grupos-musica/Grupos-%20(7).png", x: 540, y: 180, scaleX: 2.0, scaleY: 2.0, originX: "center", originY: "top", shadow: { color: "rgba(217,165,89,0.45)", blur: 45, offsetX: 0, offsetY: 0 } },
 
                 // Ornamento sup
                 { id: "orn-top-left", type: "shape", shape: "rect", x: 270, y: 800, width: 220, height: 1, fill: "#d4a058", selectable: false },
