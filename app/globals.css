@@ -49,12 +49,3 @@ body {
     -webkit-tap-highlight-color: transparent;
   }
 }
-
-/* Utility scrollbar-hide para carouseles/scrolls horizontales en mobile */
-.scrollbar-hide {
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-.scrollbar-hide::-webkit-scrollbar {
-  display: none;
-}

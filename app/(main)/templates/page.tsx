@@ -73,6 +73,7 @@ export default function TemplatesPage() {
     const [activeTopFilter, setActiveTopFilter] = useState("Todas");
     const [searchQuery, setSearchQuery] = useState("");
     const [modalTemplate, setModalTemplate] = useState<Template | null>(null);
+    const [showSidebarMobile, setShowSidebarMobile] = useState(false);
 
     const toggleAudience = (id: AudienceId) => {
         setActiveAudiences(prev =>
@@ -142,11 +143,33 @@ export default function TemplatesPage() {
     };
 
     return (
-        <div className="flex h-[calc(100vh-56px)]">
-            {/* Sidebar */}
-            <aside className="w-64 shrink-0 border-r border-white/[0.06] bg-[#0c0c12] overflow-y-auto p-4 flex flex-col gap-5">
-                <div>
+        <div className="flex h-[calc(100vh-56px)] md:h-[calc(100vh-56px)]">
+            {/* Overlay sidebar mobile */}
+            {showSidebarMobile && (
+                <div
+                    onClick={() => setShowSidebarMobile(false)}
+                    className="md:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
+                />
+            )}
+
+            {/* Sidebar - DESKTOP: fijo lateral. MOBILE: drawer deslizable desde izq */}
+            <aside className={`
+                ${showSidebarMobile ? "translate-x-0" : "-translate-x-full"} md:translate-x-0
+                fixed md:static inset-y-0 left-0 top-14 md:top-0
+                z-50 md:z-auto
+                w-72 md:w-64 shrink-0
+                border-r border-white/[0.06] bg-[#0c0c12]
+                overflow-y-auto p-4 flex flex-col gap-5
+                transition-transform duration-300 ease-out
+            `}>
+                <div className="flex items-center justify-between md:block">
                     <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">Filtros</h3>
+                    {/* Boton cerrar drawer SOLO MOBILE */}
+                    <button onClick={() => setShowSidebarMobile(false)} className="md:hidden text-gray-400 active:text-white mb-3">
+                        <span className="text-xl leading-none">×</span>
+                    </button>
+                </div>
+                <div>
                     <div className="relative">
                         <Search size={16} strokeWidth={1.8} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
                         <input
@@ -247,21 +270,31 @@ export default function TemplatesPage() {
 
             {/* Contenido principal */}
             <div className="flex-1 overflow-y-auto">
-                <div className="p-6">
-                    <div className="flex items-start justify-between mb-6">
-                        <div>
-                            <h1 className="text-2xl font-bold text-white">Plantillas</h1>
-                            <p className="text-sm text-gray-500 mt-1">
+                <div className="p-3 sm:p-6">
+                    <div className="flex items-start justify-between mb-4 sm:mb-6 gap-3">
+                        <div className="min-w-0">
+                            <h1 className="text-xl sm:text-2xl font-bold text-white">Plantillas</h1>
+                            <p className="text-xs sm:text-sm text-gray-500 mt-1 truncate">
                                 {activeCategory === "todas"
                                     ? "Elige una plantilla lista para editar"
                                     : `Explorando: ${CATEGORIES.find(c => c.id === activeCategory)?.label}`}
                             </p>
                         </div>
-                        <select className="bg-white/[0.05] border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-gray-300 outline-none">
-                            <option className="bg-[#1a1a2e]">Más recientes</option>
-                            <option className="bg-[#1a1a2e]">Más populares</option>
-                            <option className="bg-[#1a1a2e]">Premium primero</option>
-                        </select>
+                        <div className="flex items-center gap-2 shrink-0">
+                            {/* Boton Filtros - SOLO MOBILE */}
+                            <button
+                                onClick={() => setShowSidebarMobile(true)}
+                                className="md:hidden flex items-center gap-1.5 bg-white/[0.05] border border-white/[0.08] rounded-xl px-3 py-2 text-xs font-medium text-gray-300 active:bg-white/10"
+                            >
+                                <SlidersHorizontal size={14} strokeWidth={2} />
+                                Filtros
+                            </button>
+                            <select className="hidden sm:block bg-white/[0.05] border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-gray-300 outline-none">
+                                <option className="bg-[#1a1a2e]">Más recientes</option>
+                                <option className="bg-[#1a1a2e]">Más populares</option>
+                                <option className="bg-[#1a1a2e]">Premium primero</option>
+                            </select>
+                        </div>
                     </div>
 
                     {/* ─── Selector de formato premium con parallax ─── */}
@@ -272,7 +305,7 @@ export default function TemplatesPage() {
                     />
 
                     {/* Filtros rápidos */}
-                    <div className="flex flex-wrap gap-2 mb-6">
+                    <div className="flex flex-wrap gap-2 mb-4 sm:mb-6">
                         {TOP_FILTERS.map((filter) => {
                             const isActive = activeTopFilter === filter;
                             const isPremium = filter === "Premium";
@@ -294,7 +327,7 @@ export default function TemplatesPage() {
                         })}
                     </div>
 
-                    {/* Grid */}
+                    {/* Grid - 2 cols mobile, 2 sm, 3 lg, 4 xl */}
                     {filtered.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-24 text-gray-600">
                             <SearchX size={40} strokeWidth={1.5} className="mb-4 text-gray-700" />
@@ -305,7 +338,7 @@ export default function TemplatesPage() {
                             </button>
                         </div>
                     ) : (
-                        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                        <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                             {filtered.map((template) => (
                                 <article
                                     key={`${template.id}-${activeFormat}`}
