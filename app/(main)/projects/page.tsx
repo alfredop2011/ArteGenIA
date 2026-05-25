@@ -36,69 +36,74 @@ export default function ProjectsPage() {
     );
 
     return (
-        <div className="max-w-6xl mx-auto px-6 py-10">
-            <div className="flex items-center justify-between mb-8">
+        <div className="max-w-6xl mx-auto px-3 sm:px-6 py-4 sm:py-10">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-5 sm:mb-8 gap-3">
                 <div>
-                    <h1 className="text-3xl font-black text-white mb-1">Mis flyers</h1>
-                    <p className="text-gray-400 text-sm">{projects.length} proyecto{projects.length !== 1 ? "s" : ""} guardado{projects.length !== 1 ? "s" : ""}</p>
+                    <h1 className="text-2xl sm:text-3xl font-black text-white mb-1">Mis flyers</h1>
+                    <p className="text-gray-400 text-xs sm:text-sm">{projects.length} proyecto{projects.length !== 1 ? "s" : ""} guardado{projects.length !== 1 ? "s" : ""}</p>
                 </div>
-                <Link href="/templates" className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-sm transition-all hover:scale-105">
+                <Link href="/templates" className="inline-flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-sm transition-all hover:scale-105 w-full sm:w-auto">
                     <Plus size={16} strokeWidth={2.4} />
                     Nuevo flyer
                 </Link>
             </div>
 
             {loading && (
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
                     {[...Array(4)].map((_, i) => <div key={i} className="aspect-[3/4] rounded-2xl bg-white/5 animate-pulse" />)}
                 </div>
             )}
 
             {!loading && projects.length === 0 && (
-                <div className="flex flex-col items-center justify-center py-24 text-center">
+                <div className="flex flex-col items-center justify-center py-16 sm:py-24 text-center px-4">
                     <div className="w-20 h-20 mb-4 rounded-2xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-300">
                         <Palette size={36} strokeWidth={1.6} />
                     </div>
-                    <h3 className="text-xl font-bold mb-2">Aún no tienes flyers guardados</h3>
-                    <p className="text-gray-400 mb-6">Crea tu primer flyer y guárdalo para acceder desde cualquier dispositivo.</p>
+                    <h3 className="text-lg sm:text-xl font-bold mb-2">Aún no tienes flyers guardados</h3>
+                    <p className="text-gray-400 text-sm mb-6">Crea tu primer flyer y guárdalo para acceder desde cualquier dispositivo.</p>
                     <Link href="/templates" className="px-6 py-3 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold">Explorar plantillas</Link>
                 </div>
             )}
 
             {!loading && projects.length > 0 && (
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
                     {projects.map(project => (
                         <div key={project.id} className="group relative rounded-2xl border border-white/10 bg-white/[0.03] overflow-hidden hover:border-purple-500/30 transition-all">
-                            <div className="aspect-[3/4] bg-gradient-to-br from-purple-900/40 to-pink-900/20 flex items-center justify-center overflow-hidden">
-                                {project.thumbnail_url ? (
-                                    // eslint-disable-next-line @next/next/no-img-element
-                                    <img src={project.thumbnail_url} alt={project.title} className="w-full h-full object-cover" />
+                            <Link href={`/editor/${project.id}`} className="block">
+                                <div className="aspect-[3/4] bg-gradient-to-br from-purple-900/40 to-pink-900/20 flex items-center justify-center overflow-hidden">
+                                    {project.thumbnail_url ? (
+                                        // eslint-disable-next-line @next/next/no-img-element
+                                        <img src={project.thumbnail_url} alt={project.title} className="w-full h-full object-cover" />
+                                    ) : (
+                                        <Palette size={40} strokeWidth={1.4} className="text-purple-300/60" />
+                                    )}
+                                </div>
+                                <div className="p-2 sm:p-3">
+                                    <h3 className="text-white font-bold text-xs sm:text-sm truncate">{project.title}</h3>
+                                    <p className="text-gray-500 text-[10px] sm:text-xs mt-0.5">
+                                        {new Date(project.updated_at).toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" })}
+                                    </p>
+                                </div>
+                            </Link>
+                            {/* Boton eliminar - SIEMPRE visible en mobile, hover en desktop */}
+                            <button
+                                onClick={() => handleDelete(project.id)}
+                                disabled={deleting === project.id}
+                                aria-label="Eliminar"
+                                className="absolute top-2 right-2 w-8 h-8 rounded-lg bg-black/60 backdrop-blur text-red-400 hover:bg-red-900/80 hover:text-red-300 transition-all flex items-center justify-center md:opacity-0 md:group-hover:opacity-100 disabled:opacity-50"
+                            >
+                                {deleting === project.id ? (
+                                    <span className="w-3 h-3 border-2 border-red-400/30 border-t-red-400 rounded-full animate-spin" />
                                 ) : (
-                                    <Palette size={40} strokeWidth={1.4} className="text-purple-300/60" />
+                                    <Trash2 size={14} strokeWidth={1.8} />
                                 )}
-                            </div>
-                            <div className="p-3">
-                                <h3 className="text-white font-bold text-sm truncate">{project.title}</h3>
-                                <p className="text-gray-500 text-xs mt-0.5">
-                                    {new Date(project.updated_at).toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" })}
-                                </p>
-                            </div>
-                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-3">
-                                <Link href={`/editor/${project.id}`} className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-sm font-bold">
+                            </button>
+                            {/* Overlay edit - SOLO DESKTOP en hover */}
+                            <div className="hidden md:flex absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex-col items-center justify-center gap-3 pointer-events-none">
+                                <Link href={`/editor/${project.id}`} className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-sm font-bold pointer-events-auto">
                                     <Pencil size={14} strokeWidth={2} />
                                     Editar
                                 </Link>
-                                <button onClick={() => handleDelete(project.id)} disabled={deleting === project.id}
-                                    className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-red-900/60 hover:bg-red-900 text-red-400 text-sm font-bold disabled:opacity-50">
-                                    {deleting === project.id ? (
-                                        "Eliminando..."
-                                    ) : (
-                                        <>
-                                            <Trash2 size={14} strokeWidth={1.8} />
-                                            Eliminar
-                                        </>
-                                    )}
-                                </button>
                             </div>
                         </div>
                     ))}

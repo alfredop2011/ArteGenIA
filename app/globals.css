@@ -28,3 +28,33 @@ body {
   width: 100%;
   -webkit-text-size-adjust: 100%; /* Evita que iOS ajuste tamano texto en landscape */
 }
+
+/* Safe area iOS (notch + barra inferior) para bottom nav */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Animacion slide-up del drawer mobile "Mas" */
+@keyframes slide-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+.animate-slide-up {
+  animation: slide-up 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Aumenta zona tactil de botones en mobile (Apple HIG: minimo 44x44px) */
+@media (max-width: 768px) {
+  button, a {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+/* Utility scrollbar-hide para carouseles/scrolls horizontales en mobile */
+.scrollbar-hide {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}

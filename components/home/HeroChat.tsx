@@ -60,33 +60,33 @@ export default function HeroChat() {
                     backdropFilter: "blur(20px)",
                 }}>
                 {/* Input row */}
-                <div className="relative px-5 pt-3 pb-2">
+                <div className="relative px-3 sm:px-5 pt-3 pb-2">
                     <textarea
                         value={prompt}
                         onChange={e => setPrompt(e.target.value)}
                         rows={1}
-                        className="w-full bg-transparent text-white text-base outline-none resize-none pr-40"
+                        className="w-full bg-transparent text-white text-sm sm:text-base outline-none resize-none pr-12 sm:pr-40"
                         onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); generate(); } }}
                     />
                     {!prompt && (
-                        <div className="absolute top-3 left-5 text-gray-500 text-base pointer-events-none select-none pr-40">
+                        <div className="absolute top-3 left-3 sm:left-5 text-gray-500 text-sm sm:text-base pointer-events-none select-none pr-12 sm:pr-40 truncate">
                             {text}<span className="inline-block w-0.5 h-4 bg-purple-400 ml-0.5 animate-pulse align-middle" />
                         </div>
                     )}
                     <button onClick={() => generate()} disabled={generating || !prompt.trim()}
-                        className={`absolute right-4 top-2.5 flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${prompt.trim() && !generating ? "text-white hover:scale-105" : "bg-white/5 text-gray-600 cursor-not-allowed"}`}
+                        className={`absolute right-2 sm:right-4 top-2 sm:top-2.5 flex items-center gap-2 px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${prompt.trim() && !generating ? "text-white hover:scale-105" : "bg-white/5 text-gray-600 cursor-not-allowed"}`}
                         style={prompt.trim() && !generating ? {
                             background: "linear-gradient(135deg, #7c3aed, #c026d3, #d97706)",
                             boxShadow: "0 0 25px rgba(168,85,247,0.55), 0 4px 15px rgba(0,0,0,0.3)"
                         } : {}}>
                         {generating
-                            ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Generando...</>
-                            : <><Sparkles size={15} strokeWidth={2} />Generar flyer</>}
+                            ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /><span className="hidden sm:inline">Generando...</span></>
+                            : <><Sparkles size={15} strokeWidth={2} /><span className="hidden sm:inline">Generar flyer</span></>}
                     </button>
                 </div>
 
                 {/* Chips */}
-                <div className="px-5 pb-2 flex flex-wrap gap-1.5">
+                <div className="px-3 sm:px-5 pb-2 flex flex-wrap gap-1.5">
                     {CHIPS.map(c => (
                         <button key={c} onClick={() => { setPrompt(c); generate(c); }}
                             className="text-xs px-2.5 py-0.5 rounded-full bg-white/5 hover:bg-purple-500/20 border border-white/10 hover:border-purple-500/30 text-gray-400 hover:text-white transition-all">
@@ -95,12 +95,12 @@ export default function HeroChat() {
                     ))}
                 </div>
 
-                {/* Quick options */}
-                <div className="border-t border-white/[0.06] px-5 py-2 flex items-center gap-6 overflow-x-auto">
+                {/* Quick options - scroll horizontal en mobile */}
+                <div className="border-t border-white/[0.06] px-3 sm:px-5 py-2 flex items-center gap-4 sm:gap-6 overflow-x-auto scrollbar-hide">
                     {QUICK.map(q => {
                         const Icon = q.icon;
                         return (
-                            <button key={q.label} className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-300 whitespace-nowrap transition-colors">
+                            <button key={q.label} className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-300 whitespace-nowrap transition-colors shrink-0">
                                 <Icon size={13} strokeWidth={1.8} />
                                 {q.label}
                             </button>

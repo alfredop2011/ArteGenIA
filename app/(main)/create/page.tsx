@@ -475,7 +475,7 @@ export default function CreatePage() {
   // ─── RENDER: CREATE — diseño HeroChat estilo home ──────────────────────────
 
   return (
-    <div className="min-h-[calc(100vh-56px)] bg-[#0e0e14] text-white flex flex-col items-center px-4 py-12">
+    <div className="min-h-[calc(100vh-56px)] bg-[#0e0e14] text-white flex flex-col items-center px-3 sm:px-4 py-6 sm:py-12">
       <div className="w-full max-w-5xl mx-auto">
 
         {/* Título estilo home */}
@@ -502,13 +502,13 @@ export default function CreatePage() {
           }}>
 
           {/* Input row */}
-          <div className="relative px-5 pt-3 pb-2">
+          <div className="relative px-3 sm:px-5 pt-3 pb-2">
             <textarea
               ref={textareaRef}
               value={prompt}
               onChange={e => handleTextareaChange(e.target.value)}
               rows={1}
-              className="w-full bg-transparent text-white text-base outline-none resize-none leading-relaxed"
+              className="w-full bg-transparent text-white text-sm sm:text-base outline-none resize-none leading-relaxed"
               onKeyDown={e => {
                 if (e.key === "Enter" && !e.shiftKey && !e.metaKey && !e.ctrlKey) {
                   e.preventDefault();
@@ -518,14 +518,14 @@ export default function CreatePage() {
               }}
             />
             {!prompt && (
-              <div className="absolute top-3 left-5 text-gray-500 text-base pointer-events-none select-none">
+              <div className="absolute top-3 left-3 sm:left-5 text-gray-500 text-sm sm:text-base pointer-events-none select-none">
                 {animatedText}<span className="inline-block w-0.5 h-4 bg-purple-400 ml-0.5 animate-pulse align-middle" />
               </div>
             )}
           </div>
 
           {/* Chips (se AÑADEN al prompt, no sustituyen) */}
-          <div className="px-5 pb-2 flex flex-wrap gap-1.5">
+          <div className="px-3 sm:px-5 pb-2 flex flex-wrap gap-1.5">
             {CHIPS.map(c => (
               <button key={c} onClick={() => appendChip(c)}
                 className="text-xs px-2.5 py-0.5 rounded-full bg-white/5 hover:bg-purple-500/20 border border-white/10 hover:border-purple-500/30 text-gray-400 hover:text-white transition-all">
@@ -535,7 +535,7 @@ export default function CreatePage() {
           </div>
 
           {/* Campos estructurados: Fecha, Hora, Lugar, Precio (con popover) */}
-          <div className="border-t border-white/[0.06] px-5 py-2 flex items-center gap-2 overflow-visible relative flex-wrap">
+          <div className="border-t border-white/[0.06] px-3 sm:px-5 py-2 flex items-center gap-2 overflow-visible relative flex-wrap">
 
             {/* === Chip 1: Fecha === */}
             <div className="relative">
