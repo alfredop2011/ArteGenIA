@@ -2,10 +2,10 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Canvas as FabricCanvas, type FabricObject } from "fabric";
+import { Canvas as FabricCanvas, type FabricObject, Textbox } from "fabric";
 import {
   ArrowLeft, Download, Layers, Type, Image as ImageIcon, Palette, MoreHorizontal,
-  Undo2, Redo2, Trash2,
+  Trash2, Bold, Italic, AlignLeft, AlignCenter, AlignRight, Check, X as XIcon,
 } from "lucide-react";
 import { templates, getVariant, type Template } from "@/data/templates";
 import type { FormatId } from "@/data/formats";
@@ -13,15 +13,17 @@ import { applyTemplateLayers } from "@/lib/fabricApplyTemplateLayers";
 
 // ════════════════════════════════════════════════════════════════════════════
 //  MobileEditor — editor mobile-first separado del desktop
-//  SESION 1 de 6-8 planificadas. Esta sesion entrega:
-//    - Esqueleto base (header / canvas / bottom toolbar)
-//    - Carga de plantilla desde data/templates.ts
-//    - Touch basico: tap selecciona, drag con dedo mueve, Fabric default
-//    - Bottom sheets vacios listos para llenar en sesiones siguientes
-//    - Export PNG funcional
-//  Pendientes proximas sesiones: pinch zoom, rotate, handles tactiles 40px,
-//    panel propiedades completo, edicion texto fullscreen, capas drag-reorder,
-//    selector colores/fuentes mobile, snapping, multi-select.
+//
+//  SESION 2 entrega (acumulado sobre V1):
+//    - Sheet "Texto" funcional: input + sliders fontSize/spacing + bold/italic
+//      + align + propiedades comunes
+//    - Sheet "Color" funcional: paleta tactil + native color picker
+//    - Auto-open sheet "Texto" al seleccionar capa de tipo texto
+//    - Doble tap en capa texto del canvas -> fullscreen editor con teclado iPhone
+//    - Funcion updateProp que aplica cambios a Fabric en tiempo real
+//
+//  Pendiente proximas sesiones: pinch zoom, rotate, handles tactiles 40px,
+//    drag-reorder capas, anadir texto/imagen, snapping, undo/redo.
 // ════════════════════════════════════════════════════════════════════════════
 
 type Props = {
@@ -52,6 +54,34 @@ export default function MobileEditor({ templateId, formatId }: Props) {
   const [selectedLayer, setSelectedLayer] = useState<LayerItem | null>(null);
   const [activeSheet, setActiveSheet] = useState<ToolId | null>(null);
   const [loaded, setLoaded] = useState(false);
+
+  // SESION 2: estado para edicion de texto
+  // textEditFullscreen: cuando true, modal pantalla completa con input + teclado
+  const [textEditFullscreen, setTextEditFullscreen] = useState(false);
+  const [tempText, setTempText] = useState(""); // buffer del texto en el modal fullscreen
+  // forceRerender: bump number para forzar re-render del sheet con valores nuevos
+  // tras cambiar prop del Fabric obj (Fabric muta in-place, React no detecta)
+  const [, forceRerender] = useState(0);
+  const bumpRender = useCallback(() => forceRerender(n => n + 1), []);
+
+  // Paleta de colores rapidos para el sheet Color (mobile-friendly tap)
+  const COLOR_PALETTE = [
+    "#ffffff", "#000000", "#9ca3af", "#6b7280",
+    "#fb923c", "#facc15", "#22c55e", "#22d3ee",
+    "#3b82f6", "#a855f7", "#ec4899", "#ef4444",
+    "#fef3c7", "#fed7aa", "#d8b4fe", "#fbcfe8",
+  ];
+
+  // Fuentes disponibles (las que el proyecto carga en layout.tsx)
+  const FONTS = [
+    { id: "Anton", label: "Anton" },
+    { id: "Bebas Neue", label: "Bebas Neue" },
+    { id: "Montserrat", label: "Montserrat" },
+    { id: "Playfair Display", label: "Playfair" },
+    { id: "Oswald", label: "Oswald" },
+    { id: "Cormorant Garamond", label: "Cormorant" },
+    { id: "Great Vibes", label: "Great Vibes" },
+  ];
 
   // ─── 1. Encontrar la plantilla ─────────────────────────────────────────
   useEffect(() => {
@@ -167,6 +197,66 @@ export default function MobileEditor({ templateId, formatId }: Props) {
       fc.off("selection:cleared", onDeselect);
     };
   }, [layers]);
+
+  // ─── 3d. Auto-abrir sheet contextual al seleccionar capa ────────────────
+  // Sesion 2: al seleccionar capa texto -> abre sheet "text" (propiedades).
+  // Al seleccionar imagen/shape -> abre sheet "color" (cambiar color/opacity).
+  useEffect(() => {
+    if (!selectedLayer) {
+      // Si se deselecciona, cerrar sheet si era contextual
+      if (activeSheet === "text" || activeSheet === "color") {
+        setActiveSheet(null);
+      }
+      return;
+    }
+    if (selectedLayer.type === "text") {
+      setActiveSheet("text");
+    }
+    // No autoabrir sheets para shape/image - menos invasivo
+    // El usuario puede tocar el boton "Color" del toolbar si quiere editar
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedLayer]);
+
+  // ─── 3e. Doble tap en capa texto -> modal fullscreen edit ───────────────
+  useEffect(() => {
+    const fc = fabricRef.current;
+    if (!fc) return;
+    const onDouble = (e: { target?: FabricObject }) => {
+      const target = e.target;
+      if (!target) return;
+      // Solo para textos (Textbox de Fabric)
+      const isText = target.type === "textbox" || target.type === "i-text" || target.type === "text";
+      if (!isText) return;
+      const t = target as unknown as { text: string };
+      setTempText(t.text ?? "");
+      setTextEditFullscreen(true);
+    };
+    fc.on("mouse:dblclick", onDouble);
+    return () => {
+      fc.off("mouse:dblclick", onDouble);
+    };
+  }, [loaded]);
+
+  // ─── 3f. updateProp - aplica cambio en la capa seleccionada en tiempo real
+  const updateProp = useCallback((prop: string, value: unknown) => {
+    const fc = fabricRef.current;
+    if (!fc || !selectedLayer) return;
+    const obj = selectedLayer.obj as FabricObject & Record<string, unknown>;
+    obj.set(prop, value);
+    obj.setCoords();
+    fc.requestRenderAll();
+    bumpRender();
+  }, [selectedLayer, bumpRender]);
+
+  // Aplica texto desde el modal fullscreen y cierra
+  const commitFullscreenText = useCallback(() => {
+    if (!selectedLayer || selectedLayer.type !== "text") {
+      setTextEditFullscreen(false);
+      return;
+    }
+    updateProp("text", tempText);
+    setTextEditFullscreen(false);
+  }, [selectedLayer, tempText, updateProp]);
 
   // ─── 4. Export PNG ─────────────────────────────────────────────────────
   const handleExport = useCallback(() => {
@@ -317,7 +407,7 @@ export default function MobileEditor({ templateId, formatId }: Props) {
               <button onClick={() => setActiveSheet(null)} className="text-gray-400 active:text-white text-xl leading-none w-8 h-8 flex items-center justify-center">×</button>
             </div>
 
-            {/* Content sheet - placeholder hasta sesion 2 */}
+            {/* Content sheet */}
             <div className="flex-1 overflow-y-auto px-4 py-4">
               {activeSheet === "layers" && (
                 <div className="space-y-1">
@@ -348,16 +438,295 @@ export default function MobileEditor({ templateId, formatId }: Props) {
                 </div>
               )}
 
-              {activeSheet !== "layers" && (
+              {/* ─── SHEET TEXTO (sesion 2) ────────────────────────────── */}
+              {activeSheet === "text" && selectedLayer && selectedLayer.type === "text" && (() => {
+                const obj = selectedLayer.obj as Textbox;
+                return (
+                  <div className="space-y-5">
+                    {/* Quick text edit */}
+                    <div>
+                      <label className="text-[10px] uppercase tracking-widest text-gray-500 font-semibold mb-1.5 block">Texto</label>
+                      <button
+                        onClick={() => { setTempText(obj.text ?? ""); setTextEditFullscreen(true); }}
+                        className="w-full bg-white/[0.06] border border-white/10 rounded-xl px-3 py-3 text-sm text-white text-left active:bg-white/[0.10] flex items-center justify-between gap-2"
+                      >
+                        <span className="truncate flex-1">{obj.text || <em className="text-gray-500">Vacío</em>}</span>
+                        <span className="text-[10px] text-purple-400 font-bold uppercase tracking-wider shrink-0">Editar</span>
+                      </button>
+                    </div>
+
+                    {/* Color */}
+                    <div>
+                      <label className="text-[10px] uppercase tracking-widest text-gray-500 font-semibold mb-2 block">Color</label>
+                      <div className="grid grid-cols-8 gap-1.5 mb-2">
+                        {COLOR_PALETTE.map(c => (
+                          <button
+                            key={c}
+                            onClick={() => updateProp("fill", c)}
+                            className={`aspect-square rounded-lg active:scale-90 transition-transform border-2 ${
+                              (obj.fill as string)?.toLowerCase() === c.toLowerCase() ? "border-white" : "border-white/10"
+                            }`}
+                            style={{ background: c }}
+                          />
+                        ))}
+                      </div>
+                      <label className="flex items-center gap-2 bg-white/[0.04] border border-white/10 rounded-xl px-3 py-2.5 active:bg-white/[0.08]">
+                        <span className="text-xs text-gray-400">Personalizado</span>
+                        <input
+                          type="color"
+                          value={typeof obj.fill === "string" ? obj.fill : "#ffffff"}
+                          onChange={e => updateProp("fill", e.target.value)}
+                          className="ml-auto w-8 h-8 rounded cursor-pointer border-0 bg-transparent"
+                          style={{ appearance: "none" }}
+                        />
+                      </label>
+                    </div>
+
+                    {/* Fuente */}
+                    <div>
+                      <label className="text-[10px] uppercase tracking-widest text-gray-500 font-semibold mb-2 block">Fuente</label>
+                      <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1 -mx-4 px-4">
+                        {FONTS.map(f => {
+                          const current = (obj.fontFamily ?? "").toString();
+                          const isActive = current.includes(f.id);
+                          return (
+                            <button
+                              key={f.id}
+                              onClick={() => updateProp("fontFamily", f.id)}
+                              className={`shrink-0 px-4 py-2 rounded-xl text-sm whitespace-nowrap transition-all ${
+                                isActive
+                                  ? "bg-purple-600/30 text-purple-200 border border-purple-500/40"
+                                  : "bg-white/[0.04] text-gray-300 border border-white/10 active:bg-white/[0.08]"
+                              }`}
+                              style={{ fontFamily: f.id }}
+                            >
+                              {f.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Tamano */}
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="text-[10px] uppercase tracking-widest text-gray-500 font-semibold">Tamaño</label>
+                        <span className="text-xs text-gray-400 tabular-nums">{Math.round((obj.fontSize as number) ?? 60)}px</span>
+                      </div>
+                      <input
+                        type="range"
+                        min={12}
+                        max={300}
+                        value={(obj.fontSize as number) ?? 60}
+                        onChange={e => updateProp("fontSize", Number(e.target.value))}
+                        className="w-full accent-purple-500"
+                      />
+                    </div>
+
+                    {/* Espaciado */}
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="text-[10px] uppercase tracking-widest text-gray-500 font-semibold">Espaciado</label>
+                        <span className="text-xs text-gray-400 tabular-nums">{Math.round((obj.charSpacing as number) ?? 0)}</span>
+                      </div>
+                      <input
+                        type="range"
+                        min={-100}
+                        max={1200}
+                        step={10}
+                        value={(obj.charSpacing as number) ?? 0}
+                        onChange={e => updateProp("charSpacing", Number(e.target.value))}
+                        className="w-full accent-purple-500"
+                      />
+                    </div>
+
+                    {/* Estilos: bold/italic + align */}
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => updateProp("fontWeight", obj.fontWeight === "bold" || obj.fontWeight === "700" ? "400" : "bold")}
+                        className={`flex-1 h-12 rounded-xl flex items-center justify-center transition-all ${
+                          obj.fontWeight === "bold" || obj.fontWeight === "700"
+                            ? "bg-purple-600/30 text-purple-200 border border-purple-500/40"
+                            : "bg-white/[0.04] text-gray-400 border border-white/10 active:bg-white/[0.08]"
+                        }`}
+                      >
+                        <Bold size={18} strokeWidth={2.5}/>
+                      </button>
+                      <button
+                        onClick={() => updateProp("fontStyle", obj.fontStyle === "italic" ? "normal" : "italic")}
+                        className={`flex-1 h-12 rounded-xl flex items-center justify-center transition-all ${
+                          obj.fontStyle === "italic"
+                            ? "bg-purple-600/30 text-purple-200 border border-purple-500/40"
+                            : "bg-white/[0.04] text-gray-400 border border-white/10 active:bg-white/[0.08]"
+                        }`}
+                      >
+                        <Italic size={18} strokeWidth={2.5}/>
+                      </button>
+                      <div className="w-px h-8 bg-white/10 mx-0.5"/>
+                      {(["left", "center", "right"] as const).map(align => {
+                        const Icon = align === "left" ? AlignLeft : align === "center" ? AlignCenter : AlignRight;
+                        const isActive = obj.textAlign === align;
+                        return (
+                          <button
+                            key={align}
+                            onClick={() => updateProp("textAlign", align)}
+                            className={`flex-1 h-12 rounded-xl flex items-center justify-center transition-all ${
+                              isActive
+                                ? "bg-purple-600/30 text-purple-200 border border-purple-500/40"
+                                : "bg-white/[0.04] text-gray-400 border border-white/10 active:bg-white/[0.08]"
+                            }`}
+                          >
+                            <Icon size={18} strokeWidth={2.5}/>
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Opacidad */}
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="text-[10px] uppercase tracking-widest text-gray-500 font-semibold">Opacidad</label>
+                        <span className="text-xs text-gray-400 tabular-nums">{Math.round(((obj.opacity as number) ?? 1) * 100)}%</span>
+                      </div>
+                      <input
+                        type="range"
+                        min={0}
+                        max={100}
+                        value={Math.round(((obj.opacity as number) ?? 1) * 100)}
+                        onChange={e => updateProp("opacity", Number(e.target.value) / 100)}
+                        className="w-full accent-purple-500"
+                      />
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* SHEET TEXTO sin seleccion - hint */}
+              {activeSheet === "text" && (!selectedLayer || selectedLayer.type !== "text") && (
+                <div className="text-center text-gray-500 text-sm py-12">
+                  <Type size={32} strokeWidth={1.5} className="mx-auto mb-3 text-gray-700"/>
+                  <p className="font-semibold text-gray-400 mb-2">Selecciona un texto</p>
+                  <p className="text-xs">Toca una capa de texto en el lienzo para editar su contenido, color y fuente.</p>
+                </div>
+              )}
+
+              {/* ─── SHEET COLOR (sesion 2) ────────────────────────────── */}
+              {activeSheet === "color" && selectedLayer && (() => {
+                const obj = selectedLayer.obj as FabricObject & { fill?: unknown; opacity?: number };
+                const currentColor = typeof obj.fill === "string" ? obj.fill : "#ffffff";
+                return (
+                  <div className="space-y-5">
+                    <div>
+                      <label className="text-[10px] uppercase tracking-widest text-gray-500 font-semibold mb-2 block">
+                        Color {selectedLayer.type === "text" ? "del texto" : selectedLayer.type === "image" ? "(no aplica a imagenes)" : "de relleno"}
+                      </label>
+                      {selectedLayer.type !== "image" && (
+                        <>
+                          <div className="grid grid-cols-8 gap-1.5 mb-2">
+                            {COLOR_PALETTE.map(c => (
+                              <button
+                                key={c}
+                                onClick={() => updateProp("fill", c)}
+                                className={`aspect-square rounded-lg active:scale-90 transition-transform border-2 ${
+                                  currentColor.toLowerCase() === c.toLowerCase() ? "border-white" : "border-white/10"
+                                }`}
+                                style={{ background: c }}
+                              />
+                            ))}
+                          </div>
+                          <label className="flex items-center gap-2 bg-white/[0.04] border border-white/10 rounded-xl px-3 py-2.5">
+                            <span className="text-xs text-gray-400">Personalizado</span>
+                            <input
+                              type="color"
+                              value={currentColor}
+                              onChange={e => updateProp("fill", e.target.value)}
+                              className="ml-auto w-8 h-8 rounded cursor-pointer border-0 bg-transparent"
+                              style={{ appearance: "none" }}
+                            />
+                          </label>
+                        </>
+                      )}
+                    </div>
+
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="text-[10px] uppercase tracking-widest text-gray-500 font-semibold">Opacidad</label>
+                        <span className="text-xs text-gray-400 tabular-nums">{Math.round(((obj.opacity as number) ?? 1) * 100)}%</span>
+                      </div>
+                      <input
+                        type="range"
+                        min={0}
+                        max={100}
+                        value={Math.round(((obj.opacity as number) ?? 1) * 100)}
+                        onChange={e => updateProp("opacity", Number(e.target.value) / 100)}
+                        className="w-full accent-purple-500"
+                      />
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* SHEET COLOR sin seleccion */}
+              {activeSheet === "color" && !selectedLayer && (
+                <div className="text-center text-gray-500 text-sm py-12">
+                  <Palette size={32} strokeWidth={1.5} className="mx-auto mb-3 text-gray-700"/>
+                  <p className="font-semibold text-gray-400 mb-2">Selecciona una capa</p>
+                  <p className="text-xs">Toca una capa en el lienzo para cambiar su color.</p>
+                </div>
+              )}
+
+              {/* SHEETS PENDIENTES: photo + more */}
+              {(activeSheet === "photo" || activeSheet === "more") && (
                 <div className="text-center text-gray-500 text-sm py-12">
                   <p className="font-semibold text-gray-400 mb-2">Próximamente</p>
-                  <p className="text-xs">Esta sección se completa en próximas sesiones.</p>
-                  <p className="text-xs mt-1">Por ahora puedes seleccionar capas tocándolas en el canvas y moverlas con el dedo.</p>
+                  <p className="text-xs">Esta sección se completa en próximas sesiones (subir foto, duplicar, mover capa, etc).</p>
                 </div>
               )}
             </div>
           </div>
         </>
+      )}
+
+      {/* ═══ FULLSCREEN TEXT EDIT MODAL (sesion 2) ════════════════════════
+          Se abre via doble tap en canvas OR boton "Editar" del sheet Texto.
+          Usa textarea nativo -> aprovecha teclado iPhone, autocompletado,
+          dictado por voz, etc.
+          ═══════════════════════════════════════════════════════════════════ */}
+      {textEditFullscreen && selectedLayer && selectedLayer.type === "text" && (
+        <div className="fixed inset-0 z-[60] bg-[#0a0a14] flex flex-col safe-area-bottom">
+          {/* Header */}
+          <div className="h-14 border-b border-white/10 flex items-center px-3 gap-2 bg-[#0e0e14]">
+            <button
+              onClick={() => setTextEditFullscreen(false)}
+              className="w-10 h-10 rounded-xl flex items-center justify-center text-gray-300 active:bg-white/10"
+              aria-label="Cancelar"
+            >
+              <XIcon size={20} strokeWidth={2}/>
+            </button>
+            <p className="flex-1 text-sm font-semibold text-white">Editar texto</p>
+            <button
+              onClick={commitFullscreenText}
+              className="px-4 py-2 rounded-xl bg-purple-600 active:bg-purple-700 text-white text-sm font-bold flex items-center gap-1.5"
+            >
+              <Check size={15} strokeWidth={2.5}/>
+              Aplicar
+            </button>
+          </div>
+
+          {/* Textarea fullscreen */}
+          <div className="flex-1 p-4">
+            <textarea
+              autoFocus
+              value={tempText}
+              onChange={e => setTempText(e.target.value)}
+              placeholder="Escribe el texto..."
+              className="w-full h-full bg-transparent text-white text-2xl font-bold leading-tight outline-none resize-none placeholder-gray-700"
+              style={{
+                fontFamily: (selectedLayer.obj as Textbox).fontFamily ?? "Montserrat",
+              }}
+            />
+          </div>
+        </div>
       )}
     </div>
   );
