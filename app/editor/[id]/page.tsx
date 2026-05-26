@@ -2,27 +2,34 @@ import Link from "next/link";
 import EditorRouter from "@/components/editor/EditorRouter";
 import GeneratedEditor from "@/components/editor/GeneratedEditor";
 import GeneratedEditorWrapper from "@/components/editor/GeneratedEditorWrapper";
+import TemplateCreatorWrapper from "@/components/editor/TemplateCreatorWrapper";
 import { templates } from "@/data/templates";
 import { isValidFormatId, type FormatId } from "@/data/formats";
 
 type EditorPageProps = {
     params: Promise<{ id: string }>;
-    searchParams: Promise<{ format?: string }>;
+    searchParams: Promise<{ format?: string; mode?: string }>;
 };
 
 // UUID v4 pattern, used by Supabase for projects.id
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+// Pattern para drafts admin: draft-{uuid}
+const DRAFT_RE = /^draft-([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i;
 
 export default async function EditorPage({ params, searchParams }: EditorPageProps) {
     const { id } = await params;
     const sp = await searchParams;
 
+    // Modo "draft-{uuid}" — borrador admin de plantilla (creator wrapper)
+    const draftMatch = id.match(DRAFT_RE);
+    if (draftMatch) {
+        return <TemplateCreatorWrapper draftId={draftMatch[1]} />;
+    }
+
     // Modo "generated" — flyer generado desde el wizard, lee localStorage
-    // (TODO: mobile editor para este modo en proximas sesiones)
     if (id === "generated") return <GeneratedEditorWrapper />;
 
     // Modo "proyecto guardado" — id es un UUID de Supabase
-    // (TODO: mobile editor para proyectos guardados en proximas sesiones)
     if (UUID_RE.test(id)) {
         return <GeneratedEditor projectId={id} />;
     }

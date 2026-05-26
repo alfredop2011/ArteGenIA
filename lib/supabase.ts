@@ -28,3 +28,42 @@ export type Project = {
     created_at: string;
     updated_at: string;
 };
+
+/**
+ * Borrador de plantilla creado desde /admin/templates/new.
+ * El admin edita el borrador y luego lo publica (lo mueve a templates_published).
+ */
+export type TemplateDraft = {
+    id: string;
+    title: string;
+    category: string;
+    audience: string[];
+    internal_tags: string[];
+    premium: boolean;
+    status: "draft" | "ready" | "archived";
+    /** Estructura de Variants serializada (formato + dimensiones + capas) */
+    variants: unknown[];
+    thumbnail_url: string | null;
+    created_by: string;
+    created_at: string;
+    updated_at: string;
+};
+
+/**
+ * Plantilla publicada por admin. El catalogo /templates lee de aqui
+ * MEZCLADO con las plantillas de data/templates.ts.
+ */
+export type TemplatePublished = {
+    id: string;
+    draft_id: string | null;
+    title: string;
+    category: string;
+    audience: string[];
+    internal_tags: string[];
+    premium: boolean;
+    variants: unknown[];
+    thumbnail_url: string | null;
+    published_by: string;
+    published_at: string;
+    updated_at: string;
+};

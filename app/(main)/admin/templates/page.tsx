@@ -126,26 +126,35 @@ export default function AdminTemplatesPage() {
           </p>
         </div>
 
-        {pendingChanges.length > 0 && (
-          <div className="flex items-center gap-2">
-            <button
-              onClick={discardChanges}
-              className="px-3 py-2 rounded-xl text-xs font-bold text-gray-300 bg-white/[0.05] hover:bg-white/[0.10] border border-white/10 transition-colors"
-            >
-              Descartar
-            </button>
-            <button
-              onClick={() => setDiffOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-white transition-all hover:scale-[1.02]"
-              style={{
-                background: "linear-gradient(135deg, #7c3aed, #c026d3)",
-                boxShadow: "0 0 25px rgba(168,85,247,0.30)",
-              }}
-            >
-              Ver cambios <span className="px-1.5 py-0.5 rounded-md bg-white/20 text-[10px]">{pendingChanges.length}</span>
-            </button>
-          </div>
-        )}
+        <div className="flex items-center gap-2">
+          {/* Link al CREADOR de plantillas nuevo (sesion 1 creador admin) */}
+          <a
+            href="/admin/templates/new"
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-purple-200 bg-purple-500/15 border border-purple-500/30 hover:bg-purple-500/25 transition-all"
+          >
+            ✦ Crear nueva plantilla
+          </a>
+          {pendingChanges.length > 0 && (
+            <>
+              <button
+                onClick={discardChanges}
+                className="px-3 py-2 rounded-xl text-xs font-bold text-gray-300 bg-white/[0.05] hover:bg-white/[0.10] border border-white/10 transition-colors"
+              >
+                Descartar
+              </button>
+              <button
+                onClick={() => setDiffOpen(true)}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-white transition-all hover:scale-[1.02]"
+                style={{
+                  background: "linear-gradient(135deg, #7c3aed, #c026d3)",
+                  boxShadow: "0 0 25px rgba(168,85,247,0.30)",
+                }}
+              >
+                Ver cambios <span className="px-1.5 py-0.5 rounded-md bg-white/20 text-[10px]">{pendingChanges.length}</span>
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Toolbar */}
