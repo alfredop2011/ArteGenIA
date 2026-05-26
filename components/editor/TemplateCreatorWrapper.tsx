@@ -594,15 +594,71 @@ export default function TemplateCreatorWrapper({ draftId }: Props) {
     };
   }, [variant, canvasSize.w, canvasSize.h]);
 
+  // ─── Generar thumbnail PNG del canvas y subirlo a R2 ──────────────────
+  // Resetea zoom/viewport a nativo, exporta a 320px ancho, restaura.
+  // Llamado antes de saveDraft. Si falla la subida, sigue guardando sin thumb.
+  const generateAndUploadThumbnail = useCallback(async (): Promise<string | null> => {
+    const fc = fabricRef.current;
+    if (!fc) return null;
+    try {
+      // Save current state
+      const prevZoom = fc.getZoom();
+      const prevW = fc.getWidth();
+      const prevH = fc.getHeight();
+      const prevVpt = fc.viewportTransform ? [...fc.viewportTransform] : [1, 0, 0, 1, 0, 0];
+
+      // Reset to native
+      fc.discardActiveObject();
+      fc.setZoom(1);
+      fc.setViewportTransform([1, 0, 0, 1, 0, 0]);
+      fc.setDimensions({ width: canvasSize.w, height: canvasSize.h });
+      fc.renderAll();
+
+      // Multiplier para reducir a ~320px de ancho (thumb)
+      const targetW = 320;
+      const multiplier = targetW / canvasSize.w;
+      const dataUrl = fc.toDataURL({ format: "png", multiplier });
+
+      // Restaurar estado anterior
+      fc.setDimensions({ width: prevW, height: prevH });
+      fc.setZoom(prevZoom);
+      fc.setViewportTransform(prevVpt as [number, number, number, number, number, number]);
+      fc.renderAll();
+
+      // POST al endpoint admin para subir a R2
+      const res = await fetch("/api/admin/upload-thumbnail", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ dataUrl, draftId }),
+      });
+      if (!res.ok) {
+        console.warn("[thumb] upload failed", await res.text());
+        return null;
+      }
+      const json = (await res.json()) as { url?: string };
+      return json.url ?? null;
+    } catch (e) {
+      console.error("[thumb]", e);
+      return null;
+    }
+  }, [canvasSize.w, canvasSize.h, draftId]);
+
   const handleSaveDraft = useCallback(async () => {
     const newVariant = serializeCanvasToVariant();
     if (!newVariant) return;
     setSaving(true);
+    // Generar thumbnail en paralelo (no bloquea el save si falla)
+    const thumbPromise = generateAndUploadThumbnail();
     const id = await saveDraft(draftId, {
       title, category, audience, premium,
       variants: [newVariant],
       status: "draft",
     });
+    // Anadir thumbnail si llego (no bloquea el feedback verde)
+    const thumbnailUrl = await thumbPromise;
+    if (id && thumbnailUrl) {
+      await saveDraft(id, { thumbnail_url: thumbnailUrl });
+    }
     setSaving(false);
     if (id) {
       setSavedRecently(true);
@@ -610,7 +666,7 @@ export default function TemplateCreatorWrapper({ draftId }: Props) {
     } else {
       alert("Error guardando borrador. Mira la consola para detalles.");
     }
-  }, [draftId, title, category, audience, premium, serializeCanvasToVariant, saveDraft]);
+  }, [draftId, title, category, audience, premium, serializeCanvasToVariant, saveDraft, generateAndUploadThumbnail]);
 
   const handlePublish = useCallback(async () => {
     if (!confirm(`¿Publicar "${title}" al catálogo? Aparecerá en /templates para todos los usuarios.`)) return;

@@ -274,9 +274,14 @@ type GeneratedEditorProps = {
   formatId?: FormatId;
   /** Si se pasa, el editor carga el proyecto guardado del usuario por su UUID. */
   projectId?: string;
+  /**
+   * Si se pasa, el editor carga una plantilla publicada (de templates_published Supabase).
+   * Se trata como una plantilla normal pero sin id numerico en data/templates.ts.
+   */
+  publishedTemplate?: Template;
 };
 
-export default function GeneratedEditor({ templateId, formatId, projectId }: GeneratedEditorProps = {}) {
+export default function GeneratedEditor({ templateId, formatId, projectId, publishedTemplate }: GeneratedEditorProps = {}) {
   const router = useRouter();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricRef = useRef<FabricCanvas | null>(null);
@@ -448,6 +453,17 @@ export default function GeneratedEditor({ templateId, formatId, projectId }: Gen
         // Guardamos el JSON para hidratar el canvas cuando esté listo (en el otro useEffect)
         (window as unknown as { __pendingFabricJson?: object }).__pendingFabricJson = row.fabric_json ?? {};
       })();
+      return;
+    }
+    // Modo plantilla publicada (Supabase templates_published): viene ya como Template object
+    if (publishedTemplate) {
+      setTemplate(publishedTemplate);
+      setDocTitle(publishedTemplate.title);
+      const v = getVariant(publishedTemplate, formatId);
+      setData({
+        format: v.width === v.height ? "cuadrado" : (v.width > v.height ? "evento" : "instagram"),
+        palette: { colors: ["#ffffff", "#f5c518", "#0d0d1a"], label: "default" },
+      });
       return;
     }
     // Modo plantilla: cargar la plantilla por id

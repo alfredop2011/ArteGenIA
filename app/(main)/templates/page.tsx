@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   LayoutGrid,
@@ -25,11 +25,12 @@ import {
   Sparkles,
   type LucideIcon,
 } from "lucide-react";
-import { templates, type Template, type AudienceId } from "@/data/templates";
+import { templates, type Template, type AudienceId, type TemplateVariant } from "@/data/templates";
 import { type FormatId } from "@/data/formats";
 import TemplateFabricThumbnail from "@/components/templates/TemplateFabricThumbnail";
 import FormatPickerModal from "@/components/templates/FormatPickerModal";
 import FormatDestinationPicker from "@/components/templates/FormatDestinationPicker";
+import { supabase, type TemplatePublished } from "@/lib/supabase";
 
 type CategoryItem = { id: string; label: string; icon: LucideIcon };
 type AudienceItem = { id: AudienceId; label: string; icon: LucideIcon };
@@ -75,6 +76,53 @@ export default function TemplatesPage() {
     const [modalTemplate, setModalTemplate] = useState<Template | null>(null);
     const [showSidebarMobile, setShowSidebarMobile] = useState(false);
 
+    // ─── Templates publicadas desde Supabase (admin creator) ──────────────
+    // Se cargan en background y se concatenan AL INICIO de templates oficiales.
+    // Si la carga falla o no hay publicadas, el catalogo funciona igual con
+    // solo data/templates.ts. Decision: publicadas primero (lo mas nuevo arriba).
+    const [publishedTemplates, setPublishedTemplates] = useState<Template[]>([]);
+    useEffect(() => {
+        (async () => {
+            try {
+                const { data, error } = await supabase
+                    .from("templates_published")
+                    .select("*")
+                    .order("published_at", { ascending: false });
+                if (error) {
+                    console.warn("[templates] no se pudo cargar publicadas:", error.message);
+                    return;
+                }
+                const pubs = (data ?? []) as TemplatePublished[];
+                // Convertir TemplatePublished -> Template (mismo shape para filtros)
+                // Usamos ids negativos (-1, -2...) para no chocar con los numericos de
+                // data/templates.ts y para que el router pueda distinguir mas adelante.
+                // Por ahora el editor solo soporta abrir plantillas oficiales o drafts,
+                // las publicadas redirigen a /editor/draft-{uuid}?mode=template-creator
+                // si admin, o se podran clonar como flyer normal cuando se enchufe
+                // el cargador correspondiente.
+                const converted: Template[] = pubs.map((p, idx) => ({
+                    id: -1000 - idx, // ids negativos = publicadas (placeholder)
+                    title: p.title,
+                    category: p.category,
+                    image: p.thumbnail_url ?? "",
+                    premium: p.premium,
+                    audience: p.audience as AudienceId[],
+                    internalTags: ["beta"], // marcamos como beta para distinguir
+                    variants: (p.variants as TemplateVariant[]) ?? [],
+                    // Anadimos un campo no-tipado para que router pueda identificar
+                    // el id de Supabase real (uuid string)
+                    __publishedId: p.id,
+                } as Template & { __publishedId: string }));
+                setPublishedTemplates(converted);
+            } catch (e) {
+                console.warn("[templates] error inesperado:", e);
+            }
+        })();
+    }, []);
+
+    // Catalogo combinado: publicadas Supabase PRIMERO, luego oficiales data/templates.ts
+    const allTemplates = useMemo(() => [...publishedTemplates, ...templates], [publishedTemplates]);
+
     const toggleAudience = (id: AudienceId) => {
         setActiveAudiences(prev =>
             prev.includes(id) ? prev.filter(a => a !== id) : [...prev, id]
@@ -82,16 +130,20 @@ export default function TemplatesPage() {
     };
 
     const handleUseTemplate = (template: Template) => {
+        // Helper: si la plantilla viene de Supabase published, usar URL especial
+        const tpl = template as Template & { __publishedId?: string };
+        const idForUrl = tpl.__publishedId ? `published-${tpl.__publishedId}` : String(template.id);
+
         // Si la plantilla tiene la variante del formato activo, ir directo a ella
         const directVariant = template.variants.find(v => v.format === activeFormat);
         if (directVariant) {
-            router.push(`/editor/${template.id}?format=${activeFormat}`);
+            router.push(`/editor/${idForUrl}?format=${activeFormat}`);
             return;
         }
         // Si solo hay 1 variante saltamos el modal y abrimos directamente
         if (template.variants.length <= 1) {
             const fmt = template.variants[0]?.format;
-            router.push(fmt ? `/editor/${template.id}?format=${fmt}` : `/editor/${template.id}`);
+            router.push(fmt ? `/editor/${idForUrl}?format=${fmt}` : `/editor/${idForUrl}`);
             return;
         }
         // Más de 1 variante: pedir al usuario que elija
@@ -100,14 +152,14 @@ export default function TemplatesPage() {
 
     // Contadores por formato (cuántas plantillas tienen cada variante)
     const formatCounts = useMemo<Record<"square" | "story" | "portrait" | "fb-cover", number>>(() => ({
-        "square":   templates.filter(t => t.variants.some(v => v.format === "square")).length,
-        "story":    templates.filter(t => t.variants.some(v => v.format === "story")).length,
-        "portrait": templates.filter(t => t.variants.some(v => v.format === "portrait")).length,
-        "fb-cover": templates.filter(t => t.variants.some(v => v.format === "fb-cover")).length,
-    }), []);
+        "square":   allTemplates.filter(t => t.variants.some(v => v.format === "square")).length,
+        "story":    allTemplates.filter(t => t.variants.some(v => v.format === "story")).length,
+        "portrait": allTemplates.filter(t => t.variants.some(v => v.format === "portrait")).length,
+        "fb-cover": allTemplates.filter(t => t.variants.some(v => v.format === "fb-cover")).length,
+    }), [allTemplates]);
 
     const filtered = useMemo(() => {
-        return templates.filter((t) => {
+        return allTemplates.filter((t) => {
             // Filtrado estricto por formato activo
             const matchFormat = t.variants.some(v => v.format === activeFormat);
             if (!matchFormat) return false;
@@ -132,7 +184,7 @@ export default function TemplatesPage() {
                 cat.includes(activeTopFilter.toLowerCase());
             return matchCat && matchAudience && matchSearch && matchTop;
         });
-    }, [activeFormat, activeCategory, activeAudiences, searchQuery, activeTopFilter]);
+    }, [allTemplates, activeFormat, activeCategory, activeAudiences, searchQuery, activeTopFilter]);
 
     const clearFilters = () => {
         setActiveFormat("portrait");

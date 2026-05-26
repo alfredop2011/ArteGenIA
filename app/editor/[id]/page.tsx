@@ -3,6 +3,7 @@ import EditorRouter from "@/components/editor/EditorRouter";
 import GeneratedEditor from "@/components/editor/GeneratedEditor";
 import GeneratedEditorWrapper from "@/components/editor/GeneratedEditorWrapper";
 import TemplateCreatorWrapper from "@/components/editor/TemplateCreatorWrapper";
+import PublishedTemplateLoader from "@/components/editor/PublishedTemplateLoader";
 import { templates } from "@/data/templates";
 import { isValidFormatId, type FormatId } from "@/data/formats";
 
@@ -15,15 +16,30 @@ type EditorPageProps = {
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 // Pattern para drafts admin: draft-{uuid}
 const DRAFT_RE = /^draft-([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i;
+// Pattern para plantillas publicadas: published-{uuid}
+const PUBLISHED_RE = /^published-([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i;
 
 export default async function EditorPage({ params, searchParams }: EditorPageProps) {
     const { id } = await params;
     const sp = await searchParams;
 
+    // Resolver formato pedido o el primero disponible
+    const requestedFormat = sp.format;
+    const formatId: FormatId | undefined =
+        requestedFormat && isValidFormatId(requestedFormat)
+            ? (requestedFormat as FormatId)
+            : undefined;
+
     // Modo "draft-{uuid}" — borrador admin de plantilla (creator wrapper)
     const draftMatch = id.match(DRAFT_RE);
     if (draftMatch) {
         return <TemplateCreatorWrapper draftId={draftMatch[1]} />;
+    }
+
+    // Modo "published-{uuid}" — plantilla publicada (loader que la inyecta en localStorage)
+    const publishedMatch = id.match(PUBLISHED_RE);
+    if (publishedMatch) {
+        return <PublishedTemplateLoader publishedId={publishedMatch[1]} formatId={formatId} />;
     }
 
     // Modo "generated" — flyer generado desde el wizard, lee localStorage
@@ -48,13 +64,6 @@ export default async function EditorPage({ params, searchParams }: EditorPagePro
             </section>
         );
     }
-
-    // Resolver formato pedido o el primero disponible
-    const requestedFormat = sp.format;
-    const formatId: FormatId | undefined =
-        requestedFormat && isValidFormatId(requestedFormat)
-            ? (requestedFormat as FormatId)
-            : undefined;
 
     // EditorRouter elige MobileEditor (< 768px) o GeneratedEditor (desktop)
     return <EditorRouter templateId={templateId} formatId={formatId} />;
