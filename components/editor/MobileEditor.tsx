@@ -123,7 +123,7 @@ export default function MobileEditor({ templateId, formatId }: Props) {
     // Si hay sheet abierto, restamos un 40vh adicional para que el flyer
     // quede arriba visible y no detras del sheet.
     const baseAvailH = window.innerHeight - 56 - 72 - 16;
-    const sheetH = activeSheet ? window.innerHeight * 0.4 : 0;
+    const sheetH = activeSheet ? window.innerHeight * 0.32 : 0;
     const availH = baseAvailH - sheetH;
     setCanvasArea({ w: availW, h: Math.max(200, availH) });
     setCanvasSize({ w: variant.width, h: variant.height });
@@ -803,7 +803,7 @@ export default function MobileEditor({ templateId, formatId }: Props) {
             className="fixed inset-0 z-40"
             style={{ background: "transparent" }}
           />
-          <div className="fixed bottom-0 left-0 right-0 z-50 bg-[#0f0f1a]/95 backdrop-blur-md rounded-t-3xl border-t border-white/10 shadow-2xl pb-8 max-h-[40vh] flex flex-col safe-area-bottom">
+          <div className="fixed bottom-0 left-0 right-0 z-50 bg-[#0f0f1a]/95 backdrop-blur-md rounded-t-3xl border-t border-white/10 shadow-2xl pb-8 max-h-[30vh] flex flex-col safe-area-bottom">
             {/* Handle */}
             <div className="w-12 h-1 bg-white/20 rounded-full mx-auto mt-2 mb-2 shrink-0"/>
 
