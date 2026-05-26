@@ -112,15 +112,22 @@ export default function MobileEditor({ templateId, formatId }: Props) {
   // el flyer dentro. El pinch zoom puede aumentar/disminuir libremente despues.
   const [canvasArea, setCanvasArea] = useState({ w: 300, h: 500 });
 
+  // Compute canvas area - reduce cuando hay sheet abierto para que el
+  // flyer NO quede tapado por el sheet inferior.
   const computeArea = useCallback(() => {
     if (!template) return;
     const variant = getVariant(template, formatId);
     if (!variant) return;
     const availW = window.innerWidth - 16;
-    const availH = window.innerHeight - 56 - 72 - 16;
-    setCanvasArea({ w: availW, h: availH });
+    // Header (56) + bottom toolbar (72) + margenes (16) = 144
+    // Si hay sheet abierto, restamos un 40vh adicional para que el flyer
+    // quede arriba visible y no detras del sheet.
+    const baseAvailH = window.innerHeight - 56 - 72 - 16;
+    const sheetH = activeSheet ? window.innerHeight * 0.4 : 0;
+    const availH = baseAvailH - sheetH;
+    setCanvasArea({ w: availW, h: Math.max(200, availH) });
     setCanvasSize({ w: variant.width, h: variant.height });
-  }, [template, formatId]);
+  }, [template, formatId, activeSheet]);
 
   useEffect(() => {
     computeArea();
@@ -178,9 +185,9 @@ export default function MobileEditor({ templateId, formatId }: Props) {
           cornerStyle: "circle",
           transparentCorners: false,
           borderColor: "#a855f7",
-          borderScaleFactor: 1.5,
-          cornerSize: 14,                   // tamano visual handle
-          touchCornerSize: 44,              // hit area touch (Apple HIG)
+          borderScaleFactor: 1,
+          cornerSize: 10,                   // tamano visual handle
+          touchCornerSize: 36,              // hit area touch (Apple HIG)
           padding: 4,
           hasRotatingPoint: true,           // habilita rotate handle
         });
@@ -213,10 +220,10 @@ export default function MobileEditor({ templateId, formatId }: Props) {
         obj.set({
           // Valores FIJOS, no divididos por zoom (Fabric ya escala internamente).
           // Esto evita que el bbox crezca enormemente en zoom bajo.
-          cornerSize: 14,
-          touchCornerSize: 44, // hit area touch (no afecta visual)
+          cornerSize: 10,
+          touchCornerSize: 36, // hit area touch (no afecta visual)
           padding: 4,
-          borderScaleFactor: 1.5,
+          borderScaleFactor: 1,
         });
         obj.setCoords();
       });
@@ -519,9 +526,9 @@ export default function MobileEditor({ templateId, formatId }: Props) {
       cornerStyle: "circle",
       transparentCorners: false,
       borderColor: "#a855f7",
-      borderScaleFactor: 1.5,
-      cornerSize: 14,
-      touchCornerSize: 44,
+      borderScaleFactor: 1,
+      cornerSize: 10,
+      touchCornerSize: 36,
       padding: 4,
       hasRotatingPoint: true,
     });
@@ -796,7 +803,7 @@ export default function MobileEditor({ templateId, formatId }: Props) {
             className="fixed inset-0 z-40"
             style={{ background: "transparent" }}
           />
-          <div className="fixed bottom-0 left-0 right-0 z-50 bg-[#0f0f1a]/95 backdrop-blur-md rounded-t-3xl border-t border-white/10 shadow-2xl pb-8 max-h-[50vh] flex flex-col safe-area-bottom">
+          <div className="fixed bottom-0 left-0 right-0 z-50 bg-[#0f0f1a]/95 backdrop-blur-md rounded-t-3xl border-t border-white/10 shadow-2xl pb-8 max-h-[40vh] flex flex-col safe-area-bottom">
             {/* Handle */}
             <div className="w-12 h-1 bg-white/20 rounded-full mx-auto mt-2 mb-2 shrink-0"/>
 
