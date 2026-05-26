@@ -15,7 +15,7 @@ import {
   Type, Image as ImageIcon, Square, Circle as CircleIcon, Palette,
   Layers as LayersIcon, MoreHorizontal, ChevronUp, ChevronDown, GripVertical,
   Bold, Italic, AlignLeft, AlignCenter, AlignRight, X as XIcon,
-  MoveUp, MoveDown,
+  MoveUp, MoveDown, Edit3,
 } from "lucide-react";
 import { useTemplateDrafts } from "@/hooks/useTemplateDrafts";
 import { applyTemplateLayers } from "@/lib/fabricApplyTemplateLayers";
@@ -104,6 +104,11 @@ export default function TemplateCreatorWrapper({ draftId }: Props) {
   const lastAppliedZoomRef = useRef<number>(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Si el draft viene de "editar publicada", tendra un tag "replaces:{uuid}"
+  // Lo preservamos para que publishDraft sepa que debe borrar la published vieja.
+  const [internalTags, setInternalTags] = useState<string[]>([]);
+  const isEditingPublished = internalTags.some(t => t.startsWith("replaces:"));
+
   // ─── 1. Cargar draft de Supabase ────────────────────────────────────────
   useEffect(() => {
     let cancelled = false;
@@ -114,6 +119,7 @@ export default function TemplateCreatorWrapper({ draftId }: Props) {
       setCategory(d.category);
       setAudience(d.audience as AudienceId[]);
       setPremium(d.premium);
+      setInternalTags(d.internal_tags ?? []);
       const v = (d.variants as TemplateVariant[])[0];
       if (v) {
         setVariant(v);
@@ -651,6 +657,7 @@ export default function TemplateCreatorWrapper({ draftId }: Props) {
     const thumbPromise = generateAndUploadThumbnail();
     const id = await saveDraft(draftId, {
       title, category, audience, premium,
+      internal_tags: internalTags, // preservar tag replaces si existe
       variants: [newVariant],
       status: "draft",
     });
@@ -666,22 +673,27 @@ export default function TemplateCreatorWrapper({ draftId }: Props) {
     } else {
       alert("Error guardando borrador. Mira la consola para detalles.");
     }
-  }, [draftId, title, category, audience, premium, serializeCanvasToVariant, saveDraft, generateAndUploadThumbnail]);
+  }, [draftId, title, category, audience, premium, internalTags, serializeCanvasToVariant, saveDraft, generateAndUploadThumbnail]);
 
   const handlePublish = useCallback(async () => {
-    if (!confirm(`¿Publicar "${title}" al catálogo? Aparecerá en /templates para todos los usuarios.`)) return;
+    const msg = isEditingPublished
+      ? `¿Publicar cambios de "${title}"? Reemplazará la versión anterior en /templates.`
+      : `¿Publicar "${title}" al catálogo? Aparecerá en /templates para todos los usuarios.`;
+    if (!confirm(msg)) return;
     // Primero guardamos cambios pendientes
     await handleSaveDraft();
     setPublishing(true);
     const id = await publishDraft(draftId);
     setPublishing(false);
     if (id) {
-      alert("¡Plantilla publicada! Verás aparecer en /templates.");
+      alert(isEditingPublished
+        ? "¡Cambios publicados! La versión anterior ha sido reemplazada en /templates."
+        : "¡Plantilla publicada! Aparecerá en /templates.");
       router.push("/admin/templates/new");
     } else {
       alert("Error publicando. Mira la consola.");
     }
-  }, [draftId, title, handleSaveDraft, publishDraft, router]);
+  }, [draftId, title, isEditingPublished, handleSaveDraft, publishDraft, router]);
 
   // ─── Render ─────────────────────────────────────────────────────────────
   if (!draftReady) {
@@ -731,9 +743,17 @@ export default function TemplateCreatorWrapper({ draftId }: Props) {
           className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-green-600 active:from-emerald-700 active:to-green-700 text-white text-xs font-bold disabled:opacity-50"
         >
           {publishing ? <Loader2 size={14} className="animate-spin"/> : <Send size={14} strokeWidth={2.5}/>}
-          <span className="hidden sm:inline">Publicar</span>
+          <span className="hidden sm:inline">{isEditingPublished ? "Publicar cambios" : "Publicar"}</span>
         </button>
       </header>
+
+      {/* Banner editando published - visible si hay tag replaces */}
+      {isEditingPublished && (
+        <div className="bg-amber-500/10 border-b border-amber-500/30 px-3 py-2 text-xs text-amber-300 flex items-center gap-2 shrink-0">
+          <Edit3 size={12} strokeWidth={2.5}/>
+          <span><strong>Editando publicada:</strong> al pulsar &quot;Publicar cambios&quot;, la versión anterior se reemplazará en /templates.</span>
+        </div>
+      )}
 
       {/* ═══ META PANEL desplegable ═══════════════════════════════════════ */}
       {metaPanelOpen && (

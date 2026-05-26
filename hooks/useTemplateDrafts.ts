@@ -108,19 +108,38 @@ export function useTemplateDrafts() {
       const draft = await getDraft(draftId);
       if (!draft) throw new Error("Borrador no encontrado");
 
+      // Si el draft reemplaza una published anterior (tag "replaces:{uuid}"),
+      // borramos la published vieja antes de insertar la nueva.
+      const replacesTag = (draft.internal_tags ?? []).find(t => t.startsWith("replaces:"));
+      const replacesPublishedId = replacesTag ? replacesTag.slice("replaces:".length) : null;
+
+      // Filtrar el tag de internal antes de copiar a published (no contamina)
+      const cleanTags = (draft.internal_tags ?? []).filter(t => !t.startsWith("replaces:"));
+
       // Insert en templates_published (mismo schema + draft_id + published_by)
       const { data, error } = await supabase.from("templates_published").insert({
         draft_id: draft.id,
         title: draft.title,
         category: draft.category,
         audience: draft.audience,
-        internal_tags: draft.internal_tags,
+        internal_tags: cleanTags,
         premium: draft.premium,
         variants: draft.variants,
         thumbnail_url: draft.thumbnail_url,
         published_by: user.id,
       }).select("id").single();
       if (error) throw error;
+
+      // Si reemplaza una published anterior, borrarla AHORA (despues del insert exitoso)
+      if (replacesPublishedId) {
+        const { error: delErr } = await supabase.from("templates_published")
+          .delete()
+          .eq("id", replacesPublishedId);
+        if (delErr) {
+          console.warn("[publishDraft] No se pudo borrar published anterior:", delErr.message);
+          // No fallamos toda la operacion - la nueva ya esta publicada
+        }
+      }
 
       // Marcar draft como archived (queda en historial)
       await supabase.from("templates_draft")
@@ -134,6 +153,51 @@ export function useTemplateDrafts() {
       return null;
     } finally { setLoading(false); }
   }, [getDraft]);
+
+  /**
+   * Crea un nuevo draft copiando los datos de una published existente.
+   * Anade tag "replaces:{publishedId}" en internal_tags para que cuando
+   * el nuevo draft se publique, se borre la published vieja (asi parece
+   * una "edicion" en lugar de duplicar).
+   *
+   * Devuelve el id del draft nuevo o null si falla.
+   */
+  const createDraftFromPublished = useCallback(async (publishedId: string): Promise<string | null> => {
+    setLoading(true); setError(null);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("No autenticado");
+
+      // Cargar la published origen
+      const { data: pubData, error: pubErr } = await supabase
+        .from("templates_published")
+        .select("*")
+        .eq("id", publishedId)
+        .single();
+      if (pubErr || !pubData) throw new Error(pubErr?.message || "Published no encontrada");
+      const pub = pubData as TemplatePublished;
+
+      // Crear draft nuevo copia de los datos + tag replaces
+      const { data, error } = await supabase.from("templates_draft").insert({
+        title: pub.title,
+        category: pub.category,
+        audience: pub.audience,
+        internal_tags: [...(pub.internal_tags ?? []).filter(t => !t.startsWith("replaces:")), `replaces:${publishedId}`],
+        premium: pub.premium,
+        variants: pub.variants,
+        thumbnail_url: pub.thumbnail_url,
+        status: "draft",
+        created_by: user.id,
+      }).select("id").single();
+      if (error) throw error;
+
+      return data.id as string;
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      setError(msg);
+      return null;
+    } finally { setLoading(false); }
+  }, []);
 
   // ─── PUBLISHED (lectura publica) ────────────────────────────────────────
   const listPublished = useCallback(async (): Promise<TemplatePublished[]> => {
@@ -171,5 +235,7 @@ export function useTemplateDrafts() {
     listDrafts, getDraft, saveDraft, deleteDraft,
     // publish
     publishDraft, listPublished, unpublish,
+    // editar published existente (sesion 3 creador)
+    createDraftFromPublished,
   };
 }

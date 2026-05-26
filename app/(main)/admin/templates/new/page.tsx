@@ -21,7 +21,7 @@ import type { TemplateDraft, TemplatePublished } from "@/lib/supabase";
  */
 export default function AdminTemplateCreatorPage() {
   const router = useRouter();
-  const { loading, listDrafts, listPublished, deleteDraft, unpublish, saveDraft } = useTemplateDrafts();
+  const { loading, listDrafts, listPublished, deleteDraft, unpublish, saveDraft, createDraftFromPublished } = useTemplateDrafts();
   const [drafts, setDrafts] = useState<TemplateDraft[]>([]);
   const [published, setPublished] = useState<TemplatePublished[]>([]);
   const [tab, setTab] = useState<"drafts" | "published">("drafts");
@@ -95,6 +95,17 @@ export default function AdminTemplateCreatorPage() {
     if (!confirm(`¿Despublicar "${p.title}"? Dejara de verse en /templates.`)) return;
     const ok = await unpublish(p.id);
     if (ok) setPublished(prev => prev.filter(x => x.id !== p.id));
+  };
+
+  // Editar una published: crear un draft copia con tag "replaces:{publishedId}"
+  // y abrir el editor. Cuando se republique, borrara la published vieja.
+  const handleEditPublished = async (p: TemplatePublished) => {
+    const newDraftId = await createDraftFromPublished(p.id);
+    if (newDraftId) {
+      router.push(`/editor/draft-${newDraftId}?mode=template-creator`);
+    } else {
+      alert("No se pudo abrir la plantilla para editar.");
+    }
   };
 
   return (
@@ -191,7 +202,7 @@ export default function AdminTemplateCreatorPage() {
             )}
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
               {published.map(p => (
-                <PublishedCard key={p.id} pub={p} onUnpublish={() => handleUnpublish(p)}/>
+                <PublishedCard key={p.id} pub={p} onUnpublish={() => handleUnpublish(p)} onEdit={() => handleEditPublished(p)}/>
               ))}
             </div>
           </>
@@ -235,29 +246,45 @@ function DraftCard({ draft, onDelete }: { draft: TemplateDraft; onDelete: () => 
   );
 }
 
-function PublishedCard({ pub, onUnpublish }: { pub: TemplatePublished; onUnpublish: () => void }) {
+function PublishedCard({ pub, onUnpublish, onEdit }: { pub: TemplatePublished; onUnpublish: () => void; onEdit: () => void }) {
   return (
     <div className="group relative rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.03] overflow-hidden">
-      <div className="aspect-[3/4] bg-gradient-to-br from-emerald-900/30 to-purple-900/20 flex items-center justify-center overflow-hidden">
-        {pub.thumbnail_url ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={pub.thumbnail_url} alt={pub.title} className="w-full h-full object-cover"/>
-        ) : (
-          <CheckCircle2 size={32} strokeWidth={1.4} className="text-emerald-300/40"/>
-        )}
-      </div>
-      <div className="p-2 sm:p-3">
-        <h3 className="text-white font-bold text-xs sm:text-sm truncate">{pub.title}</h3>
-        <p className="text-emerald-300/70 text-[10px] sm:text-xs mt-0.5 flex items-center gap-1.5">
-          <CheckCircle2 size={10} strokeWidth={2}/>
-          Publicada
-          <span className="opacity-50">· {pub.category}</span>
-        </p>
+      <button
+        onClick={onEdit}
+        className="block w-full text-left active:bg-white/[0.02]"
+        aria-label="Editar plantilla"
+      >
+        <div className="aspect-[3/4] bg-gradient-to-br from-emerald-900/30 to-purple-900/20 flex items-center justify-center overflow-hidden">
+          {pub.thumbnail_url ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={pub.thumbnail_url} alt={pub.title} className="w-full h-full object-cover"/>
+          ) : (
+            <CheckCircle2 size={32} strokeWidth={1.4} className="text-emerald-300/40"/>
+          )}
+        </div>
+        <div className="p-2 sm:p-3">
+          <h3 className="text-white font-bold text-xs sm:text-sm truncate">{pub.title}</h3>
+          <p className="text-emerald-300/70 text-[10px] sm:text-xs mt-0.5 flex items-center gap-1.5">
+            <CheckCircle2 size={10} strokeWidth={2}/>
+            Publicada
+            <span className="opacity-50">· {pub.category}</span>
+          </p>
+        </div>
+      </button>
+      {/* Overlay edit (visible siempre en mobile, hover en desktop) */}
+      <div className="absolute inset-x-0 bottom-0 p-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+        <button
+          onClick={onEdit}
+          className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold pointer-events-auto"
+        >
+          <Edit3 size={12} strokeWidth={2.5}/>
+          Editar
+        </button>
       </div>
       <button
         onClick={onUnpublish}
         aria-label="Despublicar"
-        className="absolute top-2 right-2 w-8 h-8 rounded-lg bg-black/60 backdrop-blur text-amber-400 active:bg-amber-900/80 active:text-amber-300 hover:bg-amber-900/80 hover:text-amber-300 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+        className="absolute top-2 right-2 w-8 h-8 rounded-lg bg-black/60 backdrop-blur text-amber-400 active:bg-amber-900/80 active:text-amber-300 hover:bg-amber-900/80 hover:text-amber-300 flex items-center justify-center md:opacity-0 md:group-hover:opacity-100 transition-opacity"
       >
         <ArchiveIcon size={14} strokeWidth={1.8}/>
       </button>
