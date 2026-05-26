@@ -7,7 +7,7 @@ import {
   LayoutGrid, Type, Sparkles as SparklesIcon, Image as ImageIcon, Mountain,
   Layers as LayersIcon, Wand2, Tag, Heart,
   // Toolbar / Top bar
-  ArrowLeft, Undo2, Redo2, Search, Share2, Save, Download,
+  ArrowLeft, Undo2, Redo2, Search, Share2, Save, Download, Send, Loader2,
   // Layers panel
   GripVertical, Eye, EyeOff, Lock, Unlock, Trash2,
   // Layer type indicators
@@ -27,12 +27,13 @@ import {
   MousePointer2,
 } from "lucide-react";
 import type { Canvas as FabricCanvas, FabricObject, IText } from "fabric";
-import { templates, type Template, getVariant } from "@/data/templates";
+import { templates, type Template, type TemplateVariant, type AudienceId, getVariant } from "@/data/templates";
 import type { FormatId } from "@/data/formats";
 import { applyTemplateLayers } from "@/lib/fabricApplyTemplateLayers";
 import { ArtistLibraryModal, type ArtistEntry } from "@/components/wizard/ArtistLibrary";
 import { useProjects } from "@/hooks/useProjects";
 import { useUndoRedo } from "@/hooks/useUndoRedo";
+import { useTemplateDrafts } from "@/hooks/useTemplateDrafts";
 import { supabase } from "@/lib/supabase";
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
@@ -279,9 +280,17 @@ type GeneratedEditorProps = {
    * Se trata como una plantilla normal pero sin id numerico en data/templates.ts.
    */
   publishedTemplate?: Template;
+  /**
+   * Si se pasa, el editor entra en MODO CREATOR ADMIN:
+   *   - Carga las capas del draft desde Supabase (templates_draft)
+   *   - Muestra barra metadata admin con titulo/categoria/audiencia/premium
+   *   - Sustituye boton Save por "Guardar borrador" + anade "Publicar"
+   *   - Cuando se publica, mueve a templates_published
+   */
+  draftId?: string;
 };
 
-export default function GeneratedEditor({ templateId, formatId, projectId, publishedTemplate }: GeneratedEditorProps = {}) {
+export default function GeneratedEditor({ templateId, formatId, projectId, publishedTemplate, draftId }: GeneratedEditorProps = {}) {
   const router = useRouter();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricRef = useRef<FabricCanvas | null>(null);
@@ -310,6 +319,35 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
   const { saveProject } = useProjects();
   const [saveState, setSaveState] = useState<SaveState>("saved");
   const [canvasSize, setCanvasSize] = useState({ w: 1080, h: 1350 });
+
+  // ─── ADMIN CREATOR MODE (sesion 4 creador) ────────────────────────────────
+  // Cuando se pasa draftId, el editor entra en modo admin: barra metadata
+  // arriba, botones "Guardar borrador" y "Publicar" sustituyen al Save normal.
+  // Si no hay draftId, esto no afecta para nada al editor normal.
+  const isAdminMode = !!draftId;
+  const { getDraft, saveDraft, publishDraft, createDraftFromPublished: _cdfp } = useTemplateDrafts();
+  void _cdfp;
+  const [adminTitle, setAdminTitle] = useState("");
+  const [adminCategory, setAdminCategory] = useState("Otros");
+  const [adminAudience, setAdminAudience] = useState<AudienceId[]>([]);
+  const [adminPremium, setAdminPremium] = useState(false);
+  const [adminInternalTags, setAdminInternalTags] = useState<string[]>([]);
+  const [adminMetaOpen, setAdminMetaOpen] = useState(false);
+  const [adminSaving, setAdminSaving] = useState(false);
+  const [adminPublishing, setAdminPublishing] = useState(false);
+  const [adminSavedRecently, setAdminSavedRecently] = useState(false);
+  const isEditingPublished = adminInternalTags.some(t => t.startsWith("replaces:"));
+
+  // ADMIN CATEGORIAS Y AUDIENCIAS (mismas que TemplateCreatorWrapper)
+  const ADMIN_CATEGORIES = ["Concierto", "Festival", "Fiesta", "Conferencia", "Clases", "Promocional", "Otros"];
+  const ADMIN_AUDIENCES: { id: AudienceId; label: string }[] = [
+    { id: "academias", label: "Academias" },
+    { id: "productoras", label: "Productoras" },
+    { id: "freelance", label: "Freelance" },
+    { id: "instituciones", label: "Instituciones" },
+    { id: "agencias", label: "Agencias" },
+    { id: "colegios", label: "Colegios" },
+  ];
 
   // ─── MOBILE DETECTION + PANELS ────────────────────────────────────────────
   // Detecta viewport < 768px en cliente. Fuerza viewMode "dock" en mobile.
@@ -452,6 +490,49 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
         });
         // Guardamos el JSON para hidratar el canvas cuando esté listo (en el otro useEffect)
         (window as unknown as { __pendingFabricJson?: object }).__pendingFabricJson = row.fabric_json ?? {};
+      })();
+      return;
+    }
+    // Modo creator admin: cargar draft de Supabase como una plantilla
+    if (draftId) {
+      (async () => {
+        const d = await getDraft(draftId);
+        if (!d) {
+          alert("Borrador no encontrado.");
+          router.push("/admin/templates/new");
+          return;
+        }
+        // Hidratar estado admin
+        setAdminTitle(d.title);
+        setAdminCategory(d.category);
+        setAdminAudience(d.audience as AudienceId[]);
+        setAdminPremium(d.premium);
+        setAdminInternalTags(d.internal_tags ?? []);
+        setDocTitle(d.title);
+
+        // Tratar el draft como una Template normal
+        const variants = (d.variants as TemplateVariant[]) ?? [];
+        if (variants.length === 0) {
+          alert("El borrador no tiene variantes.");
+          router.push("/admin/templates/new");
+          return;
+        }
+        const draftAsTemplate: Template = {
+          id: -2,
+          title: d.title,
+          category: d.category,
+          image: d.thumbnail_url ?? "",
+          premium: d.premium,
+          audience: d.audience as AudienceId[],
+          internalTags: ["beta"],
+          variants,
+        };
+        setTemplate(draftAsTemplate);
+        const v = getVariant(draftAsTemplate, formatId);
+        setData({
+          format: v.width === v.height ? "cuadrado" : (v.width > v.height ? "evento" : "instagram"),
+          palette: { colors: ["#ffffff", "#f5c518", "#0d0d1a"], label: "default" },
+        });
       })();
       return;
     }
@@ -1138,6 +1219,157 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
   // Sync ref so the Cmd+S keyboard handler always calls the latest version
   useEffect(() => { handleSaveRef.current = handleSave; }, [handleSave]);
 
+  // ─── ADMIN: SAVE DRAFT + PUBLISH ──────────────────────────────────────────
+  // Serializa el canvas Fabric a una TemplateVariant compatible con applyTemplateLayers,
+  // sube thumbnail a R2 y guarda en templates_draft.
+  const serializeCanvasToVariant = useCallback((): TemplateVariant | null => {
+    const fc = fabricRef.current;
+    if (!fc) return null;
+    const fabricJson = fc.toJSON() as { objects?: Array<Record<string, unknown>> };
+    const objs = fabricJson.objects ?? [];
+
+    type AnyLayer = {
+      id: string; type: string; text?: string; src?: string;
+      x?: number; y?: number; width?: number; height?: number; radius?: number;
+      fontSize?: number; fontFamily?: string; color?: string; fill?: string;
+      fontWeight?: string; fontStyle?: string; textAlign?: string;
+      originX?: string; originY?: string; angle?: number;
+      charSpacing?: number; lineHeight?: number;
+      opacity?: number; scaleX?: number; scaleY?: number;
+      shape?: string; selectable?: boolean;
+    };
+
+    const layersOut: AnyLayer[] = objs.map((o, i) => {
+      const oType = o.type as string;
+      if (oType === "textbox" || oType === "i-text" || oType === "text") {
+        return {
+          id: `text-${i}`, type: "text",
+          text: (o.text as string) ?? "",
+          x: (o.left as number) ?? 0, y: (o.top as number) ?? 0,
+          width: ((o.width as number) ?? 300) * ((o.scaleX as number) ?? 1),
+          fontSize: (o.fontSize as number) ?? 60,
+          fontFamily: (o.fontFamily as string) ?? "Montserrat",
+          color: (o.fill as string) ?? "#fff",
+          fontWeight: o.fontWeight as string,
+          fontStyle: o.fontStyle as string,
+          textAlign: o.textAlign as string,
+          originX: o.originX as string,
+          originY: o.originY as string,
+          angle: o.angle as number,
+          charSpacing: o.charSpacing as number,
+          lineHeight: o.lineHeight as number,
+        };
+      }
+      if (oType === "image") {
+        return {
+          id: `image-${i}`, type: "image",
+          src: (o.src as string) ?? "",
+          x: o.left as number, y: o.top as number,
+          scaleX: o.scaleX as number, scaleY: o.scaleY as number,
+          opacity: o.opacity as number,
+          angle: o.angle as number,
+        };
+      }
+      const isCircle = oType === "circle";
+      return {
+        id: `shape-${i}`, type: "shape",
+        shape: isCircle ? "circle" : "rect",
+        x: (o.left as number) ?? 0, y: (o.top as number) ?? 0,
+        width: ((o.width as number) ?? 100) * ((o.scaleX as number) ?? 1),
+        height: ((o.height as number) ?? 100) * ((o.scaleY as number) ?? 1),
+        fill: (o.fill as string) ?? "#fff",
+        opacity: o.opacity as number,
+        radius: isCircle ? (o.radius as number) : undefined,
+        selectable: o.selectable as boolean,
+        angle: o.angle as number,
+      };
+    });
+
+    return {
+      format: (data?.format === "cuadrado" ? "square" : data?.format === "evento" ? "fb-cover" : "portrait") as TemplateVariant["format"],
+      width: canvasSize.w,
+      height: canvasSize.h,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      layers: layersOut as any,
+    };
+  }, [canvasSize.w, canvasSize.h, data?.format]);
+
+  const handleAdminSaveDraft = useCallback(async () => {
+    if (!draftId) return;
+    const newVariant = serializeCanvasToVariant();
+    if (!newVariant) return;
+    setAdminSaving(true);
+    // Subir thumbnail en paralelo
+    const thumbPromise = (async (): Promise<string | null> => {
+      const fc = fabricRef.current;
+      if (!fc) return null;
+      try {
+        const prevZoom = fc.getZoom();
+        const prevW = fc.getWidth();
+        const prevH = fc.getHeight();
+        const prevVpt = fc.viewportTransform ? [...fc.viewportTransform] : [1, 0, 0, 1, 0, 0];
+        fc.discardActiveObject();
+        fc.setZoom(1);
+        fc.setViewportTransform([1, 0, 0, 1, 0, 0]);
+        fc.setDimensions({ width: canvasSize.w, height: canvasSize.h });
+        fc.renderAll();
+        const targetW = 320;
+        const multiplier = targetW / canvasSize.w;
+        const dataUrl = fc.toDataURL({ format: "png", multiplier });
+        fc.setDimensions({ width: prevW, height: prevH });
+        fc.setZoom(prevZoom);
+        fc.setViewportTransform(prevVpt as [number, number, number, number, number, number]);
+        fc.renderAll();
+        const res = await fetch("/api/admin/upload-thumbnail", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ dataUrl, draftId }),
+        });
+        if (!res.ok) return null;
+        const j = (await res.json()) as { url?: string };
+        return j.url ?? null;
+      } catch (e) { console.warn(e); return null; }
+    })();
+
+    const id = await saveDraft(draftId, {
+      title: adminTitle, category: adminCategory, audience: adminAudience, premium: adminPremium,
+      internal_tags: adminInternalTags,
+      variants: [newVariant],
+      status: "draft",
+    });
+    const thumbnailUrl = await thumbPromise;
+    if (id && thumbnailUrl) {
+      await saveDraft(id, { thumbnail_url: thumbnailUrl });
+    }
+    setAdminSaving(false);
+    if (id) {
+      setAdminSavedRecently(true);
+      setTimeout(() => setAdminSavedRecently(false), 2000);
+    } else {
+      alert("Error guardando borrador.");
+    }
+  }, [draftId, adminTitle, adminCategory, adminAudience, adminPremium, adminInternalTags, serializeCanvasToVariant, saveDraft, canvasSize.w, canvasSize.h]);
+
+  const handleAdminPublish = useCallback(async () => {
+    if (!draftId) return;
+    const msg = isEditingPublished
+      ? `¿Publicar cambios de "${adminTitle}"? Reemplazará la versión anterior en /templates.`
+      : `¿Publicar "${adminTitle}" al catálogo? Aparecerá en /templates para todos.`;
+    if (!confirm(msg)) return;
+    await handleAdminSaveDraft();
+    setAdminPublishing(true);
+    const id = await publishDraft(draftId);
+    setAdminPublishing(false);
+    if (id) {
+      alert(isEditingPublished
+        ? "¡Cambios publicados! Versión anterior reemplazada en /templates."
+        : "¡Plantilla publicada! Aparecerá en /templates.");
+      router.push("/admin/templates/new");
+    } else {
+      alert("Error publicando.");
+    }
+  }, [draftId, adminTitle, isEditingPublished, handleAdminSaveDraft, publishDraft, router]);
+
   // ─── LEFT TOOLS ───────────────────────────────────────────────────────────
 
   const TOOLS: Array<{ id: LeftTool; label: string; icon: React.ReactNode; comingSoon?: boolean }> = [
@@ -1164,7 +1396,7 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
       {/* HEADER — TOPBAR */}
       <header className="h-14 ag-glass border-b border-white/[0.06] flex items-center px-2 sm:px-4 gap-2 sm:gap-3 shrink-0 z-50">
         {/* Back */}
-        <button onClick={() => router.push(template ? "/templates" : "/create")}
+        <button onClick={() => router.push(isAdminMode ? "/admin/templates/new" : (template ? "/templates" : "/create"))}
           title="Volver"
           className="ag-icon-btn">
           <ArrowLeft className="w-4 h-4" strokeWidth={2} />
@@ -1176,12 +1408,26 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
           <span className="text-[13px] font-bold hidden lg:block text-white/90 tracking-tight">Arte Gen</span>
         </div>
 
+        {isAdminMode && (
+          <span className="px-2 py-0.5 rounded-md bg-red-500/15 border border-red-500/30 text-red-300 text-[10px] font-bold tracking-wide">
+            ADMIN
+          </span>
+        )}
+
         <div className="hidden sm:block w-px h-6 bg-white/[0.07] mx-1"/>
 
-        {/* Editable doc title */}
+        {/* Editable doc title (en modo admin sincroniza con adminTitle) */}
         <input
-          value={docTitle}
-          onChange={(e) => { setDocTitle(e.target.value); setSaveState("unsaved"); }}
+          value={isAdminMode ? adminTitle : docTitle}
+          onChange={(e) => {
+            if (isAdminMode) {
+              setAdminTitle(e.target.value);
+              setDocTitle(e.target.value);
+            } else {
+              setDocTitle(e.target.value);
+            }
+            setSaveState("unsaved");
+          }}
           className="bg-transparent text-xs sm:text-sm font-semibold text-white/95 px-2 py-1 rounded-lg hover:bg-white/[0.04] focus:bg-white/[0.06] focus:outline-none focus:ring-1 focus:ring-purple-500/40 transition-all min-w-0 flex-1 sm:flex-none sm:max-w-[200px]"
           placeholder="Diseño sin título"
         />
@@ -1271,20 +1517,48 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
           <Share2 className="w-4 h-4" strokeWidth={1.5} />
         </button>
 
-        {/* Save - icono solo en mobile */}
-        <button
-          onClick={handleSave}
-          disabled={savingProject}
-          title={currentProjectId ? "Guardar cambios (⌘S)" : "Guardar nuevo diseño"}
-          className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.08] border border-white/[0.08] text-white text-xs font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed">
-          {savingProject ? (
-            <><div className="w-3 h-3 border border-gray-400 border-t-white rounded-full animate-spin"/><span className="hidden sm:inline">Guardando…</span></>
-          ) : (
-            <><Save className="w-3.5 h-3.5" strokeWidth={2} /><span className="hidden sm:inline">{currentProjectId ? "Guardar" : "Guardar"}</span></>
-          )}
-        </button>
+        {/* Save normal - oculto en modo admin */}
+        {!isAdminMode && (
+          <button
+            onClick={handleSave}
+            disabled={savingProject}
+            title={currentProjectId ? "Guardar cambios (⌘S)" : "Guardar nuevo diseño"}
+            className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.08] border border-white/[0.08] text-white text-xs font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+            {savingProject ? (
+              <><div className="w-3 h-3 border border-gray-400 border-t-white rounded-full animate-spin"/><span className="hidden sm:inline">Guardando…</span></>
+            ) : (
+              <><Save className="w-3.5 h-3.5" strokeWidth={2} /><span className="hidden sm:inline">{currentProjectId ? "Guardar" : "Guardar"}</span></>
+            )}
+          </button>
+        )}
 
-        {/* Export - en mobile abre bottom sheet de export */}
+        {/* ADMIN: boton meta toggle */}
+        {isAdminMode && (
+          <button
+            onClick={() => setAdminMetaOpen(o => !o)}
+            title="Metadata (categoria, audiencia, premium)"
+            className="hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.10] text-gray-300 text-xs font-medium transition-all"
+          >
+            <Tag className="w-3.5 h-3.5" strokeWidth={2}/>
+            <span className="hidden lg:inline">{adminCategory} · {adminAudience.length || 0} pub</span>
+            <ChevronDown className={`w-3 h-3 transition-transform ${adminMetaOpen ? "rotate-180" : ""}`} strokeWidth={2}/>
+          </button>
+        )}
+
+        {/* ADMIN: Guardar borrador */}
+        {isAdminMode && (
+          <button
+            onClick={handleAdminSaveDraft}
+            disabled={adminSaving}
+            title="Guardar borrador (Supabase)"
+            className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.08] border border-white/[0.08] text-white text-xs font-semibold transition-all disabled:opacity-50"
+          >
+            {adminSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin"/> : (adminSavedRecently ? <><span className="w-2 h-2 rounded-full bg-emerald-400"/><span className="hidden sm:inline">Guardado</span></> : <><Save className="w-3.5 h-3.5" strokeWidth={2}/><span className="hidden sm:inline">Guardar borrador</span></>)}
+          </button>
+        )}
+
+        {/* Export normal - oculto en modo admin (porque tenemos Publicar) */}
+        {!isAdminMode && (
         <div className="relative group">
           <button
             onClick={() => isMobile && setMobilePanelOpen("export")}
@@ -1302,10 +1576,77 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
             ))}
           </div>
         </div>
+        )}
+
+        {/* ADMIN: Publicar */}
+        {isAdminMode && (
+          <button
+            onClick={handleAdminPublish}
+            disabled={adminPublishing}
+            title="Publicar al catalogo /templates"
+            className="flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-500 hover:to-green-500 text-white text-xs font-bold transition-all shadow-lg shadow-emerald-500/30 disabled:opacity-50"
+          >
+            {adminPublishing ? <Loader2 className="w-3.5 h-3.5 animate-spin"/> : <><Send className="w-3.5 h-3.5" strokeWidth={2.5}/><span className="hidden sm:inline">{isEditingPublished ? "Publicar cambios" : "Publicar"}</span></>}
+          </button>
+        )}
 
         {/* User avatar - oculto en mobile */}
         <div className="hidden sm:flex w-8 h-8 rounded-full bg-gradient-to-br from-zinc-700 to-zinc-900 border border-white/[0.07] items-center justify-center text-[11px] font-bold text-white/80 cursor-pointer hover:border-white/20 transition-all ml-1">AG</div>
       </header>
+
+      {/* ADMIN: Banner editando publicada */}
+      {isAdminMode && isEditingPublished && (
+        <div className="bg-amber-500/10 border-b border-amber-500/30 px-3 py-2 text-xs text-amber-300 flex items-center gap-2 shrink-0">
+          <Edit3 className="w-3 h-3" strokeWidth={2.5}/>
+          <span><strong>Editando publicada:</strong> al publicar, la versión anterior se reemplazará en /templates.</span>
+        </div>
+      )}
+
+      {/* ADMIN: Meta panel desplegable */}
+      {isAdminMode && adminMetaOpen && (
+        <div className="bg-[#0f0f1a] border-b border-white/[0.08] px-4 py-3 space-y-3 shrink-0 z-20 max-h-[40vh] overflow-y-auto">
+          <div className="flex items-center gap-2">
+            <label className="text-xs text-gray-400 font-semibold w-24 shrink-0">Categoría</label>
+            <select
+              value={adminCategory}
+              onChange={e => setAdminCategory(e.target.value)}
+              className="flex-1 bg-white/[0.04] border border-white/10 rounded-lg px-3 py-1.5 text-sm text-white outline-none focus:border-purple-500/40"
+            >
+              {ADMIN_CATEGORIES.map(c => <option key={c} value={c} className="bg-[#1c1c28]">{c}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="text-xs text-gray-400 font-semibold mb-1.5 block">Audiencia (multi)</label>
+            <div className="flex flex-wrap gap-1.5">
+              {ADMIN_AUDIENCES.map(a => {
+                const active = adminAudience.includes(a.id);
+                return (
+                  <button
+                    key={a.id}
+                    onClick={() => setAdminAudience(prev => active ? prev.filter(x => x !== a.id) : [...prev, a.id])}
+                    className={`px-3 py-1 rounded-lg text-xs font-medium transition-all ${
+                      active ? "bg-purple-600/30 text-purple-200 border border-purple-500/40" : "bg-white/[0.04] text-gray-400 border border-white/10 hover:bg-white/[0.08]"
+                    }`}
+                  >
+                    {a.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <label className="text-xs text-gray-400 font-semibold w-24 shrink-0">Premium</label>
+            <button
+              onClick={() => setAdminPremium(p => !p)}
+              className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
+                adminPremium ? "bg-fuchsia-600/30 text-fuchsia-200 border border-fuchsia-500/40" : "bg-white/[0.04] text-gray-500 border border-white/10"
+              }`}
+            >
+              {adminPremium ? "✓ Premium" : "Free"}
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="flex-1 flex overflow-hidden bg-[#070711]">
 

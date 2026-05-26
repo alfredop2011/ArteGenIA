@@ -2,7 +2,6 @@ import Link from "next/link";
 import EditorRouter from "@/components/editor/EditorRouter";
 import GeneratedEditor from "@/components/editor/GeneratedEditor";
 import GeneratedEditorWrapper from "@/components/editor/GeneratedEditorWrapper";
-import TemplateCreatorWrapper from "@/components/editor/TemplateCreatorWrapper";
 import PublishedTemplateLoader from "@/components/editor/PublishedTemplateLoader";
 import { templates } from "@/data/templates";
 import { isValidFormatId, type FormatId } from "@/data/formats";
@@ -30,10 +29,11 @@ export default async function EditorPage({ params, searchParams }: EditorPagePro
             ? (requestedFormat as FormatId)
             : undefined;
 
-    // Modo "draft-{uuid}" — borrador admin de plantilla (creator wrapper)
+    // Modo "draft-{uuid}" — borrador admin de plantilla
+    // Sesion 4 creador: usa GeneratedEditor con prop draftId (no TemplateCreatorWrapper)
     const draftMatch = id.match(DRAFT_RE);
     if (draftMatch) {
-        return <TemplateCreatorWrapper draftId={draftMatch[1]} />;
+        return <GeneratedEditor draftId={draftMatch[1]} formatId={formatId} />;
     }
 
     // Modo "published-{uuid}" — plantilla publicada (loader que la inyecta en localStorage)
