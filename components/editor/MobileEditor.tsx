@@ -14,19 +14,23 @@ import { applyTemplateLayers } from "@/lib/fabricApplyTemplateLayers";
 // ════════════════════════════════════════════════════════════════════════════
 //  MobileEditor — editor mobile-first separado del desktop
 //
-//  SESION 3 entrega (acumulado sobre V1+V2):
-//    - Pinch zoom 2 dedos: zoom in/out centrado en el punto medio entre dedos
-//      Min 10%, max 500%
-//    - Pan 1 dedo en zona vacia: arrastra y mueve la vista del canvas
-//    - Pan/zoom respetan la seleccion (los gestures sobre objetos siguen
-//      siendo gestionados por Fabric -> drag de capa)
-//    - Boton flotante "ajustar a pantalla" (esquina inferior derecha)
-//      resetea zoom + viewport al estado inicial
-//    - Export PNG sigue funcionando: resetea zoom/viewport interno, exporta
-//      el flyer a tamano nativo, restaura estado del usuario
+//  SESION 4 entrega (acumulado sobre V1+V2+V3):
+//    - Handles tactiles 40px (Apple HIG) - antes 7px imposibles en touch
+//    - Handles circulares purple-500 con borde blanco visible
+//    - Padding 12px alrededor del bounding box (mas espacio para tocar)
+//    - Border scale factor 2 (linea de seleccion mas gruesa)
+//    - Rotate handle visible y separado 60px arriba del bbox
+//    - AUTO-COMPENSACION del tamano de handles segun zoom:
+//        - cornerSize = 40 / zoom (siempre se ven a ~40px en pantalla)
+//        - Funciona con auto-fit Y con pinch zoom del usuario
+//        - Guard contra loop infinito (solo re-aplica si zoom cambia)
+//    - Ahora puedes:
+//        * Tocar esquina con dedo -> redimensionar
+//        * Tocar lateral -> redimensionar 1 eje
+//        * Tocar handle de arriba (rotate) -> rotar capa
 //
-//  Pendiente proximas sesiones: handles tactiles 40px, rotate, drag-reorder
-//    capas, anadir texto/imagen, snapping, undo/redo.
+//  Pendiente proximas sesiones: drag-reorder capas, anadir texto/imagen,
+//    snapping, undo/redo.
 // ════════════════════════════════════════════════════════════════════════════
 
 type Props = {
@@ -148,13 +152,26 @@ export default function MobileEditor({ templateId, formatId }: Props) {
       });
       setLayers(items);
 
-      // Quitar interaccion de capas marcadas selectable: false
+      // Configurar TODAS las capas para uso tactil mobile
       fc.getObjects().forEach((obj, i) => {
         const ld = variant.layers?.[i] as { selectable?: boolean } | undefined;
         if (ld && ld.selectable === false) {
           obj.selectable = false;
           obj.evented = false;
+          return;
         }
+        // SESION 4: Estilo handles tactil-friendly
+        // cornerSize y otros se ajustaran dinamicamente segun zoom en el effect 3g
+        obj.set({
+          cornerColor: "#a855f7",          // purple-500
+          cornerStrokeColor: "#ffffff",
+          cornerStyle: "circle",
+          transparentCorners: false,
+          borderColor: "#a855f7",
+          borderScaleFactor: 2,
+          padding: 8,                       // espacio extra alrededor del bbox
+          hasRotatingPoint: true,           // habilita rotate handle
+        });
       });
       setLoaded(true);
       fc.renderAll();
@@ -166,6 +183,53 @@ export default function MobileEditor({ templateId, formatId }: Props) {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [template, formatId]);
+
+  // ─── 3g. Ajustar tamano de handles segun zoom actual (sesion 4) ─────────
+  // Los handles aparecen a cornerSize * zoom px en pantalla. Compensamos
+  // multiplicando cornerSize por (1 / zoom) para que SIEMPRE midan ~40px
+  // visuales independientemente del zoom (pinch/auto-fit).
+  // Se ejecuta al cambiar el zoom (con guard para evitar loop infinito).
+  const lastAppliedZoomRef = useRef<number>(0);
+  useEffect(() => {
+    const fc = fabricRef.current;
+    if (!fc) return;
+
+    const applyHandleSize = (force = false) => {
+      const z = fc.getZoom();
+      if (z <= 0) return;
+      // Guard: solo aplica si el zoom cambio significativamente
+      if (!force && Math.abs(z - lastAppliedZoomRef.current) < 0.01) return;
+      lastAppliedZoomRef.current = z;
+
+      // Tamano objetivo visual: 40px (Apple HIG min tap target ~44px)
+      const cornerSizeNative = 40 / z;
+      const rotateOffsetNative = 60 / z;
+      const paddingNative = 12 / z;
+      const borderScaleNative = 2 / z;
+
+      fc.getObjects().forEach(obj => {
+        if (!obj.selectable) return;
+        obj.set({
+          cornerSize: cornerSizeNative,
+          touchCornerSize: cornerSizeNative,
+          padding: paddingNative,
+          borderScaleFactor: borderScaleNative,
+          rotatingPointOffset: rotateOffsetNative,
+        });
+        obj.setCoords();
+      });
+      fc.requestRenderAll();
+    };
+
+    // Forzar primer apply
+    applyHandleSize(true);
+
+    // Re-aplicar cuando hay render (pinch/pan/transformacion). El guard
+    // evita el loop infinito.
+    const onTransform = () => applyHandleSize();
+    fc.on("after:render", onTransform);
+    return () => { fc.off("after:render", onTransform); };
+  }, [loaded]);
 
   // ─── 3b. Ajustar canvas DOM al area disponible + auto-fit zoom inicial
   // SESION 3: el canvas DOM ocupa toda el area disponible. El zoom + viewport
