@@ -112,22 +112,19 @@ export default function MobileEditor({ templateId, formatId }: Props) {
   // el flyer dentro. El pinch zoom puede aumentar/disminuir libremente despues.
   const [canvasArea, setCanvasArea] = useState({ w: 300, h: 500 });
 
-  // Compute canvas area - reduce cuando hay sheet abierto para que el
-  // flyer NO quede tapado por el sheet inferior.
+  // Compute canvas area - mantiene tamano completo siempre.
+  // El reposicionamiento del flyer cuando hay sheet abierto se hace via
+  // viewport offset (effect mas abajo) para que la capa seleccionada quede
+  // visible POR ENCIMA del sheet, no tapada.
   const computeArea = useCallback(() => {
     if (!template) return;
     const variant = getVariant(template, formatId);
     if (!variant) return;
     const availW = window.innerWidth - 16;
-    // Header (56) + bottom toolbar (72) + margenes (16) = 144
-    // Si hay sheet abierto, restamos un 40vh adicional para que el flyer
-    // quede arriba visible y no detras del sheet.
-    const baseAvailH = window.innerHeight - 56 - 72 - 16;
-    const sheetH = activeSheet ? window.innerHeight * 0.32 : 0;
-    const availH = baseAvailH - sheetH;
+    const availH = window.innerHeight - 56 - 72 - 16;
     setCanvasArea({ w: availW, h: Math.max(200, availH) });
     setCanvasSize({ w: variant.width, h: variant.height });
-  }, [template, formatId, activeSheet]);
+  }, [template, formatId]);
 
   useEffect(() => {
     computeArea();
@@ -411,6 +408,41 @@ export default function MobileEditor({ templateId, formatId }: Props) {
       fc.off("selection:cleared", onDeselect);
     };
   }, [layers]);
+
+  // ─── 3c-bis. Reposicionar viewport cuando hay sheet + capa seleccionada
+  // SESION 6.3 fix: cuando se abre un sheet y hay capa seleccionada, ajustar
+  // el viewportTransform para que la capa quede visible POR ENCIMA del sheet
+  // (en el tercio superior de la pantalla, no detras del sheet inferior).
+  useEffect(() => {
+    const fc = fabricRef.current;
+    if (!fc || !loaded || !activeSheet || !selectedLayer) return;
+
+    // Altura disponible cuando hay sheet abierto: por encima del sheet
+    // Sheet ocupa 30vh, asi que tenemos 70vh de canvas area total -
+    // header (56) - bottom toolbar (72) ~ 70% del canvas area util
+    const sheetHpx = window.innerHeight * 0.30;
+    const visibleH = canvasArea.h - sheetHpx; // altura visible por encima del sheet
+
+    // Obtener bounding box del objeto en coords del canvas (sin viewport)
+    const obj = selectedLayer.obj;
+    const objTop = obj.top ?? 0;
+    const objHeight = (obj.height ?? 0) * (obj.scaleY ?? 1);
+    const objCenter = objTop + objHeight / 2;
+
+    // Calcular target Y en el viewport para que el objeto quede en
+    // el centro vertical de la zona visible (la mitad superior antes del sheet)
+    const zoom = fc.getZoom();
+    const targetCenterY = visibleH / 2;
+    // viewportTransform: y_screen = y_canvas * zoom + ty
+    // Queremos que objCenter * zoom + ty = targetCenterY
+    // => ty = targetCenterY - objCenter * zoom
+    const ty = targetCenterY - objCenter * zoom;
+
+    const vpt = fc.viewportTransform;
+    if (!vpt) return;
+    fc.setViewportTransform([vpt[0], vpt[1], vpt[2], vpt[3], vpt[4], ty]);
+    fc.requestRenderAll();
+  }, [activeSheet, selectedLayer, loaded, canvasArea.h]);
 
   // ─── 3d. Auto-abrir sheet contextual al seleccionar capa ────────────────
   // Sesion 2: al seleccionar capa texto -> abre sheet "text" (propiedades).
