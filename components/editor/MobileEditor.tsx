@@ -2,10 +2,19 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Canvas as FabricCanvas, type FabricObject, Textbox } from "fabric";
+import {
+  Canvas as FabricCanvas,
+  type FabricObject,
+  Textbox,
+  Rect,
+  Circle,
+  FabricImage,
+} from "fabric";
 import {
   ArrowLeft, Download, Layers, Type, Image as ImageIcon, Palette, MoreHorizontal,
   Trash2, Bold, Italic, AlignLeft, AlignCenter, AlignRight, Check, X as XIcon,
+  Plus, Copy, Square, Circle as CircleIcon, MoveUp, MoveDown,
+  ChevronUp, ChevronDown, GripVertical,
 } from "lucide-react";
 import { templates, getVariant, type Template } from "@/data/templates";
 import type { FormatId } from "@/data/formats";
@@ -14,23 +23,24 @@ import { applyTemplateLayers } from "@/lib/fabricApplyTemplateLayers";
 // ════════════════════════════════════════════════════════════════════════════
 //  MobileEditor — editor mobile-first separado del desktop
 //
-//  SESION 4 entrega (acumulado sobre V1+V2+V3):
-//    - Handles tactiles 40px (Apple HIG) - antes 7px imposibles en touch
-//    - Handles circulares purple-500 con borde blanco visible
-//    - Padding 12px alrededor del bounding box (mas espacio para tocar)
-//    - Border scale factor 2 (linea de seleccion mas gruesa)
-//    - Rotate handle visible y separado 60px arriba del bbox
-//    - AUTO-COMPENSACION del tamano de handles segun zoom:
-//        - cornerSize = 40 / zoom (siempre se ven a ~40px en pantalla)
-//        - Funciona con auto-fit Y con pinch zoom del usuario
-//        - Guard contra loop infinito (solo re-aplica si zoom cambia)
-//    - Ahora puedes:
-//        * Tocar esquina con dedo -> redimensionar
-//        * Tocar lateral -> redimensionar 1 eje
-//        * Tocar handle de arriba (rotate) -> rotar capa
+//  SESION 5 entrega (acumulado sobre V1+V2+V3+V4):
+//    - Sheet "Foto" funcional: boton "Subir foto" abre galeria iPhone nativa
+//      (FileReader + FabricImage.fromURL + auto-escala al 60% del canvas)
+//    - Sheet "Mas" funcional: 3 botones para anadir capas + acciones contextuales
+//        + Nuevo texto (Textbox por defecto centrada, abre auto sheet propiedades)
+//        + Rectangulo (300x300 purple a centro)
+//        + Circulo (radius 150 naranja a centro)
+//        Si hay capa seleccionada: Duplicar, Eliminar, Al frente, Atras
+//    - Sheet "Capas" mejorado:
+//        + Boton "Anadir capa" arriba (atajo a Mas)
+//        + Orden visual: ARRIBA en lista = FRENTE en canvas
+//        + Cuando una capa esta seleccionada: 2 flechas chevron up/down para
+//          reordenar al frente/atras
+//        + Resync state layers tras reorder Fabric
+//    - Helper registerLayer aplica styling tactil (sesion 4) a capas nuevas
 //
-//  Pendiente proximas sesiones: drag-reorder capas, anadir texto/imagen,
-//    snapping, undo/redo.
+//  Pendiente proximas sesiones: snapping / smart guides, undo/redo,
+//    soporte mobile para /editor/generated y proyectos guardados.
 // ════════════════════════════════════════════════════════════════════════════
 
 type Props = {
@@ -512,6 +522,184 @@ export default function MobileEditor({ templateId, formatId }: Props) {
     setSelectedLayer(null);
   }, [selectedLayer]);
 
+  // ─── 5b. Anadir capa al layers state (helper interno) ───────────────────
+  const registerLayer = useCallback((obj: FabricObject, name: string, type: LayerItem["type"]) => {
+    const id = `${type}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    // Aplica el styling tactil (mismo que loaded effect)
+    obj.set({
+      cornerColor: "#a855f7",
+      cornerStrokeColor: "#ffffff",
+      cornerStyle: "circle",
+      transparentCorners: false,
+      borderColor: "#a855f7",
+      borderScaleFactor: 2,
+      padding: 8,
+      hasRotatingPoint: true,
+    });
+    const item: LayerItem = { id, name, type, obj };
+    setLayers(prev => [...prev, item]);
+    // Forzar re-aplicar handle sizing (effect 3g lo hara al next render)
+    lastAppliedZoomRef.current = 0;
+    return item;
+  }, []);
+
+  // ─── 5c. + Texto ────────────────────────────────────────────────────────
+  const handleAddText = useCallback(() => {
+    const fc = fabricRef.current;
+    if (!fc) return;
+    const t = new Textbox("Doble tap para editar", {
+      left: canvasSize.w / 2 - 200,
+      top: canvasSize.h / 2 - 30,
+      width: 400,
+      fontSize: 60,
+      fontFamily: "Montserrat",
+      fill: "#ffffff",
+      fontWeight: "700",
+      textAlign: "center",
+    });
+    fc.add(t);
+    const item = registerLayer(t, "Nuevo texto", "text");
+    fc.setActiveObject(t);
+    fc.requestRenderAll();
+    setSelectedLayer(item);
+    setActiveSheet("text"); // auto-abrir sheet propiedades
+  }, [canvasSize.w, canvasSize.h, registerLayer]);
+
+  // ─── 5d. + Rectangulo ───────────────────────────────────────────────────
+  const handleAddRect = useCallback(() => {
+    const fc = fabricRef.current;
+    if (!fc) return;
+    const r = new Rect({
+      left: canvasSize.w / 2 - 150,
+      top: canvasSize.h / 2 - 150,
+      width: 300,
+      height: 300,
+      fill: "#a855f7",
+      opacity: 0.8,
+    });
+    fc.add(r);
+    const item = registerLayer(r, "Rectángulo", "shape");
+    fc.setActiveObject(r);
+    fc.requestRenderAll();
+    setSelectedLayer(item);
+    setActiveSheet(null);
+  }, [canvasSize.w, canvasSize.h, registerLayer]);
+
+  // ─── 5e. + Circulo ──────────────────────────────────────────────────────
+  const handleAddCircle = useCallback(() => {
+    const fc = fabricRef.current;
+    if (!fc) return;
+    const c = new Circle({
+      left: canvasSize.w / 2 - 150,
+      top: canvasSize.h / 2 - 150,
+      radius: 150,
+      fill: "#fb923c",
+      opacity: 0.8,
+    });
+    fc.add(c);
+    const item = registerLayer(c, "Círculo", "shape");
+    fc.setActiveObject(c);
+    fc.requestRenderAll();
+    setSelectedLayer(item);
+    setActiveSheet(null);
+  }, [canvasSize.w, canvasSize.h, registerLayer]);
+
+  // ─── 5f. + Foto (galeria iPhone) ────────────────────────────────────────
+  // Usa <input type="file" accept="image/*"> que abre nativo el picker.
+  // En iPhone Safari ofrece "Tomar foto" + "Elegir de galeria".
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const handleAddPhotoClick = useCallback(() => {
+    fileInputRef.current?.click();
+  }, []);
+  const handleFileSelected = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const fc = fabricRef.current;
+    if (!fc) return;
+
+    // Convertir file a dataURL para Fabric
+    const reader = new FileReader();
+    reader.onload = async (ev) => {
+      const dataUrl = ev.target?.result as string;
+      if (!dataUrl) return;
+      try {
+        const img = await FabricImage.fromURL(dataUrl, { crossOrigin: "anonymous" });
+        // Auto-escalar para que quepa en el canvas (max 60% del ancho)
+        const maxW = canvasSize.w * 0.6;
+        const maxH = canvasSize.h * 0.6;
+        const imgW = img.width ?? 1;
+        const imgH = img.height ?? 1;
+        const scaleX = maxW / imgW;
+        const scaleY = maxH / imgH;
+        const s = Math.min(scaleX, scaleY, 1);
+        img.set({
+          left: canvasSize.w / 2 - (imgW * s) / 2,
+          top: canvasSize.h / 2 - (imgH * s) / 2,
+          scaleX: s,
+          scaleY: s,
+        });
+        fc.add(img);
+        const item = registerLayer(img, "Foto subida", "image");
+        fc.setActiveObject(img);
+        fc.requestRenderAll();
+        setSelectedLayer(item);
+        setActiveSheet(null);
+      } catch (err) {
+        console.error("Error subiendo foto:", err);
+        alert("No se pudo cargar la foto.");
+      }
+    };
+    reader.readAsDataURL(file);
+    // Reset input para poder subir misma foto otra vez si quiere
+    e.target.value = "";
+  }, [canvasSize.w, canvasSize.h, registerLayer]);
+
+  // ─── 5g. Duplicar capa seleccionada ─────────────────────────────────────
+  const handleDuplicateSelected = useCallback(async () => {
+    const fc = fabricRef.current;
+    if (!fc || !selectedLayer) return;
+    try {
+      const cloned = await selectedLayer.obj.clone();
+      cloned.set({
+        left: (selectedLayer.obj.left ?? 0) + 40,
+        top: (selectedLayer.obj.top ?? 0) + 40,
+      });
+      fc.add(cloned);
+      const item = registerLayer(cloned, `${selectedLayer.name} (copia)`, selectedLayer.type);
+      fc.setActiveObject(cloned);
+      fc.requestRenderAll();
+      setSelectedLayer(item);
+    } catch (err) {
+      console.error("Error duplicando:", err);
+    }
+  }, [selectedLayer, registerLayer]);
+
+  // ─── 5h. Reordenar capas (mover frente/atras) ───────────────────────────
+  const handleBringForward = useCallback(() => {
+    const fc = fabricRef.current;
+    if (!fc || !selectedLayer) return;
+    fc.bringObjectForward(selectedLayer.obj);
+    fc.requestRenderAll();
+    // Resync layers order
+    const ordered: LayerItem[] = fc.getObjects().map((obj) => {
+      const found = layers.find(l => l.obj === obj);
+      return found ?? { id: `unknown-${Date.now()}`, name: "Capa", type: "shape" as const, obj };
+    });
+    setLayers(ordered);
+  }, [selectedLayer, layers]);
+
+  const handleSendBackward = useCallback(() => {
+    const fc = fabricRef.current;
+    if (!fc || !selectedLayer) return;
+    fc.sendObjectBackwards(selectedLayer.obj);
+    fc.requestRenderAll();
+    const ordered: LayerItem[] = fc.getObjects().map((obj) => {
+      const found = layers.find(l => l.obj === obj);
+      return found ?? { id: `unknown-${Date.now()}`, name: "Capa", type: "shape" as const, obj };
+    });
+    setLayers(ordered);
+  }, [selectedLayer, layers]);
+
   // ─── 6. Render ─────────────────────────────────────────────────────────
   return (
     <div className="fixed inset-0 bg-[#070711] flex flex-col text-white overflow-hidden">
@@ -639,29 +827,91 @@ export default function MobileEditor({ templateId, formatId }: Props) {
             <div className="flex-1 overflow-y-auto px-4 py-4">
               {activeSheet === "layers" && (
                 <div className="space-y-1">
-                  {layers.filter(l => l.obj.selectable !== false).map(layer => (
-                    <button
-                      key={layer.id}
-                      onClick={() => {
-                        const fc = fabricRef.current;
-                        if (!fc) return;
-                        fc.setActiveObject(layer.obj);
-                        fc.renderAll();
-                        setSelectedLayer(layer);
-                        setActiveSheet(null);
-                      }}
-                      className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left transition-colors ${
-                        selectedLayer?.id === layer.id ? "bg-purple-600/20 border border-purple-500/40" : "bg-white/[0.03] active:bg-white/[0.08]"
-                      }`}
-                    >
-                      <div className="w-8 h-8 rounded-lg bg-white/[0.05] flex items-center justify-center text-gray-400">
-                        {layer.type === "text" ? <Type size={14}/> : layer.type === "image" ? <ImageIcon size={14}/> : <Palette size={14}/>}
+                  {/* Boton +Anadir capa arriba (atajo a "Mas") */}
+                  <button
+                    onClick={() => setActiveSheet("more")}
+                    className="w-full flex items-center justify-center gap-2 px-3 py-2.5 mb-3 rounded-xl border border-dashed border-white/15 text-purple-300 active:bg-white/[0.05] text-sm font-semibold"
+                  >
+                    <Plus size={16} strokeWidth={2.5}/>
+                    Añadir capa
+                  </button>
+
+                  {/* Lista de capas - orden visual: ARRIBA en lista = FRENTE en canvas */}
+                  {[...layers].reverse().filter(l => l.obj.selectable !== false).map((layer) => {
+                    const isSelected = selectedLayer?.id === layer.id;
+                    const realIdx = layers.findIndex(l => l.id === layer.id);
+                    const canMoveUp = realIdx < layers.length - 1;
+                    const canMoveDown = realIdx > 0;
+                    return (
+                      <div
+                        key={layer.id}
+                        className={`flex items-center gap-2 px-2 py-2 rounded-xl ${
+                          isSelected ? "bg-purple-600/20 border border-purple-500/40" : "bg-white/[0.03]"
+                        }`}
+                      >
+                        <button
+                          onClick={() => {
+                            const fc = fabricRef.current;
+                            if (!fc) return;
+                            fc.setActiveObject(layer.obj);
+                            fc.renderAll();
+                            setSelectedLayer(layer);
+                            setActiveSheet(null);
+                          }}
+                          className="flex items-center gap-3 flex-1 text-left active:bg-white/5 rounded-lg px-1 py-1"
+                        >
+                          <div className="w-8 h-8 rounded-lg bg-white/[0.05] flex items-center justify-center text-gray-400">
+                            {layer.type === "text" ? <Type size={14}/> : layer.type === "image" ? <ImageIcon size={14}/> : <Palette size={14}/>}
+                          </div>
+                          <span className="text-sm text-white flex-1 truncate">{layer.name}</span>
+                        </button>
+                        {/* Arrows para reordenar - solo visible si esta seleccionada */}
+                        {isSelected && (
+                          <>
+                            <button
+                              onClick={() => {
+                                const fc = fabricRef.current;
+                                if (!fc || !canMoveUp) return;
+                                fc.bringObjectForward(layer.obj);
+                                fc.requestRenderAll();
+                                const ordered = fc.getObjects().map((obj) => layers.find(l => l.obj === obj)!).filter(Boolean);
+                                setLayers(ordered);
+                              }}
+                              disabled={!canMoveUp}
+                              className={`w-8 h-8 rounded-lg flex items-center justify-center ${canMoveUp ? "text-gray-300 active:bg-white/10" : "text-gray-700 opacity-30"}`}
+                              aria-label="Mover al frente"
+                            >
+                              <ChevronUp size={16} strokeWidth={2.5}/>
+                            </button>
+                            <button
+                              onClick={() => {
+                                const fc = fabricRef.current;
+                                if (!fc || !canMoveDown) return;
+                                fc.sendObjectBackwards(layer.obj);
+                                fc.requestRenderAll();
+                                const ordered = fc.getObjects().map((obj) => layers.find(l => l.obj === obj)!).filter(Boolean);
+                                setLayers(ordered);
+                              }}
+                              disabled={!canMoveDown}
+                              className={`w-8 h-8 rounded-lg flex items-center justify-center ${canMoveDown ? "text-gray-300 active:bg-white/10" : "text-gray-700 opacity-30"}`}
+                              aria-label="Enviar atrás"
+                            >
+                              <ChevronDown size={16} strokeWidth={2.5}/>
+                            </button>
+                          </>
+                        )}
+                        {!isSelected && (
+                          <div className="text-gray-700 px-1">
+                            <GripVertical size={14} strokeWidth={2}/>
+                          </div>
+                        )}
                       </div>
-                      <span className="text-sm text-white flex-1 truncate">{layer.name}</span>
-                    </button>
-                  ))}
-                  {layers.length === 0 && (
-                    <p className="text-center text-gray-500 text-sm py-8">No hay capas</p>
+                    );
+                  })}
+                  {layers.filter(l => l.obj.selectable !== false).length === 0 && (
+                    <p className="text-center text-gray-500 text-sm py-8">
+                      No hay capas editables. Toca <span className="text-purple-300 font-semibold">+ Añadir capa</span> para empezar.
+                    </p>
                   )}
                 </div>
               )}
@@ -903,17 +1153,138 @@ export default function MobileEditor({ templateId, formatId }: Props) {
                 </div>
               )}
 
-              {/* SHEETS PENDIENTES: photo + more */}
-              {(activeSheet === "photo" || activeSheet === "more") && (
-                <div className="text-center text-gray-500 text-sm py-12">
-                  <p className="font-semibold text-gray-400 mb-2">Próximamente</p>
-                  <p className="text-xs">Esta sección se completa en próximas sesiones (subir foto, duplicar, mover capa, etc).</p>
+              {/* ─── SHEET FOTO (sesion 5) ─────────────────────────────── */}
+              {activeSheet === "photo" && (
+                <div className="space-y-3">
+                  <button
+                    onClick={handleAddPhotoClick}
+                    className="w-full flex items-center gap-3 px-4 py-4 rounded-2xl bg-gradient-to-r from-purple-600 to-fuchsia-600 active:from-purple-700 active:to-fuchsia-700 text-white font-bold text-base"
+                  >
+                    <ImageIcon size={20} strokeWidth={2.5}/>
+                    Subir foto desde galería
+                  </button>
+                  <p className="text-xs text-gray-500 text-center px-4">
+                    iPhone te dará a elegir entre &quot;Tomar foto&quot; o &quot;Elegir de la galería&quot;.
+                  </p>
+
+                  {/* TODO sesion 8: galeria de fotos de eventos populares (Unsplash) */}
+                  <div className="pt-4 border-t border-white/[0.06]">
+                    <p className="text-[10px] uppercase tracking-widest text-gray-500 font-semibold mb-2">
+                      Próximamente
+                    </p>
+                    <p className="text-xs text-gray-600">
+                      Galería de fotos para eventos (música, fiesta, conciertos) integrada.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* ─── SHEET MAS (sesion 5) ──────────────────────────────── */}
+              {activeSheet === "more" && (
+                <div className="space-y-2">
+                  <p className="text-[10px] uppercase tracking-widest text-gray-500 font-semibold mb-2">Añadir capa</p>
+                  <button
+                    onClick={handleAddText}
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-white/[0.04] active:bg-white/[0.08] border border-white/10 text-white text-sm"
+                  >
+                    <div className="w-9 h-9 rounded-lg bg-purple-500/15 border border-purple-500/30 flex items-center justify-center text-purple-300">
+                      <Type size={16} strokeWidth={2}/>
+                    </div>
+                    <div className="flex-1 text-left">
+                      <p className="font-semibold">Nuevo texto</p>
+                      <p className="text-[11px] text-gray-500">Añade un texto editable</p>
+                    </div>
+                    <Plus size={16} strokeWidth={2.5} className="text-gray-500"/>
+                  </button>
+                  <button
+                    onClick={handleAddRect}
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-white/[0.04] active:bg-white/[0.08] border border-white/10 text-white text-sm"
+                  >
+                    <div className="w-9 h-9 rounded-lg bg-purple-500/15 border border-purple-500/30 flex items-center justify-center text-purple-300">
+                      <Square size={16} strokeWidth={2}/>
+                    </div>
+                    <div className="flex-1 text-left">
+                      <p className="font-semibold">Rectángulo</p>
+                      <p className="text-[11px] text-gray-500">Forma rectangular</p>
+                    </div>
+                    <Plus size={16} strokeWidth={2.5} className="text-gray-500"/>
+                  </button>
+                  <button
+                    onClick={handleAddCircle}
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-white/[0.04] active:bg-white/[0.08] border border-white/10 text-white text-sm"
+                  >
+                    <div className="w-9 h-9 rounded-lg bg-purple-500/15 border border-purple-500/30 flex items-center justify-center text-purple-300">
+                      <CircleIcon size={16} strokeWidth={2}/>
+                    </div>
+                    <div className="flex-1 text-left">
+                      <p className="font-semibold">Círculo</p>
+                      <p className="text-[11px] text-gray-500">Forma circular</p>
+                    </div>
+                    <Plus size={16} strokeWidth={2.5} className="text-gray-500"/>
+                  </button>
+
+                  {/* Acciones contextuales sobre capa seleccionada */}
+                  {selectedLayer && (
+                    <>
+                      <p className="text-[10px] uppercase tracking-widest text-gray-500 font-semibold mt-5 mb-2">
+                        Capa seleccionada: <span className="text-gray-300 normal-case font-medium">{selectedLayer.name}</span>
+                      </p>
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          onClick={handleDuplicateSelected}
+                          className="flex items-center justify-center gap-2 px-3 py-3 rounded-xl bg-white/[0.04] active:bg-white/[0.08] border border-white/10 text-white text-sm"
+                        >
+                          <Copy size={14} strokeWidth={2}/>
+                          Duplicar
+                        </button>
+                        <button
+                          onClick={() => { handleDeleteSelected(); setActiveSheet(null); }}
+                          className="flex items-center justify-center gap-2 px-3 py-3 rounded-xl bg-red-500/10 active:bg-red-500/20 border border-red-500/30 text-red-400 text-sm"
+                        >
+                          <Trash2 size={14} strokeWidth={2}/>
+                          Eliminar
+                        </button>
+                        <button
+                          onClick={handleBringForward}
+                          className="flex items-center justify-center gap-2 px-3 py-3 rounded-xl bg-white/[0.04] active:bg-white/[0.08] border border-white/10 text-white text-sm"
+                        >
+                          <MoveUp size={14} strokeWidth={2}/>
+                          Al frente
+                        </button>
+                        <button
+                          onClick={handleSendBackward}
+                          className="flex items-center justify-center gap-2 px-3 py-3 rounded-xl bg-white/[0.04] active:bg-white/[0.08] border border-white/10 text-white text-sm"
+                        >
+                          <MoveDown size={14} strokeWidth={2}/>
+                          Atrás
+                        </button>
+                      </div>
+                    </>
+                  )}
+                  {!selectedLayer && (
+                    <p className="text-xs text-gray-600 text-center mt-4">
+                      Selecciona una capa para duplicarla, eliminarla o cambiar su orden.
+                    </p>
+                  )}
                 </div>
               )}
             </div>
           </div>
         </>
       )}
+
+      {/* ═══ FILE INPUT INVISIBLE (sesion 5) ══════════════════════════════
+          Triggered por handleAddPhotoClick. En iPhone Safari abre selector
+          nativo con opciones "Tomar foto" + "Elegir de la galeria".
+          ═══════════════════════════════════════════════════════════════════ */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        onChange={handleFileSelected}
+        style={{ display: "none" }}
+      />
 
       {/* ═══ FULLSCREEN TEXT EDIT MODAL (sesion 2) ════════════════════════
           Se abre via doble tap en canvas OR boton "Editar" del sheet Texto.
