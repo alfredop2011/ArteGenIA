@@ -1222,11 +1222,13 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
   // ─── ADMIN: SAVE DRAFT + PUBLISH ──────────────────────────────────────────
   // Serializa el canvas Fabric a una TemplateVariant compatible con applyTemplateLayers,
   // sube thumbnail a R2 y guarda en templates_draft.
+  // IMPORTANTE: iteramos sobre fc.getObjects() directamente (no toJSON) para tener
+  // acceso a las propiedades reales del objeto Fabric.
   const serializeCanvasToVariant = useCallback((): TemplateVariant | null => {
     const fc = fabricRef.current;
     if (!fc) return null;
-    const fabricJson = fc.toJSON() as { objects?: Array<Record<string, unknown>> };
-    const objs = fabricJson.objects ?? [];
+
+    const objs = fc.getObjects();
 
     type AnyLayer = {
       id: string; type: string; text?: string; src?: string;
@@ -1240,48 +1242,87 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
     };
 
     const layersOut: AnyLayer[] = objs.map((o, i) => {
-      const oType = o.type as string;
-      if (oType === "textbox" || oType === "i-text" || oType === "text") {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const obj = o as any;
+      const oType = obj.type as string;
+
+      // TEXT: textbox, i-text, text — Fabric guarda en .text directamente
+      if (oType === "textbox" || oType === "i-text" || oType === "text" || oType === "Textbox" || oType === "IText") {
         return {
           id: `text-${i}`, type: "text",
-          text: (o.text as string) ?? "",
-          x: (o.left as number) ?? 0, y: (o.top as number) ?? 0,
-          width: ((o.width as number) ?? 300) * ((o.scaleX as number) ?? 1),
-          fontSize: (o.fontSize as number) ?? 60,
-          fontFamily: (o.fontFamily as string) ?? "Montserrat",
-          color: (o.fill as string) ?? "#fff",
-          fontWeight: o.fontWeight as string,
-          fontStyle: o.fontStyle as string,
-          textAlign: o.textAlign as string,
-          originX: o.originX as string,
-          originY: o.originY as string,
-          angle: o.angle as number,
-          charSpacing: o.charSpacing as number,
-          lineHeight: o.lineHeight as number,
+          text: obj.text ?? "",
+          x: obj.left ?? 0,
+          y: obj.top ?? 0,
+          width: (obj.width ?? 300) * (obj.scaleX ?? 1),
+          fontSize: obj.fontSize ?? 60,
+          fontFamily: obj.fontFamily ?? "Montserrat",
+          color: obj.fill ?? "#fff",
+          fontWeight: obj.fontWeight ?? "normal",
+          fontStyle: obj.fontStyle ?? "normal",
+          textAlign: obj.textAlign ?? "left",
+          originX: obj.originX ?? "left",
+          originY: obj.originY ?? "top",
+          angle: obj.angle ?? 0,
+          charSpacing: obj.charSpacing ?? 0,
+          lineHeight: obj.lineHeight ?? 1.16,
         };
       }
-      if (oType === "image") {
+
+      // IMAGE: FabricImage. El src está en _element.src o getSrc()
+      if (oType === "image" || oType === "Image" || oType === "FabricImage") {
+        const src = obj._element?.src ?? obj.getSrc?.() ?? "";
         return {
           id: `image-${i}`, type: "image",
-          src: (o.src as string) ?? "",
-          x: o.left as number, y: o.top as number,
-          scaleX: o.scaleX as number, scaleY: o.scaleY as number,
-          opacity: o.opacity as number,
-          angle: o.angle as number,
+          src,
+          x: obj.left ?? 0,
+          y: obj.top ?? 0,
+          scaleX: obj.scaleX ?? 1,
+          scaleY: obj.scaleY ?? 1,
+          opacity: obj.opacity ?? 1,
+          angle: obj.angle ?? 0,
+          originX: obj.originX ?? "left",
+          originY: obj.originY ?? "top",
         };
       }
-      const isCircle = oType === "circle";
+
+      // SHAPE rect
+      if (oType === "rect" || oType === "Rect") {
+        return {
+          id: `shape-${i}`, type: "shape", shape: "rect",
+          x: obj.left ?? 0, y: obj.top ?? 0,
+          width: (obj.width ?? 100) * (obj.scaleX ?? 1),
+          height: (obj.height ?? 100) * (obj.scaleY ?? 1),
+          fill: obj.fill ?? "#fff",
+          opacity: obj.opacity ?? 1,
+          selectable: obj.selectable ?? true,
+          angle: obj.angle ?? 0,
+        };
+      }
+
+      // SHAPE circle
+      if (oType === "circle" || oType === "Circle") {
+        const radius = (obj.radius ?? 50) * (obj.scaleX ?? 1);
+        return {
+          id: `shape-${i}`, type: "shape", shape: "circle",
+          x: obj.left ?? 0, y: obj.top ?? 0,
+          width: radius * 2, // applyTemplateLayers usa width/2 como radius
+          height: radius * 2,
+          fill: obj.fill ?? "#fff",
+          opacity: obj.opacity ?? 1,
+          selectable: obj.selectable ?? true,
+          angle: obj.angle ?? 0,
+        };
+      }
+
+      // Fallback: rect generico magenta para detectar tipos no manejados
+      console.warn("[SERIALIZE] tipo desconocido:", oType, obj);
       return {
-        id: `shape-${i}`, type: "shape",
-        shape: isCircle ? "circle" : "rect",
-        x: (o.left as number) ?? 0, y: (o.top as number) ?? 0,
-        width: ((o.width as number) ?? 100) * ((o.scaleX as number) ?? 1),
-        height: ((o.height as number) ?? 100) * ((o.scaleY as number) ?? 1),
-        fill: (o.fill as string) ?? "#fff",
-        opacity: o.opacity as number,
-        radius: isCircle ? (o.radius as number) : undefined,
-        selectable: o.selectable as boolean,
-        angle: o.angle as number,
+        id: `unknown-${i}`, type: "shape", shape: "rect",
+        x: obj.left ?? 0, y: obj.top ?? 0,
+        width: (obj.width ?? 100) * (obj.scaleX ?? 1),
+        height: (obj.height ?? 100) * (obj.scaleY ?? 1),
+        fill: obj.fill ?? "#ff00ff",
+        opacity: 0.5,
       };
     });
 
@@ -1432,17 +1473,21 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
           placeholder="Diseño sin título"
         />
 
-        {/* Save state - oculto en mobile (se ve en bottom toolbar) */}
-        <div className="hidden sm:flex items-center gap-1.5 text-[11px] ml-1">
-          {saveState === "saving"  && <><div className="w-2.5 h-2.5 border border-gray-500 border-t-purple-400 rounded-full animate-spin"/><span className="text-gray-500">Guardando…</span></>}
-          {saveState === "saved"   && <><div className="w-2 h-2 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400/50"/><span className="text-gray-500">Guardado</span></>}
-          {saveState === "unsaved" && <><div className="w-2 h-2 rounded-full bg-amber-400 shadow-sm shadow-amber-400/50"/><span className="text-gray-500">Sin guardar</span></>}
-        </div>
+        {/* Save state - oculto en mobile y en admin mode */}
+        {!isAdminMode && (
+          <div className="hidden sm:flex items-center gap-1.5 text-[11px] ml-1">
+            {saveState === "saving"  && <><div className="w-2.5 h-2.5 border border-gray-500 border-t-purple-400 rounded-full animate-spin"/><span className="text-gray-500">Guardando…</span></>}
+            {saveState === "saved"   && <><div className="w-2 h-2 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400/50"/><span className="text-gray-500">Guardado</span></>}
+            {saveState === "unsaved" && <><div className="w-2 h-2 rounded-full bg-amber-400 shadow-sm shadow-amber-400/50"/><span className="text-gray-500">Sin guardar</span></>}
+          </div>
+        )}
 
-        {/* Size badge */}
-        <div className="hidden md:flex items-center text-[11px] text-gray-400 border border-white/[0.07] bg-white/[0.02] rounded-lg px-2.5 py-1 ml-1">
-          {canvasSize.w} × {canvasSize.h} px
-        </div>
+        {/* Size badge - oculto en admin (se ve en meta panel) */}
+        {!isAdminMode && (
+          <div className="hidden md:flex items-center text-[11px] text-gray-400 border border-white/[0.07] bg-white/[0.02] rounded-lg px-2.5 py-1 ml-1">
+            {canvasSize.w} × {canvasSize.h} px
+          </div>
+        )}
 
         <div className="flex-1"/>
 
@@ -1462,60 +1507,68 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
           <Redo2 className="w-4 h-4" strokeWidth={2} />
         </button>
 
-        <div className="hidden sm:block w-px h-5 bg-white/[0.07] mx-0.5"/>
+        {!isAdminMode && <div className="hidden sm:block w-px h-5 bg-white/[0.07] mx-0.5"/>}
 
-        {/* Zoom selector - oculto en mobile (zoom via pinch nativo + dock) */}
-        <div className="hidden sm:flex items-center bg-white/[0.03] border border-white/[0.07] rounded-lg overflow-hidden">
-          <button onClick={() => setZoom(z => Math.max(10, z - 10))} className="px-2 py-1 text-gray-400 hover:text-white hover:bg-white/5 transition-colors text-sm">−</button>
-          <select value={zoom} onChange={(e) => setZoom(parseInt(e.target.value))}
-            className="bg-transparent text-[11px] text-white/90 px-1.5 py-1 outline-none cursor-pointer">
-            {[25, 50, 75, 100, 125, 150, 200].map(z => <option key={z} value={z} className="bg-[#1c1c28]">{z}%</option>)}
-          </select>
-          <button onClick={() => setZoom(z => Math.min(200, z + 10))} className="px-2 py-1 text-gray-400 hover:text-white hover:bg-white/5 transition-colors text-sm">+</button>
-        </div>
+        {/* Zoom selector - oculto en mobile y en admin mode */}
+        {!isAdminMode && (
+          <div className="hidden sm:flex items-center bg-white/[0.03] border border-white/[0.07] rounded-lg overflow-hidden">
+            <button onClick={() => setZoom(z => Math.max(10, z - 10))} className="px-2 py-1 text-gray-400 hover:text-white hover:bg-white/5 transition-colors text-sm">−</button>
+            <select value={zoom} onChange={(e) => setZoom(parseInt(e.target.value))}
+              className="bg-transparent text-[11px] text-white/90 px-1.5 py-1 outline-none cursor-pointer">
+              {[25, 50, 75, 100, 125, 150, 200].map(z => <option key={z} value={z} className="bg-[#1c1c28]">{z}%</option>)}
+            </select>
+            <button onClick={() => setZoom(z => Math.min(200, z + 10))} className="px-2 py-1 text-gray-400 hover:text-white hover:bg-white/5 transition-colors text-sm">+</button>
+          </div>
+        )}
 
-        <div className="hidden md:block w-px h-5 bg-white/[0.07] mx-0.5"/>
+        {!isAdminMode && <div className="hidden md:block w-px h-5 bg-white/[0.07] mx-0.5"/>}
 
-        {/* View mode toggle - SOLO DESKTOP (mobile siempre dock forzado) */}
-        <div className="hidden md:flex items-center bg-white/[0.04] border border-white/[0.08] rounded-lg overflow-hidden p-0.5">
+        {/* View mode toggle - oculto en admin */}
+        {!isAdminMode && (
+          <div className="hidden md:flex items-center bg-white/[0.04] border border-white/[0.08] rounded-lg overflow-hidden p-0.5">
+            <button
+              onClick={() => setViewMode("sidebar")}
+              title="Vista con barra lateral fija"
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium transition-all ${
+                viewMode === "sidebar"
+                  ? "bg-purple-600/30 text-purple-200 shadow-sm shadow-purple-500/30"
+                  : "text-gray-500 hover:text-gray-300"
+              }`}>
+              <PanelLeft className="w-3.5 h-3.5" strokeWidth={1.5} />
+              Sidebar
+            </button>
+            <button
+              onClick={() => setViewMode("dock")}
+              title="Vista con dock flotante inferior"
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium transition-all ${
+                viewMode === "dock"
+                  ? "bg-purple-600/30 text-purple-200 shadow-sm shadow-purple-500/30"
+                  : "text-gray-500 hover:text-gray-300"
+              }`}>
+              <PanelBottom className="w-3.5 h-3.5" strokeWidth={1.5} />
+              Dock
+            </button>
+          </div>
+        )}
+
+        {/* Command palette - oculto en admin */}
+        {!isAdminMode && (
           <button
-            onClick={() => setViewMode("sidebar")}
-            title="Vista con barra lateral fija"
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium transition-all ${
-              viewMode === "sidebar"
-                ? "bg-purple-600/30 text-purple-200 shadow-sm shadow-purple-500/30"
-                : "text-gray-500 hover:text-gray-300"
-            }`}>
-            <PanelLeft className="w-3.5 h-3.5" strokeWidth={1.5} />
-            Sidebar
+            onClick={() => setPaletteOpen(true)}
+            title="Buscar comando (⌘K)"
+            className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/[0.04] border border-white/[0.08] text-[11px] text-gray-400 hover:text-white hover:bg-white/[0.06] transition-all">
+            <Search className="w-3.5 h-3.5" strokeWidth={2} />
+            <span>Buscar</span>
+            <kbd className="ml-1 px-1.5 py-0.5 rounded bg-white/[0.06] text-[9px] text-gray-500 border border-white/5 font-mono">⌘K</kbd>
           </button>
-          <button
-            onClick={() => setViewMode("dock")}
-            title="Vista con dock flotante inferior"
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium transition-all ${
-              viewMode === "dock"
-                ? "bg-purple-600/30 text-purple-200 shadow-sm shadow-purple-500/30"
-                : "text-gray-500 hover:text-gray-300"
-            }`}>
-            <PanelBottom className="w-3.5 h-3.5" strokeWidth={1.5} />
-            Dock
+        )}
+
+        {/* Share - oculto en admin */}
+        {!isAdminMode && (
+          <button title="Compartir (próximamente)" className="ag-icon-btn opacity-60 hidden md:flex">
+            <Share2 className="w-4 h-4" strokeWidth={1.5} />
           </button>
-        </div>
-
-        {/* Command palette - SOLO DESKTOP */}
-        <button
-          onClick={() => setPaletteOpen(true)}
-          title="Buscar comando (⌘K)"
-          className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/[0.04] border border-white/[0.08] text-[11px] text-gray-400 hover:text-white hover:bg-white/[0.06] transition-all">
-          <Search className="w-3.5 h-3.5" strokeWidth={2} />
-          <span>Buscar</span>
-          <kbd className="ml-1 px-1.5 py-0.5 rounded bg-white/[0.06] text-[9px] text-gray-500 border border-white/5 font-mono">⌘K</kbd>
-        </button>
-
-        {/* Share - SOLO DESKTOP */}
-        <button title="Compartir (próximamente)" className="ag-icon-btn opacity-60 hidden md:flex">
-          <Share2 className="w-4 h-4" strokeWidth={1.5} />
-        </button>
+        )}
 
         {/* Save normal - oculto en modo admin */}
         {!isAdminMode && (
