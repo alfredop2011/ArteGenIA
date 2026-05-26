@@ -170,16 +170,18 @@ export default function MobileEditor({ templateId, formatId }: Props) {
           obj.evented = false;
           return;
         }
-        // SESION 4: Estilo handles tactil-friendly
-        // cornerSize y otros se ajustaran dinamicamente segun zoom en el effect 3g
+        // SESION 4 + 6: Estilo handles tactil-friendly
+        // Valores fijos (no escalan por zoom), Fabric ya gestiona internamente
         obj.set({
           cornerColor: "#a855f7",          // purple-500
           cornerStrokeColor: "#ffffff",
           cornerStyle: "circle",
           transparentCorners: false,
           borderColor: "#a855f7",
-          borderScaleFactor: 2,
-          padding: 8,                       // espacio extra alrededor del bbox
+          borderScaleFactor: 1.5,
+          cornerSize: 14,                   // tamano visual handle
+          touchCornerSize: 44,              // hit area touch (Apple HIG)
+          padding: 4,
           hasRotatingPoint: true,           // habilita rotate handle
         });
       });
@@ -194,52 +196,36 @@ export default function MobileEditor({ templateId, formatId }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [template, formatId]);
 
-  // ─── 3g. Ajustar tamano de handles segun zoom actual (sesion 4) ─────────
-  // Los handles aparecen a cornerSize * zoom px en pantalla. Compensamos
-  // multiplicando cornerSize por (1 / zoom) para que SIEMPRE midan ~40px
-  // visuales independientemente del zoom (pinch/auto-fit).
-  // Se ejecuta al cambiar el zoom (con guard para evitar loop infinito).
+  // ─── 3g. Ajustar tamano de handles (sesion 6 fix) ─────────────────────
+  // Fabric ya escala los handles automaticamente con el zoom, asi que NO
+  // necesitamos compensar dividiendo por zoom. Solo usamos valores fijos
+  // razonables. cornerSize=14 da ~14px visuales en zoom 1, y Fabric lo
+  // escala automatico. touchCornerSize=44 (Apple HIG min tap target) controla
+  // SOLO el hit area de touch, sin afectar el tamano visual del bbox.
   const lastAppliedZoomRef = useRef<number>(0);
   useEffect(() => {
     const fc = fabricRef.current;
     if (!fc) return;
 
-    const applyHandleSize = (force = false) => {
-      const z = fc.getZoom();
-      if (z <= 0) return;
-      // Guard: solo aplica si el zoom cambio significativamente
-      if (!force && Math.abs(z - lastAppliedZoomRef.current) < 0.01) return;
-      lastAppliedZoomRef.current = z;
-
-      // Tamano objetivo visual: 40px (Apple HIG min tap target ~44px)
-      const cornerSizeNative = 40 / z;
-      const rotateOffsetNative = 60 / z;
-      const paddingNative = 12 / z;
-      const borderScaleNative = 2 / z;
-
+    const applyHandleSize = () => {
       fc.getObjects().forEach(obj => {
         if (!obj.selectable) return;
         obj.set({
-          cornerSize: cornerSizeNative,
-          touchCornerSize: cornerSizeNative,
-          padding: paddingNative,
-          borderScaleFactor: borderScaleNative,
-          rotatingPointOffset: rotateOffsetNative,
+          // Valores FIJOS, no divididos por zoom (Fabric ya escala internamente).
+          // Esto evita que el bbox crezca enormemente en zoom bajo.
+          cornerSize: 14,
+          touchCornerSize: 44, // hit area touch (no afecta visual)
+          padding: 4,
+          borderScaleFactor: 1.5,
         });
         obj.setCoords();
       });
       fc.requestRenderAll();
     };
 
-    // Forzar primer apply
-    applyHandleSize(true);
-
-    // Re-aplicar cuando hay render (pinch/pan/transformacion). El guard
-    // evita el loop infinito.
-    const onTransform = () => applyHandleSize();
-    fc.on("after:render", onTransform);
-    return () => { fc.off("after:render", onTransform); };
-  }, [loaded]);
+    applyHandleSize();
+    // Ya no necesitamos listener after:render porque los valores son fijos
+  }, [loaded, layers.length]);
 
   // ─── 3b. Ajustar canvas DOM al area disponible + auto-fit zoom inicial
   // SESION 3: el canvas DOM ocupa toda el area disponible. El zoom + viewport
@@ -262,16 +248,15 @@ export default function MobileEditor({ templateId, formatId }: Props) {
     fc.requestRenderAll();
   }, [canvasArea.w, canvasArea.h, canvasSize.w, canvasSize.h]);
 
-  // ─── 3b-bis. PINCH ZOOM + PAN (sesion 3) ────────────────────────────────
-  // Listener nativo de touch porque Fabric.js no gestiona pinch internamente.
-  // Estrategia:
-  //   - 1 dedo sobre objeto: lo gestiona Fabric (drag capa, ya funciona)
-  //   - 1 dedo sobre area vacia: PAN del viewport (mover vista)
-  //   - 2 dedos: PINCH ZOOM (zoom centrado en el punto medio entre dedos)
+  // ─── 3b-bis. PINCH ZOOM + PAN (sesion 3, fix sesion 6) ─────────────────
+  // FIX SESION 6: el listener anterior estaba en fc.upperCanvasEl que en Fabric 7
+  // se rompe si el handler se registra antes que la wrapper interna este montada.
+  // Ahora usamos wrapperRef (el div padre) que SIEMPRE esta disponible y captura
+  // los eventos touch ANTES que Fabric los procese.
   useEffect(() => {
     const fc = fabricRef.current;
-    if (!fc) return;
-    const el = fc.upperCanvasEl;
+    if (!fc || !loaded) return;
+    const el = wrapperRef.current;
     if (!el) return;
 
     // Estado del gesto en curso
@@ -292,6 +277,7 @@ export default function MobileEditor({ templateId, formatId }: Props) {
       if (e.touches.length === 2) {
         // Empieza pinch: cancela cualquier seleccion activa para que Fabric no estorbe
         e.preventDefault();
+        e.stopPropagation();
         fc.discardActiveObject();
         mode = "pinch";
         const [t1, t2] = [e.touches[0], e.touches[1]];
@@ -301,7 +287,7 @@ export default function MobileEditor({ templateId, formatId }: Props) {
         if (!vpt) return;
         initialVptX = vpt[4];
         initialVptY = vpt[5];
-        // Punto medio en coords del canvas DOM
+        // Punto medio en coords del wrapper
         const rect = el.getBoundingClientRect();
         initialMidX = ((t1.clientX + t2.clientX) / 2) - rect.left;
         initialMidY = ((t1.clientY + t2.clientY) / 2) - rect.top;
@@ -327,14 +313,14 @@ export default function MobileEditor({ templateId, formatId }: Props) {
     const onTouchMove = (e: TouchEvent) => {
       if (mode === "pinch" && e.touches.length === 2) {
         e.preventDefault();
+        e.stopPropagation();
         const [t1, t2] = [e.touches[0], e.touches[1]];
         const newDist = distance(t1, t2);
         const ratio = newDist / initialDist;
         let newZoom = initialZoom * ratio;
         // Limitar zoom min/max
         newZoom = Math.max(0.1, Math.min(5, newZoom));
-        // Aplicar zoom manteniendo el punto medio inicial fijo:
-        // newVptX = initialMidX - (initialMidX - initialVptX) * (newZoom / initialZoom)
+        // Aplicar zoom manteniendo el punto medio inicial fijo
         const zoomRatio = newZoom / initialZoom;
         const newVptX = initialMidX - (initialMidX - initialVptX) * zoomRatio;
         const newVptY = initialMidY - (initialMidY - initialVptY) * zoomRatio;
@@ -343,6 +329,7 @@ export default function MobileEditor({ templateId, formatId }: Props) {
         fc.requestRenderAll();
       } else if (mode === "pan" && e.touches.length === 1) {
         e.preventDefault();
+        e.stopPropagation();
         const t = e.touches[0];
         const rect = el.getBoundingClientRect();
         const x = t.clientX - rect.left;
@@ -364,21 +351,21 @@ export default function MobileEditor({ templateId, formatId }: Props) {
       if (e.touches.length === 0) {
         mode = "none";
       } else if (e.touches.length === 1 && mode === "pinch") {
-        // De pinch a single touch: terminar el gesto
         mode = "none";
       }
     };
 
-    el.addEventListener("touchstart", onTouchStart, { passive: false });
-    el.addEventListener("touchmove", onTouchMove, { passive: false });
-    el.addEventListener("touchend", onTouchEnd);
-    el.addEventListener("touchcancel", onTouchEnd);
+    // Capture phase = true: el listener se ejecuta ANTES de que Fabric lo procese
+    el.addEventListener("touchstart", onTouchStart, { passive: false, capture: true });
+    el.addEventListener("touchmove", onTouchMove, { passive: false, capture: true });
+    el.addEventListener("touchend", onTouchEnd, { capture: true });
+    el.addEventListener("touchcancel", onTouchEnd, { capture: true });
 
     return () => {
-      el.removeEventListener("touchstart", onTouchStart);
-      el.removeEventListener("touchmove", onTouchMove);
-      el.removeEventListener("touchend", onTouchEnd);
-      el.removeEventListener("touchcancel", onTouchEnd);
+      el.removeEventListener("touchstart", onTouchStart, { capture: true });
+      el.removeEventListener("touchmove", onTouchMove, { capture: true });
+      el.removeEventListener("touchend", onTouchEnd, { capture: true });
+      el.removeEventListener("touchcancel", onTouchEnd, { capture: true });
     };
   }, [loaded]);
 
@@ -525,21 +512,21 @@ export default function MobileEditor({ templateId, formatId }: Props) {
   // ─── 5b. Anadir capa al layers state (helper interno) ───────────────────
   const registerLayer = useCallback((obj: FabricObject, name: string, type: LayerItem["type"]) => {
     const id = `${type}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-    // Aplica el styling tactil (mismo que loaded effect)
+    // Aplica el styling tactil (mismo que loaded effect, sesion 6)
     obj.set({
       cornerColor: "#a855f7",
       cornerStrokeColor: "#ffffff",
       cornerStyle: "circle",
       transparentCorners: false,
       borderColor: "#a855f7",
-      borderScaleFactor: 2,
-      padding: 8,
+      borderScaleFactor: 1.5,
+      cornerSize: 14,
+      touchCornerSize: 44,
+      padding: 4,
       hasRotatingPoint: true,
     });
     const item: LayerItem = { id, name, type, obj };
     setLayers(prev => [...prev, item]);
-    // Forzar re-aplicar handle sizing (effect 3g lo hara al next render)
-    lastAppliedZoomRef.current = 0;
     return item;
   }, []);
 
@@ -800,19 +787,21 @@ export default function MobileEditor({ templateId, formatId }: Props) {
         })}
       </nav>
 
-      {/* ═══ BOTTOM SHEETS (placeholders sesion 1) ════════════════════════ */}
+      {/* ═══ BOTTOM SHEETS (sesion 6 fix: max-h 50vh + overlay transparente) ═══ */}
       {activeSheet && (
         <>
+          {/* Overlay invisible para tap-fuera-cerrar (sin oscurecer canvas) */}
           <div
             onClick={() => setActiveSheet(null)}
-            className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+            className="fixed inset-0 z-40"
+            style={{ background: "transparent" }}
           />
-          <div className="fixed bottom-0 left-0 right-0 z-50 bg-[#0f0f1a] rounded-t-3xl border-t border-white/10 shadow-2xl pb-8 max-h-[70vh] flex flex-col safe-area-bottom">
+          <div className="fixed bottom-0 left-0 right-0 z-50 bg-[#0f0f1a]/95 backdrop-blur-md rounded-t-3xl border-t border-white/10 shadow-2xl pb-8 max-h-[50vh] flex flex-col safe-area-bottom">
             {/* Handle */}
-            <div className="w-12 h-1 bg-white/20 rounded-full mx-auto mt-3 mb-3 shrink-0"/>
+            <div className="w-12 h-1 bg-white/20 rounded-full mx-auto mt-2 mb-2 shrink-0"/>
 
             {/* Header sheet */}
-            <div className="px-4 pb-3 border-b border-white/[0.06] flex items-center justify-between shrink-0">
+            <div className="px-4 pb-2 border-b border-white/[0.06] flex items-center justify-between shrink-0">
               <span className="text-sm font-bold uppercase tracking-widest text-gray-300">
                 {activeSheet === "layers" && "Capas"}
                 {activeSheet === "text" && "Texto"}
@@ -824,7 +813,7 @@ export default function MobileEditor({ templateId, formatId }: Props) {
             </div>
 
             {/* Content sheet */}
-            <div className="flex-1 overflow-y-auto px-4 py-4">
+            <div className="flex-1 overflow-y-auto px-4 py-3">
               {activeSheet === "layers" && (
                 <div className="space-y-1">
                   {/* Boton +Anadir capa arriba (atajo a "Mas") */}
