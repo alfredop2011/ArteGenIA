@@ -1,9 +1,14 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   Search, Copy, Check, X, ChevronDown, AlertTriangle,
+  ChevronLeft, ChevronRight, ArrowDownWideNarrow, ArrowUpWideNarrow,
 } from "lucide-react";
+
+// Tamano de pagina del listado admin. Pensado para evitar listas muy largas
+// (catalogo crece y queremos algo navegable).
+const PAGE_SIZE = 12;
 import {
   templates,
   INTERNAL_TAGS,
@@ -40,6 +45,11 @@ export default function AdminTemplatesPage() {
   const [tagFilter, setTagFilter] = useState<InternalTag | "all" | "untagged">("all");
   const [edits, setEdits] = useState<Record<number, InternalTag[]>>({});
   const [diffOpen, setDiffOpen] = useState(false);
+  // Orden por id. Por defecto "desc" = nuevas primero (las ultimas creadas
+  // aparecen arriba). El admin puede cambiarlo con el toggle de la toolbar.
+  const [sortOrder, setSortOrder] = useState<"desc" | "asc">("desc");
+  // Pagina actual del paginador.
+  const [page, setPage] = useState(1);
 
   // Tags efectivos de una plantilla (estado local si fue editada, sino original)
   const effectiveTags = (t: Template): InternalTag[] => {
@@ -48,7 +58,7 @@ export default function AdminTemplatesPage() {
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return templates.filter(t => {
+    const list = templates.filter(t => {
       // Búsqueda
       if (q) {
         const hay =
@@ -63,9 +73,28 @@ export default function AdminTemplatesPage() {
       if (tagFilter === "untagged") return tags.length === 0;
       return tags.includes(tagFilter);
     });
+    // Ordenar por id segun sortOrder. desc = mas nueva primero.
+    return [...list].sort((a, b) => sortOrder === "desc" ? b.id - a.id : a.id - b.id);
     // effectiveTags lee de `edits` que ya está como dependencia, no es necesario añadirla
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query, tagFilter, edits]);
+  }, [query, tagFilter, edits, sortOrder]);
+
+  // Paginacion: porciones de PAGE_SIZE elementos. Cuando cambian los filtros
+  // u orden, volvemos a la primera pagina para evitar quedar fuera de rango.
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const paginated = useMemo(() => {
+    const start = (page - 1) * PAGE_SIZE;
+    return filtered.slice(start, start + PAGE_SIZE);
+  }, [filtered, page]);
+
+  // Reset de pagina si cambian busqueda, tag, orden, edicion (puede afectar al
+  // conteo via "untagged"), o si la pagina actual queda fuera de rango.
+  useEffect(() => {
+    setPage(1);
+  }, [query, tagFilter, sortOrder]);
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
 
   const pendingChanges: PendingChange[] = useMemo(() => {
     return Object.entries(edits)
@@ -168,6 +197,19 @@ export default function AdminTemplatesPage() {
             className="w-full bg-white/[0.04] border border-white/10 rounded-xl pl-9 pr-3 py-2.5 text-sm text-white placeholder-gray-600 outline-none focus:border-purple-500/40 transition-colors"
           />
         </div>
+        {/* Toggle orden por id (defecto: nuevas primero) */}
+        <button
+          onClick={() => setSortOrder(o => o === "desc" ? "asc" : "desc")}
+          className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-bold text-gray-300 bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 transition-colors"
+          title={sortOrder === "desc" ? "Mostrando: nuevas primero" : "Mostrando: antiguas primero"}
+        >
+          {sortOrder === "desc"
+            ? <ArrowDownWideNarrow size={14} className="text-purple-300" />
+            : <ArrowUpWideNarrow size={14} className="text-purple-300" />}
+          <span className="hidden sm:inline">
+            {sortOrder === "desc" ? "Nuevas primero" : "Antiguas primero"}
+          </span>
+        </button>
       </div>
 
       {/* Tag filter chips */}
@@ -196,23 +238,35 @@ export default function AdminTemplatesPage() {
         ))}
       </div>
 
-      {/* Lista */}
+      {/* Lista paginada */}
       {filtered.length === 0 ? (
         <div className="text-center py-16 text-gray-500 text-sm">
           Sin resultados con esos filtros
         </div>
       ) : (
-        <div className="space-y-2">
-          {filtered.map(t => (
-            <TemplateRow
-              key={t.id}
-              template={t}
-              effectiveTags={effectiveTags(t)}
-              dirty={edits[t.id] !== undefined}
-              onToggleTag={(tag) => toggleTag(t.id, tag)}
+        <>
+          <div className="space-y-2">
+            {paginated.map(t => (
+              <TemplateRow
+                key={t.id}
+                template={t}
+                effectiveTags={effectiveTags(t)}
+                dirty={edits[t.id] !== undefined}
+                onToggleTag={(tag) => toggleTag(t.id, tag)}
+              />
+            ))}
+          </div>
+          {/* Paginador (solo si hay mas de una pagina) */}
+          {totalPages > 1 && (
+            <Pagination
+              page={page}
+              totalPages={totalPages}
+              total={filtered.length}
+              pageSize={PAGE_SIZE}
+              onChange={setPage}
             />
-          ))}
-        </div>
+          )}
+        </>
       )}
 
       {/* Modal con diff TypeScript */}
@@ -227,6 +281,89 @@ export default function AdminTemplatesPage() {
 }
 
 // ─── Subcomponentes ──────────────────────────────────────────────────────
+
+/**
+ * Paginador. Muestra "page X de Y", flechas anterior/siguiente, y unos
+ * cuantos numeros de pagina (siempre 1 y N, y una ventana alrededor de la
+ * actual). Botones inactivos quedan deshabilitados, no ocultos.
+ */
+function Pagination({
+  page,
+  totalPages,
+  total,
+  pageSize,
+  onChange,
+}: {
+  page: number;
+  totalPages: number;
+  total: number;
+  pageSize: number;
+  onChange: (next: number) => void;
+}) {
+  // Calculamos las "ventanas" de paginas a mostrar. Asi no llenamos la
+  // barra de numeros cuando hay muchas paginas.
+  const pages: (number | "...")[] = [];
+  const window = 1; // paginas a cada lado de la actual
+  for (let i = 1; i <= totalPages; i++) {
+    if (i === 1 || i === totalPages || (i >= page - window && i <= page + window)) {
+      pages.push(i);
+    } else if (pages[pages.length - 1] !== "...") {
+      pages.push("...");
+    }
+  }
+
+  const from = (page - 1) * pageSize + 1;
+  const to = Math.min(page * pageSize, total);
+
+  return (
+    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mt-5 pt-4 border-t border-white/[0.05]">
+      {/* Texto rango */}
+      <p className="text-[11px] text-gray-500">
+        Mostrando <span className="text-gray-300 font-semibold">{from}–{to}</span> de{" "}
+        <span className="text-gray-300 font-semibold">{total}</span>
+      </p>
+
+      {/* Controles */}
+      <div className="flex items-center gap-1">
+        <button
+          onClick={() => onChange(Math.max(1, page - 1))}
+          disabled={page === 1}
+          className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/[0.06] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          aria-label="Página anterior"
+        >
+          <ChevronLeft size={16} />
+        </button>
+
+        {pages.map((p, i) =>
+          p === "..." ? (
+            <span key={`dots-${i}`} className="px-1.5 text-gray-600 text-xs select-none">…</span>
+          ) : (
+            <button
+              key={p}
+              onClick={() => onChange(p)}
+              className={`min-w-[32px] px-2 py-1 rounded-lg text-xs font-bold transition-colors ${
+                p === page
+                  ? "bg-purple-500/25 border border-purple-500/50 text-white"
+                  : "text-gray-400 hover:text-white hover:bg-white/[0.06] border border-transparent"
+              }`}
+            >
+              {p}
+            </button>
+          )
+        )}
+
+        <button
+          onClick={() => onChange(Math.min(totalPages, page + 1))}
+          disabled={page === totalPages}
+          className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/[0.06] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          aria-label="Página siguiente"
+        >
+          <ChevronRight size={16} />
+        </button>
+      </div>
+    </div>
+  );
+}
 
 function FilterChip({
   active,

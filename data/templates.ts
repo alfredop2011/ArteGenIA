@@ -1639,4 +1639,1548 @@ export const templates: Template[] = [
             ] },
         ],
     },
+
+// ═════════════════════════════════════════════════════════════════════
+// FAMILIA PROFESIONAL — 6 nuevas inspiradas en #1, #5, #15, #17, #18
+// Todas portrait 1080x1350. Tag beta hasta validar visual.
+// ═════════════════════════════════════════════════════════════════════
+
+// ─────────────────────────────────────────────────────────────────────
+// 29 — Cartel Vintage Cantante — poster cine retro 70s (NUEVO LAYOUT)
+//      Fondo crema-sepia con textura, marcos ornamentales dobles,
+//      sello LIVE circular, titulo serif con sombra dura tipo letterpress.
+// ─────────────────────────────────────────────────────────────────────
+    {
+        id: 29,
+        title: "Cartel Vintage",
+        category: "Conciertos",
+        image: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Musica/Cantantes/Cantante-%20(10).png",
+        premium: true,
+        audience: ["productoras", "academias"],
+        internalTags: ["beta"],
+        variants: [
+            { format: "portrait", width: 1080, height: 1350, layers: [
+                // FONDO crema base
+                { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1350, fill: "#e8dcc1", selectable: false },
+                // Sobrecapa sepia con opacidad
+                { id: "tint-sepia", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1350, fill: "rgba(120,80,40,0.18)", selectable: false },
+                // Vinetas en esquinas tipo papel envejecido
+                { id: "vignette-tl", type: "shape", shape: "circle", x: -200, y: -200, width: 600, height: 600, fill: "rgba(74,42,15,0.25)", opacity: 0.7, selectable: false },
+                { id: "vignette-br", type: "shape", shape: "circle", x: 680, y: 950, width: 600, height: 600, fill: "rgba(74,42,15,0.25)", opacity: 0.7, selectable: false },
+
+                // MARCO doble ornamental exterior
+                { id: "frame-outer", type: "shape", shape: "rect", x: 40, y: 40, width: 1000, height: 1270, fill: "transparent", stroke: "#5c2a0a", strokeWidth: 4, selectable: false },
+                { id: "frame-inner", type: "shape", shape: "rect", x: 65, y: 65, width: 950, height: 1220, fill: "transparent", stroke: "#5c2a0a", strokeWidth: 1, selectable: false },
+
+                // CABECERA superior dentro del marco
+                { id: "header-line-l", type: "shape", shape: "rect", x: 130, y: 130, width: 280, height: 1, fill: "#5c2a0a", selectable: false },
+                { id: "header-line-r", type: "shape", shape: "rect", x: 670, y: 130, width: 280, height: 1, fill: "#5c2a0a", selectable: false },
+                { id: "header-text", type: "text", text: "TEATRO  ·  ANNO 2026  ·  N° 14", x: 0, y: 118, width: 1080, fontSize: 16, fontFamily: "Cormorant Garamond, serif", color: "#5c2a0a", fontWeight: "700", textAlign: "center", charSpacing: 400 },
+
+                // SELLO circular rojo "LIVE" arriba-derecha (efecto sello)
+                { id: "stamp-bg", type: "shape", shape: "circle", x: 800, y: 165, width: 165, height: 165, fill: "rgba(140,30,30,0.92)", stroke: "#5c1010", strokeWidth: 3, selectable: false },
+                { id: "stamp-text-1", type: "text", text: "LIVE", x: 740, y: 215, width: 280, fontSize: 38, fontFamily: "Anton, Impact, sans-serif", color: "#f5e6c8", fontWeight: "900", textAlign: "center", charSpacing: 80 },
+                { id: "stamp-text-2", type: "text", text: "ONE NIGHT", x: 740, y: 258, width: 280, fontSize: 11, fontFamily: "Anton, Impact, sans-serif", color: "#f5e6c8", textAlign: "center", charSpacing: 200 },
+
+                // ARTISTA (cantante 10) recortada al centro
+                { id: "artist", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Musica/Cantantes/Cantante-%20(10).png", x: 540, y: 200, scaleX: 1.4, scaleY: 1.4, originX: "center", originY: "top", shadow: { color: "rgba(74,42,15,0.65)", blur: 35, offsetX: 8, offsetY: 8 } },
+
+                // SUPRATITULO con tracking estilo vintage
+                { id: "supra", type: "text", text: "PRESENTA EN UNA SOLA NOCHE", x: 0, y: 880, width: 1080, fontSize: 18, fontFamily: "Cormorant Garamond, serif", color: "#5c2a0a", fontWeight: "700", textAlign: "center", charSpacing: 500 },
+
+                // TITULO serifa MASIVA con sombra dura letterpress
+                // sombra dura simulada con un texto identico desplazado
+                { id: "title-shadow", type: "text", text: "MARA SOLÍS", x: 8, y: 928, width: 1080, fontSize: 130, fontFamily: "Playfair Display, serif", color: "#a85a20", fontWeight: "900", textAlign: "center" },
+                { id: "title", type: "text", text: "MARA SOLÍS", x: 0, y: 920, width: 1080, fontSize: 130, fontFamily: "Playfair Display, serif", color: "#3d1a05", fontWeight: "900", textAlign: "center" },
+
+                // Subtitulo italica
+                { id: "subtitle", type: "text", text: "Una velada de copla y bolero", x: 0, y: 1060, width: 1080, fontSize: 28, fontFamily: "Cormorant Garamond, serif", color: "#5c2a0a", fontStyle: "italic", textAlign: "center" },
+
+                // Divider doble decorativo
+                { id: "div-1", type: "shape", shape: "rect", x: 280, y: 1110, width: 520, height: 2, fill: "#5c2a0a", selectable: false },
+                { id: "div-2", type: "shape", shape: "rect", x: 380, y: 1118, width: 320, height: 1, fill: "#5c2a0a", selectable: false },
+
+                // CREDITOS estilo pelicula al pie en grid 3 columnas
+                { id: "credits-1-label", type: "text", text: "DIRIGE", x: 130, y: 1145, width: 240, fontSize: 11, fontFamily: "Cormorant Garamond, serif", color: "rgba(92,42,10,0.6)", fontWeight: "700", textAlign: "center", charSpacing: 350 },
+                { id: "credits-1-value", type: "text", text: "L. Vega", x: 130, y: 1165, width: 240, fontSize: 20, fontFamily: "Playfair Display, serif", color: "#3d1a05", textAlign: "center", fontStyle: "italic" },
+
+                { id: "credits-2-label", type: "text", text: "MÚSICA", x: 420, y: 1145, width: 240, fontSize: 11, fontFamily: "Cormorant Garamond, serif", color: "rgba(92,42,10,0.6)", fontWeight: "700", textAlign: "center", charSpacing: 350 },
+                { id: "credits-2-value", type: "text", text: "El Sexteto", x: 420, y: 1165, width: 240, fontSize: 20, fontFamily: "Playfair Display, serif", color: "#3d1a05", textAlign: "center", fontStyle: "italic" },
+
+                { id: "credits-3-label", type: "text", text: "PRODUCE", x: 710, y: 1145, width: 240, fontSize: 11, fontFamily: "Cormorant Garamond, serif", color: "rgba(92,42,10,0.6)", fontWeight: "700", textAlign: "center", charSpacing: 350 },
+                { id: "credits-3-value", type: "text", text: "Casa Real", x: 710, y: 1165, width: 240, fontSize: 20, fontFamily: "Playfair Display, serif", color: "#3d1a05", textAlign: "center", fontStyle: "italic" },
+
+                // PIE: fecha y venue tipo billete
+                { id: "footer-line", type: "shape", shape: "rect", x: 130, y: 1225, width: 820, height: 1, fill: "#5c2a0a", selectable: false },
+                { id: "footer-date", type: "text", text: "12 SEPTIEMBRE  ·  TEATRO CIRCO PRICE  ·  MADRID", x: 0, y: 1240, width: 1080, fontSize: 18, fontFamily: "Cormorant Garamond, serif", color: "#3d1a05", fontWeight: "700", textAlign: "center", charSpacing: 250 },
+                { id: "footer-price", type: "text", text: "ENTRADA 30 PESETAS  ·  AFORO RESERVADO", x: 0, y: 1268, width: 1080, fontSize: 13, fontFamily: "Cormorant Garamond, serif", color: "rgba(92,42,10,0.7)", fontStyle: "italic", textAlign: "center", charSpacing: 350 },
+            ] },
+        ],
+    },
+
+// ─────────────────────────────────────────────────────────────────────
+// 30 — Vinyl Cover DJ — disco de vinilo grande (NUEVO LAYOUT)
+//      Fondo color saturado liso, vinilo XXL parcial abajo,
+//      DJ emerge del disco, info como tracklist Side A/B.
+// ─────────────────────────────────────────────────────────────────────
+    {
+        id: 30,
+        title: "Vinyl Cover",
+        category: "Club / Discoteca",
+        image: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dj/Dj-2.png",
+        premium: false,
+        audience: ["productoras"],
+        internalTags: ["beta"],
+        variants: [
+            { format: "portrait", width: 1080, height: 1350, layers: [
+                // FONDO color saturado naranja cobre liso
+                { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1350, fill: "#d97706", selectable: false },
+                // Banda superior delgada con grano negro
+                { id: "grain-top", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 80, fill: "rgba(0,0,0,0.25)", selectable: false },
+
+                // CABECERA tipo album cover
+                { id: "label-top-l", type: "text", text: "33 ⅓ RPM", x: 50, y: 30, width: 300, fontSize: 14, fontFamily: "Anton, Impact, sans-serif", color: "#fef3c7", textAlign: "left", charSpacing: 400 },
+                { id: "label-top-r", type: "text", text: "STEREO  ·  LP-2026", x: 730, y: 30, width: 300, fontSize: 14, fontFamily: "Anton, Impact, sans-serif", color: "#fef3c7", textAlign: "right", charSpacing: 400 },
+
+                // TITULO album cover izquierda
+                { id: "label-album", type: "text", text: "ALBUM", x: 50, y: 140, width: 600, fontSize: 12, fontFamily: "Montserrat, sans-serif", color: "rgba(254,243,199,0.7)", fontWeight: "700", textAlign: "left", charSpacing: 400 },
+                { id: "album-name-1", type: "text", text: "NIGHT", x: 50, y: 165, width: 600, fontSize: 110, fontFamily: "Anton, Impact, sans-serif", color: "#fef3c7", textAlign: "left", charSpacing: -5 },
+                { id: "album-name-2", type: "text", text: "TRANSMISSION", x: 50, y: 270, width: 1000, fontSize: 56, fontFamily: "Anton, Impact, sans-serif", color: "#0a0a0a", textAlign: "left", charSpacing: 20 },
+
+                // Linea horizontal divisor
+                { id: "div-h", type: "shape", shape: "rect", x: 50, y: 360, width: 980, height: 2, fill: "rgba(254,243,199,0.5)", selectable: false },
+
+                // ─── VINILO XXL semioculto abajo ───
+                // Disco principal negro
+                { id: "vinyl-disc", type: "shape", shape: "circle", x: 540, y: 600, width: 1100, height: 1100, fill: "#0a0a0a", originX: "center", originY: "top", selectable: false },
+                // Anillos finos del disco (groove)
+                { id: "vinyl-ring-1", type: "shape", shape: "circle", x: 540, y: 640, width: 1020, height: 1020, fill: "transparent", stroke: "rgba(60,60,60,0.6)", strokeWidth: 1, originX: "center", originY: "top", selectable: false },
+                { id: "vinyl-ring-2", type: "shape", shape: "circle", x: 540, y: 730, width: 840, height: 840, fill: "transparent", stroke: "rgba(60,60,60,0.5)", strokeWidth: 1, originX: "center", originY: "top", selectable: false },
+                { id: "vinyl-ring-3", type: "shape", shape: "circle", x: 540, y: 820, width: 660, height: 660, fill: "transparent", stroke: "rgba(60,60,60,0.4)", strokeWidth: 1, originX: "center", originY: "top", selectable: false },
+                // Label central del disco (rojo)
+                { id: "vinyl-label", type: "shape", shape: "circle", x: 540, y: 950, width: 400, height: 400, fill: "#dc2626", originX: "center", originY: "top", selectable: false },
+                // Hole central del disco
+                { id: "vinyl-hole", type: "shape", shape: "circle", x: 540, y: 1140, width: 20, height: 20, fill: "#0a0a0a", originX: "center", originY: "top", selectable: false },
+
+                // DJ emerge del disco
+                { id: "artist", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dj/Dj-2.png", x: 540, y: 380, scaleX: 1.55, scaleY: 1.55, originX: "center", originY: "top", shadow: { color: "rgba(0,0,0,0.65)", blur: 45, offsetX: 0, offsetY: 15 } },
+
+                // SIDE A label
+                { id: "side-a-label", type: "text", text: "SIDE A", x: 80, y: 410, width: 200, fontSize: 14, fontFamily: "Anton, Impact, sans-serif", color: "#fef3c7", textAlign: "left", charSpacing: 600 },
+                { id: "side-a-line", type: "shape", shape: "rect", x: 80, y: 432, width: 220, height: 2, fill: "#fef3c7", selectable: false },
+                { id: "side-a-1", type: "text", text: "01. PULSAR (Intro)", x: 80, y: 445, width: 300, fontSize: 15, fontFamily: "Montserrat, sans-serif", color: "#fef3c7", fontWeight: "500", textAlign: "left" },
+                { id: "side-a-2", type: "text", text: "02. Open Air", x: 80, y: 470, width: 300, fontSize: 15, fontFamily: "Montserrat, sans-serif", color: "#fef3c7", fontWeight: "500", textAlign: "left" },
+                { id: "side-a-3", type: "text", text: "03. Melodic Drop", x: 80, y: 495, width: 300, fontSize: 15, fontFamily: "Montserrat, sans-serif", color: "#fef3c7", fontWeight: "500", textAlign: "left" },
+
+                // SIDE B label
+                { id: "side-b-label", type: "text", text: "SIDE B", x: 780, y: 410, width: 220, fontSize: 14, fontFamily: "Anton, Impact, sans-serif", color: "#fef3c7", textAlign: "right", charSpacing: 600 },
+                { id: "side-b-line", type: "shape", shape: "rect", x: 780, y: 432, width: 220, height: 2, fill: "#fef3c7", selectable: false },
+                { id: "side-b-1", type: "text", text: "04. House 4AM", x: 700, y: 445, width: 300, fontSize: 15, fontFamily: "Montserrat, sans-serif", color: "#fef3c7", fontWeight: "500", textAlign: "right" },
+                { id: "side-b-2", type: "text", text: "05. Closing Set", x: 700, y: 470, width: 300, fontSize: 15, fontFamily: "Montserrat, sans-serif", color: "#fef3c7", fontWeight: "500", textAlign: "right" },
+                { id: "side-b-3", type: "text", text: "06. Sunrise Reprise", x: 700, y: 495, width: 300, fontSize: 15, fontFamily: "Montserrat, sans-serif", color: "#fef3c7", fontWeight: "500", textAlign: "right" },
+
+                // INFO en el label central del disco
+                { id: "release-by", type: "text", text: "A SET BY", x: 0, y: 990, width: 1080, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(254,243,199,0.7)", fontWeight: "700", textAlign: "center", charSpacing: 400 },
+                { id: "release-name", type: "text", text: "DJ MAVEN", x: 0, y: 1010, width: 1080, fontSize: 48, fontFamily: "Anton, Impact, sans-serif", color: "#fef3c7", textAlign: "center", charSpacing: 80 },
+                { id: "release-date", type: "text", text: "22 . AGO . 2026", x: 0, y: 1065, width: 1080, fontSize: 16, fontFamily: "Montserrat, sans-serif", color: "#fef3c7", fontWeight: "700", textAlign: "center", charSpacing: 350 },
+                { id: "release-venue", type: "text", text: "AZOTEA  ·  BARCELONA", x: 0, y: 1090, width: 1080, fontSize: 13, fontFamily: "Montserrat, sans-serif", color: "rgba(254,243,199,0.8)", fontWeight: "500", textAlign: "center", charSpacing: 280 },
+            ] },
+        ],
+    },
+
+// ─────────────────────────────────────────────────────────────────────
+// 31 — Cartelera Bandera 5 Artistas — lineup horizontal (NUEVO LAYOUT)
+//      Headliner GRANDE arriba ocupando casi mitad,
+//      4 secundarios en fila horizontal con casillas color,
+//      info pie tipo billete metro.
+// ─────────────────────────────────────────────────────────────────────
+    {
+        id: 31,
+        title: "Cartelera 5",
+        category: "Fiesta",
+        image: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/02_damian_reyes_perfil.png",
+        premium: false,
+        audience: ["productoras", "academias"],
+        internalTags: ["beta"],
+        variants: [
+            { format: "portrait", width: 1080, height: 1350, layers: [
+                // FONDO crema claro
+                { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1350, fill: "#f5e9d3", selectable: false },
+
+                // BANDA NEGRA superior con titulo masivo
+                { id: "top-band", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 140, fill: "#0a0a0a", selectable: false },
+                { id: "top-title", type: "text", text: "CARTELERA", x: 0, y: 25, width: 1080, fontSize: 70, fontFamily: "Anton, Impact, sans-serif", color: "#f5e9d3", textAlign: "center", charSpacing: 80 },
+                { id: "top-subtitle", type: "text", text: "5 ARTISTAS  ·  1 NOCHE  ·  ENTRADA LIBRE", x: 0, y: 105, width: 1080, fontSize: 14, fontFamily: "Montserrat, sans-serif", color: "#fbbf24", fontWeight: "700", textAlign: "center", charSpacing: 400 },
+
+                // HEADLINER bloque arriba
+                // Caja headliner crema oscuro
+                { id: "head-bg", type: "shape", shape: "rect", x: 40, y: 170, width: 1000, height: 540, fill: "#7c2d12", selectable: false },
+                // Headliner foto - Damian centrado en la caja
+                { id: "headliner", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/02_damian_reyes_perfil.png", x: 540, y: 175, scaleX: 0.95, scaleY: 0.95, originX: "center", originY: "top", shadow: { color: "rgba(0,0,0,0.5)", blur: 35, offsetX: 0, offsetY: 10 } },
+                // Tag HEADLINER vertical lado izq caja
+                { id: "head-tag", type: "text", text: "HEADLINER", x: 70, y: 480, width: 200, fontSize: 16, fontFamily: "Anton, Impact, sans-serif", color: "#fbbf24", textAlign: "left", angle: -90, charSpacing: 600 },
+                // Nombre headliner abajo de la caja
+                { id: "head-name", type: "text", text: "DAMIÁN REYES", x: 40, y: 640, width: 1000, fontSize: 56, fontFamily: "Anton, Impact, sans-serif", color: "#fbbf24", textAlign: "center", charSpacing: 60 },
+
+                // BANDA DIVISOR amarilla
+                { id: "div-band", type: "shape", shape: "rect", x: 0, y: 730, width: 1080, height: 38, fill: "#fbbf24", selectable: false },
+                { id: "div-band-text", type: "text", text: "·  TAMBIÉN EN ESCENA  ·", x: 0, y: 740, width: 1080, fontSize: 16, fontFamily: "Anton, Impact, sans-serif", color: "#0a0a0a", textAlign: "center", charSpacing: 500 },
+
+                // ─── 4 ARTISTAS SECUNDARIOS EN FILA HORIZONTAL ───
+                // Cada casilla: 240 ancho * 290 alto, separadas 20px
+                // Casilla 1 (verde teal)
+                { id: "slot-1-bg", type: "shape", shape: "rect", x: 40, y: 790, width: 240, height: 290, fill: "#0f766e", selectable: false },
+                { id: "artist-1", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/03_nia_batista_perfil.png", x: 160, y: 800, scaleX: 0.35, scaleY: 0.35, originX: "center", originY: "top" },
+                { id: "name-1", type: "text", text: "NIA", x: 40, y: 1035, width: 240, fontSize: 26, fontFamily: "Anton, Impact, sans-serif", color: "#fef3c7", textAlign: "center", charSpacing: 80 },
+
+                // Casilla 2 (rosa)
+                { id: "slot-2-bg", type: "shape", shape: "rect", x: 300, y: 790, width: 240, height: 290, fill: "#be185d", selectable: false },
+                { id: "artist-2", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/04_malik_santos_perfil.png", x: 420, y: 800, scaleX: 0.35, scaleY: 0.35, originX: "center", originY: "top" },
+                { id: "name-2", type: "text", text: "MALIK", x: 300, y: 1035, width: 240, fontSize: 26, fontFamily: "Anton, Impact, sans-serif", color: "#fef3c7", textAlign: "center", charSpacing: 80 },
+
+                // Casilla 3 (azul)
+                { id: "slot-3-bg", type: "shape", shape: "rect", x: 560, y: 790, width: 240, height: 290, fill: "#1d4ed8", selectable: false },
+                { id: "artist-3", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/05_valentina_damian_pareja.png", x: 680, y: 800, scaleX: 0.35, scaleY: 0.35, originX: "center", originY: "top" },
+                { id: "name-3", type: "text", text: "VAL & DAMI", x: 560, y: 1035, width: 240, fontSize: 22, fontFamily: "Anton, Impact, sans-serif", color: "#fef3c7", textAlign: "center", charSpacing: 80 },
+
+                // Casilla 4 (morado)
+                { id: "slot-4-bg", type: "shape", shape: "rect", x: 820, y: 790, width: 220, height: 290, fill: "#6b21a8", selectable: false },
+                { id: "artist-4", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/06_isabela_alejandro_pareja.png", x: 930, y: 800, scaleX: 0.32, scaleY: 0.32, originX: "center", originY: "top" },
+                { id: "name-4", type: "text", text: "ISA & ALE", x: 820, y: 1035, width: 220, fontSize: 22, fontFamily: "Anton, Impact, sans-serif", color: "#fef3c7", textAlign: "center", charSpacing: 80 },
+
+                // PIE tipo billete/ticket
+                { id: "ticket-bg", type: "shape", shape: "rect", x: 0, y: 1110, width: 1080, height: 240, fill: "#0a0a0a", selectable: false },
+                // Linea de "perforacion" decorativa
+                { id: "perf-line", type: "shape", shape: "rect", x: 0, y: 1110, width: 1080, height: 4, fill: "#fbbf24", selectable: false },
+
+                // INFO 3 columnas tipo ticket
+                { id: "tk-col1-label", type: "text", text: "FECHA", x: 60, y: 1140, width: 280, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(251,191,36,0.7)", fontWeight: "700", textAlign: "left", charSpacing: 300 },
+                { id: "tk-col1-value", type: "text", text: "VIE  ·  3 OCT", x: 60, y: 1158, width: 280, fontSize: 30, fontFamily: "Anton, Impact, sans-serif", color: "#fef3c7", textAlign: "left", charSpacing: 80 },
+                { id: "tk-col1-extra", type: "text", text: "21:00 — 03:00", x: 60, y: 1198, width: 280, fontSize: 15, fontFamily: "Montserrat, sans-serif", color: "#fbbf24", fontWeight: "600", textAlign: "left" },
+
+                { id: "tk-col2-label", type: "text", text: "LUGAR", x: 380, y: 1140, width: 320, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(251,191,36,0.7)", fontWeight: "700", textAlign: "left", charSpacing: 300 },
+                { id: "tk-col2-value", type: "text", text: "SALA TROPICAL", x: 380, y: 1158, width: 320, fontSize: 30, fontFamily: "Anton, Impact, sans-serif", color: "#fef3c7", textAlign: "left", charSpacing: 80 },
+                { id: "tk-col2-extra", type: "text", text: "C/ Libertad 8  ·  Metro Chueca", x: 380, y: 1198, width: 320, fontSize: 13, fontFamily: "Montserrat, sans-serif", color: "#fbbf24", fontWeight: "500", textAlign: "left" },
+
+                { id: "tk-col3-label", type: "text", text: "PRECIO", x: 740, y: 1140, width: 280, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(251,191,36,0.7)", fontWeight: "700", textAlign: "left", charSpacing: 300 },
+                { id: "tk-col3-value", type: "text", text: "12€ / 18€", x: 740, y: 1158, width: 280, fontSize: 30, fontFamily: "Anton, Impact, sans-serif", color: "#fef3c7", textAlign: "left", charSpacing: 80 },
+                { id: "tk-col3-extra", type: "text", text: "Anticipada / Puerta", x: 740, y: 1198, width: 280, fontSize: 13, fontFamily: "Montserrat, sans-serif", color: "#fbbf24", fontWeight: "500", textAlign: "left" },
+
+                // CTA pie
+                { id: "cta", type: "text", text: "RESERVAS  ·  +34 600 111 222  ·  WHATSAPP", x: 0, y: 1260, width: 1080, fontSize: 14, fontFamily: "Anton, Impact, sans-serif", color: "rgba(254,243,199,0.7)", textAlign: "center", charSpacing: 350 },
+
+                // CODIGO ticket
+                { id: "ticket-code", type: "text", text: "N° 003 · CARTELERA · 2026", x: 0, y: 1300, width: 1080, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(251,191,36,0.5)", fontWeight: "500", textAlign: "center", charSpacing: 500 },
+            ] },
+        ],
+    },
+
+// ─────────────────────────────────────────────────────────────────────
+// 32 — Postal Polaroid Banda — postal vintage manuscrita (NUEVO LAYOUT)
+//      Fondo papel sepia, polaroid girada ligeramente con foto banda,
+//      sello correo arriba-der, texto manuscrito italica abajo,
+//      bordes rayados tipo correo aereo.
+// ─────────────────────────────────────────────────────────────────────
+    {
+        id: 32,
+        title: "Postal Banda",
+        category: "Conciertos",
+        image: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Musica/Grupos-musica/Grupos-%20(7).png",
+        premium: true,
+        audience: ["productoras", "academias"],
+        internalTags: ["beta"],
+        variants: [
+            { format: "portrait", width: 1080, height: 1350, layers: [
+                // FONDO papel crema con manchas calidas
+                { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1350, fill: "#f0e3c8", selectable: false },
+                // Manchas tipo papel envejecido
+                { id: "stain-1", type: "shape", shape: "circle", x: 80, y: 950, width: 400, height: 400, fill: "rgba(184,134,11,0.10)", opacity: 0.8, selectable: false },
+                { id: "stain-2", type: "shape", shape: "circle", x: 600, y: 60, width: 500, height: 500, fill: "rgba(184,134,11,0.10)", opacity: 0.8, selectable: false },
+
+                // BORDE rayado tipo correo aereo (rayas rojas/azules alrededor)
+                // Borde superior - rayas alternas
+                { id: "air-top-1", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 12, fill: "#dc2626", selectable: false },
+                { id: "air-top-2", type: "shape", shape: "rect", x: 0, y: 12, width: 1080, height: 12, fill: "#1d4ed8", selectable: false },
+                { id: "air-top-3", type: "shape", shape: "rect", x: 0, y: 24, width: 1080, height: 12, fill: "#dc2626", selectable: false },
+                // Borde inferior
+                { id: "air-bot-1", type: "shape", shape: "rect", x: 0, y: 1314, width: 1080, height: 12, fill: "#dc2626", selectable: false },
+                { id: "air-bot-2", type: "shape", shape: "rect", x: 0, y: 1326, width: 1080, height: 12, fill: "#1d4ed8", selectable: false },
+                { id: "air-bot-3", type: "shape", shape: "rect", x: 0, y: 1338, width: 1080, height: 12, fill: "#dc2626", selectable: false },
+
+                // CABECERA tipo postal
+                { id: "header-text", type: "text", text: "·  POST CARD  ·  DESDE MADRID  ·", x: 0, y: 70, width: 1080, fontSize: 18, fontFamily: "Cormorant Garamond, serif", color: "#7c2d12", fontWeight: "700", textAlign: "center", charSpacing: 400 },
+                { id: "header-line", type: "shape", shape: "rect", x: 280, y: 100, width: 520, height: 1, fill: "#7c2d12", selectable: false },
+
+                // SELLO postal arriba-derecha
+                { id: "stamp-bg", type: "shape", shape: "rect", x: 850, y: 140, width: 180, height: 220, fill: "#fef3c7", stroke: "#7c2d12", strokeWidth: 3, strokeDashArray: [6, 4], selectable: false },
+                { id: "stamp-inner", type: "shape", shape: "rect", x: 866, y: 156, width: 148, height: 188, fill: "transparent", stroke: "#7c2d12", strokeWidth: 1, selectable: false },
+                { id: "stamp-value", type: "text", text: "25€", x: 850, y: 180, width: 180, fontSize: 40, fontFamily: "Playfair Display, serif", color: "#7c2d12", fontWeight: "900", textAlign: "center", fontStyle: "italic" },
+                { id: "stamp-text", type: "text", text: "ESPAÑA", x: 850, y: 240, width: 180, fontSize: 14, fontFamily: "Cormorant Garamond, serif", color: "#7c2d12", fontWeight: "700", textAlign: "center", charSpacing: 300 },
+                { id: "stamp-mini", type: "text", text: "POSTA CULTURAL", x: 850, y: 270, width: 180, fontSize: 9, fontFamily: "Cormorant Garamond, serif", color: "#7c2d12", textAlign: "center", charSpacing: 200 },
+                // "Matasellos" sobre el sello (circulo con stroke)
+                { id: "postmark", type: "shape", shape: "circle", x: 760, y: 200, width: 130, height: 130, fill: "transparent", stroke: "rgba(124,45,18,0.45)", strokeWidth: 2, selectable: false },
+                { id: "postmark-2", type: "shape", shape: "circle", x: 778, y: 218, width: 94, height: 94, fill: "transparent", stroke: "rgba(124,45,18,0.45)", strokeWidth: 1, selectable: false },
+                { id: "postmark-text", type: "text", text: "MADRID  ·  17.X.26", x: 700, y: 257, width: 250, fontSize: 11, fontFamily: "Cormorant Garamond, serif", color: "rgba(124,45,18,0.65)", fontWeight: "700", textAlign: "center", charSpacing: 200 },
+
+                // POLAROID girada con foto banda
+                // Marco blanco rotado ~-4 grados, centrado en x=380 y=560
+                { id: "polaroid-frame", type: "shape", shape: "rect", x: 380, y: 560, width: 540, height: 620, fill: "#fafafa", originX: "center", originY: "center", angle: -4, stroke: "rgba(0,0,0,0.08)", strokeWidth: 1 },
+                // Polaroid inner background area for photo (offset matching angle aprox)
+                { id: "polaroid-photo-bg", type: "shape", shape: "rect", x: 380, y: 502, width: 480, height: 480, fill: "#1a0d05", originX: "center", originY: "center", angle: -4, selectable: false },
+                // Foto banda dentro de polaroid (misma rotacion)
+                { id: "band", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Musica/Grupos-musica/Grupos-%20(7).png", x: 380, y: 502, scaleX: 1.05, scaleY: 1.05, originX: "center", originY: "center", angle: -4 },
+                // Caption manuscrita debajo (dentro del marco polaroid)
+                { id: "polaroid-caption", type: "text", text: "El Cuarteto del Café · Verano '26", x: 200, y: 800, width: 380, fontSize: 22, fontFamily: "Cormorant Garamond, serif", color: "#1a0d05", fontStyle: "italic", textAlign: "center", angle: -4 },
+
+                // TEXTO MANUSCRITO simulado lateral derecho (como nota a mano)
+                { id: "note-line-1", type: "text", text: "Querido amigo,", x: 720, y: 480, width: 320, fontSize: 22, fontFamily: "Cormorant Garamond, serif", color: "#1a0d05", fontStyle: "italic", textAlign: "left" },
+                { id: "note-line-2", type: "text", text: "Esta noche tocan en", x: 720, y: 520, width: 320, fontSize: 20, fontFamily: "Cormorant Garamond, serif", color: "#1a0d05", textAlign: "left" },
+                { id: "note-line-3", type: "text", text: "el Café Central, no te", x: 720, y: 548, width: 320, fontSize: 20, fontFamily: "Cormorant Garamond, serif", color: "#1a0d05", textAlign: "left" },
+                { id: "note-line-4", type: "text", text: "lo pierdas. Cuerdas", x: 720, y: 576, width: 320, fontSize: 20, fontFamily: "Cormorant Garamond, serif", color: "#1a0d05", textAlign: "left" },
+                { id: "note-line-5", type: "text", text: "y silencio.", x: 720, y: 604, width: 320, fontSize: 20, fontFamily: "Cormorant Garamond, serif", color: "#1a0d05", textAlign: "left" },
+                { id: "note-line-sig", type: "text", text: "— M.", x: 720, y: 645, width: 320, fontSize: 22, fontFamily: "Cormorant Garamond, serif", color: "#7c2d12", fontStyle: "italic", textAlign: "left" },
+
+                // BLOQUE PIE con info estructurada estilo "remitente"
+                { id: "block-bg", type: "shape", shape: "rect", x: 80, y: 1010, width: 920, height: 270, fill: "rgba(255,255,255,0.45)", stroke: "#7c2d12", strokeWidth: 1, selectable: false },
+
+                // Pie: titulo grande Playfair italica
+                { id: "title-1", type: "text", text: "Cuerdas", x: 0, y: 1030, width: 1080, fontSize: 80, fontFamily: "Playfair Display, serif", color: "#1a0d05", textAlign: "center", fontStyle: "italic" },
+                { id: "title-2", type: "text", text: "& Silencio", x: 0, y: 1115, width: 1080, fontSize: 60, fontFamily: "Playfair Display, serif", color: "#7c2d12", textAlign: "center", fontStyle: "italic" },
+
+                // Info pie
+                { id: "info-line", type: "shape", shape: "rect", x: 280, y: 1195, width: 520, height: 1, fill: "#7c2d12", selectable: false },
+                { id: "info-date", type: "text", text: "17 DE OCTUBRE  ·  20:30 H  ·  CAFÉ CENTRAL", x: 0, y: 1210, width: 1080, fontSize: 16, fontFamily: "Cormorant Garamond, serif", color: "#1a0d05", fontWeight: "700", textAlign: "center", charSpacing: 250 },
+                { id: "info-extra", type: "text", text: "AFORO 80  ·  RESERVA: reservas@cafecentral.es", x: 0, y: 1245, width: 1080, fontSize: 12, fontFamily: "Cormorant Garamond, serif", color: "rgba(124,45,18,0.75)", fontStyle: "italic", textAlign: "center", charSpacing: 300 },
+            ] },
+        ],
+    },
+
+// ─────────────────────────────────────────────────────────────────────
+// 33 — Solista Editorial — Gala estilo magazine cover (NUEVO)
+//      Foto artista grande + masthead arriba + bloque editorial abajo.
+//      Mix Playfair + Montserrat. Detalles tipo revista.
+// ─────────────────────────────────────────────────────────────────────
+    {
+        id: 33,
+        title: "Solista Editorial",
+        category: "Gala",
+        image: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Musica/Cantantes/Cantante-%20(14).png",
+        premium: true,
+        audience: ["productoras", "agencias"],
+        internalTags: ["beta"],
+        variants: [
+            { format: "portrait", width: 1080, height: 1350, layers: [
+                // FONDO marron oscuro casi negro
+                { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1350, fill: "#0e0a06", selectable: false },
+                // Halo central calido
+                { id: "halo", type: "shape", shape: "circle", x: 180, y: 200, width: 720, height: 720, fill: "rgba(180,135,68,0.30)", opacity: 0.6, selectable: false },
+
+                // ARTISTA centrado
+                { id: "artist", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Musica/Cantantes/Cantante-%20(14).png", x: 540, y: 70, scaleX: 1.88, scaleY: 1.88, originX: "center", originY: "top", shadow: { color: "rgba(180,135,68,0.5)", blur: 55, offsetX: 0, offsetY: 0 } },
+
+                // SELLO vertical lado izquierdo tipo magazine spine
+                { id: "spine-label", type: "text", text: "ISSUE  ·  N°  04   ·   OCT  2026", x: 35, y: 670, width: 60, fontSize: 13, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.55)", fontWeight: "600", textAlign: "left", angle: -90, charSpacing: 600 },
+
+                // CABECERA tipo masthead
+                { id: "masthead-line", type: "shape", shape: "rect", x: 60, y: 60, width: 960, height: 1, fill: "rgba(180,135,68,0.7)", selectable: false },
+                { id: "masthead-1", type: "text", text: "VOICES", x: 60, y: 30, width: 480, fontSize: 22, fontFamily: "Playfair Display, serif", color: "#b48744", textAlign: "left", fontStyle: "italic" },
+                { id: "masthead-2", type: "text", text: "EDITORIAL  ·  MÚSICA EN VIVO", x: 540, y: 35, width: 480, fontSize: 12, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.55)", fontWeight: "600", textAlign: "right", charSpacing: 400 },
+
+                // BLOQUE EDITORIAL inferior
+                { id: "block-bg", type: "shape", shape: "rect", x: 0, y: 920, width: 1080, height: 430, fill: "rgba(8,5,3,0.92)", selectable: false },
+                { id: "block-line", type: "shape", shape: "rect", x: 60, y: 920, width: 960, height: 2, fill: "#b48744", selectable: false },
+
+                // KICKER
+                { id: "kicker", type: "text", text: "GALA BENÉFICA  ·  EDICIÓN ESPECIAL", x: 60, y: 950, width: 960, fontSize: 14, fontFamily: "Montserrat, sans-serif", color: "#b48744", fontWeight: "700", textAlign: "left", charSpacing: 350 },
+
+                // TITULO grande italica desplazado a izquierda
+                { id: "title-1", type: "text", text: "Voz", x: 60, y: 985, width: 960, fontSize: 130, fontFamily: "Playfair Display, serif", color: "#ffffff", textAlign: "left", fontStyle: "italic" },
+                { id: "title-2", type: "text", text: "de Cristal", x: 60, y: 1110, width: 960, fontSize: 96, fontFamily: "Playfair Display, serif", color: "#b48744", textAlign: "left", fontStyle: "italic" },
+
+                // GRID INFO 2x2 (label tiny + value)
+                { id: "info-label-1", type: "text", text: "FECHA", x: 60, y: 1230, width: 200, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.5)", fontWeight: "700", textAlign: "left", charSpacing: 300 },
+                { id: "info-value-1", type: "text", text: "28 NOV  ·  21:00 H", x: 60, y: 1250, width: 320, fontSize: 18, fontFamily: "Playfair Display, serif", color: "#ffffff", textAlign: "left" },
+
+                { id: "info-label-2", type: "text", text: "LUGAR", x: 60, y: 1290, width: 200, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.5)", fontWeight: "700", textAlign: "left", charSpacing: 300 },
+                { id: "info-value-2", type: "text", text: "Hotel Mandarín  ·  Madrid", x: 60, y: 1310, width: 360, fontSize: 18, fontFamily: "Playfair Display, serif", color: "#ffffff", textAlign: "left", fontStyle: "italic" },
+
+                { id: "info-label-3", type: "text", text: "PRECIO", x: 600, y: 1230, width: 200, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.5)", fontWeight: "700", textAlign: "left", charSpacing: 300 },
+                { id: "info-value-3", type: "text", text: "Donativo desde 80€", x: 600, y: 1250, width: 380, fontSize: 18, fontFamily: "Playfair Display, serif", color: "#ffffff", textAlign: "left" },
+
+                { id: "info-label-4", type: "text", text: "RSVP", x: 600, y: 1290, width: 200, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.5)", fontWeight: "700", textAlign: "left", charSpacing: 300 },
+                { id: "info-value-4", type: "text", text: "gala@voices.es", x: 600, y: 1310, width: 380, fontSize: 18, fontFamily: "Playfair Display, serif", color: "#b48744", textAlign: "left", fontStyle: "italic" },
+            ] },
+        ],
+    },
+
+// ─────────────────────────────────────────────────────────────────────
+// 34 — Ruido Fest Bold Yellow — festival pop (inspirada en #5)
+//      Amarillo masivo + formas angulares morada/rosa + Anton chunky.
+// ─────────────────────────────────────────────────────────────────────
+    {
+        id: 34,
+        title: "Ruido Fest",
+        category: "Festival",
+        image: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Musica/Grupos-musica/Grupos-%20(3).png",
+        premium: false,
+        audience: ["productoras"],
+        internalTags: ["beta"],
+        variants: [
+            { format: "portrait", width: 1080, height: 1350, layers: [
+                // FONDO amarillo masivo
+                { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1350, fill: "#FFE600", selectable: false },
+                // Forma morada angular grande arriba-derecha
+                { id: "deco-purple", type: "shape", shape: "rect", x: 540, y: -100, width: 700, height: 1100, fill: "#5b21b6", opacity: 0.95, angle: 14 },
+                // Forma rosa angular abajo-izquierda
+                { id: "deco-pink", type: "shape", shape: "rect", x: -200, y: 870, width: 700, height: 500, fill: "#ec4899", opacity: 0.92, angle: -8 },
+
+                // BANDA superior negra para titulo
+                { id: "top-band", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 220, fill: "#0d0d0d", selectable: false },
+                // TITULO masivo linea 1 blanco
+                { id: "title-1", type: "text", text: "RUIDO", x: 0, y: 45, width: 1080, fontSize: 140, fontFamily: "Anton, Impact, sans-serif", color: "#FFFFFF", fontWeight: "900", textAlign: "center", charSpacing: -8 },
+                // Linea 2 amarillo
+                { id: "title-2", type: "text", text: "FEST", x: 0, y: 175, width: 1080, fontSize: 64, fontFamily: "Anton, Impact, sans-serif", color: "#FFE600", fontWeight: "900", textAlign: "center", charSpacing: 30 },
+
+                // GRUPO centrado
+                { id: "band", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Musica/Grupos-musica/Grupos-%20(3).png", x: 540, y: 290, scaleX: 1.65, scaleY: 1.65, originX: "center", originY: "top", shadow: { color: "rgba(13,13,13,0.55)", blur: 35, offsetX: 0, offsetY: 0 } },
+
+                // BANDA inferior negra
+                { id: "bot-band", type: "shape", shape: "rect", x: 0, y: 1080, width: 1080, height: 270, fill: "#0d0d0d", selectable: false },
+                // FECHA gigante amarillo
+                { id: "date", type: "text", text: "12.13.14", x: 0, y: 1110, width: 1080, fontSize: 130, fontFamily: "Anton, Impact, sans-serif", color: "#FFE600", fontWeight: "900", textAlign: "center", charSpacing: 5 },
+                { id: "month", type: "text", text: "JULIO 2026", x: 0, y: 1235, width: 1080, fontSize: 32, fontFamily: "Anton, Impact, sans-serif", color: "#FFFFFF", textAlign: "center", charSpacing: 600 },
+                { id: "venue", type: "text", text: "PARQUE TIERRA  ·  MADRID  ·  5 ESCENARIOS", x: 0, y: 1295, width: 1080, fontSize: 16, fontFamily: "Montserrat, sans-serif", color: "rgba(255,230,0,0.85)", fontWeight: "600", textAlign: "center", charSpacing: 250 },
+
+                // Etiqueta lateral vertical
+                { id: "side-label", type: "text", text: "5 ESCENARIOS  ·  +30 ARTISTAS  ·  3 DÍAS", x: 1030, y: 670, width: 60, fontSize: 14, fontFamily: "Anton, Impact, sans-serif", color: "#0d0d0d", textAlign: "left", angle: 90, charSpacing: 300 },
+            ] },
+        ],
+    },
+
+// ═════════════════════════════════════════════════════════════════════
+// FAMILIA CLASES & WORKSHOPS DE BAILE — 6 plantillas
+// Foto profe + concepto distinto por plantilla. Tag beta.
+// ═════════════════════════════════════════════════════════════════════
+
+// ─────────────────────────────────────────────────────────────────────
+// 35 — Workshop Bachata Sensual — pareja Lucia & Mateo
+//      Latin rojo/burdeos rico, foto pareja con halo, cajas info esquinas
+// ─────────────────────────────────────────────────────────────────────
+    {
+        id: 35,
+        title: "Workshop Bachata Sensual",
+        category: "Clases",
+        image: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/07_lucia_mateo_pareja.png",
+        premium: true,
+        audience: ["academias"],
+        internalTags: ["beta"],
+        variants: [
+            { format: "portrait", width: 1080, height: 1350, layers: [
+                // FONDO burdeos profundo
+                { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1350, fill: "#3f0a14", selectable: false },
+                // Gradiente simulado con circulos halo
+                { id: "halo-1", type: "shape", shape: "circle", x: -100, y: -50, width: 700, height: 700, fill: "rgba(220,38,38,0.40)", opacity: 0.7, selectable: false },
+                { id: "halo-2", type: "shape", shape: "circle", x: 580, y: 100, width: 650, height: 650, fill: "rgba(127,29,29,0.55)", opacity: 0.7, selectable: false },
+                { id: "halo-3", type: "shape", shape: "circle", x: 200, y: 750, width: 700, height: 700, fill: "rgba(248,113,113,0.20)", opacity: 0.7, selectable: false },
+
+                // CHIP top "ÚNICA SESIÓN"
+                { id: "chip-bg", type: "shape", shape: "rect", x: 380, y: 55, width: 320, height: 42, fill: "transparent", radius: 21, stroke: "#fca5a5", strokeWidth: 2, selectable: false },
+                { id: "chip-label", type: "text", text: "·  ÚNICA SESIÓN  ·", x: 0, y: 65, width: 1080, fontSize: 18, fontFamily: "Anton, Impact, sans-serif", color: "#fca5a5", textAlign: "center", charSpacing: 600 },
+
+                // SUPRATITULO arriba con tracking
+                { id: "supra", type: "text", text: "M A S T E R   W O R K S H O P", x: 0, y: 130, width: 1080, fontSize: 16, fontFamily: "Cormorant Garamond, serif", color: "#fbbf24", fontWeight: "500", textAlign: "center", charSpacing: 700 },
+
+                // TITULO Playfair MASIVO con linea 2 italica
+                { id: "title-1", type: "text", text: "BACHATA", x: 0, y: 170, width: 1080, fontSize: 110, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "center", charSpacing: 40 },
+                { id: "title-2", type: "text", text: "Sensual", x: 0, y: 280, width: 1080, fontSize: 76, fontFamily: "Playfair Display, serif", color: "#fbbf24", textAlign: "center", fontStyle: "italic" },
+
+                // FOTO PAREJA centrada con halo blanco intenso
+                { id: "couple", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/07_lucia_mateo_pareja.png", x: 540, y: 380, scaleX: 0.78, scaleY: 0.78, originX: "center", originY: "top", shadow: { color: "rgba(255,255,255,0.95)", blur: 60, offsetX: 0, offsetY: 0 } },
+
+                // NOMBRE pareja debajo de la foto
+                { id: "by-label", type: "text", text: "IMPARTEN", x: 0, y: 900, width: 1080, fontSize: 13, fontFamily: "Montserrat, sans-serif", color: "#fbbf24", fontWeight: "700", textAlign: "center", charSpacing: 500 },
+                { id: "names", type: "text", text: "Lucía  &  Mateo", x: 0, y: 925, width: 1080, fontSize: 42, fontFamily: "Playfair Display, serif", color: "#ffffff", textAlign: "center", fontStyle: "italic" },
+
+                // Divider ornamental
+                { id: "div-l", type: "shape", shape: "rect", x: 320, y: 1000, width: 200, height: 1, fill: "#fbbf24", selectable: false },
+                { id: "div-r", type: "shape", shape: "rect", x: 560, y: 1000, width: 200, height: 1, fill: "#fbbf24", selectable: false },
+                { id: "div-dot", type: "shape", shape: "circle", x: 533, y: 992, width: 14, height: 14, fill: "transparent", stroke: "#fbbf24", strokeWidth: 1, selectable: false },
+
+                // ─── BLOQUE INFO 3 CAJAS GEOMETRICAS ───
+                // Caja 1 - FECHA
+                { id: "card-1", type: "shape", shape: "rect", x: 40, y: 1030, width: 320, height: 200, fill: "rgba(15,3,8,0.65)", radius: 8, stroke: "rgba(251,191,36,0.35)", strokeWidth: 1, selectable: false },
+                { id: "c1-label", type: "text", text: "FECHA", x: 40, y: 1055, width: 320, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "#fbbf24", fontWeight: "700", textAlign: "center", charSpacing: 400 },
+                { id: "c1-day", type: "text", text: "11", x: 40, y: 1080, width: 320, fontSize: 80, fontFamily: "Playfair Display, serif", color: "#ffffff", textAlign: "center", fontStyle: "italic" },
+                { id: "c1-month", type: "text", text: "OCT · SÁB", x: 40, y: 1190, width: 320, fontSize: 16, fontFamily: "Anton, Impact, sans-serif", color: "#fbbf24", textAlign: "center", charSpacing: 250 },
+
+                // Caja 2 - PRECIO
+                { id: "card-2", type: "shape", shape: "rect", x: 380, y: 1030, width: 320, height: 200, fill: "rgba(15,3,8,0.65)", radius: 8, stroke: "rgba(251,191,36,0.35)", strokeWidth: 1, selectable: false },
+                { id: "c2-label", type: "text", text: "PRECIO", x: 380, y: 1055, width: 320, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "#fbbf24", fontWeight: "700", textAlign: "center", charSpacing: 400 },
+                { id: "c2-day", type: "text", text: "45€", x: 380, y: 1080, width: 320, fontSize: 76, fontFamily: "Playfair Display, serif", color: "#ffffff", textAlign: "center", fontStyle: "italic" },
+                { id: "c2-month", type: "text", text: "2H · PLAZAS LIMITADAS", x: 380, y: 1190, width: 320, fontSize: 12, fontFamily: "Anton, Impact, sans-serif", color: "#fbbf24", textAlign: "center", charSpacing: 200 },
+
+                // Caja 3 - HORA
+                { id: "card-3", type: "shape", shape: "rect", x: 720, y: 1030, width: 320, height: 200, fill: "rgba(15,3,8,0.65)", radius: 8, stroke: "rgba(251,191,36,0.35)", strokeWidth: 1, selectable: false },
+                { id: "c3-label", type: "text", text: "HORA", x: 720, y: 1055, width: 320, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "#fbbf24", fontWeight: "700", textAlign: "center", charSpacing: 400 },
+                { id: "c3-day", type: "text", text: "18 H", x: 720, y: 1080, width: 320, fontSize: 76, fontFamily: "Playfair Display, serif", color: "#ffffff", textAlign: "center", fontStyle: "italic" },
+                { id: "c3-month", type: "text", text: "DURACIÓN 2 HORAS", x: 720, y: 1190, width: 320, fontSize: 12, fontFamily: "Anton, Impact, sans-serif", color: "#fbbf24", textAlign: "center", charSpacing: 200 },
+
+                // PIE: venue + cta
+                { id: "venue", type: "text", text: "SALA TROPICAL  ·  C/ LIBERTAD 8  ·  MADRID", x: 0, y: 1260, width: 1080, fontSize: 16, fontFamily: "Montserrat, sans-serif", color: "#ffffff", fontWeight: "600", textAlign: "center", charSpacing: 300 },
+                { id: "cta", type: "text", text: "RESERVA EN  ·  bachata@saltatropical.es", x: 0, y: 1295, width: 1080, fontSize: 14, fontFamily: "Cormorant Garamond, serif", color: "#fbbf24", fontStyle: "italic", textAlign: "center", charSpacing: 250 },
+            ] },
+        ],
+    },
+
+// ─────────────────────────────────────────────────────────────────────
+// 36 — Clases Semanales con Jean — modern minimalista (NUEVO LAYOUT)
+//      Foto profe LATERAL izquierda + info derecha estructurada
+//      Mucho aire, sans-serif, paleta gris + acento granate
+// ─────────────────────────────────────────────────────────────────────
+    {
+        id: 36,
+        title: "Clases Semanales",
+        category: "Clases",
+        image: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/Profe-jean.png",
+        premium: false,
+        audience: ["academias"],
+        internalTags: ["beta"],
+        variants: [
+            { format: "portrait", width: 1080, height: 1350, layers: [
+                // FONDO crema casi blanco
+                { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1350, fill: "#f5f1ec", selectable: false },
+                // Banda lateral izquierda granate (donde va la foto)
+                { id: "left-band", type: "shape", shape: "rect", x: 0, y: 0, width: 540, height: 1350, fill: "#7c1d2c", selectable: false },
+
+                // PROFE foto centrada en banda izquierda
+                { id: "profe", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/Profe-jean.png", x: 270, y: 130, scaleX: 0.82, scaleY: 0.82, originX: "center", originY: "top", shadow: { color: "rgba(0,0,0,0.45)", blur: 30, offsetX: 5, offsetY: 5 } },
+
+                // Sello vertical en banda izq abajo
+                { id: "side-vert", type: "text", text: "ACADEMIA  ·  TEMPORADA 2026 / 27", x: 50, y: 1100, width: 50, fontSize: 13, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.5)", fontWeight: "600", textAlign: "left", angle: -90, charSpacing: 400 },
+                // Nombre del profe en banda izq abajo
+                { id: "profe-name-l", type: "text", text: "JEAN MARC", x: 0, y: 1230, width: 540, fontSize: 38, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "center", charSpacing: 80 },
+                { id: "profe-role", type: "text", text: "Director artístico", x: 0, y: 1280, width: 540, fontSize: 14, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.7)", fontWeight: "500", textAlign: "center", fontStyle: "italic", charSpacing: 150 },
+
+                // LADO DERECHO - info
+                // Kicker arriba
+                { id: "kicker", type: "text", text: "TEMPORADA  ·  OCTUBRE  ·  MAYO", x: 600, y: 100, width: 440, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "#7c1d2c", fontWeight: "700", textAlign: "left", charSpacing: 350 },
+
+                // TITULO grande sans-serif
+                { id: "title-1", type: "text", text: "Clases", x: 600, y: 130, width: 440, fontSize: 72, fontFamily: "Playfair Display, serif", color: "#1f1010", textAlign: "left", fontStyle: "italic" },
+                { id: "title-2", type: "text", text: "Semanales", x: 600, y: 215, width: 460, fontSize: 72, fontFamily: "Playfair Display, serif", color: "#7c1d2c", textAlign: "left", fontStyle: "italic" },
+
+                // Divider fino
+                { id: "div", type: "shape", shape: "rect", x: 600, y: 330, width: 80, height: 3, fill: "#7c1d2c", selectable: false },
+
+                // Descripcion corta
+                { id: "desc", type: "text", text: "Formación regular en grupo. Nivel principiante e intermedio. Plazas limitadas a 12 alumnos por clase.", x: 600, y: 360, width: 440, fontSize: 16, fontFamily: "Montserrat, sans-serif", color: "rgba(31,16,16,0.75)", fontWeight: "500", textAlign: "left", lineHeight: 1.4 },
+
+                // ─── HORARIOS lista limpia ───
+                { id: "sched-title", type: "text", text: "HORARIOS", x: 600, y: 480, width: 440, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(31,16,16,0.5)", fontWeight: "700", textAlign: "left", charSpacing: 400 },
+                { id: "sched-line", type: "shape", shape: "rect", x: 600, y: 502, width: 80, height: 2, fill: "#7c1d2c", selectable: false },
+
+                // Fila 1 LUN
+                { id: "sched-d1", type: "text", text: "LUN", x: 600, y: 525, width: 80, fontSize: 18, fontFamily: "Anton, Impact, sans-serif", color: "#7c1d2c", textAlign: "left", charSpacing: 150 },
+                { id: "sched-t1", type: "text", text: "Iniciación bachata", x: 720, y: 525, width: 240, fontSize: 17, fontFamily: "Montserrat, sans-serif", color: "#1f1010", fontWeight: "600", textAlign: "left" },
+                { id: "sched-h1", type: "text", text: "19:00", x: 970, y: 525, width: 80, fontSize: 16, fontFamily: "Montserrat, sans-serif", color: "rgba(31,16,16,0.6)", fontWeight: "500", textAlign: "right" },
+                { id: "sched-sep1", type: "shape", shape: "rect", x: 600, y: 555, width: 440, height: 1, fill: "rgba(31,16,16,0.12)", selectable: false },
+
+                // Fila 2 MAR
+                { id: "sched-d2", type: "text", text: "MAR", x: 600, y: 570, width: 80, fontSize: 18, fontFamily: "Anton, Impact, sans-serif", color: "#7c1d2c", textAlign: "left", charSpacing: 150 },
+                { id: "sched-t2", type: "text", text: "Salsa cubana", x: 720, y: 570, width: 240, fontSize: 17, fontFamily: "Montserrat, sans-serif", color: "#1f1010", fontWeight: "600", textAlign: "left" },
+                { id: "sched-h2", type: "text", text: "20:00", x: 970, y: 570, width: 80, fontSize: 16, fontFamily: "Montserrat, sans-serif", color: "rgba(31,16,16,0.6)", fontWeight: "500", textAlign: "right" },
+                { id: "sched-sep2", type: "shape", shape: "rect", x: 600, y: 600, width: 440, height: 1, fill: "rgba(31,16,16,0.12)", selectable: false },
+
+                // Fila 3 MIE
+                { id: "sched-d3", type: "text", text: "MIÉ", x: 600, y: 615, width: 80, fontSize: 18, fontFamily: "Anton, Impact, sans-serif", color: "#7c1d2c", textAlign: "left", charSpacing: 150 },
+                { id: "sched-t3", type: "text", text: "Bachata intermedio", x: 720, y: 615, width: 240, fontSize: 17, fontFamily: "Montserrat, sans-serif", color: "#1f1010", fontWeight: "600", textAlign: "left" },
+                { id: "sched-h3", type: "text", text: "19:30", x: 970, y: 615, width: 80, fontSize: 16, fontFamily: "Montserrat, sans-serif", color: "rgba(31,16,16,0.6)", fontWeight: "500", textAlign: "right" },
+                { id: "sched-sep3", type: "shape", shape: "rect", x: 600, y: 645, width: 440, height: 1, fill: "rgba(31,16,16,0.12)", selectable: false },
+
+                // Fila 4 JUE
+                { id: "sched-d4", type: "text", text: "JUE", x: 600, y: 660, width: 80, fontSize: 18, fontFamily: "Anton, Impact, sans-serif", color: "#7c1d2c", textAlign: "left", charSpacing: 150 },
+                { id: "sched-t4", type: "text", text: "Estilo en pareja", x: 720, y: 660, width: 240, fontSize: 17, fontFamily: "Montserrat, sans-serif", color: "#1f1010", fontWeight: "600", textAlign: "left" },
+                { id: "sched-h4", type: "text", text: "21:00", x: 970, y: 660, width: 80, fontSize: 16, fontFamily: "Montserrat, sans-serif", color: "rgba(31,16,16,0.6)", fontWeight: "500", textAlign: "right" },
+                { id: "sched-sep4", type: "shape", shape: "rect", x: 600, y: 690, width: 440, height: 1, fill: "rgba(31,16,16,0.12)", selectable: false },
+
+                // PRECIO bloque destacado abajo
+                { id: "price-bg", type: "shape", shape: "rect", x: 600, y: 760, width: 440, height: 140, fill: "#7c1d2c", radius: 6, selectable: false },
+                { id: "price-label", type: "text", text: "BONO MENSUAL", x: 600, y: 785, width: 440, fontSize: 12, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.65)", fontWeight: "700", textAlign: "center", charSpacing: 400 },
+                { id: "price-value", type: "text", text: "60€", x: 600, y: 810, width: 440, fontSize: 64, fontFamily: "Playfair Display, serif", color: "#ffffff", textAlign: "center", fontStyle: "italic" },
+                { id: "price-extra", type: "text", text: "4 clases / mes  ·  clase suelta 18€", x: 600, y: 880, width: 440, fontSize: 12, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.85)", fontWeight: "500", textAlign: "center", charSpacing: 150 },
+
+                // FOOTER info
+                { id: "addr-label", type: "text", text: "DÓNDE", x: 600, y: 945, width: 440, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(31,16,16,0.5)", fontWeight: "700", textAlign: "left", charSpacing: 400 },
+                { id: "addr-value", type: "text", text: "Estudio Jean · C/ Goya 22", x: 600, y: 965, width: 440, fontSize: 17, fontFamily: "Playfair Display, serif", color: "#1f1010", textAlign: "left", fontStyle: "italic" },
+
+                { id: "tel-label", type: "text", text: "RESERVA", x: 600, y: 1010, width: 440, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(31,16,16,0.5)", fontWeight: "700", textAlign: "left", charSpacing: 400 },
+                { id: "tel-value", type: "text", text: "+34 600 222 333  ·  WhatsApp", x: 600, y: 1030, width: 440, fontSize: 17, fontFamily: "Playfair Display, serif", color: "#1f1010", textAlign: "left", fontStyle: "italic" },
+
+                { id: "web-label", type: "text", text: "WEB", x: 600, y: 1075, width: 440, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(31,16,16,0.5)", fontWeight: "700", textAlign: "left", charSpacing: 400 },
+                { id: "web-value", type: "text", text: "estudiojean.es", x: 600, y: 1095, width: 440, fontSize: 17, fontFamily: "Playfair Display, serif", color: "#7c1d2c", textAlign: "left", fontStyle: "italic" },
+            ] },
+        ],
+    },
+
+// ─────────────────────────────────────────────────────────────────────
+// 37 — Taller Flamenco Ana María — negro/rojo flamenco editorial (NUEVO)
+//      Tipografia serifa pasional, lineas rojas tipo abanico, foto con halo
+//      Look poster flamenco moderno premium
+// ─────────────────────────────────────────────────────────────────────
+    {
+        id: 37,
+        title: "Taller Flamenco",
+        category: "Clases",
+        image: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/Profe-baileAnamaria.png",
+        premium: true,
+        audience: ["academias", "instituciones"],
+        internalTags: ["beta"],
+        variants: [
+            { format: "portrait", width: 1080, height: 1350, layers: [
+                // FONDO negro profundo
+                { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1350, fill: "#0a0102", selectable: false },
+                // Halo rojo central detras del titulo
+                { id: "halo-red-1", type: "shape", shape: "circle", x: 100, y: 0, width: 900, height: 900, fill: "rgba(190,18,18,0.40)", opacity: 0.55, selectable: false },
+                { id: "halo-red-2", type: "shape", shape: "circle", x: 300, y: 350, width: 600, height: 600, fill: "rgba(220,38,38,0.55)", opacity: 0.65, selectable: false },
+
+                // LINEAS ROJAS RADIALES tipo abanico flamenco (varias rect rotadas desde centro inferior)
+                { id: "ray-1", type: "shape", shape: "rect", x: 540, y: 800, width: 4, height: 1000, fill: "rgba(220,38,38,0.45)", opacity: 0.8, angle: -42, originX: "center", originY: "bottom", selectable: false },
+                { id: "ray-2", type: "shape", shape: "rect", x: 540, y: 800, width: 4, height: 1000, fill: "rgba(220,38,38,0.45)", opacity: 0.8, angle: -28, originX: "center", originY: "bottom", selectable: false },
+                { id: "ray-3", type: "shape", shape: "rect", x: 540, y: 800, width: 4, height: 1000, fill: "rgba(220,38,38,0.55)", opacity: 0.85, angle: -14, originX: "center", originY: "bottom", selectable: false },
+                { id: "ray-4", type: "shape", shape: "rect", x: 540, y: 800, width: 4, height: 1000, fill: "rgba(220,38,38,0.65)", opacity: 0.9, angle: 0, originX: "center", originY: "bottom", selectable: false },
+                { id: "ray-5", type: "shape", shape: "rect", x: 540, y: 800, width: 4, height: 1000, fill: "rgba(220,38,38,0.55)", opacity: 0.85, angle: 14, originX: "center", originY: "bottom", selectable: false },
+                { id: "ray-6", type: "shape", shape: "rect", x: 540, y: 800, width: 4, height: 1000, fill: "rgba(220,38,38,0.45)", opacity: 0.8, angle: 28, originX: "center", originY: "bottom", selectable: false },
+                { id: "ray-7", type: "shape", shape: "rect", x: 540, y: 800, width: 4, height: 1000, fill: "rgba(220,38,38,0.45)", opacity: 0.8, angle: 42, originX: "center", originY: "bottom", selectable: false },
+
+                // CABECERA tipo programa teatro
+                { id: "header-line-t", type: "shape", shape: "rect", x: 80, y: 65, width: 920, height: 1, fill: "rgba(255,255,255,0.4)", selectable: false },
+                { id: "header-line-b", type: "shape", shape: "rect", x: 80, y: 115, width: 920, height: 1, fill: "rgba(255,255,255,0.4)", selectable: false },
+                { id: "header-text", type: "text", text: "ESTUDIO  ·  ANA  MARÍA  ·  TEMPORADA 2026", x: 0, y: 80, width: 1080, fontSize: 16, fontFamily: "Cormorant Garamond, serif", color: "#ffffff", fontWeight: "500", textAlign: "center", charSpacing: 500 },
+
+                // ANA MARIA con halo intenso rojo
+                { id: "profe", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/Profe-baileAnamaria.png", x: 540, y: 160, scaleX: 1.55, scaleY: 1.55, originX: "center", originY: "top", shadow: { color: "rgba(220,38,38,0.85)", blur: 75, offsetX: 0, offsetY: 0 } },
+
+                // BLOQUE titulo abajo
+                // Overlay negro denso
+                { id: "overlay-bottom", type: "shape", shape: "rect", x: 0, y: 880, width: 1080, height: 470, fill: "rgba(10,1,2,0.92)", selectable: false },
+                // Linea roja arriba del bloque
+                { id: "block-top-line", type: "shape", shape: "rect", x: 0, y: 880, width: 1080, height: 3, fill: "#dc2626", selectable: false },
+
+                // SUPRA
+                { id: "supra", type: "text", text: "T A L L E R   M O N O G R Á F I C O", x: 0, y: 905, width: 1080, fontSize: 15, fontFamily: "Cormorant Garamond, serif", color: "#dc2626", fontWeight: "700", textAlign: "center", charSpacing: 700 },
+
+                // TITULO grande Playfair italica
+                { id: "title-1", type: "text", text: "Flamenco", x: 0, y: 940, width: 1080, fontSize: 100, fontFamily: "Playfair Display, serif", color: "#ffffff", textAlign: "center", fontStyle: "italic" },
+                { id: "title-2", type: "text", text: "& Compás", x: 0, y: 1050, width: 1080, fontSize: 70, fontFamily: "Playfair Display, serif", color: "#dc2626", textAlign: "center", fontStyle: "italic" },
+
+                // Nombre profe
+                { id: "by-label", type: "text", text: "I M P A R T E", x: 0, y: 1145, width: 1080, fontSize: 12, fontFamily: "Cormorant Garamond, serif", color: "rgba(255,255,255,0.55)", fontWeight: "600", textAlign: "center", charSpacing: 600 },
+                { id: "profe-name", type: "text", text: "Ana María Rodríguez", x: 0, y: 1170, width: 1080, fontSize: 30, fontFamily: "Playfair Display, serif", color: "#ffffff", textAlign: "center", fontStyle: "italic" },
+
+                // Divider
+                { id: "div", type: "shape", shape: "rect", x: 420, y: 1215, width: 240, height: 1, fill: "#dc2626", selectable: false },
+
+                // INFO pie 3 columnas
+                { id: "i-1-l", type: "text", text: "FECHA", x: 60, y: 1235, width: 320, fontSize: 10, fontFamily: "Montserrat, sans-serif", color: "rgba(220,38,38,0.85)", fontWeight: "700", textAlign: "center", charSpacing: 350 },
+                { id: "i-1-v", type: "text", text: "DOM 18 OCT", x: 60, y: 1255, width: 320, fontSize: 18, fontFamily: "Playfair Display, serif", color: "#ffffff", textAlign: "center" },
+                { id: "i-1-x", type: "text", text: "11:00 — 14:00", x: 60, y: 1283, width: 320, fontSize: 13, fontFamily: "Cormorant Garamond, serif", color: "rgba(255,255,255,0.7)", fontStyle: "italic", textAlign: "center" },
+
+                { id: "i-2-l", type: "text", text: "PRECIO", x: 380, y: 1235, width: 320, fontSize: 10, fontFamily: "Montserrat, sans-serif", color: "rgba(220,38,38,0.85)", fontWeight: "700", textAlign: "center", charSpacing: 350 },
+                { id: "i-2-v", type: "text", text: "50€", x: 380, y: 1252, width: 320, fontSize: 22, fontFamily: "Playfair Display, serif", color: "#ffffff", textAlign: "center", fontStyle: "italic" },
+                { id: "i-2-x", type: "text", text: "Plazas limitadas a 15", x: 380, y: 1283, width: 320, fontSize: 13, fontFamily: "Cormorant Garamond, serif", color: "rgba(255,255,255,0.7)", fontStyle: "italic", textAlign: "center" },
+
+                { id: "i-3-l", type: "text", text: "LUGAR", x: 700, y: 1235, width: 320, fontSize: 10, fontFamily: "Montserrat, sans-serif", color: "rgba(220,38,38,0.85)", fontWeight: "700", textAlign: "center", charSpacing: 350 },
+                { id: "i-3-v", type: "text", text: "Sala Carmen", x: 700, y: 1253, width: 320, fontSize: 18, fontFamily: "Playfair Display, serif", color: "#ffffff", textAlign: "center" },
+                { id: "i-3-x", type: "text", text: "C/ La Latina · Madrid", x: 700, y: 1283, width: 320, fontSize: 13, fontFamily: "Cormorant Garamond, serif", color: "rgba(255,255,255,0.7)", fontStyle: "italic", textAlign: "center" },
+
+                // CTA pie
+                { id: "cta", type: "text", text: "RESERVA EN  ·  estudio.anamaria@flamenco.es", x: 0, y: 1320, width: 1080, fontSize: 12, fontFamily: "Cormorant Garamond, serif", color: "#dc2626", fontStyle: "italic", textAlign: "center", charSpacing: 250 },
+            ] },
+        ],
+    },
+
+// ─────────────────────────────────────────────────────────────────────
+// 38 — Ciclo 3 Maestros Bachata — color block 3 columnas (NUEVO LAYOUT)
+//      3 bloques verticales color con un profe en cada uno
+//      Cada bloque su info propia: dia + estilo
+// ─────────────────────────────────────────────────────────────────────
+    {
+        id: 38,
+        title: "Ciclo 3 Maestros",
+        category: "Clases",
+        image: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/02_damian_reyes_perfil.png",
+        premium: true,
+        audience: ["academias"],
+        internalTags: ["beta"],
+        variants: [
+            { format: "portrait", width: 1080, height: 1350, layers: [
+                // FONDO base negro
+                { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1350, fill: "#0a0a0a", selectable: false },
+
+                // CABECERA con titulo grande arriba
+                { id: "header-bg", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 270, fill: "#fbbf24", selectable: false },
+                { id: "header-supra", type: "text", text: "CICLO  ·  OTOÑO  ·  2026", x: 0, y: 55, width: 1080, fontSize: 14, fontFamily: "Montserrat, sans-serif", color: "rgba(10,10,10,0.7)", fontWeight: "800", textAlign: "center", charSpacing: 500 },
+                { id: "header-t1", type: "text", text: "TRES", x: 0, y: 85, width: 1080, fontSize: 120, fontFamily: "Anton, Impact, sans-serif", color: "#0a0a0a", textAlign: "center", charSpacing: 80 },
+                { id: "header-t2", type: "text", text: "MAESTROS", x: 0, y: 200, width: 1080, fontSize: 42, fontFamily: "Anton, Impact, sans-serif", color: "#0a0a0a", textAlign: "center", charSpacing: 200 },
+
+                // ─── COLUMNA 1 (rojo) ───
+                { id: "col-1-bg", type: "shape", shape: "rect", x: 0, y: 270, width: 360, height: 870, fill: "#b91c1c", selectable: false },
+                { id: "profe-1", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/02_damian_reyes_perfil.png", x: 180, y: 300, scaleX: 0.55, scaleY: 0.55, originX: "center", originY: "top" },
+                { id: "c1-num", type: "text", text: "01", x: 0, y: 730, width: 360, fontSize: 90, fontFamily: "Anton, Impact, sans-serif", color: "rgba(255,255,255,0.25)", textAlign: "center" },
+                { id: "c1-name", type: "text", text: "DAMIÁN", x: 0, y: 830, width: 360, fontSize: 34, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "center", charSpacing: 60 },
+                { id: "c1-style", type: "text", text: "BACHATA · MODERNA", x: 0, y: 880, width: 360, fontSize: 12, fontFamily: "Montserrat, sans-serif", color: "#fbbf24", fontWeight: "700", textAlign: "center", charSpacing: 250 },
+                { id: "c1-line", type: "shape", shape: "rect", x: 130, y: 920, width: 100, height: 2, fill: "#fbbf24", selectable: false },
+                { id: "c1-day", type: "text", text: "VIE", x: 0, y: 945, width: 360, fontSize: 56, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "center", charSpacing: 100 },
+                { id: "c1-time", type: "text", text: "19:00 — 21:00", x: 0, y: 1015, width: 360, fontSize: 14, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.85)", fontWeight: "600", textAlign: "center", charSpacing: 200 },
+                { id: "c1-price-bg", type: "shape", shape: "rect", x: 90, y: 1060, width: 180, height: 50, fill: "#fbbf24", radius: 25, selectable: false },
+                { id: "c1-price", type: "text", text: "30€ / CLASE", x: 0, y: 1077, width: 360, fontSize: 16, fontFamily: "Anton, Impact, sans-serif", color: "#0a0a0a", textAlign: "center", charSpacing: 150 },
+
+                // ─── COLUMNA 2 (rosa) ───
+                { id: "col-2-bg", type: "shape", shape: "rect", x: 360, y: 270, width: 360, height: 870, fill: "#be185d", selectable: false },
+                { id: "profe-2", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/03_nia_batista_perfil.png", x: 540, y: 300, scaleX: 0.55, scaleY: 0.55, originX: "center", originY: "top" },
+                { id: "c2-num", type: "text", text: "02", x: 360, y: 730, width: 360, fontSize: 90, fontFamily: "Anton, Impact, sans-serif", color: "rgba(255,255,255,0.25)", textAlign: "center" },
+                { id: "c2-name", type: "text", text: "NIA", x: 360, y: 830, width: 360, fontSize: 34, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "center", charSpacing: 60 },
+                { id: "c2-style", type: "text", text: "BACHATA · LADY STYLE", x: 360, y: 880, width: 360, fontSize: 12, fontFamily: "Montserrat, sans-serif", color: "#fbbf24", fontWeight: "700", textAlign: "center", charSpacing: 250 },
+                { id: "c2-line", type: "shape", shape: "rect", x: 490, y: 920, width: 100, height: 2, fill: "#fbbf24", selectable: false },
+                { id: "c2-day", type: "text", text: "SÁB", x: 360, y: 945, width: 360, fontSize: 56, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "center", charSpacing: 100 },
+                { id: "c2-time", type: "text", text: "11:00 — 13:00", x: 360, y: 1015, width: 360, fontSize: 14, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.85)", fontWeight: "600", textAlign: "center", charSpacing: 200 },
+                { id: "c2-price-bg", type: "shape", shape: "rect", x: 450, y: 1060, width: 180, height: 50, fill: "#fbbf24", radius: 25, selectable: false },
+                { id: "c2-price", type: "text", text: "30€ / CLASE", x: 360, y: 1077, width: 360, fontSize: 16, fontFamily: "Anton, Impact, sans-serif", color: "#0a0a0a", textAlign: "center", charSpacing: 150 },
+
+                // ─── COLUMNA 3 (azul) ───
+                { id: "col-3-bg", type: "shape", shape: "rect", x: 720, y: 270, width: 360, height: 870, fill: "#1d4ed8", selectable: false },
+                { id: "profe-3", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/04_malik_santos_perfil.png", x: 900, y: 300, scaleX: 0.55, scaleY: 0.55, originX: "center", originY: "top" },
+                { id: "c3-num", type: "text", text: "03", x: 720, y: 730, width: 360, fontSize: 90, fontFamily: "Anton, Impact, sans-serif", color: "rgba(255,255,255,0.25)", textAlign: "center" },
+                { id: "c3-name", type: "text", text: "MALIK", x: 720, y: 830, width: 360, fontSize: 34, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "center", charSpacing: 60 },
+                { id: "c3-style", type: "text", text: "BACHATA · URBAN MIX", x: 720, y: 880, width: 360, fontSize: 12, fontFamily: "Montserrat, sans-serif", color: "#fbbf24", fontWeight: "700", textAlign: "center", charSpacing: 250 },
+                { id: "c3-line", type: "shape", shape: "rect", x: 850, y: 920, width: 100, height: 2, fill: "#fbbf24", selectable: false },
+                { id: "c3-day", type: "text", text: "DOM", x: 720, y: 945, width: 360, fontSize: 56, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "center", charSpacing: 100 },
+                { id: "c3-time", type: "text", text: "12:00 — 14:00", x: 720, y: 1015, width: 360, fontSize: 14, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.85)", fontWeight: "600", textAlign: "center", charSpacing: 200 },
+                { id: "c3-price-bg", type: "shape", shape: "rect", x: 810, y: 1060, width: 180, height: 50, fill: "#fbbf24", radius: 25, selectable: false },
+                { id: "c3-price", type: "text", text: "30€ / CLASE", x: 720, y: 1077, width: 360, fontSize: 16, fontFamily: "Anton, Impact, sans-serif", color: "#0a0a0a", textAlign: "center", charSpacing: 150 },
+
+                // BANDA INFERIOR amarilla con BONO completo
+                { id: "footer-bg", type: "shape", shape: "rect", x: 0, y: 1140, width: 1080, height: 210, fill: "#fbbf24", selectable: false },
+                { id: "footer-label", type: "text", text: "BONO CICLO COMPLETO", x: 0, y: 1160, width: 1080, fontSize: 12, fontFamily: "Montserrat, sans-serif", color: "rgba(10,10,10,0.7)", fontWeight: "800", textAlign: "center", charSpacing: 500 },
+                { id: "footer-price", type: "text", text: "80€", x: 0, y: 1180, width: 1080, fontSize: 88, fontFamily: "Anton, Impact, sans-serif", color: "#0a0a0a", textAlign: "center", charSpacing: 30 },
+                { id: "footer-detail", type: "text", text: "3 CLASES  ·  3 ESTILOS  ·  3 MAESTROS  ·  ESCUELA DEL SOL  ·  MADRID", x: 0, y: 1290, width: 1080, fontSize: 13, fontFamily: "Anton, Impact, sans-serif", color: "#0a0a0a", textAlign: "center", charSpacing: 300 },
+                { id: "footer-cta", type: "text", text: "RESERVA EN  ·  escueladelsol.es / ciclo", x: 0, y: 1320, width: 1080, fontSize: 12, fontFamily: "Montserrat, sans-serif", color: "rgba(10,10,10,0.7)", fontWeight: "600", textAlign: "center", charSpacing: 250 },
+            ] },
+        ],
+    },
+
+// ─────────────────────────────────────────────────────────────────────
+// 39 — Bachata Principiantes — friendly verde menta (NUEVO LAYOUT)
+//      Pareja con look amigable, fondo pastel, mensaje invitador
+//      Tipografia chunky pero friendly, decoraciones simpaticas
+// ─────────────────────────────────────────────────────────────────────
+    {
+        id: 39,
+        title: "Bachata Principiantes",
+        category: "Clases",
+        image: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/05_valentina_damian_pareja.png",
+        premium: false,
+        audience: ["academias"],
+        internalTags: ["beta"],
+        variants: [
+            { format: "portrait", width: 1080, height: 1350, layers: [
+                // FONDO verde menta pastel
+                { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1350, fill: "#a7f3d0", selectable: false },
+
+                // Burbujas decorativas grandes (friendly)
+                { id: "bubble-1", type: "shape", shape: "circle", x: -100, y: -100, width: 350, height: 350, fill: "#fbbf24", opacity: 0.85, selectable: false },
+                { id: "bubble-2", type: "shape", shape: "circle", x: 850, y: 50, width: 280, height: 280, fill: "#f472b6", opacity: 0.85, selectable: false },
+                { id: "bubble-3", type: "shape", shape: "circle", x: 900, y: 1100, width: 220, height: 220, fill: "#6366f1", opacity: 0.85, selectable: false },
+                { id: "bubble-4", type: "shape", shape: "circle", x: -50, y: 1050, width: 200, height: 200, fill: "#f59e0b", opacity: 0.85, selectable: false },
+                // Estrellas/puntos pequeños decorativos (circulos pequenos sueltos)
+                { id: "dot-1", type: "shape", shape: "circle", x: 280, y: 110, width: 22, height: 22, fill: "#7c2d12", selectable: false },
+                { id: "dot-2", type: "shape", shape: "circle", x: 760, y: 380, width: 18, height: 18, fill: "#7c2d12", selectable: false },
+                { id: "dot-3", type: "shape", shape: "circle", x: 220, y: 660, width: 18, height: 18, fill: "#be185d", selectable: false },
+                { id: "dot-4", type: "shape", shape: "circle", x: 820, y: 720, width: 22, height: 22, fill: "#7c2d12", selectable: false },
+                { id: "dot-5", type: "shape", shape: "circle", x: 380, y: 1180, width: 16, height: 16, fill: "#be185d", selectable: false },
+
+                // CHIP arriba "PRIMERA CLASE GRATIS"
+                { id: "chip-bg", type: "shape", shape: "rect", x: 290, y: 70, width: 500, height: 60, fill: "#0a0a0a", radius: 30, selectable: false },
+                { id: "chip-label", type: "text", text: "★ PRIMERA CLASE GRATIS ★", x: 0, y: 88, width: 1080, fontSize: 22, fontFamily: "Anton, Impact, sans-serif", color: "#fbbf24", textAlign: "center", charSpacing: 250 },
+
+                // TITULO megabold curvas friendly (Anton 2 lineas con sombra dura)
+                { id: "title-shadow", type: "text", text: "BACHATA", x: 10, y: 200, width: 1080, fontSize: 150, fontFamily: "Anton, Impact, sans-serif", color: "#7c2d12", textAlign: "center", charSpacing: -5 },
+                { id: "title-1", type: "text", text: "BACHATA", x: 0, y: 190, width: 1080, fontSize: 150, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "center", charSpacing: -5 },
+
+                { id: "title-2-bg", type: "shape", shape: "rect", x: 280, y: 340, width: 520, height: 70, fill: "#be185d", radius: 35, selectable: false, angle: -3, originX: "left", originY: "top" },
+                { id: "title-2", type: "text", text: "para principiantes", x: 0, y: 358, width: 1080, fontSize: 32, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "center", charSpacing: 100, angle: -3 },
+
+                // FOTO PAREJA centrada con halo blanco friendly
+                { id: "couple", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/05_valentina_damian_pareja.png", x: 540, y: 430, scaleX: 0.75, scaleY: 0.75, originX: "center", originY: "top", shadow: { color: "rgba(255,255,255,0.95)", blur: 45, offsetX: 0, offsetY: 0 } },
+
+                // ─── BLOQUE INFO inferior ───
+                // Caja blanca grande con texto friendly
+                { id: "info-bg", type: "shape", shape: "rect", x: 60, y: 940, width: 960, height: 350, fill: "#ffffff", radius: 22, stroke: "#0a0a0a", strokeWidth: 4, selectable: false },
+
+                // Mensaje amistoso
+                { id: "msg-1", type: "text", text: "¿NUNCA BAILASTE?", x: 60, y: 970, width: 960, fontSize: 22, fontFamily: "Anton, Impact, sans-serif", color: "#be185d", textAlign: "center", charSpacing: 200 },
+                { id: "msg-2", type: "text", text: "Empieza aquí.", x: 60, y: 1005, width: 960, fontSize: 48, fontFamily: "Anton, Impact, sans-serif", color: "#0a0a0a", textAlign: "center", charSpacing: 30 },
+
+                // Divider con corazon
+                { id: "msg-dot-l", type: "shape", shape: "circle", x: 380, y: 1075, width: 12, height: 12, fill: "#be185d", selectable: false },
+                { id: "msg-line", type: "shape", shape: "rect", x: 400, y: 1078, width: 280, height: 4, fill: "#be185d", selectable: false },
+                { id: "msg-dot-r", type: "shape", shape: "circle", x: 680, y: 1075, width: 12, height: 12, fill: "#be185d", selectable: false },
+
+                // INFO con dia hora precio
+                { id: "info-day", type: "text", text: "MARTES  ·  20:00 H", x: 60, y: 1110, width: 960, fontSize: 38, fontFamily: "Anton, Impact, sans-serif", color: "#0a0a0a", textAlign: "center", charSpacing: 100 },
+                { id: "info-where", type: "text", text: "Estudio Jean  ·  C/ Goya 22  ·  Madrid", x: 60, y: 1170, width: 960, fontSize: 18, fontFamily: "Montserrat, sans-serif", color: "rgba(10,10,10,0.65)", fontWeight: "600", textAlign: "center" },
+
+                // Precio destacado con tag
+                { id: "tag-bg", type: "shape", shape: "rect", x: 320, y: 1210, width: 440, height: 60, fill: "#fbbf24", radius: 30, selectable: false },
+                { id: "tag-text", type: "text", text: "DESPUÉS  ·  15€ / CLASE", x: 0, y: 1228, width: 1080, fontSize: 22, fontFamily: "Anton, Impact, sans-serif", color: "#0a0a0a", textAlign: "center", charSpacing: 200 },
+
+                // CTA pie
+                { id: "cta", type: "text", text: "RESERVA WHATSAPP  ·  +34 600 222 333", x: 0, y: 1310, width: 1080, fontSize: 16, fontFamily: "Anton, Impact, sans-serif", color: "#0a0a0a", textAlign: "center", charSpacing: 250 },
+            ] },
+        ],
+    },
+
+// ─────────────────────────────────────────────────────────────────────
+// 40 — Intensivo Fin de Semana — bold itinerario azul/amarillo (NUEVO)
+//      2 fotos pareja stack vertical + schedule sabado/domingo
+//      Tipografia bold tipo bootcamp deportivo
+// ─────────────────────────────────────────────────────────────────────
+    {
+        id: 40,
+        title: "Intensivo Fin de Semana",
+        category: "Clases",
+        image: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/06_isabela_alejandro_pareja.png",
+        premium: true,
+        audience: ["academias"],
+        internalTags: ["beta"],
+        variants: [
+            { format: "portrait", width: 1080, height: 1350, layers: [
+                // FONDO azul marino profundo
+                { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1350, fill: "#0c1a3d", selectable: false },
+                // Halos azules dispersos
+                { id: "halo-bl", type: "shape", shape: "circle", x: -100, y: 200, width: 600, height: 600, fill: "rgba(59,130,246,0.30)", opacity: 0.7, selectable: false },
+                { id: "halo-br", type: "shape", shape: "circle", x: 680, y: 700, width: 600, height: 600, fill: "rgba(96,165,250,0.25)", opacity: 0.7, selectable: false },
+
+                // BANDA AMARILLA arriba diagonal
+                { id: "diag-band", type: "shape", shape: "rect", x: -150, y: 80, width: 1400, height: 70, fill: "#fbbf24", angle: -3, selectable: false },
+                { id: "diag-text", type: "text", text: "·  INTENSIVO BACHATA  ·  10 HORAS  ·  2 DÍAS  ·  CUPO 24  ·", x: 0, y: 100, width: 1080, fontSize: 16, fontFamily: "Anton, Impact, sans-serif", color: "#0a0a0a", textAlign: "center", charSpacing: 250, angle: -3 },
+
+                // CABECERA titulo
+                { id: "kicker", type: "text", text: "DEL 25 AL 26 DE OCTUBRE", x: 0, y: 200, width: 1080, fontSize: 14, fontFamily: "Montserrat, sans-serif", color: "#fbbf24", fontWeight: "700", textAlign: "center", charSpacing: 500 },
+                { id: "title-1", type: "text", text: "BOOTCAMP", x: 0, y: 230, width: 1080, fontSize: 88, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "center", charSpacing: 30 },
+                { id: "title-2", type: "text", text: "DE BACHATA", x: 0, y: 320, width: 1080, fontSize: 46, fontFamily: "Anton, Impact, sans-serif", color: "#fbbf24", textAlign: "center", charSpacing: 200 },
+
+                // ─── DOS FOTOS PROFES (izquierda y derecha) ───
+                // Profe izq (Isabela & Alejandro)
+                { id: "frame-l", type: "shape", shape: "circle", x: 270, y: 400, width: 280, height: 280, fill: "#fbbf24", originX: "center", originY: "top", selectable: false },
+                { id: "profe-l", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/06_isabela_alejandro_pareja.png", x: 270, y: 395, scaleX: 0.42, scaleY: 0.42, originX: "center", originY: "top", shadow: { color: "rgba(0,0,0,0.5)", blur: 25, offsetX: 0, offsetY: 5 } },
+                { id: "name-l", type: "text", text: "ISA & ALE", x: 130, y: 695, width: 280, fontSize: 28, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "center", charSpacing: 80 },
+                { id: "role-l", type: "text", text: "Sensual & Lady styling", x: 130, y: 730, width: 280, fontSize: 13, fontFamily: "Montserrat, sans-serif", color: "rgba(251,191,36,0.85)", fontWeight: "600", textAlign: "center", charSpacing: 100 },
+
+                // Profe der (Damian solo - como secondary)
+                { id: "frame-r", type: "shape", shape: "circle", x: 810, y: 400, width: 280, height: 280, fill: "#fbbf24", originX: "center", originY: "top", selectable: false },
+                { id: "profe-r", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/02_damian_reyes_perfil.png", x: 810, y: 395, scaleX: 0.42, scaleY: 0.42, originX: "center", originY: "top", shadow: { color: "rgba(0,0,0,0.5)", blur: 25, offsetX: 0, offsetY: 5 } },
+                { id: "name-r", type: "text", text: "DAMIÁN", x: 670, y: 695, width: 280, fontSize: 28, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "center", charSpacing: 80 },
+                { id: "role-r", type: "text", text: "Técnica & musicalidad", x: 670, y: 730, width: 280, fontSize: 13, fontFamily: "Montserrat, sans-serif", color: "rgba(251,191,36,0.85)", fontWeight: "600", textAlign: "center", charSpacing: 100 },
+
+                // ─── ITINERARIO SCHEDULE bloques ───
+                { id: "sched-title", type: "text", text: "PROGRAMA", x: 0, y: 790, width: 1080, fontSize: 14, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.5)", fontWeight: "700", textAlign: "center", charSpacing: 500 },
+
+                // Sábado bloque
+                { id: "sab-bg", type: "shape", shape: "rect", x: 60, y: 825, width: 460, height: 290, fill: "rgba(255,255,255,0.06)", radius: 8, stroke: "rgba(251,191,36,0.45)", strokeWidth: 1, selectable: false },
+                { id: "sab-day", type: "text", text: "SÁBADO 25", x: 60, y: 845, width: 460, fontSize: 24, fontFamily: "Anton, Impact, sans-serif", color: "#fbbf24", textAlign: "center", charSpacing: 200 },
+                { id: "sab-line", type: "shape", shape: "rect", x: 220, y: 880, width: 140, height: 2, fill: "#fbbf24", selectable: false },
+
+                { id: "sab-1-t", type: "text", text: "10:00", x: 90, y: 905, width: 100, fontSize: 18, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "left", charSpacing: 100 },
+                { id: "sab-1-d", type: "text", text: "Técnica de base", x: 200, y: 907, width: 300, fontSize: 14, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.85)", fontWeight: "600", textAlign: "left" },
+
+                { id: "sab-2-t", type: "text", text: "13:00", x: 90, y: 940, width: 100, fontSize: 18, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "left", charSpacing: 100 },
+                { id: "sab-2-d", type: "text", text: "Almuerzo", x: 200, y: 942, width: 300, fontSize: 14, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.55)", fontWeight: "500", textAlign: "left", fontStyle: "italic" },
+
+                { id: "sab-3-t", type: "text", text: "16:00", x: 90, y: 975, width: 100, fontSize: 18, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "left", charSpacing: 100 },
+                { id: "sab-3-d", type: "text", text: "Figuras pareja", x: 200, y: 977, width: 300, fontSize: 14, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.85)", fontWeight: "600", textAlign: "left" },
+
+                { id: "sab-4-t", type: "text", text: "19:00", x: 90, y: 1010, width: 100, fontSize: 18, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "left", charSpacing: 100 },
+                { id: "sab-4-d", type: "text", text: "Social abierta", x: 200, y: 1012, width: 300, fontSize: 14, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.85)", fontWeight: "600", textAlign: "left" },
+
+                { id: "sab-hours", type: "text", text: "5H DE TRABAJO", x: 60, y: 1075, width: 460, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(251,191,36,0.7)", fontWeight: "700", textAlign: "center", charSpacing: 350 },
+
+                // Domingo bloque
+                { id: "dom-bg", type: "shape", shape: "rect", x: 560, y: 825, width: 460, height: 290, fill: "rgba(255,255,255,0.06)", radius: 8, stroke: "rgba(251,191,36,0.45)", strokeWidth: 1, selectable: false },
+                { id: "dom-day", type: "text", text: "DOMINGO 26", x: 560, y: 845, width: 460, fontSize: 24, fontFamily: "Anton, Impact, sans-serif", color: "#fbbf24", textAlign: "center", charSpacing: 200 },
+                { id: "dom-line", type: "shape", shape: "rect", x: 720, y: 880, width: 140, height: 2, fill: "#fbbf24", selectable: false },
+
+                { id: "dom-1-t", type: "text", text: "10:00", x: 590, y: 905, width: 100, fontSize: 18, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "left", charSpacing: 100 },
+                { id: "dom-1-d", type: "text", text: "Musicalidad", x: 700, y: 907, width: 300, fontSize: 14, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.85)", fontWeight: "600", textAlign: "left" },
+
+                { id: "dom-2-t", type: "text", text: "13:00", x: 590, y: 940, width: 100, fontSize: 18, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "left", charSpacing: 100 },
+                { id: "dom-2-d", type: "text", text: "Almuerzo", x: 700, y: 942, width: 300, fontSize: 14, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.55)", fontWeight: "500", textAlign: "left", fontStyle: "italic" },
+
+                { id: "dom-3-t", type: "text", text: "16:00", x: 590, y: 975, width: 100, fontSize: 18, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "left", charSpacing: 100 },
+                { id: "dom-3-d", type: "text", text: "Sensual styling", x: 700, y: 977, width: 300, fontSize: 14, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.85)", fontWeight: "600", textAlign: "left" },
+
+                { id: "dom-4-t", type: "text", text: "18:00", x: 590, y: 1010, width: 100, fontSize: 18, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "left", charSpacing: 100 },
+                { id: "dom-4-d", type: "text", text: "Cierre & grupal", x: 700, y: 1012, width: 300, fontSize: 14, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.85)", fontWeight: "600", textAlign: "left" },
+
+                { id: "dom-hours", type: "text", text: "5H DE TRABAJO", x: 560, y: 1075, width: 460, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(251,191,36,0.7)", fontWeight: "700", textAlign: "center", charSpacing: 350 },
+
+                // BANDA PIE precio + cta
+                { id: "footer-bg", type: "shape", shape: "rect", x: 0, y: 1150, width: 1080, height: 200, fill: "#fbbf24", selectable: false },
+                { id: "footer-price-label", type: "text", text: "INVERSIÓN COMPLETA", x: 0, y: 1170, width: 1080, fontSize: 12, fontFamily: "Montserrat, sans-serif", color: "rgba(10,10,10,0.7)", fontWeight: "800", textAlign: "center", charSpacing: 500 },
+                { id: "footer-price", type: "text", text: "150€", x: 0, y: 1190, width: 1080, fontSize: 80, fontFamily: "Anton, Impact, sans-serif", color: "#0a0a0a", textAlign: "center", charSpacing: 30 },
+                { id: "footer-extra", type: "text", text: "EARLY BIRD 130€ HASTA 10 OCT", x: 0, y: 1285, width: 1080, fontSize: 14, fontFamily: "Anton, Impact, sans-serif", color: "#0a0a0a", textAlign: "center", charSpacing: 300 },
+                { id: "footer-cta", type: "text", text: "RESERVA  ·  bootcamp@escueladelsol.es", x: 0, y: 1315, width: 1080, fontSize: 13, fontFamily: "Montserrat, sans-serif", color: "rgba(10,10,10,0.75)", fontWeight: "700", textAlign: "center", charSpacing: 250 },
+            ] },
+        ],
+    },
+
+// ═════════════════════════════════════════════════════════════════════
+// FAMILIA CLASES & WORKSHOPS — SEGUNDA TANDA — estilos variados
+// 3 plantillas con fotos reusadas. 3 mas se haran al recibir fotos nuevas.
+// ═════════════════════════════════════════════════════════════════════
+
+// ─────────────────────────────────────────────────────────────────────
+// 41 — Tango Argentino Workshop — art-deco vintage Buenos Aires (NUEVO)
+//      Blanco/negro contraste alto + acento bordo, tipografia retro
+//      Decoracion lineas tipo art-deco. Estetica "milonga".
+// ─────────────────────────────────────────────────────────────────────
+    {
+        id: 41,
+        title: "Tango Argentino",
+        category: "Clases",
+        image: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/07_lucia_mateo_pareja.png",
+        premium: true,
+        audience: ["academias", "instituciones"],
+        internalTags: ["beta"],
+        variants: [
+            { format: "portrait", width: 1080, height: 1350, layers: [
+                // FONDO crema casi blanco
+                { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1350, fill: "#f5f0e8", selectable: false },
+                // Mancha bordo lateral derecha (forma angular art-deco)
+                { id: "shape-bordo", type: "shape", shape: "rect", x: 540, y: 0, width: 800, height: 1350, fill: "#7a1532", angle: 6, originX: "left", originY: "top", selectable: false },
+
+                // LINEAS ART-DECO doradas radiales esquina sup izq
+                { id: "deco-l1", type: "shape", shape: "rect", x: 60, y: 60, width: 380, height: 2, fill: "#b8860b", selectable: false },
+                { id: "deco-l2", type: "shape", shape: "rect", x: 60, y: 76, width: 280, height: 1, fill: "#b8860b", selectable: false },
+                { id: "deco-l3", type: "shape", shape: "rect", x: 60, y: 87, width: 180, height: 1, fill: "#b8860b", selectable: false },
+
+                // LINEAS art-deco esquina inf der (sobre bordo)
+                { id: "deco-r1", type: "shape", shape: "rect", x: 660, y: 1290, width: 360, height: 2, fill: "#d4af37", selectable: false },
+                { id: "deco-r2", type: "shape", shape: "rect", x: 760, y: 1275, width: 260, height: 1, fill: "#d4af37", selectable: false },
+                { id: "deco-r3", type: "shape", shape: "rect", x: 840, y: 1264, width: 180, height: 1, fill: "#d4af37", selectable: false },
+
+                // CABECERA tipo programa milonga
+                { id: "kicker", type: "text", text: "M I L O N G A   ·   E S T U D I O   B A I L E", x: 60, y: 110, width: 480, fontSize: 11, fontFamily: "Cormorant Garamond, serif", color: "#7a1532", fontWeight: "700", textAlign: "left", charSpacing: 500 },
+
+                // TITULO Playfair italica MASIVO 2 lineas
+                { id: "title-1", type: "text", text: "Tango", x: 60, y: 150, width: 480, fontSize: 130, fontFamily: "Playfair Display, serif", color: "#0a0a0a", textAlign: "left", fontStyle: "italic" },
+                { id: "title-2", type: "text", text: "Argentino", x: 60, y: 280, width: 480, fontSize: 78, fontFamily: "Playfair Display, serif", color: "#7a1532", textAlign: "left", fontStyle: "italic" },
+
+                // Ornamento bajo titulo
+                { id: "orn-1", type: "shape", shape: "rect", x: 60, y: 380, width: 60, height: 2, fill: "#b8860b", selectable: false },
+                { id: "orn-d", type: "shape", shape: "circle", x: 128, y: 376, width: 10, height: 10, fill: "transparent", stroke: "#b8860b", strokeWidth: 1, selectable: false },
+                { id: "orn-2", type: "shape", shape: "rect", x: 148, y: 380, width: 280, height: 2, fill: "#b8860b", selectable: false },
+
+                // Descripcion italica corta
+                { id: "desc-1", type: "text", text: "Tradición porteña, abrazo cerrado", x: 60, y: 405, width: 480, fontSize: 20, fontFamily: "Cormorant Garamond, serif", color: "rgba(10,10,10,0.78)", fontStyle: "italic", textAlign: "left" },
+                { id: "desc-2", type: "text", text: "y caminata. Para todos los niveles.", x: 60, y: 435, width: 480, fontSize: 20, fontFamily: "Cormorant Garamond, serif", color: "rgba(10,10,10,0.78)", fontStyle: "italic", textAlign: "left" },
+
+                // FOTO pareja en lado derecho sobre fondo bordo
+                { id: "couple", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/07_lucia_mateo_pareja.png", x: 800, y: 200, scaleX: 0.78, scaleY: 0.78, originX: "center", originY: "top", shadow: { color: "rgba(180,134,11,0.55)", blur: 40, offsetX: 0, offsetY: 0 } },
+
+                // Plate de nombres dentro del bordo
+                { id: "plate-bg", type: "shape", shape: "rect", x: 600, y: 760, width: 400, height: 100, fill: "rgba(245,240,232,0.92)", selectable: false },
+                { id: "plate-line-t", type: "shape", shape: "rect", x: 600, y: 760, width: 400, height: 2, fill: "#b8860b", selectable: false },
+                { id: "plate-line-b", type: "shape", shape: "rect", x: 600, y: 858, width: 400, height: 2, fill: "#b8860b", selectable: false },
+                { id: "plate-label", type: "text", text: "IMPARTEN", x: 600, y: 776, width: 400, fontSize: 10, fontFamily: "Montserrat, sans-serif", color: "rgba(122,21,50,0.7)", fontWeight: "800", textAlign: "center", charSpacing: 500 },
+                { id: "plate-names", type: "text", text: "Lucía  &  Mateo", x: 600, y: 798, width: 400, fontSize: 32, fontFamily: "Playfair Display, serif", color: "#0a0a0a", textAlign: "center", fontStyle: "italic" },
+
+                // ─── BLOQUE INFO 4 LINEAS columna izq ───
+                // Linea 1 FECHA
+                { id: "info-1-l", type: "text", text: "FECHA", x: 60, y: 920, width: 200, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(10,10,10,0.55)", fontWeight: "800", textAlign: "left", charSpacing: 400 },
+                { id: "info-1-v", type: "text", text: "Sábado 8 de noviembre", x: 60, y: 942, width: 440, fontSize: 22, fontFamily: "Playfair Display, serif", color: "#0a0a0a", textAlign: "left", fontStyle: "italic" },
+                { id: "info-1-sep", type: "shape", shape: "rect", x: 60, y: 985, width: 440, height: 1, fill: "rgba(10,10,10,0.18)", selectable: false },
+
+                // Linea 2 HORA
+                { id: "info-2-l", type: "text", text: "HORARIO", x: 60, y: 1000, width: 200, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(10,10,10,0.55)", fontWeight: "800", textAlign: "left", charSpacing: 400 },
+                { id: "info-2-v", type: "text", text: "18:00 — 21:00 H", x: 60, y: 1022, width: 440, fontSize: 22, fontFamily: "Playfair Display, serif", color: "#0a0a0a", textAlign: "left", fontStyle: "italic" },
+                { id: "info-2-sep", type: "shape", shape: "rect", x: 60, y: 1065, width: 440, height: 1, fill: "rgba(10,10,10,0.18)", selectable: false },
+
+                // Linea 3 LUGAR
+                { id: "info-3-l", type: "text", text: "LUGAR", x: 60, y: 1080, width: 200, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(10,10,10,0.55)", fontWeight: "800", textAlign: "left", charSpacing: 400 },
+                { id: "info-3-v", type: "text", text: "El Salón Buenos Aires", x: 60, y: 1102, width: 440, fontSize: 22, fontFamily: "Playfair Display, serif", color: "#0a0a0a", textAlign: "left", fontStyle: "italic" },
+                { id: "info-3-x", type: "text", text: "C/ Espoz y Mina · Madrid", x: 60, y: 1135, width: 440, fontSize: 14, fontFamily: "Cormorant Garamond, serif", color: "rgba(10,10,10,0.6)", fontStyle: "italic", textAlign: "left" },
+
+                // ─── PRECIO destacado en bloque bordo abajo derecha ───
+                { id: "price-bg", type: "shape", shape: "rect", x: 600, y: 920, width: 400, height: 270, fill: "#0a0a0a", selectable: false },
+                { id: "price-line-t", type: "shape", shape: "rect", x: 630, y: 945, width: 340, height: 1, fill: "#b8860b", selectable: false },
+                { id: "price-line-b", type: "shape", shape: "rect", x: 630, y: 1170, width: 340, height: 1, fill: "#b8860b", selectable: false },
+                { id: "price-label", type: "text", text: "INVERSIÓN", x: 600, y: 965, width: 400, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "#b8860b", fontWeight: "800", textAlign: "center", charSpacing: 500 },
+                { id: "price-value", type: "text", text: "65€", x: 600, y: 990, width: 400, fontSize: 110, fontFamily: "Playfair Display, serif", color: "#f5f0e8", textAlign: "center", fontStyle: "italic" },
+                { id: "price-extra", type: "text", text: "Plazas limitadas a 18", x: 600, y: 1130, width: 400, fontSize: 13, fontFamily: "Cormorant Garamond, serif", color: "rgba(245,240,232,0.78)", fontStyle: "italic", textAlign: "center", charSpacing: 100 },
+
+                // FOOTER cta linea inferior
+                { id: "footer-line", type: "shape", shape: "rect", x: 60, y: 1230, width: 480, height: 1, fill: "#7a1532", selectable: false },
+                { id: "footer-cta", type: "text", text: "RESERVA  ·  salon.ba@tango.es", x: 60, y: 1245, width: 480, fontSize: 13, fontFamily: "Cormorant Garamond, serif", color: "#7a1532", fontStyle: "italic", textAlign: "left", charSpacing: 250 },
+                { id: "footer-phone", type: "text", text: "+34 600 333 444", x: 60, y: 1275, width: 480, fontSize: 13, fontFamily: "Montserrat, sans-serif", color: "rgba(10,10,10,0.6)", fontWeight: "500", textAlign: "left", charSpacing: 200 },
+            ] },
+        ],
+    },
+
+// ─────────────────────────────────────────────────────────────────────
+// 42 — Salsa Cubana — clases regulares tropical solar (NUEVO LAYOUT)
+//      Fondo amarillo+naranja+verde palmera bold caribeño
+//      Iconos abstractos (notas, hojas), tipografia chunky
+// ─────────────────────────────────────────────────────────────────────
+    {
+        id: 42,
+        title: "Salsa Cubana",
+        category: "Clases",
+        image: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/02_damian_reyes_perfil.png",
+        premium: false,
+        audience: ["academias"],
+        internalTags: ["beta"],
+        variants: [
+            { format: "portrait", width: 1080, height: 1350, layers: [
+                // FONDO amarillo solar
+                { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1350, fill: "#fde047", selectable: false },
+                // Banda diagonal naranja arriba
+                { id: "diag-orange", type: "shape", shape: "rect", x: -200, y: 0, width: 1500, height: 380, fill: "#ea580c", angle: -8, originX: "left", originY: "top", selectable: false },
+                // Banda diagonal verde palmera abajo
+                { id: "diag-green", type: "shape", shape: "rect", x: -200, y: 1050, width: 1500, height: 500, fill: "#15803d", angle: -6, originX: "left", originY: "top", selectable: false },
+
+                // SOL/circulos decorativos (hojas tropicales abstractas)
+                { id: "sun-1", type: "shape", shape: "circle", x: 820, y: 80, width: 200, height: 200, fill: "#fbbf24", selectable: false },
+                { id: "sun-ray-1", type: "shape", shape: "rect", x: 920, y: 50, width: 4, height: 50, fill: "#fbbf24", angle: 0, originX: "center", originY: "top", selectable: false },
+                { id: "sun-ray-2", type: "shape", shape: "rect", x: 920, y: 180, width: 4, height: 50, fill: "#fbbf24", angle: 45, originX: "center", originY: "top", selectable: false },
+                { id: "sun-ray-3", type: "shape", shape: "rect", x: 920, y: 180, width: 4, height: 50, fill: "#fbbf24", angle: -45, originX: "center", originY: "top", selectable: false },
+                // Hojas tropicales abstractas (lateral izquierdo)
+                { id: "leaf-1", type: "shape", shape: "circle", x: -40, y: 460, width: 240, height: 240, fill: "#84cc16", opacity: 0.85, selectable: false },
+                { id: "leaf-2", type: "shape", shape: "circle", x: -100, y: 700, width: 200, height: 200, fill: "#65a30d", opacity: 0.85, selectable: false },
+                // Hojas en lateral derecho
+                { id: "leaf-3", type: "shape", shape: "circle", x: 950, y: 540, width: 180, height: 180, fill: "#84cc16", opacity: 0.85, selectable: false },
+
+                // CABECERA blanca sobre naranja
+                { id: "kicker", type: "text", text: "ESTUDIO DEL SOL  ·  TEMPORADA 26/27", x: 0, y: 75, width: 1080, fontSize: 14, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.85)", fontWeight: "800", textAlign: "center", charSpacing: 500 },
+
+                // TITULO masivo blanco sobre naranja
+                { id: "title-1", type: "text", text: "SALSA", x: 0, y: 110, width: 1080, fontSize: 175, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "center", charSpacing: 40 },
+                { id: "title-2-bg", type: "shape", shape: "rect", x: 280, y: 280, width: 520, height: 60, fill: "#0a0a0a", radius: 30, selectable: false, angle: 2 },
+                { id: "title-2", type: "text", text: "CUBANA · DESDE LA HABANA", x: 0, y: 296, width: 1080, fontSize: 22, fontFamily: "Anton, Impact, sans-serif", color: "#fde047", textAlign: "center", charSpacing: 200, angle: 2 },
+
+                // FOTO profe centrado con halo
+                { id: "frame-circle", type: "shape", shape: "circle", x: 540, y: 400, width: 460, height: 460, fill: "#ffffff", originX: "center", originY: "top", stroke: "#0a0a0a", strokeWidth: 5, selectable: false },
+                { id: "profe", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/02_damian_reyes_perfil.png", x: 540, y: 395, scaleX: 0.78, scaleY: 0.78, originX: "center", originY: "top", shadow: { color: "rgba(234,88,12,0.65)", blur: 35, offsetX: 0, offsetY: 5 } },
+
+                // Plate nombre profe
+                { id: "plate-name-bg", type: "shape", shape: "rect", x: 340, y: 850, width: 400, height: 60, fill: "#0a0a0a", radius: 30, selectable: false },
+                { id: "plate-name", type: "text", text: "PROFE DAMIÁN", x: 0, y: 868, width: 1080, fontSize: 26, fontFamily: "Anton, Impact, sans-serif", color: "#fde047", textAlign: "center", charSpacing: 250 },
+
+                // ─── BLOQUE INFO HORARIOS sobre verde ───
+                { id: "info-title", type: "text", text: "·  HORARIOS  ·", x: 0, y: 945, width: 1080, fontSize: 16, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "center", charSpacing: 500 },
+
+                // 3 dias en grid 3 columnas (sobre verde)
+                // Lunes
+                { id: "day-1-bg", type: "shape", shape: "rect", x: 80, y: 990, width: 290, height: 130, fill: "rgba(254,224,71,0.95)", radius: 12, selectable: false },
+                { id: "day-1-label", type: "text", text: "LUNES", x: 80, y: 1005, width: 290, fontSize: 14, fontFamily: "Anton, Impact, sans-serif", color: "#ea580c", textAlign: "center", charSpacing: 400 },
+                { id: "day-1-time", type: "text", text: "19:00", x: 80, y: 1030, width: 290, fontSize: 50, fontFamily: "Anton, Impact, sans-serif", color: "#0a0a0a", textAlign: "center", charSpacing: 30 },
+                { id: "day-1-extra", type: "text", text: "INICIO", x: 80, y: 1090, width: 290, fontSize: 13, fontFamily: "Montserrat, sans-serif", color: "rgba(10,10,10,0.7)", fontWeight: "700", textAlign: "center", charSpacing: 300 },
+
+                // Miercoles
+                { id: "day-2-bg", type: "shape", shape: "rect", x: 395, y: 990, width: 290, height: 130, fill: "rgba(254,224,71,0.95)", radius: 12, selectable: false },
+                { id: "day-2-label", type: "text", text: "MIÉRCOLES", x: 395, y: 1005, width: 290, fontSize: 14, fontFamily: "Anton, Impact, sans-serif", color: "#ea580c", textAlign: "center", charSpacing: 400 },
+                { id: "day-2-time", type: "text", text: "20:00", x: 395, y: 1030, width: 290, fontSize: 50, fontFamily: "Anton, Impact, sans-serif", color: "#0a0a0a", textAlign: "center", charSpacing: 30 },
+                { id: "day-2-extra", type: "text", text: "INTERMEDIO", x: 395, y: 1090, width: 290, fontSize: 13, fontFamily: "Montserrat, sans-serif", color: "rgba(10,10,10,0.7)", fontWeight: "700", textAlign: "center", charSpacing: 300 },
+
+                // Viernes
+                { id: "day-3-bg", type: "shape", shape: "rect", x: 710, y: 990, width: 290, height: 130, fill: "rgba(254,224,71,0.95)", radius: 12, selectable: false },
+                { id: "day-3-label", type: "text", text: "VIERNES", x: 710, y: 1005, width: 290, fontSize: 14, fontFamily: "Anton, Impact, sans-serif", color: "#ea580c", textAlign: "center", charSpacing: 400 },
+                { id: "day-3-time", type: "text", text: "21:00", x: 710, y: 1030, width: 290, fontSize: 50, fontFamily: "Anton, Impact, sans-serif", color: "#0a0a0a", textAlign: "center", charSpacing: 30 },
+                { id: "day-3-extra", type: "text", text: "SOCIAL", x: 710, y: 1090, width: 290, fontSize: 13, fontFamily: "Montserrat, sans-serif", color: "rgba(10,10,10,0.7)", fontWeight: "700", textAlign: "center", charSpacing: 300 },
+
+                // PRECIO destacado abajo
+                { id: "price-bg", type: "shape", shape: "rect", x: 340, y: 1160, width: 400, height: 70, fill: "#0a0a0a", radius: 35, selectable: false },
+                { id: "price-text", type: "text", text: "BONO MES · 50€", x: 0, y: 1183, width: 1080, fontSize: 28, fontFamily: "Anton, Impact, sans-serif", color: "#fde047", textAlign: "center", charSpacing: 200 },
+
+                // CTA pie
+                { id: "footer-where", type: "text", text: "ESTUDIO DEL SOL  ·  C/ TENERIFE 5  ·  MADRID", x: 0, y: 1265, width: 1080, fontSize: 16, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "center", charSpacing: 300 },
+                { id: "footer-cta", type: "text", text: "·  estudiodelsol.es  ·  whatsapp +34 600 444 555  ·", x: 0, y: 1300, width: 1080, fontSize: 12, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.85)", fontWeight: "600", textAlign: "center", charSpacing: 300 },
+            ] },
+        ],
+    },
+
+// ─────────────────────────────────────────────────────────────────────
+// 43 — Urban Hip-Hop — street graffiti (NUEVO LAYOUT)
+//      Fondo negro con manchas spray color, tags graffiti dispersos
+//      Tipografia bold sketch, etiquetas tipo street art
+// ─────────────────────────────────────────────────────────────────────
+    {
+        id: 43,
+        title: "Urban Hip-Hop",
+        category: "Clases",
+        image: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/04_malik_santos_perfil.png",
+        premium: false,
+        audience: ["academias"],
+        internalTags: ["beta"],
+        variants: [
+            { format: "portrait", width: 1080, height: 1350, layers: [
+                // FONDO negro graffiti
+                { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1350, fill: "#0d0d0d", selectable: false },
+
+                // MANCHAS spray dispersas (circulos grandes con opacidad baja - simula spray)
+                { id: "spray-pink", type: "shape", shape: "circle", x: -150, y: -100, width: 700, height: 700, fill: "rgba(244,114,182,0.30)", opacity: 0.9, selectable: false },
+                { id: "spray-cyan", type: "shape", shape: "circle", x: 580, y: 100, width: 600, height: 600, fill: "rgba(34,211,238,0.28)", opacity: 0.9, selectable: false },
+                { id: "spray-yellow", type: "shape", shape: "circle", x: 100, y: 900, width: 500, height: 500, fill: "rgba(253,224,71,0.20)", opacity: 0.85, selectable: false },
+                { id: "spray-purple", type: "shape", shape: "circle", x: 700, y: 800, width: 550, height: 550, fill: "rgba(168,85,247,0.25)", opacity: 0.85, selectable: false },
+
+                // TAGS graffiti simulados (rect rotados pequeños con color)
+                { id: "tag-1-bg", type: "shape", shape: "rect", x: 60, y: 80, width: 180, height: 32, fill: "#f472b6", angle: -8, selectable: false },
+                { id: "tag-1-text", type: "text", text: "URBAN", x: 60, y: 86, width: 180, fontSize: 20, fontFamily: "Anton, Impact, sans-serif", color: "#0d0d0d", fontWeight: "900", textAlign: "center", charSpacing: 200, angle: -8 },
+
+                { id: "tag-2-bg", type: "shape", shape: "rect", x: 870, y: 130, width: 150, height: 28, fill: "#22d3ee", angle: 6, selectable: false },
+                { id: "tag-2-text", type: "text", text: "VIBES", x: 870, y: 135, width: 150, fontSize: 18, fontFamily: "Anton, Impact, sans-serif", color: "#0d0d0d", fontWeight: "900", textAlign: "center", charSpacing: 200, angle: 6 },
+
+                { id: "tag-3-bg", type: "shape", shape: "rect", x: 30, y: 1180, width: 160, height: 28, fill: "#fde047", angle: -5, selectable: false },
+                { id: "tag-3-text", type: "text", text: "STREET", x: 30, y: 1185, width: 160, fontSize: 18, fontFamily: "Anton, Impact, sans-serif", color: "#0d0d0d", fontWeight: "900", textAlign: "center", charSpacing: 200, angle: -5 },
+
+                // Simulacion de "spray drips" (rect verticales finos con color)
+                { id: "drip-1", type: "shape", shape: "rect", x: 200, y: 280, width: 3, height: 60, fill: "rgba(244,114,182,0.6)", selectable: false },
+                { id: "drip-2", type: "shape", shape: "rect", x: 360, y: 260, width: 2, height: 50, fill: "rgba(244,114,182,0.5)", selectable: false },
+                { id: "drip-3", type: "shape", shape: "rect", x: 880, y: 320, width: 3, height: 70, fill: "rgba(34,211,238,0.6)", selectable: false },
+
+                // TITULO graffiti masivo con stroke (efecto graffiti contorno)
+                { id: "title-stroke", type: "text", text: "HIP-HOP", x: 0, y: 230, width: 1080, fontSize: 180, fontFamily: "Anton, Impact, sans-serif", color: "transparent", stroke: "#f472b6", strokeWidth: 6, textAlign: "center", charSpacing: -10 },
+                { id: "title", type: "text", text: "HIP-HOP", x: 0, y: 230, width: 1080, fontSize: 180, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "center", charSpacing: -10 },
+
+                // SUBTITULO debajo con angle
+                { id: "subtitle-bg", type: "shape", shape: "rect", x: 240, y: 405, width: 600, height: 48, fill: "#22d3ee", angle: -2, selectable: false },
+                { id: "subtitle", type: "text", text: "·  CLASES SEMANALES  ·  TODOS NIVELES  ·", x: 0, y: 418, width: 1080, fontSize: 18, fontFamily: "Anton, Impact, sans-serif", color: "#0d0d0d", textAlign: "center", charSpacing: 200, angle: -2 },
+
+                // PROFE foto centro
+                { id: "profe", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/04_malik_santos_perfil.png", x: 540, y: 475, scaleX: 0.85, scaleY: 0.85, originX: "center", originY: "top", shadow: { color: "rgba(34,211,238,0.85)", blur: 70, offsetX: 0, offsetY: 0 } },
+
+                // Sello nombre profe (rect rotado tipo sticker)
+                { id: "sticker-bg", type: "shape", shape: "rect", x: 700, y: 880, width: 280, height: 60, fill: "#fde047", angle: 4, selectable: false },
+                { id: "sticker-l", type: "text", text: "PROFE", x: 700, y: 887, width: 280, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(13,13,13,0.7)", fontWeight: "800", textAlign: "center", charSpacing: 400, angle: 4 },
+                { id: "sticker-n", type: "text", text: "MALIK SANTOS", x: 700, y: 905, width: 280, fontSize: 22, fontFamily: "Anton, Impact, sans-serif", color: "#0d0d0d", textAlign: "center", charSpacing: 100, angle: 4 },
+
+                // ─── INFO INFERIOR caja "tag-board" con grid ───
+                { id: "board-bg", type: "shape", shape: "rect", x: 60, y: 980, width: 960, height: 280, fill: "rgba(255,255,255,0.06)", radius: 6, stroke: "rgba(244,114,182,0.5)", strokeWidth: 2, strokeDashArray: [8, 5], selectable: false },
+
+                // Grid 2x2 info
+                // Lun-Mie-Vie
+                { id: "g-1-l", type: "text", text: "DÍAS", x: 90, y: 1010, width: 300, fontSize: 12, fontFamily: "Montserrat, sans-serif", color: "#f472b6", fontWeight: "800", textAlign: "left", charSpacing: 350 },
+                { id: "g-1-v", type: "text", text: "LUN  ·  MIÉ  ·  VIE", x: 90, y: 1030, width: 440, fontSize: 36, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "left", charSpacing: 80 },
+
+                // Hora
+                { id: "g-2-l", type: "text", text: "HORA", x: 600, y: 1010, width: 300, fontSize: 12, fontFamily: "Montserrat, sans-serif", color: "#f472b6", fontWeight: "800", textAlign: "left", charSpacing: 350 },
+                { id: "g-2-v", type: "text", text: "20:30 H", x: 600, y: 1030, width: 380, fontSize: 36, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "left", charSpacing: 100 },
+
+                // separador
+                { id: "g-sep", type: "shape", shape: "rect", x: 90, y: 1100, width: 900, height: 1, fill: "rgba(255,255,255,0.2)", selectable: false },
+
+                // Lugar
+                { id: "g-3-l", type: "text", text: "LUGAR", x: 90, y: 1115, width: 300, fontSize: 12, fontFamily: "Montserrat, sans-serif", color: "#22d3ee", fontWeight: "800", textAlign: "left", charSpacing: 350 },
+                { id: "g-3-v", type: "text", text: "WAREHOUSE 12", x: 90, y: 1135, width: 440, fontSize: 30, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "left", charSpacing: 80 },
+                { id: "g-3-x", type: "text", text: "Vallecas · Madrid", x: 90, y: 1175, width: 440, fontSize: 14, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.6)", fontWeight: "500", textAlign: "left" },
+
+                // Precio
+                { id: "g-4-l", type: "text", text: "BONO MES", x: 600, y: 1115, width: 300, fontSize: 12, fontFamily: "Montserrat, sans-serif", color: "#fde047", fontWeight: "800", textAlign: "left", charSpacing: 350 },
+                { id: "g-4-v", type: "text", text: "55€", x: 600, y: 1130, width: 380, fontSize: 56, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "left", charSpacing: 30 },
+                { id: "g-4-x", type: "text", text: "Drop-in · 18€", x: 600, y: 1195, width: 380, fontSize: 14, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.6)", fontWeight: "500", textAlign: "left" },
+
+                // CTA pie con tag grande
+                { id: "footer-bg", type: "shape", shape: "rect", x: 0, y: 1290, width: 1080, height: 60, fill: "#f472b6", selectable: false },
+                { id: "footer-cta", type: "text", text: "RESERVA  ·  warehouse12.es  ·  @WAREHOUSE12_HIPHOP", x: 0, y: 1306, width: 1080, fontSize: 18, fontFamily: "Anton, Impact, sans-serif", color: "#0d0d0d", textAlign: "center", charSpacing: 200 },
+            ] },
+        ],
+    },
+
+// ─────────────────────────────────────────────────────────────────────
+// 44 — Kizomba Workshop — editorial tierra (NUEVO LAYOUT)
+//      2 fotos pareja (foto principal grande + secondary), terracota+oro+crema
+//      Mix tipografia sans+serif, lineas curvas sugieren musica/abrazo
+// ─────────────────────────────────────────────────────────────────────
+    {
+        id: 44,
+        title: "Kizomba Workshop",
+        category: "Clases",
+        image: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/Kizomba-Joa%CC%83o%20y%20Catarina.png",
+        premium: true,
+        audience: ["academias"],
+        internalTags: ["beta"],
+        variants: [
+            { format: "portrait", width: 1080, height: 1350, layers: [
+                // FONDO crema oscuro tierra
+                { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1350, fill: "#1c0f08", selectable: false },
+                // Halos tierra calidos
+                { id: "halo-1", type: "shape", shape: "circle", x: -150, y: 100, width: 720, height: 720, fill: "rgba(180,83,9,0.40)", opacity: 0.7, selectable: false },
+                { id: "halo-2", type: "shape", shape: "circle", x: 500, y: 400, width: 720, height: 720, fill: "rgba(154,52,18,0.40)", opacity: 0.7, selectable: false },
+                { id: "halo-3", type: "shape", shape: "circle", x: -50, y: 850, width: 600, height: 600, fill: "rgba(217,119,6,0.30)", opacity: 0.65, selectable: false },
+
+                // CABECERA editorial linea fina y kicker
+                { id: "header-line", type: "shape", shape: "rect", x: 60, y: 80, width: 480, height: 1, fill: "#d4a058", selectable: false },
+                { id: "header-num", type: "text", text: "WORKSHOP  ·  N° 12  ·  TEMPORADA 26/27", x: 60, y: 50, width: 480, fontSize: 11, fontFamily: "Cormorant Garamond, serif", color: "#d4a058", fontWeight: "700", textAlign: "left", charSpacing: 450 },
+
+                // TITULO grande Playfair italica + sans condensado
+                { id: "supra", type: "text", text: "MASTER", x: 60, y: 110, width: 480, fontSize: 14, fontFamily: "Anton, Impact, sans-serif", color: "rgba(212,160,88,0.85)", textAlign: "left", charSpacing: 500 },
+                { id: "title-1", type: "text", text: "Kizomba", x: 60, y: 140, width: 700, fontSize: 130, fontFamily: "Playfair Display, serif", color: "#fef3c7", textAlign: "left", fontStyle: "italic" },
+                { id: "title-2", type: "text", text: "& Tarraxinha", x: 60, y: 270, width: 700, fontSize: 60, fontFamily: "Playfair Display, serif", color: "#d4a058", textAlign: "left", fontStyle: "italic" },
+
+                // Descripcion linea italica
+                { id: "desc", type: "text", text: "Abrazo cerrado, musicalidad lenta, raíces angoleñas.", x: 60, y: 360, width: 720, fontSize: 19, fontFamily: "Cormorant Garamond, serif", color: "rgba(254,243,199,0.78)", fontStyle: "italic", textAlign: "left" },
+
+                // ─── DOBLE FOTO COMPOSICION ───
+                // Foto principal grande (Kizomba-Joao+Catarina) lado derecho dominante
+                { id: "couple-main", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/Kizomba-Joa%CC%83o%20y%20Catarina.png", x: 760, y: 420, scaleX: 0.95, scaleY: 0.95, originX: "center", originY: "top", shadow: { color: "rgba(212,160,88,0.65)", blur: 50, offsetX: 0, offsetY: 0 } },
+
+                // Foto secondary mas pequeña abajo izq (otro angulo / momento)
+                { id: "frame-sec", type: "shape", shape: "rect", x: 80, y: 460, width: 300, height: 360, fill: "rgba(212,160,88,0.15)", stroke: "#d4a058", strokeWidth: 1, selectable: false },
+                { id: "couple-sec", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/Kizomba-Joa%CC%83o%20y%20Catarina-2.png", x: 230, y: 470, scaleX: 0.50, scaleY: 0.50, originX: "center", originY: "top", shadow: { color: "rgba(180,83,9,0.55)", blur: 30, offsetX: 0, offsetY: 0 } },
+
+                // Caption foto secondary
+                { id: "caption-num", type: "text", text: "Nº 02  ·", x: 80, y: 845, width: 300, fontSize: 12, fontFamily: "Montserrat, sans-serif", color: "#d4a058", fontWeight: "800", textAlign: "left", charSpacing: 300 },
+                { id: "caption-text", type: "text", text: "Otro momento en escena", x: 160, y: 845, width: 220, fontSize: 12, fontFamily: "Cormorant Garamond, serif", color: "rgba(254,243,199,0.65)", fontStyle: "italic", textAlign: "left" },
+
+                // Plate nombres profes pareja
+                { id: "plate-line-t", type: "shape", shape: "rect", x: 80, y: 905, width: 920, height: 1, fill: "#d4a058", selectable: false },
+                { id: "plate-label", type: "text", text: "IMPARTEN", x: 0, y: 920, width: 1080, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(212,160,88,0.75)", fontWeight: "800", textAlign: "center", charSpacing: 500 },
+                { id: "plate-names", type: "text", text: "João  &  Catarina", x: 0, y: 944, width: 1080, fontSize: 44, fontFamily: "Playfair Display, serif", color: "#fef3c7", textAlign: "center", fontStyle: "italic" },
+                { id: "plate-from", type: "text", text: "DESDE LISBOA · CAMPEONES DEL MUNDO 2024", x: 0, y: 1005, width: 1080, fontSize: 12, fontFamily: "Cormorant Garamond, serif", color: "#d4a058", fontWeight: "600", textAlign: "center", charSpacing: 400 },
+                { id: "plate-line-b", type: "shape", shape: "rect", x: 80, y: 1035, width: 920, height: 1, fill: "#d4a058", selectable: false },
+
+                // ─── BLOQUE INFO 3 cajas tierra ───
+                { id: "box-1-bg", type: "shape", shape: "rect", x: 60, y: 1070, width: 310, height: 200, fill: "rgba(28,15,8,0.7)", stroke: "rgba(212,160,88,0.45)", strokeWidth: 1, selectable: false },
+                { id: "b1-l", type: "text", text: "FECHA", x: 60, y: 1090, width: 310, fontSize: 10, fontFamily: "Montserrat, sans-serif", color: "#d4a058", fontWeight: "800", textAlign: "center", charSpacing: 400 },
+                { id: "b1-day", type: "text", text: "22", x: 60, y: 1110, width: 310, fontSize: 88, fontFamily: "Playfair Display, serif", color: "#fef3c7", textAlign: "center", fontStyle: "italic" },
+                { id: "b1-month", type: "text", text: "NOV · SÁBADO", x: 60, y: 1228, width: 310, fontSize: 13, fontFamily: "Cormorant Garamond, serif", color: "rgba(254,243,199,0.75)", textAlign: "center", charSpacing: 250 },
+
+                { id: "box-2-bg", type: "shape", shape: "rect", x: 385, y: 1070, width: 310, height: 200, fill: "rgba(28,15,8,0.7)", stroke: "rgba(212,160,88,0.45)", strokeWidth: 1, selectable: false },
+                { id: "b2-l", type: "text", text: "HORARIO", x: 385, y: 1090, width: 310, fontSize: 10, fontFamily: "Montserrat, sans-serif", color: "#d4a058", fontWeight: "800", textAlign: "center", charSpacing: 400 },
+                { id: "b2-day", type: "text", text: "16 — 20H", x: 385, y: 1110, width: 310, fontSize: 50, fontFamily: "Playfair Display, serif", color: "#fef3c7", textAlign: "center", fontStyle: "italic" },
+                { id: "b2-month", type: "text", text: "4 HORAS · 2 BLOQUES", x: 385, y: 1228, width: 310, fontSize: 13, fontFamily: "Cormorant Garamond, serif", color: "rgba(254,243,199,0.75)", textAlign: "center", charSpacing: 200 },
+
+                { id: "box-3-bg", type: "shape", shape: "rect", x: 710, y: 1070, width: 310, height: 200, fill: "rgba(28,15,8,0.7)", stroke: "rgba(212,160,88,0.45)", strokeWidth: 1, selectable: false },
+                { id: "b3-l", type: "text", text: "INVERSIÓN", x: 710, y: 1090, width: 310, fontSize: 10, fontFamily: "Montserrat, sans-serif", color: "#d4a058", fontWeight: "800", textAlign: "center", charSpacing: 400 },
+                { id: "b3-day", type: "text", text: "70€", x: 710, y: 1110, width: 310, fontSize: 88, fontFamily: "Playfair Display, serif", color: "#fef3c7", textAlign: "center", fontStyle: "italic" },
+                { id: "b3-month", type: "text", text: "EARLY BIRD 60€", x: 710, y: 1228, width: 310, fontSize: 13, fontFamily: "Cormorant Garamond, serif", color: "rgba(254,243,199,0.75)", textAlign: "center", charSpacing: 200 },
+
+                // CTA pie
+                { id: "footer-where", type: "text", text: "STUDIO KIZ  ·  C/ MIRA EL RÍO ALTA 17  ·  MADRID", x: 0, y: 1290, width: 1080, fontSize: 13, fontFamily: "Cormorant Garamond, serif", color: "#d4a058", fontWeight: "600", textAlign: "center", charSpacing: 350 },
+                { id: "footer-cta", type: "text", text: "RESERVA  ·  workshop@studiokiz.es", x: 0, y: 1315, width: 1080, fontSize: 13, fontFamily: "Cormorant Garamond, serif", color: "rgba(254,243,199,0.7)", fontStyle: "italic", textAlign: "center", charSpacing: 250 },
+            ] },
+        ],
+    },
+
+// ─────────────────────────────────────────────────────────────────────
+// 45 — Urbano Latino con Elena — solo, foto grande (REEMPLAZA duo anterior)
+//      Coral+rojo bold con titulo masivo Anton, foto recortada a tope
+// ─────────────────────────────────────────────────────────────────────
+    {
+        id: 45,
+        title: "Urbano Latino con Elena",
+        category: "Clases",
+        image: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/Profesores_Baile_Urbano_Latino_Elena-grupales.png",
+        premium: true,
+        audience: ["academias", "instituciones"],
+        internalTags: ["beta"],
+        variants: [
+            { format: "portrait", width: 1080, height: 1350, layers: [
+                // FONDO coral profundo
+                { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1350, fill: "#7f1d1d", selectable: false },
+                // Halos calidos coral/naranja
+                { id: "halo-1", type: "shape", shape: "circle", x: -150, y: -50, width: 800, height: 800, fill: "rgba(251,113,133,0.45)", opacity: 0.7, selectable: false },
+                { id: "halo-2", type: "shape", shape: "circle", x: 480, y: 400, width: 750, height: 750, fill: "rgba(249,115,22,0.40)", opacity: 0.65, selectable: false },
+                { id: "halo-3", type: "shape", shape: "circle", x: -100, y: 900, width: 600, height: 600, fill: "rgba(244,63,94,0.35)", opacity: 0.6, selectable: false },
+
+                // Etiqueta lateral vertical
+                { id: "vert-label", type: "text", text: "URBAN  ·  LATIN  ·  TEMPORADA 26/27", x: 40, y: 670, width: 60, fontSize: 14, fontFamily: "Anton, Impact, sans-serif", color: "#fde047", textAlign: "left", angle: -90, charSpacing: 500 },
+
+                // FOTO ELENA grande dominante a la derecha
+                { id: "elena", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/Profesores_Baile_Urbano_Latino_Elena-grupales.png", x: 720, y: 60, scaleX: 1.45, scaleY: 1.45, originX: "center", originY: "top", shadow: { color: "rgba(253,224,71,0.55)", blur: 60, offsetX: 0, offsetY: 0 } },
+
+                // CHIP arriba izquierda
+                { id: "chip-bg", type: "shape", shape: "rect", x: 100, y: 90, width: 280, height: 42, fill: "transparent", radius: 21, stroke: "#fde047", strokeWidth: 2, selectable: false },
+                { id: "chip-label", type: "text", text: "·  CLASES GRUPALES  ·", x: 100, y: 100, width: 280, fontSize: 14, fontFamily: "Anton, Impact, sans-serif", color: "#fde047", textAlign: "center", charSpacing: 350 },
+
+                // TITULO MASIVO orientado a izquierda
+                { id: "title-1", type: "text", text: "URBANO", x: 80, y: 170, width: 540, fontSize: 130, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "left", charSpacing: 20 },
+                { id: "title-2", type: "text", text: "+ LATIN", x: 80, y: 305, width: 540, fontSize: 100, fontFamily: "Anton, Impact, sans-serif", color: "#fde047", textAlign: "left", charSpacing: 30 },
+
+                // Linea decorativa
+                { id: "title-line", type: "shape", shape: "rect", x: 80, y: 425, width: 200, height: 5, fill: "#fde047", selectable: false },
+
+                // Subtitulo
+                { id: "subtitle-1", type: "text", text: "Tu academia se sube al ritmo.", x: 80, y: 450, width: 540, fontSize: 22, fontFamily: "Playfair Display, serif", color: "rgba(255,255,255,0.9)", fontStyle: "italic", textAlign: "left" },
+                { id: "subtitle-2", type: "text", text: "Sesiones de grupo de hasta 20 personas.", x: 80, y: 485, width: 540, fontSize: 16, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.65)", fontWeight: "500", textAlign: "left" },
+
+                // BLOQUE info pie (sin tapar la foto, banda angosta inferior)
+                { id: "info-bg", type: "shape", shape: "rect", x: 0, y: 950, width: 1080, height: 400, fill: "rgba(15,5,5,0.92)", selectable: false },
+                { id: "info-top-line", type: "shape", shape: "rect", x: 0, y: 950, width: 1080, height: 4, fill: "#fde047", selectable: false },
+
+                // Nombre profe destacado
+                { id: "profe-label", type: "text", text: "IMPARTE", x: 0, y: 985, width: 1080, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(253,224,71,0.7)", fontWeight: "800", textAlign: "center", charSpacing: 500 },
+                { id: "profe-name", type: "text", text: "ELENA RUIZ", x: 0, y: 1010, width: 1080, fontSize: 52, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "center", charSpacing: 100 },
+                { id: "profe-role", type: "text", text: "10 años en escuelas internacionales", x: 0, y: 1075, width: 1080, fontSize: 14, fontFamily: "Playfair Display, serif", color: "rgba(255,255,255,0.65)", fontStyle: "italic", textAlign: "center" },
+
+                // Divider
+                { id: "div", type: "shape", shape: "rect", x: 420, y: 1115, width: 240, height: 1, fill: "rgba(253,224,71,0.5)", selectable: false },
+
+                // INFO grid 3 columnas
+                { id: "i-1-l", type: "text", text: "DÍAS", x: 60, y: 1140, width: 320, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(253,224,71,0.85)", fontWeight: "800", textAlign: "center", charSpacing: 400 },
+                { id: "i-1-v", type: "text", text: "LUN · JUE", x: 60, y: 1162, width: 320, fontSize: 30, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "center", charSpacing: 80 },
+                { id: "i-1-x", type: "text", text: "20:00 — 21:30", x: 60, y: 1208, width: 320, fontSize: 13, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.7)", fontWeight: "500", textAlign: "center" },
+
+                { id: "i-2-l", type: "text", text: "PRECIO", x: 380, y: 1140, width: 320, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(253,224,71,0.85)", fontWeight: "800", textAlign: "center", charSpacing: 400 },
+                { id: "i-2-v", type: "text", text: "55€", x: 380, y: 1160, width: 320, fontSize: 40, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "center", charSpacing: 30 },
+                { id: "i-2-x", type: "text", text: "BONO MENSUAL", x: 380, y: 1208, width: 320, fontSize: 13, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.7)", fontWeight: "600", textAlign: "center", charSpacing: 200 },
+
+                { id: "i-3-l", type: "text", text: "DÓNDE", x: 700, y: 1140, width: 320, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(253,224,71,0.85)", fontWeight: "800", textAlign: "center", charSpacing: 400 },
+                { id: "i-3-v", type: "text", text: "Academia del Ritmo", x: 700, y: 1166, width: 320, fontSize: 17, fontFamily: "Playfair Display, serif", color: "#ffffff", textAlign: "center", fontStyle: "italic" },
+                { id: "i-3-x", type: "text", text: "Gran Vía 12 · Madrid", x: 700, y: 1198, width: 320, fontSize: 13, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.7)", fontWeight: "500", textAlign: "center" },
+
+                // CTA pie
+                { id: "cta-line", type: "shape", shape: "rect", x: 80, y: 1265, width: 920, height: 1, fill: "rgba(253,224,71,0.3)", selectable: false },
+                { id: "cta", type: "text", text: "INSCRIBE TU GRUPO  ·  academiaritmo.es  ·  WhatsApp +34 600 444 555", x: 0, y: 1285, width: 1080, fontSize: 13, fontFamily: "Anton, Impact, sans-serif", color: "#fde047", textAlign: "center", charSpacing: 300 },
+            ] },
+        ],
+    },
+
+// ─────────────────────────────────────────────────────────────────────
+// 46 — Urbano Latino con Marco — solo, foto grande (NUEVO)
+//      Azul electrico/cyan dinamico, titulo lateral, foto recortada izquierda
+// ─────────────────────────────────────────────────────────────────────
+    {
+        id: 46,
+        title: "Urbano Latino con Marco",
+        category: "Clases",
+        image: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/Profesores_Baile_Urbano_Latino_Marco_grupales.png",
+        premium: true,
+        audience: ["academias", "instituciones"],
+        internalTags: ["beta"],
+        variants: [
+            { format: "portrait", width: 1080, height: 1350, layers: [
+                // FONDO azul electrico profundo
+                { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1350, fill: "#0c1a3d", selectable: false },
+                // Halos cyan/azul
+                { id: "halo-1", type: "shape", shape: "circle", x: -150, y: 200, width: 800, height: 800, fill: "rgba(34,211,238,0.40)", opacity: 0.7, selectable: false },
+                { id: "halo-2", type: "shape", shape: "circle", x: 580, y: -50, width: 700, height: 700, fill: "rgba(59,130,246,0.50)", opacity: 0.7, selectable: false },
+                { id: "halo-3", type: "shape", shape: "circle", x: 100, y: 800, width: 700, height: 700, fill: "rgba(168,85,247,0.30)", opacity: 0.6, selectable: false },
+
+                // Barras laterales electric blue (sugieren movimiento)
+                { id: "bar-1", type: "shape", shape: "rect", x: 950, y: 100, width: 6, height: 240, fill: "#22d3ee", angle: -8, selectable: false },
+                { id: "bar-2", type: "shape", shape: "rect", x: 1020, y: 220, width: 4, height: 180, fill: "#22d3ee", angle: -8, opacity: 0.7, selectable: false },
+                { id: "bar-3", type: "shape", shape: "rect", x: 60, y: 460, width: 6, height: 240, fill: "#fde047", angle: 8, selectable: false },
+                { id: "bar-4", type: "shape", shape: "rect", x: 30, y: 580, width: 4, height: 180, fill: "#fde047", angle: 8, opacity: 0.7, selectable: false },
+
+                // Etiqueta lateral vertical
+                { id: "vert-label", type: "text", text: "URBAN  ·  LATIN  ·  GROUPS", x: 1015, y: 970, width: 60, fontSize: 13, fontFamily: "Anton, Impact, sans-serif", color: "#22d3ee", textAlign: "left", angle: 90, charSpacing: 500 },
+
+                // CHIP arriba derecha
+                { id: "chip-bg", type: "shape", shape: "rect", x: 700, y: 90, width: 280, height: 42, fill: "transparent", radius: 21, stroke: "#22d3ee", strokeWidth: 2, selectable: false },
+                { id: "chip-label", type: "text", text: "·  ACADEMIA / EVENTOS  ·", x: 700, y: 100, width: 280, fontSize: 13, fontFamily: "Anton, Impact, sans-serif", color: "#22d3ee", textAlign: "center", charSpacing: 250 },
+
+                // FOTO MARCO grande dominante a la izquierda
+                { id: "marco", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/Profesores_Baile_Urbano_Latino_Marco_grupales.png", x: 380, y: 60, scaleX: 1.45, scaleY: 1.45, originX: "center", originY: "top", shadow: { color: "rgba(34,211,238,0.65)", blur: 65, offsetX: 0, offsetY: 0 } },
+
+                // TITULO orientado a derecha
+                { id: "title-1", type: "text", text: "MARCO", x: 480, y: 170, width: 540, fontSize: 130, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "right", charSpacing: 60 },
+                { id: "title-2", type: "text", text: "URBAN LATIN", x: 480, y: 305, width: 540, fontSize: 56, fontFamily: "Anton, Impact, sans-serif", color: "#22d3ee", textAlign: "right", charSpacing: 100 },
+
+                // Linea decorativa der
+                { id: "title-line", type: "shape", shape: "rect", x: 820, y: 390, width: 200, height: 5, fill: "#22d3ee", selectable: false },
+
+                // Subtitulo der
+                { id: "subtitle-1", type: "text", text: "Coreografía moderna y movimiento.", x: 480, y: 415, width: 540, fontSize: 20, fontFamily: "Playfair Display, serif", color: "rgba(255,255,255,0.9)", fontStyle: "italic", textAlign: "right" },
+                { id: "subtitle-2", type: "text", text: "Para grupos de academia o evento.", x: 480, y: 448, width: 540, fontSize: 15, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.65)", fontWeight: "500", textAlign: "right" },
+
+                // BLOQUE info pie
+                { id: "info-bg", type: "shape", shape: "rect", x: 0, y: 950, width: 1080, height: 400, fill: "rgba(4,8,20,0.92)", selectable: false },
+                { id: "info-top-line", type: "shape", shape: "rect", x: 0, y: 950, width: 1080, height: 4, fill: "#22d3ee", selectable: false },
+
+                // Nombre profe destacado
+                { id: "profe-label", type: "text", text: "IMPARTE", x: 0, y: 985, width: 1080, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(34,211,238,0.7)", fontWeight: "800", textAlign: "center", charSpacing: 500 },
+                { id: "profe-name", type: "text", text: "MARCO SILVA", x: 0, y: 1010, width: 1080, fontSize: 52, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "center", charSpacing: 100 },
+                { id: "profe-role", type: "text", text: "Coreógrafo · Producciones audiovisuales", x: 0, y: 1075, width: 1080, fontSize: 14, fontFamily: "Playfair Display, serif", color: "rgba(255,255,255,0.65)", fontStyle: "italic", textAlign: "center" },
+
+                // Divider
+                { id: "div", type: "shape", shape: "rect", x: 420, y: 1115, width: 240, height: 1, fill: "rgba(34,211,238,0.5)", selectable: false },
+
+                // INFO grid 3 columnas
+                { id: "i-1-l", type: "text", text: "DÍAS", x: 60, y: 1140, width: 320, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(34,211,238,0.85)", fontWeight: "800", textAlign: "center", charSpacing: 400 },
+                { id: "i-1-v", type: "text", text: "MAR · VIE", x: 60, y: 1162, width: 320, fontSize: 30, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "center", charSpacing: 80 },
+                { id: "i-1-x", type: "text", text: "19:00 — 20:30", x: 60, y: 1208, width: 320, fontSize: 13, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.7)", fontWeight: "500", textAlign: "center" },
+
+                { id: "i-2-l", type: "text", text: "PRECIO", x: 380, y: 1140, width: 320, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(34,211,238,0.85)", fontWeight: "800", textAlign: "center", charSpacing: 400 },
+                { id: "i-2-v", type: "text", text: "60€", x: 380, y: 1160, width: 320, fontSize: 40, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "center", charSpacing: 30 },
+                { id: "i-2-x", type: "text", text: "BONO MENSUAL", x: 380, y: 1208, width: 320, fontSize: 13, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.7)", fontWeight: "600", textAlign: "center", charSpacing: 200 },
+
+                { id: "i-3-l", type: "text", text: "DÓNDE", x: 700, y: 1140, width: 320, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(34,211,238,0.85)", fontWeight: "800", textAlign: "center", charSpacing: 400 },
+                { id: "i-3-v", type: "text", text: "Academia del Ritmo", x: 700, y: 1166, width: 320, fontSize: 17, fontFamily: "Playfair Display, serif", color: "#ffffff", textAlign: "center", fontStyle: "italic" },
+                { id: "i-3-x", type: "text", text: "Gran Vía 12 · Madrid", x: 700, y: 1198, width: 320, fontSize: 13, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.7)", fontWeight: "500", textAlign: "center" },
+
+                // CTA pie
+                { id: "cta-line", type: "shape", shape: "rect", x: 80, y: 1265, width: 920, height: 1, fill: "rgba(34,211,238,0.3)", selectable: false },
+                { id: "cta", type: "text", text: "INFO Y RESERVA  ·  academiaritmo.es  ·  +34 600 444 555", x: 0, y: 1285, width: 1080, fontSize: 13, fontFamily: "Anton, Impact, sans-serif", color: "#22d3ee", textAlign: "center", charSpacing: 300 },
+            ] },
+        ],
+    },
+
+// ─────────────────────────────────────────────────────────────────────
+// 47 — Baile Mayores con Martha — solo, foto grande (NUEVO)
+//      Calido lifestyle. Azul polvoroso + crema + ambar. "El baile no tiene edad"
+// ─────────────────────────────────────────────────────────────────────
+    {
+        id: 47,
+        title: "Baile Mayores con Martha",
+        category: "Clases",
+        image: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/profe%20maduro%20o%20bailarines%20mayores%20-Martha-grupo.png",
+        premium: false,
+        audience: ["academias", "instituciones"],
+        internalTags: ["beta"],
+        variants: [
+            { format: "portrait", width: 1080, height: 1350, layers: [
+                // FONDO crema calido
+                { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1350, fill: "#f7eed8", selectable: false },
+                // Banda azul polvoroso superior (cabecera)
+                { id: "header-band", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 280, fill: "#5b7a99", selectable: false },
+                // Wave curve simulada con circulo grande sobresaliente
+                { id: "wave", type: "shape", shape: "circle", x: -300, y: 180, width: 1680, height: 320, fill: "#5b7a99", originX: "left", originY: "top", selectable: false },
+
+                // CABECERA decorativa
+                { id: "kicker", type: "text", text: "C E N T R O   M A Y O R E S   ·   2 0 2 6 / 2 7", x: 0, y: 50, width: 1080, fontSize: 12, fontFamily: "Cormorant Garamond, serif", color: "#fde68a", fontWeight: "700", textAlign: "center", charSpacing: 700 },
+
+                // TITULO grande Playfair italica
+                { id: "title-1", type: "text", text: "El baile", x: 0, y: 80, width: 1080, fontSize: 88, fontFamily: "Playfair Display, serif", color: "#fef3c7", textAlign: "center", fontStyle: "italic" },
+                { id: "title-2", type: "text", text: "no tiene edad", x: 0, y: 180, width: 1080, fontSize: 52, fontFamily: "Playfair Display, serif", color: "#fde68a", textAlign: "center", fontStyle: "italic" },
+
+                // FOTO MARTHA grande centrada (con marco crema)
+                { id: "frame-bg", type: "shape", shape: "rect", x: 140, y: 320, width: 800, height: 620, fill: "#ffffff", stroke: "rgba(91,122,153,0.25)", strokeWidth: 2, selectable: false },
+                { id: "frame-inner", type: "shape", shape: "rect", x: 160, y: 340, width: 760, height: 540, fill: "#e6dcc4", selectable: false },
+                { id: "martha", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/profe%20maduro%20o%20bailarines%20mayores%20-Martha-grupo.png", x: 540, y: 340, scaleX: 1.35, scaleY: 1.35, originX: "center", originY: "top", shadow: { color: "rgba(91,122,153,0.55)", blur: 35, offsetX: 0, offsetY: 8 } },
+
+                // Caption Martha
+                { id: "caption-label", type: "text", text: "COORDINA  ·  IMPARTE", x: 140, y: 895, width: 800, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(91,122,153,0.8)", fontWeight: "800", textAlign: "center", charSpacing: 500 },
+                { id: "caption-name", type: "text", text: "Martha González", x: 140, y: 915, width: 800, fontSize: 22, fontFamily: "Playfair Display, serif", color: "#1a2b3f", textAlign: "center", fontStyle: "italic" },
+
+                // ─── BLOQUE INFO INFERIOR ───
+                { id: "info-band", type: "shape", shape: "rect", x: 0, y: 960, width: 1080, height: 390, fill: "#ffffff", selectable: false },
+                { id: "info-band-top", type: "shape", shape: "rect", x: 0, y: 960, width: 1080, height: 4, fill: "#d97706", selectable: false },
+
+                // Descripcion calida
+                { id: "desc", type: "text", text: "Ritmo, equilibrio, memoria y mucha alegría.", x: 60, y: 985, width: 960, fontSize: 18, fontFamily: "Cormorant Garamond, serif", color: "#5b7a99", textAlign: "center", fontStyle: "italic" },
+
+                // Lista de generos en chips suaves
+                { id: "chip-1-bg", type: "shape", shape: "rect", x: 130, y: 1025, width: 200, height: 46, fill: "#fde68a", radius: 23, selectable: false },
+                { id: "chip-1", type: "text", text: "BACHATA SUAVE", x: 130, y: 1038, width: 200, fontSize: 13, fontFamily: "Anton, Impact, sans-serif", color: "#7c4a03", textAlign: "center", charSpacing: 200 },
+
+                { id: "chip-2-bg", type: "shape", shape: "rect", x: 350, y: 1025, width: 200, height: 46, fill: "#fde68a", radius: 23, selectable: false },
+                { id: "chip-2", type: "text", text: "PASODOBLE", x: 350, y: 1038, width: 200, fontSize: 13, fontFamily: "Anton, Impact, sans-serif", color: "#7c4a03", textAlign: "center", charSpacing: 200 },
+
+                { id: "chip-3-bg", type: "shape", shape: "rect", x: 570, y: 1025, width: 180, height: 46, fill: "#fde68a", radius: 23, selectable: false },
+                { id: "chip-3", type: "text", text: "VALS LENTO", x: 570, y: 1038, width: 180, fontSize: 13, fontFamily: "Anton, Impact, sans-serif", color: "#7c4a03", textAlign: "center", charSpacing: 200 },
+
+                { id: "chip-4-bg", type: "shape", shape: "rect", x: 770, y: 1025, width: 180, height: 46, fill: "#fde68a", radius: 23, selectable: false },
+                { id: "chip-4", type: "text", text: "MERENGUE", x: 770, y: 1038, width: 180, fontSize: 13, fontFamily: "Anton, Impact, sans-serif", color: "#7c4a03", textAlign: "center", charSpacing: 200 },
+
+                // ─── DETALLES PRACTICOS grid 4 columnas ───
+                { id: "details-1-l", type: "text", text: "DÍAS", x: 60, y: 1110, width: 240, fontSize: 10, fontFamily: "Montserrat, sans-serif", color: "rgba(91,122,153,0.7)", fontWeight: "800", textAlign: "left", charSpacing: 400 },
+                { id: "details-1-v", type: "text", text: "MAR  ·  JUE", x: 60, y: 1128, width: 240, fontSize: 24, fontFamily: "Playfair Display, serif", color: "#1a2b3f", textAlign: "left", fontStyle: "italic" },
+
+                { id: "details-2-l", type: "text", text: "HORA", x: 330, y: 1110, width: 240, fontSize: 10, fontFamily: "Montserrat, sans-serif", color: "rgba(91,122,153,0.7)", fontWeight: "800", textAlign: "left", charSpacing: 400 },
+                { id: "details-2-v", type: "text", text: "11:00 H", x: 330, y: 1128, width: 240, fontSize: 24, fontFamily: "Playfair Display, serif", color: "#1a2b3f", textAlign: "left", fontStyle: "italic" },
+
+                { id: "details-3-l", type: "text", text: "PRECIO", x: 580, y: 1110, width: 240, fontSize: 10, fontFamily: "Montserrat, sans-serif", color: "rgba(91,122,153,0.7)", fontWeight: "800", textAlign: "left", charSpacing: 400 },
+                { id: "details-3-v", type: "text", text: "30€ / mes", x: 580, y: 1128, width: 240, fontSize: 24, fontFamily: "Playfair Display, serif", color: "#1a2b3f", textAlign: "left", fontStyle: "italic" },
+
+                { id: "details-4-l", type: "text", text: "PARA", x: 830, y: 1110, width: 240, fontSize: 10, fontFamily: "Montserrat, sans-serif", color: "rgba(91,122,153,0.7)", fontWeight: "800", textAlign: "left", charSpacing: 400 },
+                { id: "details-4-v", type: "text", text: "+55 años", x: 830, y: 1128, width: 240, fontSize: 24, fontFamily: "Playfair Display, serif", color: "#d97706", textAlign: "left", fontStyle: "italic" },
+
+                // Linea separadora
+                { id: "info-sep", type: "shape", shape: "rect", x: 60, y: 1190, width: 960, height: 1, fill: "rgba(91,122,153,0.3)", selectable: false },
+
+                // CTA pie
+                { id: "footer-1", type: "text", text: "Centro Cultural La Plaza  ·  Goya 88  ·  Madrid", x: 0, y: 1210, width: 1080, fontSize: 16, fontFamily: "Playfair Display, serif", color: "#1a2b3f", textAlign: "center", fontStyle: "italic" },
+                { id: "footer-2", type: "text", text: "INFORMACIÓN  ·  +34 600 555 666  ·  WHATSAPP", x: 0, y: 1255, width: 1080, fontSize: 13, fontFamily: "Montserrat, sans-serif", color: "#5b7a99", fontWeight: "700", textAlign: "center", charSpacing: 350 },
+                { id: "footer-3", type: "text", text: "primera sesión gratuita", x: 0, y: 1295, width: 1080, fontSize: 16, fontFamily: "Cormorant Garamond, serif", color: "#d97706", fontStyle: "italic", textAlign: "center", charSpacing: 100 },
+            ] },
+        ],
+    },
+
+// ─────────────────────────────────────────────────────────────────────
+// 48 — Baile Mayores con Paco — solo, foto grande (NUEVO)
+//      Calido editorial. Verde oliva + crema + ambar. "Sumate a la pista"
+// ─────────────────────────────────────────────────────────────────────
+    {
+        id: 48,
+        title: "Baile Mayores con Paco",
+        category: "Clases",
+        image: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/profe%20maduro%20o%20bailarines%20mayores-grupales-Paco.png",
+        premium: false,
+        audience: ["academias", "instituciones"],
+        internalTags: ["beta"],
+        variants: [
+            { format: "portrait", width: 1080, height: 1350, layers: [
+                // FONDO crema lino
+                { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1350, fill: "#efe6cf", selectable: false },
+                // Banda verde oliva inferior 1/3 abajo (split tonal)
+                { id: "bottom-band", type: "shape", shape: "rect", x: 0, y: 900, width: 1080, height: 450, fill: "#4a5a2c", selectable: false },
+                // Curva organica entre bandas
+                { id: "wave", type: "shape", shape: "circle", x: -300, y: 760, width: 1680, height: 320, fill: "#4a5a2c", originX: "left", originY: "top", selectable: false },
+
+                // CABECERA tipo programa editorial
+                { id: "header-line-t", type: "shape", shape: "rect", x: 60, y: 60, width: 960, height: 1, fill: "#4a5a2c", selectable: false },
+                { id: "header-line-b", type: "shape", shape: "rect", x: 60, y: 100, width: 960, height: 1, fill: "#4a5a2c", selectable: false },
+                { id: "header-text", type: "text", text: "C E N T R O   M A Y O R E S   ·   E D I C I Ó N   2 0 2 6", x: 0, y: 73, width: 1080, fontSize: 13, fontFamily: "Cormorant Garamond, serif", color: "#4a5a2c", fontWeight: "700", textAlign: "center", charSpacing: 600 },
+
+                // SUPRATITULO con tracking
+                { id: "supra", type: "text", text: "L A   P I S T A   E S T Á   A B I E R T A", x: 0, y: 135, width: 1080, fontSize: 13, fontFamily: "Montserrat, sans-serif", color: "#7c4a03", fontWeight: "700", textAlign: "center", charSpacing: 700 },
+
+                // TITULO Playfair italica masivo
+                { id: "title-1", type: "text", text: "Súmate a", x: 0, y: 165, width: 1080, fontSize: 100, fontFamily: "Playfair Display, serif", color: "#2a3018", textAlign: "center", fontStyle: "italic" },
+                { id: "title-2", type: "text", text: "la pista.", x: 0, y: 280, width: 1080, fontSize: 100, fontFamily: "Playfair Display, serif", color: "#7c4a03", textAlign: "center", fontStyle: "italic" },
+
+                // Ornamento divider
+                { id: "orn-l", type: "shape", shape: "rect", x: 380, y: 405, width: 130, height: 1, fill: "#4a5a2c", selectable: false },
+                { id: "orn-d", type: "shape", shape: "circle", x: 530, y: 400, width: 12, height: 12, fill: "transparent", stroke: "#4a5a2c", strokeWidth: 1, selectable: false },
+                { id: "orn-r", type: "shape", shape: "rect", x: 570, y: 405, width: 130, height: 1, fill: "#4a5a2c", selectable: false },
+
+                // Descripcion italica
+                { id: "desc", type: "text", text: "Sesiones suaves para mantenerte activo,", x: 60, y: 425, width: 960, fontSize: 18, fontFamily: "Cormorant Garamond, serif", color: "rgba(42,48,24,0.78)", textAlign: "center", fontStyle: "italic" },
+                { id: "desc-2", type: "text", text: "con amigos y mucha música.", x: 60, y: 452, width: 960, fontSize: 18, fontFamily: "Cormorant Garamond, serif", color: "rgba(42,48,24,0.78)", textAlign: "center", fontStyle: "italic" },
+
+                // FOTO PACO grande centrada en la zona crema (a caballo entre banda crema y verde)
+                { id: "paco", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/profe%20maduro%20o%20bailarines%20mayores-grupales-Paco.png", x: 540, y: 490, scaleX: 1.40, scaleY: 1.40, originX: "center", originY: "top", shadow: { color: "rgba(74,90,44,0.55)", blur: 45, offsetX: 0, offsetY: 10 } },
+
+                // ─── BLOQUE INFO sobre banda verde ───
+                // Plate nombre profe sobre banda verde
+                { id: "plate-line", type: "shape", shape: "rect", x: 360, y: 985, width: 360, height: 1, fill: "#fde68a", selectable: false },
+                { id: "plate-label", type: "text", text: "I M P A R T E", x: 0, y: 1000, width: 1080, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(254,230,138,0.75)", fontWeight: "800", textAlign: "center", charSpacing: 500 },
+                { id: "plate-name", type: "text", text: "Paco Romero", x: 0, y: 1025, width: 1080, fontSize: 36, fontFamily: "Playfair Display, serif", color: "#fef3c7", textAlign: "center", fontStyle: "italic" },
+                { id: "plate-role", type: "text", text: "Maestro de baile · 30 años de experiencia", x: 0, y: 1075, width: 1080, fontSize: 13, fontFamily: "Cormorant Garamond, serif", color: "rgba(254,243,199,0.75)", fontStyle: "italic", textAlign: "center", charSpacing: 200 },
+
+                // Linea separadora oro
+                { id: "div", type: "shape", shape: "rect", x: 460, y: 1115, width: 160, height: 1, fill: "#fde68a", selectable: false },
+
+                // INFO 3 columnas sobre verde
+                { id: "i-1-l", type: "text", text: "DÍAS", x: 60, y: 1140, width: 320, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(254,230,138,0.85)", fontWeight: "800", textAlign: "center", charSpacing: 400 },
+                { id: "i-1-v", type: "text", text: "LUN · MIÉ", x: 60, y: 1160, width: 320, fontSize: 26, fontFamily: "Playfair Display, serif", color: "#fef3c7", textAlign: "center", fontStyle: "italic" },
+                { id: "i-1-x", type: "text", text: "11:00 — 12:30", x: 60, y: 1200, width: 320, fontSize: 13, fontFamily: "Cormorant Garamond, serif", color: "rgba(254,243,199,0.7)", fontStyle: "italic", textAlign: "center" },
+
+                { id: "i-2-l", type: "text", text: "PRECIO", x: 380, y: 1140, width: 320, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(254,230,138,0.85)", fontWeight: "800", textAlign: "center", charSpacing: 400 },
+                { id: "i-2-v", type: "text", text: "30€ / mes", x: 380, y: 1160, width: 320, fontSize: 26, fontFamily: "Playfair Display, serif", color: "#fef3c7", textAlign: "center", fontStyle: "italic" },
+                { id: "i-2-x", type: "text", text: "Sesión suelta · 10€", x: 380, y: 1200, width: 320, fontSize: 13, fontFamily: "Cormorant Garamond, serif", color: "rgba(254,243,199,0.7)", fontStyle: "italic", textAlign: "center" },
+
+                { id: "i-3-l", type: "text", text: "PARA", x: 700, y: 1140, width: 320, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(254,230,138,0.85)", fontWeight: "800", textAlign: "center", charSpacing: 400 },
+                { id: "i-3-v", type: "text", text: "+60 años", x: 700, y: 1160, width: 320, fontSize: 26, fontFamily: "Playfair Display, serif", color: "#fde68a", textAlign: "center", fontStyle: "italic" },
+                { id: "i-3-x", type: "text", text: "Sin experiencia previa", x: 700, y: 1200, width: 320, fontSize: 13, fontFamily: "Cormorant Garamond, serif", color: "rgba(254,243,199,0.7)", fontStyle: "italic", textAlign: "center" },
+
+                // CTA pie
+                { id: "cta-line", type: "shape", shape: "rect", x: 80, y: 1255, width: 920, height: 1, fill: "rgba(254,230,138,0.3)", selectable: false },
+                { id: "footer-1", type: "text", text: "Centro Cultural La Plaza  ·  Goya 88  ·  Madrid", x: 0, y: 1275, width: 1080, fontSize: 14, fontFamily: "Cormorant Garamond, serif", color: "#fef3c7", textAlign: "center", fontStyle: "italic", charSpacing: 200 },
+                { id: "footer-2", type: "text", text: "INFO  ·  +34 600 555 666  ·  primera sesión gratuita", x: 0, y: 1308, width: 1080, fontSize: 12, fontFamily: "Montserrat, sans-serif", color: "rgba(253,224,71,0.85)", fontWeight: "700", textAlign: "center", charSpacing: 350 },
+            ] },
+        ],
+    },
+
 ];
