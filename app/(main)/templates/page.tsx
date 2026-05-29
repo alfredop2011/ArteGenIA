@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   LayoutGrid,
@@ -23,6 +23,7 @@ import {
   SearchX,
   Copy,
   Sparkles,
+  ArrowUp,
   type LucideIcon,
 } from "lucide-react";
 import { templates, type Template, type AudienceId, type TemplateVariant } from "@/data/templates";
@@ -75,6 +76,9 @@ export default function TemplatesPage() {
     const [searchQuery, setSearchQuery] = useState("");
     const [modalTemplate, setModalTemplate] = useState<Template | null>(null);
     const [showSidebarMobile, setShowSidebarMobile] = useState(false);
+    // Boton flotante "subir": ref al contenedor scrollable + visibilidad
+    const scrollRef = useRef<HTMLDivElement>(null);
+    const [showScrollTop, setShowScrollTop] = useState(false);
 
     // ─── Templates publicadas desde Supabase (admin creator) ──────────────
     // Se cargan en background y se concatenan AL INICIO de templates oficiales.
@@ -159,7 +163,7 @@ export default function TemplatesPage() {
     }), [allTemplates]);
 
     const filtered = useMemo(() => {
-        return allTemplates.filter((t) => {
+        const list = allTemplates.filter((t) => {
             // Filtrado estricto por formato activo
             const matchFormat = t.variants.some(v => v.format === activeFormat);
             if (!matchFormat) return false;
@@ -183,6 +187,18 @@ export default function TemplatesPage() {
                 (activeTopFilter === "Premium" && t.premium) ||
                 cat.includes(activeTopFilter.toLowerCase());
             return matchCat && matchAudience && matchSearch && matchTop;
+        });
+        // Orden: publicadas Supabase (id negativo) conservan su orden por
+        // published_at desc al inicio. Las oficiales (data/templates.ts) van
+        // detras ordenadas por id descendente — la mas nueva (#48) primero,
+        // la mas antigua (#1) al final.
+        return [...list].sort((a, b) => {
+            const aPub = a.id < 0;
+            const bPub = b.id < 0;
+            if (aPub && !bPub) return -1;
+            if (!aPub && bPub) return 1;
+            if (aPub && bPub) return a.id - b.id; // mantienen orden array
+            return b.id - a.id; // oficiales: id desc
         });
     }, [allTemplates, activeFormat, activeCategory, activeAudiences, searchQuery, activeTopFilter]);
 
@@ -321,7 +337,14 @@ export default function TemplatesPage() {
             </aside>
 
             {/* Contenido principal */}
-            <div className="flex-1 overflow-y-auto">
+            <div
+                ref={scrollRef}
+                onScroll={(e) => {
+                    // Mostrar boton "subir" si bajamos mas de ~400px
+                    setShowScrollTop(e.currentTarget.scrollTop > 400);
+                }}
+                className="flex-1 overflow-y-auto relative"
+            >
                 <div className="p-3 sm:p-6">
                     <div className="flex items-start justify-between mb-4 sm:mb-6 gap-3">
                         <div className="min-w-0">
@@ -447,6 +470,20 @@ export default function TemplatesPage() {
                     onClose={() => setModalTemplate(null)}
                 />
             )}
+
+            {/* Boton flotante "subir arriba". Aparece al scrollear >400px en el
+                contenedor principal, y al hacer click vuelve al top suavemente. */}
+            <button
+                onClick={() => scrollRef.current?.scrollTo({ top: 0, behavior: "smooth" })}
+                aria-label="Volver arriba"
+                className={`fixed bottom-5 right-5 sm:bottom-6 sm:right-6 z-40 flex items-center justify-center rounded-full bg-purple-600 hover:bg-purple-500 text-white shadow-lg shadow-purple-900/40 border border-white/10 transition-all duration-200 h-12 w-12 sm:h-14 sm:w-14 ${
+                    showScrollTop
+                        ? "opacity-100 translate-y-0 pointer-events-auto"
+                        : "opacity-0 translate-y-3 pointer-events-none"
+                }`}
+            >
+                <ArrowUp size={22} strokeWidth={2.2} />
+            </button>
         </div>
     );
 }
