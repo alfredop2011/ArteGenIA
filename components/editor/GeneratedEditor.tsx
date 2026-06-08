@@ -1019,9 +1019,10 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
     naturalH: number;
     taps: Array<{ x: number; y: number }>;  // coords NATURALES de imagen
     isPainting: boolean;                     // true mientras mouse esta presionado (brocha)
+    hd: boolean;                             // modo HD: refinamiento con BRIA tras SAM-2
     loading: boolean;
     error: string | null;
-  }>({ open: false, imgSrc: "", naturalW: 0, naturalH: 0, taps: [], isPainting: false, loading: false, error: null });
+  }>({ open: false, imgSrc: "", naturalW: 0, naturalH: 0, taps: [], isPainting: false, hd: false, loading: false, error: null });
 
   /** Abre el modal con la imagen activa. Funciona para cualquier foto del
    *  canvas — subidas por el usuario y las que vienen en la plantilla. */
@@ -1048,6 +1049,7 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
         naturalH: probe.naturalHeight,
         taps: [],
         isPainting: false,
+        hd: false,
         loading: false,
         error: null,
       });
@@ -1060,7 +1062,7 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
 
   /** Helper: cierra el modal de segment limpiando todo el state. */
   const closeSegmentModal = useCallback(() => {
-    setSegmentState({ open: false, imgSrc: "", naturalW: 0, naturalH: 0, taps: [], isPainting: false, loading: false, error: null });
+    setSegmentState({ open: false, imgSrc: "", naturalW: 0, naturalH: 0, taps: [], isPainting: false, hd: false, loading: false, error: null });
   }, []);
 
   /** Anade un tap al array (coords naturales de imagen). */
@@ -1086,6 +1088,11 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
   /**
    * Compone imagen original + mask de SAM-2 para generar un PNG transparente
    * con solo la persona segmentada. Devuelve dataURL.
+   *
+   * IMPORTANTE: la mask que devuelve SAM-2 es PNG RGB blanco/negro SIN canal
+   * alpha (toda opaca). destination-in usa alpha, asi que primero convertimos
+   * brillo RGB → alpha (blanco=255, negro=0). Sin este paso TODA la imagen
+   * queda opaca y no se recorta nada.
    */
   const composeMaskedImage = useCallback(async (imageUrl: string, maskUrl: string): Promise<string> => {
     const [img, mask] = await Promise.all([
@@ -1105,18 +1112,49 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
       }),
     ]);
 
+    const w = img.naturalWidth;
+    const h = img.naturalHeight;
+
+    // 1. Preparar mask en canvas auxiliar.
+    // SAM-2 puede devolver mask en 2 formatos distintos segun version/params:
+    //   A) RGB blanco/negro SIN alpha (toda opaca) → R indica persona
+    //   B) PNG con alpha real (alpha indica persona)
+    // Detectamos cual es y normalizamos a alpha real.
+    const maskCv = document.createElement("canvas");
+    maskCv.width = w;
+    maskCv.height = h;
+    const maskCtx = maskCv.getContext("2d");
+    if (!maskCtx) throw new Error("canvas mask 2d no disponible");
+    maskCtx.drawImage(mask, 0, 0, w, h);
+    const maskData = maskCtx.getImageData(0, 0, w, h);
+    // Detectar si la mask trae alpha variable (al menos un pixel con alpha<255 y otro con alpha>0)
+    let hasVariableAlpha = false;
+    let foundOpaque = false;
+    let foundTransparent = false;
+    for (let i = 3; i < maskData.data.length; i += 4) {
+      const a = maskData.data[i];
+      if (a > 250) foundOpaque = true;
+      else if (a < 10) foundTransparent = true;
+      if (foundOpaque && foundTransparent) { hasVariableAlpha = true; break; }
+    }
+    if (!hasVariableAlpha) {
+      // No hay alpha variable → asumimos formato A: R = brillo de persona
+      for (let i = 0; i < maskData.data.length; i += 4) {
+        maskData.data[i + 3] = maskData.data[i] > 128 ? 255 : 0;
+      }
+      maskCtx.putImageData(maskData, 0, 0);
+    }
+    // Si hasVariableAlpha=true, dejamos la mask como vino — alpha ya esta bien
+
+    // 2. Dibujar imagen original + aplicar mask con alpha como destination-in
     const cv = document.createElement("canvas");
-    cv.width = img.naturalWidth;
-    cv.height = img.naturalHeight;
+    cv.width = w;
+    cv.height = h;
     const ctx = cv.getContext("2d");
     if (!ctx) throw new Error("canvas 2d no disponible");
-
-    // 1. Dibujar la imagen original
-    ctx.drawImage(img, 0, 0, cv.width, cv.height);
-    // 2. Aplicar la mask con composite "destination-in": solo los pixeles donde
-    //    la mask es opaca (blanca/no-transparente) quedan en el resultado.
+    ctx.drawImage(img, 0, 0, w, h);
     ctx.globalCompositeOperation = "destination-in";
-    ctx.drawImage(mask, 0, 0, cv.width, cv.height);
+    ctx.drawImage(maskCv, 0, 0);
     ctx.globalCompositeOperation = "source-over";
 
     return cv.toDataURL("image/png");
@@ -1139,18 +1177,20 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
         body: JSON.stringify({
           imageUrl: segmentState.imgSrc,
           points: segmentState.taps,
+          hd: segmentState.hd,
         }),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({ error: "Error en el servidor" }));
         throw new Error(err.error || `HTTP ${res.status}`);
       }
-      const { segmentedUrl } = await res.json();
-      if (!segmentedUrl) throw new Error("No se recibio imagen segmentada");
+      const responseData = await res.json();
+      const { segmentedUrl, cropBounds } = responseData;
+      console.log("[segment-debug] response:", responseData);
+      if (!segmentedUrl) throw new Error("No se recibio la persona recortada");
+      if (!cropBounds) throw new Error("No se recibio el bbox del crop");
 
       // CREAR NUEVA capa con la persona aislada (no reemplaza la original).
-      // Asi el usuario puede separar a varias personas de la misma foto sin
-      // perder el grupo de fondo. Fal.ai ya devolvio la PNG transparente.
       const canvas = fabricRef.current;
       const sourceObj = canvas?.getActiveObject();
       if (!sourceObj || sourceObj.type !== "image" || !canvas) {
@@ -1158,16 +1198,31 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
       }
       const fabric = await import("fabric");
       const newImg = await fabric.FabricImage.fromURL(segmentedUrl, { crossOrigin: "anonymous" });
-      // Misma posicion + escala que la original, pero con offset para que se
-      // vea como capa separada y el usuario pueda arrastrarla a otro sitio.
+
+      // Posicionar la nueva imagen EN LA POSICION EXACTA donde estaba la
+      // persona en la foto original. Para eso traducimos las coords del
+      // bbox (que estan en pixeles de la imagen original) a coords del
+      // canvas (sourceObj puede estar escalado/desplazado).
+      const naturalW = sourceObj.width ?? 1;
+      const naturalH = sourceObj.height ?? 1;
+      const scaleX = sourceObj.scaleX ?? 1;
+      const scaleY = sourceObj.scaleY ?? 1;
+      const srcLeft = sourceObj.left ?? 0;
+      const srcTop = sourceObj.top ?? 0;
+      // Si sourceObj tiene originX=center, ajustamos el offset
+      const sox = sourceObj.originX === "center" ? -naturalW * scaleX / 2 : sourceObj.originX === "right" ? -naturalW * scaleX : 0;
+      const soy = sourceObj.originY === "center" ? -naturalH * scaleY / 2 : sourceObj.originY === "bottom" ? -naturalH * scaleY : 0;
+      const cropLeftOnCanvas = srcLeft + sox + cropBounds.x * scaleX;
+      const cropTopOnCanvas  = srcTop  + soy + cropBounds.y * scaleY;
+
       newImg.set({
-        left: (sourceObj.left ?? 0) + 30,
-        top: (sourceObj.top ?? 0) + 30,
-        originX: sourceObj.originX ?? "left",
-        originY: sourceObj.originY ?? "top",
+        left: cropLeftOnCanvas,
+        top: cropTopOnCanvas,
+        originX: "left",
+        originY: "top",
         angle: sourceObj.angle ?? 0,
-        scaleX: sourceObj.scaleX ?? 1,
-        scaleY: sourceObj.scaleY ?? 1,
+        scaleX: scaleX,
+        scaleY: scaleY,
         selectable: true,
         evented: true,
       });
@@ -1186,7 +1241,7 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
       console.error("[segment] error:", e);
       setSegmentState(s => ({ ...s, loading: false, error: e instanceof Error ? e.message : "Error inesperado" }));
     }
-  }, [segmentState.imgSrc, segmentState.taps, closeSegmentModal]);
+  }, [segmentState.imgSrc, segmentState.taps, segmentState.hd, closeSegmentModal]);
 
   // ─── ALIGN TO CANVAS ──────────────────────────────────────────────────────
 
@@ -3143,18 +3198,22 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
           <div className="w-full max-w-2xl rounded-3xl overflow-hidden"
             style={{ background: "rgba(15,15,25,0.98)", border: "1px solid rgba(16,185,129,0.30)", boxShadow: "0 0 60px rgba(16,185,129,0.15)" }}>
             <div className="flex items-center justify-between p-5 border-b border-white/[0.05]">
-              <div>
+              <div className="flex-1 min-w-0">
                 <h2 className="text-lg font-black text-white flex items-center gap-2">
                   <Scissors size={18} className="text-emerald-400"/>
-                  Pinta sobre la persona
+                  Toca a la persona
+                  <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold tracking-wider border border-amber-500/40">BETA</span>
                 </h2>
                 <p className="text-xs text-gray-500 mt-0.5">
-                  <span className="text-emerald-300 font-semibold">Click + arrastra</span> sobre la persona (como con una brocha).
-                  Cubre cabeza, torso, brazos y piernas. La IA recortara esa area.
+                  <span className="text-emerald-300 font-semibold">Un solo click</span> sobre la persona que quieres aislar.
+                </p>
+                <p className="text-[10px] text-amber-300/80 mt-1 leading-snug">
+                  ⚠ Funciona mejor con <strong>1 sola persona</strong> o personas <strong>bien separadas</strong>.
+                  Grupos densos o personas abrazadas pueden no separarse bien.
                 </p>
               </div>
               {!segmentState.loading && (
-                <button onClick={closeSegmentModal} className="text-gray-500 hover:text-white text-2xl p-1">×</button>
+                <button onClick={closeSegmentModal} className="text-gray-500 hover:text-white text-2xl p-1 shrink-0">×</button>
               )}
             </div>
             <div className="p-5 relative">
@@ -3164,40 +3223,23 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={segmentState.imgSrc}
-                  alt="Pinta sobre la persona"
+                  alt="Toca a la persona"
                   className={`w-full h-full object-contain rounded-xl select-none ${segmentState.loading ? "opacity-50" : "cursor-crosshair"}`}
-                  // Eventos brocha: mouseDown empieza, mouseMove durante drag anade
-                  // puntos cada cierta distancia, mouseUp termina.
-                  onMouseDown={(e) => {
+                  // UN SOLO CLICK: el backend usa Florence-2 para detectar
+                  // personas y SAM-2 con el bounding box de la persona del
+                  // tap. Multi-click se reemplaza por click → click cambia tap.
+                  onClick={(e) => {
                     if (segmentState.loading) return;
-                    e.preventDefault();
                     const rect = (e.target as HTMLImageElement).getBoundingClientRect();
                     const xRatio = (e.clientX - rect.left) / rect.width;
                     const yRatio = (e.clientY - rect.top) / rect.height;
-                    addSegmentTap(xRatio, yRatio);
-                    setSegmentState(s => ({ ...s, isPainting: true }));
+                    // Reset: cada click empieza desde 0 (no acumula)
+                    setSegmentState(s => {
+                      const x = Math.round(xRatio * s.naturalW);
+                      const y = Math.round(yRatio * s.naturalH);
+                      return { ...s, taps: [{ x, y }], error: null };
+                    });
                   }}
-                  onMouseMove={(e) => {
-                    if (segmentState.loading || !segmentState.isPainting) return;
-                    const rect = (e.target as HTMLImageElement).getBoundingClientRect();
-                    const xRatio = (e.clientX - rect.left) / rect.width;
-                    const yRatio = (e.clientY - rect.top) / rect.height;
-                    const x = Math.round(xRatio * segmentState.naturalW);
-                    const y = Math.round(yRatio * segmentState.naturalH);
-                    // Solo anadir si esta lo bastante lejos del ultimo punto.
-                    // Min distancia ~6% del lado mayor evita saturacion.
-                    const last = segmentState.taps[segmentState.taps.length - 1];
-                    if (last) {
-                      const minDist = Math.max(segmentState.naturalW, segmentState.naturalH) * 0.06;
-                      const dist = Math.hypot(x - last.x, y - last.y);
-                      if (dist < minDist) return;
-                    }
-                    // Limite max 30 puntos para no abrumar a SAM-2
-                    if (segmentState.taps.length >= 30) return;
-                    addSegmentTap(xRatio, yRatio);
-                  }}
-                  onMouseUp={() => setSegmentState(s => ({ ...s, isPainting: false }))}
-                  onMouseLeave={() => setSegmentState(s => ({ ...s, isPainting: false }))}
                   draggable={false}
                 />
                 {/* Render trazo verde — overlay sobre la imagen */}
@@ -3231,33 +3273,51 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
                 <p className="text-red-400 text-xs mt-3 text-center">{segmentState.error}</p>
               )}
             </div>
-            {/* Footer con controles */}
-            <div className="p-4 border-t border-white/[0.05] flex items-center gap-2">
-              <span className="text-xs text-gray-500 flex-1">
-                {segmentState.taps.length === 0
-                  ? "Pinta sobre la persona con click+arrastra."
-                  : `${segmentState.taps.length} ${segmentState.taps.length === 1 ? "punto pintado" : "puntos pintados"}${segmentState.taps.length >= 30 ? " (max)" : ""}`}
-              </span>
+            {/* Footer con toggle HD + controles */}
+            <div className="border-t border-white/[0.05]">
+              {/* Toggle HD: refinamiento BRIA tras SAM-2. Bordes pelo/tela mejores. */}
               <button
-                onClick={undoLastSegmentTap}
-                disabled={segmentState.taps.length === 0 || segmentState.loading}
-                className="px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-300 bg-white/[0.05] hover:bg-white/[0.10] border border-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
-                Deshacer
+                onClick={() => setSegmentState(s => ({ ...s, hd: !s.hd }))}
+                disabled={segmentState.loading}
+                className={`w-full flex items-center justify-between px-4 py-3 transition-colors hover:bg-white/[0.03] ${segmentState.loading ? "opacity-50" : ""}`}>
+                <div className="flex items-center gap-2.5">
+                  <div className={`w-9 h-5 rounded-full transition-colors relative ${segmentState.hd ? "bg-purple-500" : "bg-white/[0.15]"}`}>
+                    <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all ${segmentState.hd ? "left-4" : "left-0.5"}`}/>
+                  </div>
+                  <div className="text-left">
+                    <p className="text-xs font-bold text-white flex items-center gap-1.5">
+                      Calidad HD
+                      {segmentState.hd && <span className="text-[9px] px-1.5 py-0.5 rounded bg-purple-500/25 text-purple-200 font-bold tracking-wide">PRO</span>}
+                    </p>
+                    <p className="text-[10px] text-gray-500">
+                      {segmentState.hd
+                        ? "Bordes precisos en pelo y telas (consume cuota HD)"
+                        : "Activa para bordes excelentes en pelo y telas"}
+                    </p>
+                  </div>
+                </div>
               </button>
-              <button
-                onClick={clearSegmentTaps}
-                disabled={segmentState.taps.length === 0 || segmentState.loading}
-                className="px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-300 bg-white/[0.05] hover:bg-white/[0.10] border border-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
-                Limpiar
-              </button>
-              <button
-                onClick={() => { void processSegmentTaps(); }}
-                disabled={segmentState.taps.length === 0 || segmentState.loading}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold text-white transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-                style={{ background: segmentState.taps.length > 0 ? "linear-gradient(135deg,#059669,#10b981)" : "rgba(255,255,255,0.05)" }}>
-                <Scissors size={13} strokeWidth={2.5}/>
-                Recortar
-              </button>
+              <div className="px-4 pb-4 flex items-center gap-2">
+                <span className="text-xs text-gray-500 flex-1">
+                  {segmentState.taps.length === 0
+                    ? "Toca a la persona que quieres aislar."
+                    : "Punto marcado. Si no es correcto, toca otra vez."}
+                </span>
+                <button
+                  onClick={() => { void processSegmentTaps(); }}
+                  disabled={segmentState.taps.length === 0 || segmentState.loading}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold text-white transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                  style={{
+                    background: segmentState.taps.length === 0
+                      ? "rgba(255,255,255,0.05)"
+                      : segmentState.hd
+                        ? "linear-gradient(135deg,#7c3aed,#a855f7)"  // morado para HD
+                        : "linear-gradient(135deg,#059669,#10b981)", // verde normal
+                  }}>
+                  <Scissors size={13} strokeWidth={2.5}/>
+                  Recortar{segmentState.hd ? " HD" : ""}
+                </button>
+              </div>
             </div>
           </div>
         </div>

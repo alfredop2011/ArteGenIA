@@ -971,7 +971,9 @@ export default function MobileEditor({ templateId, formatId }: Props) {
     probe.src = src;
   }, []);
 
-  /** Compone imagen + mask en cliente para PNG transparente. */
+  /** Compone imagen + mask en cliente para PNG transparente.
+   *  NOTA: la mask SAM-2 es RGB sin alpha — convertimos brillo→alpha antes
+   *  del destination-in. Sin este paso la imagen sale opaca completa. */
   const composeMaskedImageMobile = useCallback(async (imageUrl: string, maskUrl: string): Promise<string> => {
     const [img, mask] = await Promise.all([
       new Promise<HTMLImageElement>((res, rej) => {
@@ -987,13 +989,27 @@ export default function MobileEditor({ templateId, formatId }: Props) {
         im.src = maskUrl;
       }),
     ]);
+    const w = img.naturalWidth;
+    const h = img.naturalHeight;
+    // Mask RGB → alpha (umbral binario para bordes limpios)
+    const maskCv = document.createElement("canvas");
+    maskCv.width = w; maskCv.height = h;
+    const maskCtx = maskCv.getContext("2d");
+    if (!maskCtx) throw new Error("canvas mask 2d no disponible");
+    maskCtx.drawImage(mask, 0, 0, w, h);
+    const md = maskCtx.getImageData(0, 0, w, h);
+    for (let i = 0; i < md.data.length; i += 4) {
+      md.data[i + 3] = md.data[i] > 128 ? 255 : 0;
+    }
+    maskCtx.putImageData(md, 0, 0);
+    // Compose
     const cv = document.createElement("canvas");
-    cv.width = img.naturalWidth; cv.height = img.naturalHeight;
+    cv.width = w; cv.height = h;
     const ctx = cv.getContext("2d");
     if (!ctx) throw new Error("canvas 2d no disponible");
-    ctx.drawImage(img, 0, 0, cv.width, cv.height);
+    ctx.drawImage(img, 0, 0, w, h);
     ctx.globalCompositeOperation = "destination-in";
-    ctx.drawImage(mask, 0, 0, cv.width, cv.height);
+    ctx.drawImage(maskCv, 0, 0);
     ctx.globalCompositeOperation = "source-over";
     return cv.toDataURL("image/png");
   }, []);
@@ -1017,22 +1033,29 @@ export default function MobileEditor({ templateId, formatId }: Props) {
         const err = await res.json().catch(() => ({ error: "Error en el servidor" }));
         throw new Error(err.error || `HTTP ${res.status}`);
       }
-      const { segmentedUrl } = await res.json();
-      if (!segmentedUrl) throw new Error("No se recibio imagen segmentada");
+      const { segmentedUrl, cropBounds } = await res.json();
+      if (!segmentedUrl || !cropBounds) throw new Error("No se recibio la persona recortada");
       const fc = fabricRef.current;
       const sourceObj = fc?.getActiveObject();
       if (!sourceObj || sourceObj.type !== "image" || !fc) throw new Error("Imagen activa no disponible");
-      // CREAR nueva capa con la persona aislada (no reemplazar la original).
-      // Fal.ai ya devolvio la PNG transparente — no hace falta componer.
+      // Posicionar en bbox EXACTO donde estaba la persona en la foto original
       const newImg = await FabricImage.fromURL(segmentedUrl, { crossOrigin: "anonymous" });
+      const naturalW = sourceObj.width ?? 1;
+      const naturalH = sourceObj.height ?? 1;
+      const scaleX = sourceObj.scaleX ?? 1;
+      const scaleY = sourceObj.scaleY ?? 1;
+      const srcLeft = sourceObj.left ?? 0;
+      const srcTop = sourceObj.top ?? 0;
+      const sox = sourceObj.originX === "center" ? -naturalW * scaleX / 2 : sourceObj.originX === "right" ? -naturalW * scaleX : 0;
+      const soy = sourceObj.originY === "center" ? -naturalH * scaleY / 2 : sourceObj.originY === "bottom" ? -naturalH * scaleY : 0;
       newImg.set({
-        left: (sourceObj.left ?? 0) + 30,
-        top: (sourceObj.top ?? 0) + 30,
-        originX: sourceObj.originX ?? "left",
-        originY: sourceObj.originY ?? "top",
+        left: srcLeft + sox + cropBounds.x * scaleX,
+        top: srcTop + soy + cropBounds.y * scaleY,
+        originX: "left",
+        originY: "top",
         angle: sourceObj.angle ?? 0,
-        scaleX: sourceObj.scaleX ?? 1,
-        scaleY: sourceObj.scaleY ?? 1,
+        scaleX,
+        scaleY,
       });
       (newImg as FabricObject & { isUserUpload?: boolean }).isUserUpload = true;
       fc.add(newImg);
@@ -1888,10 +1911,10 @@ export default function MobileEditor({ templateId, formatId }: Props) {
               <div>
                 <h2 className="text-base font-black text-white flex items-center gap-2">
                   <Scissors size={16} className="text-emerald-400"/>
-                  Marca puntos sobre la persona
+                  Toca a la persona
                 </h2>
                 <p className="text-[11px] text-gray-500 mt-0.5">
-                  Toca varias partes (cabeza, torso, piernas) y pulsa Recortar.
+                  Un solo tap sobre la persona. La IA la detecta y recorta.
                 </p>
               </div>
               {!segmentState.loading && (
@@ -1904,14 +1927,19 @@ export default function MobileEditor({ templateId, formatId }: Props) {
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={segmentState.imgSrc}
-                  alt="Marca puntos"
+                  alt="Toca a la persona"
                   className={`w-full h-full object-contain rounded-xl select-none ${segmentState.loading ? "opacity-50" : "cursor-crosshair"}`}
                   onClick={(e) => {
                     if (segmentState.loading) return;
                     const rect = (e.target as HTMLImageElement).getBoundingClientRect();
                     const xRatio = (e.clientX - rect.left) / rect.width;
                     const yRatio = (e.clientY - rect.top) / rect.height;
-                    addTapMobile(xRatio, yRatio);
+                    // Reset: cada tap reemplaza el anterior (no acumula)
+                    setSegmentState(s => {
+                      const x = Math.round(xRatio * s.naturalW);
+                      const y = Math.round(yRatio * s.naturalH);
+                      return { ...s, taps: [{ x, y }], error: null };
+                    });
                   }}
                   draggable={false}
                 />
@@ -1940,20 +1968,8 @@ export default function MobileEditor({ templateId, formatId }: Props) {
             </div>
             <div className="p-3 border-t border-white/[0.05] flex items-center gap-2">
               <span className="text-[11px] text-gray-500 flex-1">
-                {segmentState.taps.length === 0 ? "Sin puntos" : `${segmentState.taps.length} ${segmentState.taps.length === 1 ? "punto" : "puntos"}`}
+                {segmentState.taps.length === 0 ? "Toca a la persona" : "Punto marcado"}
               </span>
-              <button
-                onClick={undoLastTapMobile}
-                disabled={segmentState.taps.length === 0 || segmentState.loading}
-                className="px-2.5 py-1.5 rounded-lg text-[11px] font-semibold text-gray-300 bg-white/[0.05] border border-white/10 disabled:opacity-30">
-                Deshacer
-              </button>
-              <button
-                onClick={clearTapsMobile}
-                disabled={segmentState.taps.length === 0 || segmentState.loading}
-                className="px-2.5 py-1.5 rounded-lg text-[11px] font-semibold text-gray-300 bg-white/[0.05] border border-white/10 disabled:opacity-30">
-                Limpiar
-              </button>
               <button
                 onClick={() => { void processTapsMobile(); }}
                 disabled={segmentState.taps.length === 0 || segmentState.loading}
