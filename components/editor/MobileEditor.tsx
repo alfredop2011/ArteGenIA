@@ -21,7 +21,7 @@ import {
   Plus, Copy, Square, Circle as CircleIcon, MoveUp, MoveDown,
   ChevronUp, ChevronDown, GripVertical,
   Triangle as TriangleIcon, Star, Hexagon, Minus, ArrowRight as ArrowRightIcon,
-  SquareDashed, Scissors,
+  SquareDashed, Scissors, Loader2,
 } from "lucide-react";
 import { templates, getVariant, type Template } from "@/data/templates";
 import type { FormatId } from "@/data/formats";
@@ -913,6 +913,140 @@ export default function MobileEditor({ templateId, formatId }: Props) {
     setActiveSheet(null);
   }, [layers, registerLayer]);
 
+  // ─── 5i. Recortar persona (Fal.ai SAM-2) — multi-tap ─────────────────────
+  const [segmentState, setSegmentState] = useState<{
+    open: boolean;
+    imgSrc: string;
+    naturalW: number;
+    naturalH: number;
+    taps: Array<{ x: number; y: number }>;
+    loading: boolean;
+    error: string | null;
+  }>({ open: false, imgSrc: "", naturalW: 0, naturalH: 0, taps: [], loading: false, error: null });
+
+  const closeSegmentModalMobile = useCallback(() => {
+    setSegmentState({ open: false, imgSrc: "", naturalW: 0, naturalH: 0, taps: [], loading: false, error: null });
+  }, []);
+
+  const addTapMobile = useCallback((xRatio: number, yRatio: number) => {
+    setSegmentState(s => {
+      if (s.loading) return s;
+      const x = Math.round(xRatio * s.naturalW);
+      const y = Math.round(yRatio * s.naturalH);
+      return { ...s, taps: [...s.taps, { x, y }], error: null };
+    });
+  }, []);
+
+  const undoLastTapMobile = useCallback(() => {
+    setSegmentState(s => ({ ...s, taps: s.taps.slice(0, -1) }));
+  }, []);
+
+  const clearTapsMobile = useCallback(() => {
+    setSegmentState(s => ({ ...s, taps: [] }));
+  }, []);
+
+  /** Abre el modal de segmentacion para cualquier foto del canvas (subidas
+   *  por el usuario o las que vienen en la plantilla). */
+  const handleOpenSegmentModal = useCallback(() => {
+    const obj = fabricRef.current?.getActiveObject();
+    if (!obj || obj.type !== "image") return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const src = (obj as any).getSrc?.() as string | undefined;
+    if (!src) return;
+    const probe = new Image();
+    probe.crossOrigin = "anonymous";
+    probe.onload = () => {
+      setSegmentState({
+        open: true,
+        imgSrc: src,
+        naturalW: probe.naturalWidth,
+        naturalH: probe.naturalHeight,
+        taps: [],
+        loading: false,
+        error: null,
+      });
+      setActiveSheet(null);
+    };
+    probe.onerror = () => setSegmentState(s => ({ ...s, error: "No se pudo cargar la imagen" }));
+    probe.src = src;
+  }, []);
+
+  /** Compone imagen + mask en cliente para PNG transparente. */
+  const composeMaskedImageMobile = useCallback(async (imageUrl: string, maskUrl: string): Promise<string> => {
+    const [img, mask] = await Promise.all([
+      new Promise<HTMLImageElement>((res, rej) => {
+        const im = new Image();
+        im.crossOrigin = "anonymous";
+        im.onload = () => res(im); im.onerror = () => rej(new Error("error img"));
+        im.src = imageUrl;
+      }),
+      new Promise<HTMLImageElement>((res, rej) => {
+        const im = new Image();
+        im.crossOrigin = "anonymous";
+        im.onload = () => res(im); im.onerror = () => rej(new Error("error mask"));
+        im.src = maskUrl;
+      }),
+    ]);
+    const cv = document.createElement("canvas");
+    cv.width = img.naturalWidth; cv.height = img.naturalHeight;
+    const ctx = cv.getContext("2d");
+    if (!ctx) throw new Error("canvas 2d no disponible");
+    ctx.drawImage(img, 0, 0, cv.width, cv.height);
+    ctx.globalCompositeOperation = "destination-in";
+    ctx.drawImage(mask, 0, 0, cv.width, cv.height);
+    ctx.globalCompositeOperation = "source-over";
+    return cv.toDataURL("image/png");
+  }, []);
+
+  const processTapsMobile = useCallback(async () => {
+    if (segmentState.taps.length === 0) {
+      setSegmentState(s => ({ ...s, error: "Marca al menos un punto sobre la persona" }));
+      return;
+    }
+    setSegmentState(s => ({ ...s, loading: true, error: null }));
+    try {
+      const res = await fetch("/api/segment-person", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          imageUrl: segmentState.imgSrc,
+          points: segmentState.taps,
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: "Error en el servidor" }));
+        throw new Error(err.error || `HTTP ${res.status}`);
+      }
+      const { segmentedUrl } = await res.json();
+      if (!segmentedUrl) throw new Error("No se recibio imagen segmentada");
+      const fc = fabricRef.current;
+      const sourceObj = fc?.getActiveObject();
+      if (!sourceObj || sourceObj.type !== "image" || !fc) throw new Error("Imagen activa no disponible");
+      // CREAR nueva capa con la persona aislada (no reemplazar la original).
+      // Fal.ai ya devolvio la PNG transparente — no hace falta componer.
+      const newImg = await FabricImage.fromURL(segmentedUrl, { crossOrigin: "anonymous" });
+      newImg.set({
+        left: (sourceObj.left ?? 0) + 30,
+        top: (sourceObj.top ?? 0) + 30,
+        originX: sourceObj.originX ?? "left",
+        originY: sourceObj.originY ?? "top",
+        angle: sourceObj.angle ?? 0,
+        scaleX: sourceObj.scaleX ?? 1,
+        scaleY: sourceObj.scaleY ?? 1,
+      });
+      (newImg as FabricObject & { isUserUpload?: boolean }).isUserUpload = true;
+      fc.add(newImg);
+      const newItem = registerLayer(newImg, "Persona aislada", "image");
+      fc.setActiveObject(newImg);
+      fc.requestRenderAll();
+      setSelectedLayer(newItem);
+      closeSegmentModalMobile();
+    } catch (e) {
+      console.error("[segment-mobile] error:", e);
+      setSegmentState(s => ({ ...s, loading: false, error: e instanceof Error ? e.message : "Error inesperado" }));
+    }
+  }, [segmentState.imgSrc, segmentState.taps, registerLayer, closeSegmentModalMobile]);
+
   // ─── 5f. + Foto (galeria iPhone) ────────────────────────────────────────
   // Usa <input type="file" accept="image/*"> que abre nativo el picker.
   // En iPhone Safari ofrece "Tomar foto" + "Elegir de galeria".
@@ -956,6 +1090,9 @@ export default function MobileEditor({ templateId, formatId }: Props) {
             offsetY: 0,
           }),
         });
+        // Marca foto subida por el usuario — habilita el boton "Recortar persona"
+        // (segmentacion con Fal.ai SAM-2) cuando este seleccionada.
+        (img as FabricObject & { isUserUpload?: boolean }).isUserUpload = true;
         fc.add(img);
         const item = registerLayer(img, "Foto subida", "image");
         fc.setActiveObject(img);
@@ -1571,6 +1708,30 @@ export default function MobileEditor({ templateId, formatId }: Props) {
                     );
                   })()}
 
+                  {/* Recortar persona (Fal.ai SAM-2) — cualquier foto del canvas */}
+                  {(() => {
+                    const activeObj = fabricRef.current?.getActiveObject();
+                    if (activeObj?.type !== "image") return null;
+                    return (
+                      <>
+                        <p className="text-[10px] uppercase tracking-widest text-gray-500 font-semibold mt-5 mb-1.5 px-1">
+                          <Scissors size={11} className="inline mr-1 -mt-0.5"/>
+                          Recortar persona
+                        </p>
+                        <button
+                          onClick={handleOpenSegmentModal}
+                          className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-gradient-to-br from-emerald-600/20 to-teal-600/15 active:bg-emerald-600/30 border border-emerald-500/35 text-emerald-200 text-sm font-semibold"
+                        >
+                          <Scissors size={15} strokeWidth={2.2}/>
+                          Recortar persona individual
+                        </button>
+                        <p className="text-[10px] text-gray-600 mt-1.5 leading-snug px-1">
+                          Tocas a la persona del grupo y la IA la aisla con fondo transparente.
+                        </p>
+                      </>
+                    );
+                  })()}
+
                   {/* Mask: recortar foto a forma. Solo aparece si hay IMAGEN seleccionada. */}
                   {selectedLayer?.type === "image" && (
                     <>
@@ -1714,6 +1875,96 @@ export default function MobileEditor({ templateId, formatId }: Props) {
           onAuthSuccess={authModalConfig.onSuccess}
           onClose={() => setAuthModalConfig(null)}
         />
+      )}
+
+      {/* SegmentPersonModal mobile: multi-tap. Igual que desktop pero compacto. */}
+      {segmentState.open && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm p-3"
+          onClick={e => { if (e.target === e.currentTarget && !segmentState.loading) closeSegmentModalMobile(); }}>
+          <div className="w-full max-w-xl rounded-2xl overflow-hidden"
+            style={{ background: "rgba(15,15,25,0.98)", border: "1px solid rgba(16,185,129,0.30)" }}>
+            <div className="flex items-center justify-between p-4 border-b border-white/[0.05]">
+              <div>
+                <h2 className="text-base font-black text-white flex items-center gap-2">
+                  <Scissors size={16} className="text-emerald-400"/>
+                  Marca puntos sobre la persona
+                </h2>
+                <p className="text-[11px] text-gray-500 mt-0.5">
+                  Toca varias partes (cabeza, torso, piernas) y pulsa Recortar.
+                </p>
+              </div>
+              {!segmentState.loading && (
+                <button onClick={closeSegmentModalMobile} className="text-gray-500 hover:text-white text-2xl p-1">×</button>
+              )}
+            </div>
+            <div className="p-4 relative">
+              <div className="relative max-h-[50vh] mx-auto w-full"
+                style={{ aspectRatio: segmentState.naturalH > 0 ? `${segmentState.naturalW}/${segmentState.naturalH}` : "1" }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={segmentState.imgSrc}
+                  alt="Marca puntos"
+                  className={`w-full h-full object-contain rounded-xl select-none ${segmentState.loading ? "opacity-50" : "cursor-crosshair"}`}
+                  onClick={(e) => {
+                    if (segmentState.loading) return;
+                    const rect = (e.target as HTMLImageElement).getBoundingClientRect();
+                    const xRatio = (e.clientX - rect.left) / rect.width;
+                    const yRatio = (e.clientY - rect.top) / rect.height;
+                    addTapMobile(xRatio, yRatio);
+                  }}
+                  draggable={false}
+                />
+                {segmentState.taps.map((tap, i) => (
+                  <div
+                    key={i}
+                    className="absolute pointer-events-none flex items-center justify-center w-6 h-6 -ml-3 -mt-3 rounded-full bg-emerald-500 border-2 border-white shadow-lg text-[10px] font-black text-white"
+                    style={{
+                      left: `${(tap.x / segmentState.naturalW) * 100}%`,
+                      top: `${(tap.y / segmentState.naturalH) * 100}%`,
+                    }}>
+                    {i + 1}
+                  </div>
+                ))}
+                {segmentState.loading && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/30 rounded-xl">
+                    <Loader2 className="w-9 h-9 text-emerald-400 animate-spin"/>
+                    <p className="text-sm font-semibold text-emerald-200">Procesando...</p>
+                    <p className="text-[11px] text-gray-500">2-4 segundos</p>
+                  </div>
+                )}
+              </div>
+              {segmentState.error && (
+                <p className="text-red-400 text-xs mt-3 text-center">{segmentState.error}</p>
+              )}
+            </div>
+            <div className="p-3 border-t border-white/[0.05] flex items-center gap-2">
+              <span className="text-[11px] text-gray-500 flex-1">
+                {segmentState.taps.length === 0 ? "Sin puntos" : `${segmentState.taps.length} ${segmentState.taps.length === 1 ? "punto" : "puntos"}`}
+              </span>
+              <button
+                onClick={undoLastTapMobile}
+                disabled={segmentState.taps.length === 0 || segmentState.loading}
+                className="px-2.5 py-1.5 rounded-lg text-[11px] font-semibold text-gray-300 bg-white/[0.05] border border-white/10 disabled:opacity-30">
+                Deshacer
+              </button>
+              <button
+                onClick={clearTapsMobile}
+                disabled={segmentState.taps.length === 0 || segmentState.loading}
+                className="px-2.5 py-1.5 rounded-lg text-[11px] font-semibold text-gray-300 bg-white/[0.05] border border-white/10 disabled:opacity-30">
+                Limpiar
+              </button>
+              <button
+                onClick={() => { void processTapsMobile(); }}
+                disabled={segmentState.taps.length === 0 || segmentState.loading}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold text-white disabled:opacity-30"
+                style={{ background: segmentState.taps.length > 0 ? "linear-gradient(135deg,#059669,#10b981)" : "rgba(255,255,255,0.05)" }}>
+                <Scissors size={12} strokeWidth={2.5}/>
+                Recortar
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
