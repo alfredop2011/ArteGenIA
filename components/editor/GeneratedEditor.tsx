@@ -25,8 +25,21 @@ import {
   FolderOpen, ArrowLeftCircle,
   // Empty / misc
   MousePointer2,
+  // Formas extras + mask
+  Triangle as TriangleIcon, Star, Hexagon, Minus, ArrowRight as ArrowRightIcon,
+  SquareDashed, Scissors, X as XIconLuc,
+  Circle as CircleIconLuc,
 } from "lucide-react";
 import type { Canvas as FabricCanvas, FabricObject, IText } from "fabric";
+import {
+  Shadow as FabricShadow,
+  Rect as FabricRect,
+  Circle as FabricCircle,
+  Triangle as FabricTriangle,
+  Line as FabricLine,
+  Polygon as FabricPolygon,
+  Path as FabricPath,
+} from "fabric";
 import { templates, type Template, type TemplateVariant, type AudienceId, getVariant } from "@/data/templates";
 import type { FormatId } from "@/data/formats";
 import { applyTemplateLayers } from "@/lib/fabricApplyTemplateLayers";
@@ -34,6 +47,8 @@ import { ArtistLibraryModal, type ArtistEntry } from "@/components/wizard/Artist
 import { useProjects } from "@/hooks/useProjects";
 import { useUndoRedo } from "@/hooks/useUndoRedo";
 import { useTemplateDrafts } from "@/hooks/useTemplateDrafts";
+import { useAuth } from "@/hooks/useAuth";
+import AuthModal from "@/components/auth/AuthModal";
 import { supabase } from "@/lib/supabase";
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
@@ -312,6 +327,26 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
   });
   const [zoom, setZoom] = useState(50);
   const [floatingToolbar, setFloatingToolbar] = useState<{visible: boolean; x: number; y: number; alignOpen: boolean; moreOpen: boolean}>({ visible: false, x: 0, y: 0, alignOpen: false, moreOpen: false });
+
+  // ─── AUTH MODAL ──────────────────────────────────────────────────────────
+  // Modal de login/registro que se abre cuando intentas descargar o guardar
+  // sin sesion iniciada. Tras login exitoso, `onSuccess` reintenta la accion.
+  const { user: authUser } = useAuth();
+  const [authModalConfig, setAuthModalConfig] = useState<{ title: string; subtitle: string; onSuccess: () => void } | null>(null);
+  /**
+   * Si hay sesion, ejecuta `action` directamente. Si no, abre el AuthModal y
+   * lo deja en cola para ejecutar tras login exitoso.
+   */
+  const requireAuth = useCallback((
+    action: () => void,
+    opts: { title: string; subtitle: string },
+  ) => {
+    if (authUser) {
+      action();
+    } else {
+      setAuthModalConfig({ ...opts, onSuccess: action });
+    }
+  }, [authUser]);
   const [currentProjectId, setCurrentProjectId] = useState<string | null>(projectId ?? null);
   const [savingProject, setSavingProject] = useState(false);
   const canvasWrapperRef = useRef<HTMLDivElement>(null);
@@ -923,6 +958,56 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
     canvas?.renderAll(); setSaveState("unsaved");
   }, []);
 
+  // ─── HALO / SHADOW DE IMAGEN ─────────────────────────────────────────────
+  // 3 presets rapidos (claro / oscuro / sin halo) + selector avanzado de
+  // color y blur. Trabaja directo sobre el objeto activo en el canvas.
+  const setHaloPreset = useCallback((preset: "light" | "dark" | "none") => {
+    const canvas = fabricRef.current;
+    const obj = canvas?.getActiveObject();
+    if (!obj) return;
+    if (preset === "none") {
+      obj.set("shadow", null);
+    } else {
+      const color = preset === "light" ? "rgba(255,255,255,0.85)" : "rgba(0,0,0,0.85)";
+      obj.set("shadow", new FabricShadow({ color, blur: 40, offsetX: 0, offsetY: 0 }));
+    }
+    canvas?.renderAll();
+    setSaveState("unsaved");
+    // Forzar re-render del panel para reflejar el cambio en sliders/picker
+    setSelectedLayer(prev => prev ? { ...prev } : prev);
+  }, []);
+
+  /** Aplica color del halo. Si no hay halo previo, lo crea con blur default 40. */
+  const setHaloColor = useCallback((color: string) => {
+    const canvas = fabricRef.current;
+    const obj = canvas?.getActiveObject();
+    if (!obj) return;
+    const existing = obj.shadow as FabricShadow | null;
+    const blur = existing && typeof existing === "object" ? (existing.blur ?? 40) : 40;
+    obj.set("shadow", new FabricShadow({ color, blur, offsetX: 0, offsetY: 0 }));
+    canvas?.renderAll();
+    setSaveState("unsaved");
+    setSelectedLayer(prev => prev ? { ...prev } : prev);
+  }, []);
+
+  /** Aplica blur del halo. Si no hay halo previo, lo crea con color blanco. */
+  const setHaloBlur = useCallback((blur: number) => {
+    const canvas = fabricRef.current;
+    const obj = canvas?.getActiveObject();
+    if (!obj) return;
+    const existing = obj.shadow as FabricShadow | null;
+    const color = existing && typeof existing === "object" && existing.color
+      ? existing.color
+      : "rgba(255,255,255,0.85)";
+    obj.set("shadow", new FabricShadow({ color, blur, offsetX: 0, offsetY: 0 }));
+    canvas?.renderAll();
+    setSaveState("unsaved");
+    setSelectedLayer(prev => prev ? { ...prev } : prev);
+  }, []);
+
+  // Estado de UI: si esta abierto el selector avanzado de halo
+  const [haloAdvancedOpen, setHaloAdvancedOpen] = useState(false);
+
   // ─── ALIGN TO CANVAS ──────────────────────────────────────────────────────
 
   const alignSelectedTo = useCallback((position: "left" | "center-h" | "right" | "top" | "center-v" | "bottom") => {
@@ -1055,6 +1140,15 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
           scaleY: scale,
           selectable: true,
           evented: true,
+          // Halo claro automatico para artistas (mismo look que plantillas).
+          // Logos no llevan halo. El usuario puede quitarlo o cambiar a oscuro
+          // desde el panel de propiedades de imagen.
+          shadow: isLogo ? undefined : new fabric.Shadow({
+            color: "rgba(255,255,255,0.85)",
+            blur: 40,
+            offsetX: 0,
+            offsetY: 0,
+          }),
         });
         (img as FabricObject & { customId?: string }).customId = entry.id;
         canvas.add(img);
@@ -1142,9 +1236,224 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
     setLayers(prev => [newLayer, ...prev]); setSelectedLayer(newLayer); setSaveState("unsaved"); setActiveTool("layers");
   }, [canvasSize]);
 
+  // ─── ADD SHAPES (rect, circle, triangle, line, star, hex, arrow, frame) ──
+  /** Helper interno: registra un FabricObject como nueva capa y selecciona. */
+  const addShapeToCanvas = useCallback((obj: FabricObject, name: string) => {
+    const canvas = fabricRef.current;
+    if (!canvas) return;
+    const newId = `shape-${uid()}`;
+    (obj as FabricObject & { customId?: string }).customId = newId;
+    canvas.add(obj);
+    canvas.setActiveObject(obj);
+    canvas.renderAll();
+    const newLayer: LayerItem = { id: newId, name, type: "image", obj, visible: true, locked: false };
+    setLayers(prev => [newLayer, ...prev]);
+    setSelectedLayer(newLayer);
+    setSaveState("unsaved");
+  }, []);
+
+  const addRect = useCallback(() => {
+    addShapeToCanvas(
+      new FabricRect({ left: canvasSize.w / 2 - 150, top: canvasSize.h / 2 - 150, width: 300, height: 300, fill: "#a855f7", opacity: 0.85, selectable: true, evented: true }),
+      "Rectángulo",
+    );
+  }, [canvasSize, addShapeToCanvas]);
+
+  const addCircle = useCallback(() => {
+    addShapeToCanvas(
+      new FabricCircle({ left: canvasSize.w / 2 - 150, top: canvasSize.h / 2 - 150, radius: 150, fill: "#fb923c", opacity: 0.85, selectable: true, evented: true }),
+      "Círculo",
+    );
+  }, [canvasSize, addShapeToCanvas]);
+
+  const addTriangle = useCallback(() => {
+    addShapeToCanvas(
+      new FabricTriangle({ left: canvasSize.w / 2 - 150, top: canvasSize.h / 2 - 130, width: 300, height: 260, fill: "#fb923c", opacity: 0.85, selectable: true, evented: true }),
+      "Triángulo",
+    );
+  }, [canvasSize, addShapeToCanvas]);
+
+  const addLine = useCallback(() => {
+    addShapeToCanvas(
+      new FabricLine([canvasSize.w / 2 - 200, canvasSize.h / 2, canvasSize.w / 2 + 200, canvasSize.h / 2], { stroke: "#a855f7", strokeWidth: 8, strokeLineCap: "round", selectable: true, evented: true }),
+      "Línea",
+    );
+  }, [canvasSize, addShapeToCanvas]);
+
+  const addStar = useCallback(() => {
+    const outerR = 150, innerR = 65;
+    const points: { x: number; y: number }[] = [];
+    for (let i = 0; i < 10; i++) {
+      const angle = -Math.PI / 2 + (i * Math.PI) / 5;
+      const r = i % 2 === 0 ? outerR : innerR;
+      points.push({ x: r * Math.cos(angle), y: r * Math.sin(angle) });
+    }
+    addShapeToCanvas(
+      new FabricPolygon(points, { left: canvasSize.w / 2 - outerR, top: canvasSize.h / 2 - outerR, fill: "#facc15", opacity: 0.9, selectable: true, evented: true }),
+      "Estrella",
+    );
+  }, [canvasSize, addShapeToCanvas]);
+
+  const addHexagon = useCallback(() => {
+    const r = 150;
+    const points: { x: number; y: number }[] = [];
+    for (let i = 0; i < 6; i++) {
+      const angle = -Math.PI / 2 + (i * Math.PI) / 3;
+      points.push({ x: r * Math.cos(angle), y: r * Math.sin(angle) });
+    }
+    addShapeToCanvas(
+      new FabricPolygon(points, { left: canvasSize.w / 2 - r, top: canvasSize.h / 2 - r, fill: "#22d3ee", opacity: 0.85, selectable: true, evented: true }),
+      "Hexágono",
+    );
+  }, [canvasSize, addShapeToCanvas]);
+
+  const addArrow = useCallback(() => {
+    const arrowPath = "M 0 30 L 320 30 L 320 0 L 400 50 L 320 100 L 320 70 L 0 70 Z";
+    addShapeToCanvas(
+      new FabricPath(arrowPath, { left: canvasSize.w / 2 - 200, top: canvasSize.h / 2 - 50, fill: "#a855f7", opacity: 0.9, selectable: true, evented: true }),
+      "Flecha",
+    );
+  }, [canvasSize, addShapeToCanvas]);
+
+  const addFrame = useCallback(() => {
+    addShapeToCanvas(
+      new FabricRect({ left: canvasSize.w / 2 - 200, top: canvasSize.h / 2 - 200, width: 400, height: 400, fill: "transparent", stroke: "#ffffff", strokeWidth: 6, selectable: true, evented: true }),
+      "Marco",
+    );
+  }, [canvasSize, addShapeToCanvas]);
+
+  // ─── MASK: recortar imagen a forma (clipPath) ────────────────────────────
+  /** Aplica un clipPath al objeto activo (debe ser image). */
+  const cropImageToShape = useCallback((shape: "circle" | "rounded" | "square" | "none") => {
+    const canvas = fabricRef.current;
+    const obj = canvas?.getActiveObject();
+    if (!obj || obj.type !== "image") return;
+    const localW = obj.width ?? 400;
+    const localH = obj.height ?? 400;
+    const minDim = Math.min(localW, localH);
+    if (shape === "none") {
+      (obj as FabricObject & { clipPath?: unknown }).clipPath = undefined;
+    } else if (shape === "circle") {
+      (obj as FabricObject & { clipPath?: unknown }).clipPath = new FabricCircle({
+        radius: minDim / 2, originX: "center", originY: "center", left: 0, top: 0,
+      });
+    } else if (shape === "rounded") {
+      (obj as FabricObject & { clipPath?: unknown }).clipPath = new FabricRect({
+        width: localW, height: localH, rx: minDim * 0.15, ry: minDim * 0.15,
+        originX: "center", originY: "center", left: 0, top: 0,
+      });
+    } else if (shape === "square") {
+      (obj as FabricObject & { clipPath?: unknown }).clipPath = new FabricRect({
+        width: minDim, height: minDim, originX: "center", originY: "center", left: 0, top: 0,
+      });
+    }
+    obj.dirty = true;
+    canvas?.requestRenderAll();
+    setSaveState("unsaved");
+  }, []);
+
+  // ─── IMAGEN DENTRO DE FORMA ──────────────────────────────────────────────
+  /** Tipos Fabric que consideramos "formas" (no imagen real ni texto). */
+  const SHAPE_TYPES = ["rect", "circle", "triangle", "polygon", "path", "line"];
+
+  /**
+   * Reemplaza el shape activo por una imagen del usuario clipeada con la forma
+   * del shape. La imagen se escala "cover" para llenar la forma sin deformar.
+   * Tras la operacion el shape desaparece y queda la imagen — el usuario sigue
+   * pudiendo mover/escalar/rotar como cualquier otra capa.
+   */
+  const addImageInsideShape = useCallback(async () => {
+    const canvas = fabricRef.current;
+    const obj = canvas?.getActiveObject();
+    if (!obj || !canvas) return;
+    if (!SHAPE_TYPES.includes(obj.type ?? "")) return;
+
+    // 1. Pedir foto al usuario via file picker
+    const file = await new Promise<File | null>((resolve) => {
+      const input = document.createElement("input");
+      input.type = "file";
+      input.accept = "image/*";
+      input.onchange = (e) => resolve((e.target as HTMLInputElement).files?.[0] ?? null);
+      input.click();
+    });
+    if (!file) return;
+
+    const dataUrl = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = () => reject(new Error("Error leyendo el archivo"));
+      reader.readAsDataURL(file);
+    });
+
+    // 2. Cargar imagen en Fabric
+    const fabric = await import("fabric");
+    const img = await fabric.FabricImage.fromURL(dataUrl, { crossOrigin: "anonymous" });
+
+    // 3. Calcular bounding box visual del shape (en coords del canvas)
+    const bounds = obj.getBoundingRect();
+    const imgW = img.width ?? 1;
+    const imgH = img.height ?? 1;
+    // "Cover": la imagen llena el bounding sin huecos (puede recortar).
+    const fillScale = Math.max(bounds.width / imgW, bounds.height / imgH);
+
+    // 4. Clonar el shape para usarlo como clipPath. clipPath se interpreta en
+    //    coords LOCALES del objeto contenedor (la imagen), centrado en (0,0)
+    //    cuando originX/Y son "center".
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const clipPath = await (obj as any).clone() as FabricObject;
+    clipPath.set({
+      left: 0,
+      top: 0,
+      originX: "center",
+      originY: "center",
+      angle: 0, // el angulo lo gestiona la imagen contenedora
+    });
+
+    // 5. Posicionar la imagen donde estaba el shape (centro del bounding)
+    const cx = bounds.left + bounds.width / 2;
+    const cy = bounds.top + bounds.height / 2;
+    img.set({
+      left: cx,
+      top: cy,
+      originX: "center",
+      originY: "center",
+      angle: obj.angle ?? 0,
+      scaleX: fillScale,
+      scaleY: fillScale,
+      selectable: true,
+      evented: true,
+    });
+    (img as FabricObject & { clipPath?: unknown }).clipPath = clipPath;
+
+    // 6. Reemplazar el shape por la imagen en el canvas
+    const oldId = (obj as FabricObject & { customId?: string }).customId;
+    const newId = `image-in-shape-${uid()}`;
+    (img as FabricObject & { customId?: string }).customId = newId;
+
+    canvas.remove(obj);
+    canvas.add(img);
+    canvas.setActiveObject(img);
+    canvas.renderAll();
+
+    // 7. Actualizar el estado de layers (reemplazar item del shape por el nuevo)
+    const newLayer: LayerItem = { id: newId, name: "Foto en forma", type: "image", obj: img, visible: true, locked: false };
+    setLayers(prev => {
+      if (!oldId) return [newLayer, ...prev];
+      const idx = prev.findIndex(l => l.id === oldId);
+      if (idx === -1) return [newLayer, ...prev];
+      const next = [...prev];
+      next[idx] = newLayer;
+      return next;
+    });
+    setSelectedLayer(newLayer);
+    setSaveState("unsaved");
+  }, []);
+
   // ─── EXPORT ───────────────────────────────────────────────────────────────
 
-  const exportFlyer = useCallback((format: "png" | "jpg" = "png") => {
+  // Logica pura de export: hace toDataURL y dispara la descarga. NO checkea
+  // sesion (eso lo hace el wrapper publico `exportFlyer`).
+  const doExport = useCallback((format: "png" | "jpg" = "png") => {
     const canvas = fabricRef.current;
     if (!canvas) return;
     const currentZoom = canvas.getZoom();
@@ -1158,9 +1467,24 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
     link.download = `artegenia-flyer.${format}`; link.href = dataUrl; link.click();
   }, [canvasSize]);
 
+  // Wrapper publico: pide sesion antes de descargar. Si no hay, abre AuthModal
+  // y reintenta tras login. Si hay sesion, descarga directo.
+  const exportFlyer = useCallback((format: "png" | "jpg" = "png") => {
+    requireAuth(
+      () => doExport(format),
+      {
+        title: "Descarga tu diseño",
+        subtitle: "Inicia sesión para descargar. Es gratis.",
+      },
+    );
+  }, [requireAuth, doExport]);
+
   // ─── SAVE TO SUPABASE ─────────────────────────────────────────────────────
 
-  const handleSave = useCallback(async () => {
+  // Logica pura de guardado en Supabase. NO checkea sesion (eso lo hace
+  // el wrapper publico `handleSave` via requireAuth + useProjects ya valida
+  // de nuevo en el server).
+  const doSave = useCallback(async () => {
     const canvas = fabricRef.current;
     if (!canvas) return;
     setSavingProject(true);
@@ -1215,6 +1539,18 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
       setSavingProject(false);
     }
   }, [currentProjectId, docTitle, templateId, template, data, canvasSize, saveProject]);
+
+  // Wrapper publico: pide sesion antes de guardar. Si no hay, abre AuthModal
+  // y reintenta tras login. Si hay sesion, guarda directo.
+  const handleSave = useCallback(() => {
+    requireAuth(
+      () => { void doSave(); },
+      {
+        title: "Guarda tu diseño",
+        subtitle: "Inicia sesión para guardar tu trabajo. Es gratis.",
+      },
+    );
+  }, [requireAuth, doSave]);
 
   // Sync ref so the Cmd+S keyboard handler always calls the latest version
   useEffect(() => { handleSaveRef.current = handleSave; }, [handleSave]);
@@ -1416,7 +1752,7 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
   const TOOLS: Array<{ id: LeftTool; label: string; icon: React.ReactNode; comingSoon?: boolean }> = [
     { id: "design",    label: "Diseño",    icon: <LayoutGrid className="w-5 h-5" strokeWidth={1.5} /> },
     { id: "text",      label: "Texto",     icon: <Type className="w-5 h-5" strokeWidth={1.5} /> },
-    { id: "elements",  label: "Elementos", icon: <SparklesIcon className="w-5 h-5" strokeWidth={1.5} />, comingSoon: true },
+    { id: "elements",  label: "Elementos", icon: <SparklesIcon className="w-5 h-5" strokeWidth={1.5} /> },
     { id: "photos",    label: "Fotos",     icon: <ImageIcon className="w-5 h-5" strokeWidth={1.5} /> },
     { id: "background",label: "Fondo",     icon: <Mountain className="w-5 h-5" strokeWidth={1.5} /> },
     { id: "layers",    label: "Capas",     icon: <LayersIcon className="w-5 h-5" strokeWidth={1.5} /> },
@@ -1734,6 +2070,44 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
           </div>
         )}
 
+        {/* ELEMENTS PANEL - formas y shapes ─────────────────────────────── */}
+        {activeTool === "elements" && !isMobile && (
+          <div className="w-52 ag-glass border-r border-white/[0.06] flex flex-col shrink-0">
+            <div className="px-3 py-2.5 border-b border-white/[0.06]">
+              <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-widest">Elementos</p>
+            </div>
+            <div className="flex-1 overflow-y-auto p-2">
+              <p className="text-[9.5px] uppercase tracking-widest text-gray-600 font-semibold mt-1 mb-1.5 px-1">Formas</p>
+              <div className="grid grid-cols-2 gap-1.5">
+                {[
+                  { onClick: addRect,     icon: <Square size={16} strokeWidth={2}/>,         label: "Rect" },
+                  { onClick: addCircle,   icon: <CircleIconLuc size={16} strokeWidth={2}/>,  label: "Círculo" },
+                  { onClick: addTriangle, icon: <TriangleIcon size={16} strokeWidth={2}/>,   label: "Triángulo" },
+                  { onClick: addStar,     icon: <Star size={16} strokeWidth={2}/>,           label: "Estrella" },
+                  { onClick: addHexagon,  icon: <Hexagon size={16} strokeWidth={2}/>,        label: "Hexágono" },
+                  { onClick: addArrow,    icon: <ArrowRightIcon size={16} strokeWidth={2}/>, label: "Flecha" },
+                  { onClick: addLine,     icon: <Minus size={16} strokeWidth={2.5}/>,        label: "Línea" },
+                  { onClick: addFrame,    icon: <SquareDashed size={16} strokeWidth={2}/>,   label: "Marco" },
+                ].map(b => (
+                  <button
+                    key={b.label}
+                    onClick={b.onClick}
+                    className="flex flex-col items-center gap-1 py-2.5 px-1.5 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.06] hover:border-purple-500/30 text-gray-300 hover:text-white transition-all"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-purple-500/15 border border-purple-500/30 flex items-center justify-center text-purple-300">
+                      {b.icon}
+                    </div>
+                    <span className="text-[10px] font-medium leading-tight">{b.label}</span>
+                  </button>
+                ))}
+              </div>
+              <p className="text-[10px] text-gray-600 mt-3 px-1 leading-snug">
+                Toca una forma para añadirla al diseño. Despues puedes mover, escalar y rotar.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* LAYERS PANEL - oculto en mobile (se accede por bottom sheet) */}
         {activeTool === "layers" && !isMobile && (
           <div className="w-52 ag-glass border-r border-white/[0.06] flex flex-col shrink-0">
@@ -1932,6 +2306,156 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
                   </div>
                 </CollapsibleSection>
               )}
+
+              {/* ─── SECCIÓN HALO / GLOW (solo imagen) ───────────────────── */}
+              {isImage && (() => {
+                // Leer el shadow actual del objeto activo para reflejar en sliders/picker.
+                const obj = fabricRef.current?.getActiveObject();
+                const shadow = (obj?.shadow ?? null) as FabricShadow | null;
+                const hasShadow = !!shadow && typeof shadow === "object";
+                const currentColor = hasShadow ? (shadow.color ?? "rgba(255,255,255,0.85)") : "rgba(255,255,255,0.85)";
+                const currentBlur = hasShadow ? (shadow.blur ?? 40) : 40;
+                // Detectar preset activo (light/dark/none) para resaltar el boton
+                const isLight = hasShadow && currentColor.includes("255,255,255");
+                const isDark  = hasShadow && currentColor.includes("0,0,0") && !currentColor.includes("255");
+                const isNone  = !hasShadow;
+                // Para el color picker (input type="color"): convertir rgba a hex aproximado.
+                // Si es rgba lo dejamos en su hex base (los rgba con alpha 0.85 son color base).
+                const hexFromColor = (() => {
+                  const m = currentColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+                  if (!m) return currentColor.startsWith("#") ? currentColor : "#ffffff";
+                  const r = Number(m[1]).toString(16).padStart(2, "0");
+                  const g = Number(m[2]).toString(16).padStart(2, "0");
+                  const b = Number(m[3]).toString(16).padStart(2, "0");
+                  return `#${r}${g}${b}`;
+                })();
+                return (
+                  <CollapsibleSection
+                    title="Halo"
+                    sectionKey="halo"
+                    openSections={openSections}
+                    setOpenSections={setOpenSections}>
+                    {/* 3 presets rapidos */}
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setHaloPreset("light")}
+                        className={`flex-1 py-1.5 rounded-lg text-xs transition-all ${isLight ? "bg-purple-600/20 text-purple-300 border border-purple-500/40" : "bg-white/5 text-gray-400 hover:text-white"}`}>
+                        Claro
+                      </button>
+                      <button
+                        onClick={() => setHaloPreset("dark")}
+                        className={`flex-1 py-1.5 rounded-lg text-xs transition-all ${isDark ? "bg-purple-600/20 text-purple-300 border border-purple-500/40" : "bg-white/5 text-gray-400 hover:text-white"}`}>
+                        Oscuro
+                      </button>
+                      <button
+                        onClick={() => setHaloPreset("none")}
+                        className={`flex-1 py-1.5 rounded-lg text-xs transition-all ${isNone ? "bg-purple-600/20 text-purple-300 border border-purple-500/40" : "bg-white/5 text-gray-400 hover:text-white"}`}>
+                        Sin halo
+                      </button>
+                    </div>
+                    {/* Toggle avanzado */}
+                    <button
+                      onClick={() => setHaloAdvancedOpen(v => !v)}
+                      className="mt-3 w-full text-[10.5px] text-gray-500 hover:text-white text-left flex items-center gap-1.5">
+                      <ChevronDown size={11} className={`transition-transform ${haloAdvancedOpen ? "rotate-180" : ""}`} />
+                      Avanzado
+                    </button>
+                    {haloAdvancedOpen && (
+                      <div className="mt-2 space-y-2.5 pl-2.5 border-l border-white/[0.06]">
+                        <div>
+                          <label className="text-[10px] text-gray-500 mb-1 block">Color del halo</label>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="color"
+                              value={hexFromColor}
+                              onChange={e => setHaloColor(e.target.value)}
+                              className="h-7 w-10 rounded cursor-pointer bg-transparent border border-white/10"
+                            />
+                            <span className="text-[10.5px] text-gray-500 font-mono">{hexFromColor}</span>
+                          </div>
+                        </div>
+                        <div>
+                          <label className="text-[10px] text-gray-500 mb-1 block">Difuminado · {Math.round(currentBlur)}px</label>
+                          <input
+                            type="range"
+                            min={0}
+                            max={120}
+                            step={1}
+                            value={currentBlur}
+                            onChange={e => setHaloBlur(Number(e.target.value))}
+                            className="w-full accent-purple-500"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </CollapsibleSection>
+                );
+              })()}
+
+              {/* ─── SECCIÓN FOTO DENTRO DE FORMA (solo si es shape) ─── */}
+              {isImage && (() => {
+                const obj = fabricRef.current?.getActiveObject();
+                const isShape = !!obj && SHAPE_TYPES.includes(obj.type ?? "");
+                if (!isShape) return null;
+                return (
+                  <CollapsibleSection
+                    title="Foto dentro"
+                    sectionKey="image-in-shape"
+                    openSections={openSections}
+                    setOpenSections={setOpenSections}>
+                    <button
+                      onClick={() => { void addImageInsideShape(); }}
+                      className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-gradient-to-br from-purple-600/20 to-fuchsia-600/15 hover:from-purple-600/30 hover:to-fuchsia-600/25 border border-purple-500/35 text-purple-200 text-xs font-semibold transition-all">
+                      <ImageIcon size={14} strokeWidth={2}/>
+                      Añadir foto dentro de la forma
+                    </button>
+                    <p className="text-[10px] text-gray-600 mt-2 leading-snug">
+                      La foto reemplaza la forma manteniendo su silueta como mascara.
+                      Despues podras seguir moviendo, escalando y rotando.
+                    </p>
+                  </CollapsibleSection>
+                );
+              })()}
+
+              {/* ─── SECCIÓN RECORTAR A FORMA (solo imagen) ─────────────── */}
+              {isImage && (() => {
+                const obj = fabricRef.current?.getActiveObject();
+                const clip = (obj as FabricObject & { clipPath?: { type?: string; rx?: number } })?.clipPath;
+                // Detectar tipo actual de mask para resaltar
+                const isCircle  = !!clip && clip.type === "circle";
+                const isRounded = !!clip && clip.type === "rect" && (clip.rx ?? 0) > 0;
+                const isSquare  = !!clip && clip.type === "rect" && (clip.rx ?? 0) === 0;
+                const isNone    = !clip;
+                return (
+                  <CollapsibleSection
+                    title="Recortar a forma"
+                    sectionKey="crop"
+                    openSections={openSections}
+                    setOpenSections={setOpenSections}>
+                    <div className="grid grid-cols-4 gap-1.5">
+                      {[
+                        { shape: "circle"  as const, icon: <CircleIconLuc size={16} strokeWidth={2}/>, label: "Círculo", active: isCircle },
+                        { shape: "rounded" as const, icon: <SquareDashed size={16} strokeWidth={2}/>,  label: "Rounded", active: isRounded },
+                        { shape: "square"  as const, icon: <Square size={16} strokeWidth={2}/>,        label: "Cuadrado", active: isSquare },
+                        { shape: "none"    as const, icon: <XIconLuc size={16} strokeWidth={2}/>,      label: "Quitar", active: isNone },
+                      ].map(b => (
+                        <button
+                          key={b.shape}
+                          onClick={() => cropImageToShape(b.shape)}
+                          className={`flex flex-col items-center gap-1 py-2 rounded-lg border transition-all ${b.active ? "bg-amber-500/20 text-amber-200 border-amber-500/45" : "bg-white/[0.04] text-gray-400 border-white/[0.06] hover:text-white"}`}
+                        >
+                          <div className="text-amber-300">{b.icon}</div>
+                          <span className="text-[10px] font-medium">{b.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                    <p className="text-[10px] text-gray-600 mt-2 leading-snug">
+                      <Scissors size={10} className="inline mr-1 -mt-0.5"/>
+                      Recorta la foto a una forma sin perder la imagen original.
+                    </p>
+                  </CollapsibleSection>
+                );
+              })()}
 
               {/* ─── SECCIÓN POSICIÓN Y TAMAÑO ─────────────────────────── */}
               {!isBackground && (
@@ -2380,6 +2904,18 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
             void addArtistsFromLibrary(entries);
           }}
           onClose={() => setArtistsModalOpen(false)}
+        />
+      )}
+
+      {/* AuthModal: se abre cuando el usuario intenta descargar/guardar sin
+          sesion. Tras login exitoso ejecuta la accion pendiente (onSuccess) y
+          se cierra. Si cierra manualmente sin login, no se reintenta. */}
+      {authModalConfig && (
+        <AuthModal
+          title={authModalConfig.title}
+          subtitle={authModalConfig.subtitle}
+          onAuthSuccess={authModalConfig.onSuccess}
+          onClose={() => setAuthModalConfig(null)}
         />
       )}
     </div>

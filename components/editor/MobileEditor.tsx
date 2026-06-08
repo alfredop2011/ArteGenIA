@@ -9,15 +9,24 @@ import {
   Rect,
   Circle,
   FabricImage,
+  Shadow,
+  Line,
+  Triangle,
+  Polygon,
+  Path,
 } from "fabric";
 import {
   ArrowLeft, Download, Layers, Type, Image as ImageIcon, Palette, MoreHorizontal,
   Trash2, Bold, Italic, AlignLeft, AlignCenter, AlignRight, Check, X as XIcon,
   Plus, Copy, Square, Circle as CircleIcon, MoveUp, MoveDown,
   ChevronUp, ChevronDown, GripVertical,
+  Triangle as TriangleIcon, Star, Hexagon, Minus, ArrowRight as ArrowRightIcon,
+  SquareDashed, Scissors,
 } from "lucide-react";
 import { templates, getVariant, type Template } from "@/data/templates";
 import type { FormatId } from "@/data/formats";
+import { useAuth } from "@/hooks/useAuth";
+import AuthModal from "@/components/auth/AuthModal";
 import { applyTemplateLayers } from "@/lib/fabricApplyTemplateLayers";
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -70,6 +79,15 @@ export default function MobileEditor({ templateId, formatId }: Props) {
   const [selectedLayer, setSelectedLayer] = useState<LayerItem | null>(null);
   const [activeSheet, setActiveSheet] = useState<ToolId | null>(null);
   const [loaded, setLoaded] = useState(false);
+
+  // Auth: si el usuario intenta descargar sin sesion abrimos AuthModal y
+  // reintentamos la descarga al hacer login exitoso.
+  const { user: authUser } = useAuth();
+  const [authModalConfig, setAuthModalConfig] = useState<{ title: string; subtitle: string; onSuccess: () => void } | null>(null);
+  const requireAuth = useCallback((action: () => void, opts: { title: string; subtitle: string }) => {
+    if (authUser) action();
+    else setAuthModalConfig({ ...opts, onSuccess: action });
+  }, [authUser]);
 
   // SESION 2: estado para edicion de texto
   // textEditFullscreen: cuando true, modal pantalla completa con input + teclado
@@ -505,7 +523,8 @@ export default function MobileEditor({ templateId, formatId }: Props) {
   }, [selectedLayer, tempText, updateProp]);
 
   // ─── 4. Export PNG ─────────────────────────────────────────────────────
-  const handleExport = useCallback(() => {
+  // Logica pura del export. NO checkea sesion (lo hace el wrapper handleExport).
+  const doExport = useCallback(() => {
     const fc = fabricRef.current;
     if (!fc) return;
     fc.discardActiveObject();
@@ -536,6 +555,18 @@ export default function MobileEditor({ templateId, formatId }: Props) {
     a.click();
     setActiveSheet(null);
   }, [template, canvasSize.w, canvasSize.h]);
+
+  // Wrapper publico: pide sesion antes de descargar. Si no hay, abre el
+  // AuthModal y reintenta el export tras login exitoso.
+  const handleExport = useCallback(() => {
+    requireAuth(
+      doExport,
+      {
+        title: "Descarga tu diseño",
+        subtitle: "Inicia sesión para descargar. Es gratis.",
+      },
+    );
+  }, [requireAuth, doExport]);
 
   // ─── 5. Acciones rapidas ───────────────────────────────────────────────
   const handleDeleteSelected = useCallback(() => {
@@ -630,6 +661,258 @@ export default function MobileEditor({ templateId, formatId }: Props) {
     setActiveSheet(null);
   }, [canvasSize.w, canvasSize.h, registerLayer]);
 
+  // ─── Formas extras (linea, triangulo, estrella, hexagono, flecha, marco) ─
+  // Helper centro: las nuevas formas se anaden centradas en el canvas.
+  const centerLeft = canvasSize.w / 2;
+  const centerTop = canvasSize.h / 2;
+
+  /** Linea horizontal central. Usuario puede rotarla / arrastrar extremos. */
+  const handleAddLine = useCallback(() => {
+    const fc = fabricRef.current;
+    if (!fc) return;
+    const line = new Line([centerLeft - 200, centerTop, centerLeft + 200, centerTop], {
+      stroke: "#a855f7",
+      strokeWidth: 8,
+      strokeLineCap: "round",
+    });
+    fc.add(line);
+    const item = registerLayer(line, "Línea", "shape");
+    fc.setActiveObject(line);
+    fc.requestRenderAll();
+    setSelectedLayer(item);
+    setActiveSheet(null);
+  }, [centerLeft, centerTop, registerLayer]);
+
+  /** Triangulo equilatero. */
+  const handleAddTriangle = useCallback(() => {
+    const fc = fabricRef.current;
+    if (!fc) return;
+    const t = new Triangle({
+      left: centerLeft - 150,
+      top: centerTop - 130,
+      width: 300,
+      height: 260,
+      fill: "#fb923c",
+      opacity: 0.85,
+    });
+    fc.add(t);
+    const item = registerLayer(t, "Triángulo", "shape");
+    fc.setActiveObject(t);
+    fc.requestRenderAll();
+    setSelectedLayer(item);
+    setActiveSheet(null);
+  }, [centerLeft, centerTop, registerLayer]);
+
+  /** Estrella de 5 puntas como Polygon. Puntos calculados con trig. */
+  const handleAddStar = useCallback(() => {
+    const fc = fabricRef.current;
+    if (!fc) return;
+    const outerR = 150;
+    const innerR = 65;
+    const points: { x: number; y: number }[] = [];
+    // 10 puntos alternando outer/inner. Empieza arriba (-PI/2).
+    for (let i = 0; i < 10; i++) {
+      const angle = -Math.PI / 2 + (i * Math.PI) / 5;
+      const r = i % 2 === 0 ? outerR : innerR;
+      points.push({ x: r * Math.cos(angle), y: r * Math.sin(angle) });
+    }
+    const star = new Polygon(points, {
+      left: centerLeft - outerR,
+      top: centerTop - outerR,
+      fill: "#facc15",
+      opacity: 0.9,
+    });
+    fc.add(star);
+    const item = registerLayer(star, "Estrella", "shape");
+    fc.setActiveObject(star);
+    fc.requestRenderAll();
+    setSelectedLayer(item);
+    setActiveSheet(null);
+  }, [centerLeft, centerTop, registerLayer]);
+
+  /** Hexagono regular como Polygon. */
+  const handleAddHexagon = useCallback(() => {
+    const fc = fabricRef.current;
+    if (!fc) return;
+    const r = 150;
+    const points: { x: number; y: number }[] = [];
+    for (let i = 0; i < 6; i++) {
+      const angle = -Math.PI / 2 + (i * Math.PI) / 3;
+      points.push({ x: r * Math.cos(angle), y: r * Math.sin(angle) });
+    }
+    const hex = new Polygon(points, {
+      left: centerLeft - r,
+      top: centerTop - r,
+      fill: "#22d3ee",
+      opacity: 0.85,
+    });
+    fc.add(hex);
+    const item = registerLayer(hex, "Hexágono", "shape");
+    fc.setActiveObject(hex);
+    fc.requestRenderAll();
+    setSelectedLayer(item);
+    setActiveSheet(null);
+  }, [centerLeft, centerTop, registerLayer]);
+
+  /** Flecha apuntando a la derecha (Path SVG). */
+  const handleAddArrow = useCallback(() => {
+    const fc = fabricRef.current;
+    if (!fc) return;
+    // Path SVG de flecha: trazo simple con punta. Tamano base ~400x80.
+    const arrowPath = "M 0 30 L 320 30 L 320 0 L 400 50 L 320 100 L 320 70 L 0 70 Z";
+    const arrow = new Path(arrowPath, {
+      left: centerLeft - 200,
+      top: centerTop - 50,
+      fill: "#a855f7",
+      opacity: 0.9,
+    });
+    fc.add(arrow);
+    const item = registerLayer(arrow, "Flecha", "shape");
+    fc.setActiveObject(arrow);
+    fc.requestRenderAll();
+    setSelectedLayer(item);
+    setActiveSheet(null);
+  }, [centerLeft, centerTop, registerLayer]);
+
+  /** Marco/borde: rectangulo sin fill, solo stroke. Util para destacar zonas. */
+  const handleAddFrame = useCallback(() => {
+    const fc = fabricRef.current;
+    if (!fc) return;
+    const f = new Rect({
+      left: centerLeft - 200,
+      top: centerTop - 200,
+      width: 400,
+      height: 400,
+      fill: "transparent",
+      stroke: "#ffffff",
+      strokeWidth: 6,
+    });
+    fc.add(f);
+    const item = registerLayer(f, "Marco", "shape");
+    fc.setActiveObject(f);
+    fc.requestRenderAll();
+    setSelectedLayer(item);
+    setActiveSheet(null);
+  }, [centerLeft, centerTop, registerLayer]);
+
+  // ─── 5g. Mask: recortar foto a forma (circulo o rect-rounded) ────────────
+  /** Aplica un clipPath a la imagen seleccionada para recortarla a una forma. */
+  const handleCropToShape = useCallback((shape: "circle" | "rounded" | "square" | "none") => {
+    const fc = fabricRef.current;
+    const obj = fc?.getActiveObject();
+    if (!obj || obj.type !== "image") return;
+    // Obtener dimensiones reales del objeto (no del cropPath)
+    const w = (obj.width ?? 400) * (obj.scaleX ?? 1);
+    const h = (obj.height ?? 400) * (obj.scaleY ?? 1);
+    // En Fabric el clipPath se aplica en coords locales del objeto (sin escala).
+    // Usamos width/height "originales" del image para que el clip se escale junto.
+    const localW = obj.width ?? 400;
+    const localH = obj.height ?? 400;
+    const minDim = Math.min(localW, localH);
+    if (shape === "none") {
+      (obj as FabricObject & { clipPath?: unknown }).clipPath = undefined;
+    } else if (shape === "circle") {
+      const clip = new Circle({
+        radius: minDim / 2,
+        originX: "center",
+        originY: "center",
+        left: 0,
+        top: 0,
+      });
+      (obj as FabricObject & { clipPath?: unknown }).clipPath = clip;
+    } else if (shape === "rounded") {
+      const clip = new Rect({
+        width: localW,
+        height: localH,
+        rx: minDim * 0.15,
+        ry: minDim * 0.15,
+        originX: "center",
+        originY: "center",
+        left: 0,
+        top: 0,
+      });
+      (obj as FabricObject & { clipPath?: unknown }).clipPath = clip;
+    } else if (shape === "square") {
+      const side = minDim;
+      const clip = new Rect({
+        width: side,
+        height: side,
+        originX: "center",
+        originY: "center",
+        left: 0,
+        top: 0,
+      });
+      (obj as FabricObject & { clipPath?: unknown }).clipPath = clip;
+    }
+    obj.dirty = true;
+    fc?.requestRenderAll();
+    // touchear el ancho/alto visible no cambia
+    void w; void h;
+  }, []);
+
+  // ─── 5h. Foto DENTRO de forma activa ─────────────────────────────────────
+  /** Reemplaza el shape activo por una imagen recortada con la silueta del shape. */
+  const SHAPE_TYPES_MOBILE = ["rect", "circle", "triangle", "polygon", "path", "line"];
+  const handleAddImageInsideShape = useCallback(async () => {
+    const fc = fabricRef.current;
+    const obj = fc?.getActiveObject();
+    if (!obj || !fc) return;
+    if (!SHAPE_TYPES_MOBILE.includes(obj.type ?? "")) return;
+
+    // Pedir foto al usuario (file picker nativo: galeria/camara en mobile)
+    const file = await new Promise<File | null>((resolve) => {
+      const input = document.createElement("input");
+      input.type = "file";
+      input.accept = "image/*";
+      input.onchange = (e) => resolve((e.target as HTMLInputElement).files?.[0] ?? null);
+      input.click();
+    });
+    if (!file) return;
+
+    const dataUrl = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = () => reject(new Error("Error leyendo el archivo"));
+      reader.readAsDataURL(file);
+    });
+
+    const img = await FabricImage.fromURL(dataUrl, { crossOrigin: "anonymous" });
+    const bounds = obj.getBoundingRect();
+    const imgW = img.width ?? 1;
+    const imgH = img.height ?? 1;
+    const fillScale = Math.max(bounds.width / imgW, bounds.height / imgH);
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const clipPath = await (obj as any).clone() as FabricObject;
+    clipPath.set({ left: 0, top: 0, originX: "center", originY: "center", angle: 0 });
+
+    const cx = bounds.left + bounds.width / 2;
+    const cy = bounds.top + bounds.height / 2;
+    img.set({
+      left: cx,
+      top: cy,
+      originX: "center",
+      originY: "center",
+      angle: obj.angle ?? 0,
+      scaleX: fillScale,
+      scaleY: fillScale,
+    });
+    (img as FabricObject & { clipPath?: unknown }).clipPath = clipPath;
+
+    // Encontrar el item del shape en layers para reemplazarlo
+    const oldLayer = layers.find(l => l.obj === obj) ?? null;
+    fc.remove(obj);
+    fc.add(img);
+    const newItem = registerLayer(img, "Foto en forma", "image");
+    fc.setActiveObject(img);
+    fc.requestRenderAll();
+    if (oldLayer) {
+      setLayers(prev => prev.filter(l => l.id !== oldLayer.id));
+    }
+    setSelectedLayer(newItem);
+    setActiveSheet(null);
+  }, [layers, registerLayer]);
+
   // ─── 5f. + Foto (galeria iPhone) ────────────────────────────────────────
   // Usa <input type="file" accept="image/*"> que abre nativo el picker.
   // En iPhone Safari ofrece "Tomar foto" + "Elegir de galeria".
@@ -663,6 +946,15 @@ export default function MobileEditor({ templateId, formatId }: Props) {
           top: canvasSize.h / 2 - (imgH * s) / 2,
           scaleX: s,
           scaleY: s,
+          // Halo claro auto. Mismo patron que las plantillas para artistas.
+          // El usuario puede quitarlo o cambiar el color desde el panel de
+          // propiedades de imagen (en desktop). En mobile aun no hay panel.
+          shadow: new Shadow({
+            color: "rgba(255,255,255,0.85)",
+            blur: 40,
+            offsetX: 0,
+            offsetY: 0,
+          }),
         });
         fc.add(img);
         const item = registerLayer(img, "Foto subida", "image");
@@ -1224,32 +1516,89 @@ export default function MobileEditor({ templateId, formatId }: Props) {
                     </div>
                     <Plus size={16} strokeWidth={2.5} className="text-gray-500"/>
                   </button>
-                  <button
-                    onClick={handleAddRect}
-                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-white/[0.04] active:bg-white/[0.08] border border-white/10 text-white text-sm"
-                  >
-                    <div className="w-9 h-9 rounded-lg bg-purple-500/15 border border-purple-500/30 flex items-center justify-center text-purple-300">
-                      <Square size={16} strokeWidth={2}/>
-                    </div>
-                    <div className="flex-1 text-left">
-                      <p className="font-semibold">Rectángulo</p>
-                      <p className="text-[11px] text-gray-500">Forma rectangular</p>
-                    </div>
-                    <Plus size={16} strokeWidth={2.5} className="text-gray-500"/>
-                  </button>
-                  <button
-                    onClick={handleAddCircle}
-                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-white/[0.04] active:bg-white/[0.08] border border-white/10 text-white text-sm"
-                  >
-                    <div className="w-9 h-9 rounded-lg bg-purple-500/15 border border-purple-500/30 flex items-center justify-center text-purple-300">
-                      <CircleIcon size={16} strokeWidth={2}/>
-                    </div>
-                    <div className="flex-1 text-left">
-                      <p className="font-semibold">Círculo</p>
-                      <p className="text-[11px] text-gray-500">Forma circular</p>
-                    </div>
-                    <Plus size={16} strokeWidth={2.5} className="text-gray-500"/>
-                  </button>
+
+                  {/* Grid 3-cols con las 8 formas. Compacto para mobile. */}
+                  <p className="text-[10px] uppercase tracking-widest text-gray-500 font-semibold mt-2 mb-1.5 px-1">
+                    Formas
+                  </p>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { onClick: handleAddRect,     icon: <Square size={18} strokeWidth={2}/>,        label: "Rect" },
+                      { onClick: handleAddCircle,   icon: <CircleIcon size={18} strokeWidth={2}/>,    label: "Círculo" },
+                      { onClick: handleAddTriangle, icon: <TriangleIcon size={18} strokeWidth={2}/>,  label: "Triángulo" },
+                      { onClick: handleAddStar,     icon: <Star size={18} strokeWidth={2}/>,          label: "Estrella" },
+                      { onClick: handleAddHexagon,  icon: <Hexagon size={18} strokeWidth={2}/>,       label: "Hexágono" },
+                      { onClick: handleAddArrow,    icon: <ArrowRightIcon size={18} strokeWidth={2}/>,label: "Flecha" },
+                      { onClick: handleAddLine,     icon: <Minus size={18} strokeWidth={2.5}/>,       label: "Línea" },
+                      { onClick: handleAddFrame,    icon: <SquareDashed size={18} strokeWidth={2}/>,  label: "Marco" },
+                    ].map(b => (
+                      <button
+                        key={b.label}
+                        onClick={b.onClick}
+                        className="flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl bg-white/[0.04] active:bg-white/[0.08] border border-white/10 text-white"
+                      >
+                        <div className="w-9 h-9 rounded-lg bg-purple-500/15 border border-purple-500/30 flex items-center justify-center text-purple-300">
+                          {b.icon}
+                        </div>
+                        <span className="text-[11px] font-medium">{b.label}</span>
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Foto DENTRO de forma: solo si hay shape seleccionado.
+                      Reemplaza la forma por una imagen que usa la silueta como mascara. */}
+                  {(() => {
+                    const activeObj = fabricRef.current?.getActiveObject();
+                    const isShapeActive = !!activeObj && SHAPE_TYPES_MOBILE.includes(activeObj.type ?? "");
+                    if (!isShapeActive) return null;
+                    return (
+                      <>
+                        <p className="text-[10px] uppercase tracking-widest text-gray-500 font-semibold mt-5 mb-1.5 px-1">
+                          <ImageIcon size={11} className="inline mr-1 -mt-0.5"/>
+                          Foto dentro de la forma
+                        </p>
+                        <button
+                          onClick={() => { void handleAddImageInsideShape(); }}
+                          className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-gradient-to-br from-purple-600/20 to-fuchsia-600/15 active:bg-purple-600/30 border border-purple-500/35 text-purple-200 text-sm font-semibold"
+                        >
+                          <Plus size={15} strokeWidth={2.5}/>
+                          Añadir foto dentro
+                        </button>
+                        <p className="text-[10px] text-gray-600 mt-1.5 leading-snug px-1">
+                          La foto reemplaza la forma manteniendo su silueta como mascara.
+                        </p>
+                      </>
+                    );
+                  })()}
+
+                  {/* Mask: recortar foto a forma. Solo aparece si hay IMAGEN seleccionada. */}
+                  {selectedLayer?.type === "image" && (
+                    <>
+                      <p className="text-[10px] uppercase tracking-widest text-gray-500 font-semibold mt-5 mb-1.5 px-1">
+                        <Scissors size={11} className="inline mr-1 -mt-0.5"/>
+                        Recortar foto a forma
+                      </p>
+                      <div className="grid grid-cols-4 gap-2">
+                        {[
+                          { shape: "circle"  as const, icon: <CircleIcon size={18} strokeWidth={2}/>,    label: "Círculo" },
+                          { shape: "rounded" as const, icon: <SquareDashed size={18} strokeWidth={2}/>,  label: "Rounded" },
+                          { shape: "square"  as const, icon: <Square size={18} strokeWidth={2}/>,        label: "Cuadrado" },
+                          { shape: "none"    as const, icon: <XIcon size={18} strokeWidth={2}/>,         label: "Quitar" },
+                        ].map(b => (
+                          <button
+                            key={b.shape}
+                            onClick={() => handleCropToShape(b.shape)}
+                            className="flex flex-col items-center gap-1 py-2.5 px-2 rounded-xl bg-white/[0.04] active:bg-white/[0.08] border border-white/10 text-white"
+                          >
+                            <div className="w-8 h-8 rounded-lg bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-300">
+                              {b.icon}
+                            </div>
+                            <span className="text-[10px] font-medium">{b.label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  )}
 
                   {/* Acciones contextuales sobre capa seleccionada */}
                   {selectedLayer && (
@@ -1354,6 +1703,17 @@ export default function MobileEditor({ templateId, formatId }: Props) {
             />
           </div>
         </div>
+      )}
+
+      {/* AuthModal: aparece si intentas descargar sin sesion. Tras login OK
+          reintenta el export automaticamente. */}
+      {authModalConfig && (
+        <AuthModal
+          title={authModalConfig.title}
+          subtitle={authModalConfig.subtitle}
+          onAuthSuccess={authModalConfig.onSuccess}
+          onClose={() => setAuthModalConfig(null)}
+        />
       )}
     </div>
   );

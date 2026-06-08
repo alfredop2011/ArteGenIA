@@ -87,6 +87,11 @@ export async function applyTemplateLayers(
                 strokeWidth: (layer.strokeWidth ?? 0) * scale,
                 splitByGrapheme: false,
                 editable: true,
+                // selectable/evented explicitos: Fabric tiene default true, pero
+                // forzarlo evita roturas si alguna actualizacion de la libreria
+                // cambia el comportamiento por defecto.
+                selectable: true,
+                evented: true,
             }));
         }
 
@@ -121,6 +126,10 @@ export async function applyTemplateLayers(
                         angle: layer.angle ?? 0,
                         originX: layer.originX ?? "left",
                         originY: layer.originY ?? "top",
+                        // selectable/evented explicitos por la misma razon que en text:
+                        // forzar defaults en caso de cambios futuros en Fabric.
+                        selectable: true,
+                        evented: true,
                     });
                     if (layer.cropWidth && layer.cropHeight) {
                         img.set({

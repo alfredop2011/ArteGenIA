@@ -2,9 +2,18 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 
-type Props = { onClose: () => void };
+type Props = {
+    onClose: () => void;
+    /** Override del titulo por defecto (ej. "Descarga tu diseño") */
+    title?: string;
+    /** Override del subtitulo por defecto (ej. "Inicia sesion para descargar tu diseño. Es gratis.") */
+    subtitle?: string;
+    /** Callback que se dispara tras login exitoso, ANTES de cerrar el modal.
+     *  Util para reintentar una accion (descarga, guardado) que disparo el modal. */
+    onAuthSuccess?: () => void;
+};
 
-export default function AuthModal({ onClose }: Props) {
+export default function AuthModal({ onClose, title, subtitle, onAuthSuccess }: Props) {
     const [mode, setMode] = useState<"login" | "register">("login");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -21,6 +30,8 @@ export default function AuthModal({ onClose }: Props) {
             if (mode === "login") {
                 const { error } = await signInWithEmail(email, password);
                 if (error) throw error;
+                // Login OK: ejecutar callback (descarga, guardado, etc.) y cerrar
+                onAuthSuccess?.();
                 onClose();
             } else {
                 const { error } = await signUpWithEmail(email, password, name);
@@ -43,10 +54,10 @@ export default function AuthModal({ onClose }: Props) {
                 <div className="flex items-center justify-between mb-6">
                     <div>
                         <h2 className="text-2xl font-black text-white">
-                            {mode === "login" ? "Iniciar sesión" : "Crear cuenta"}
+                            {title ?? (mode === "login" ? "Iniciar sesión" : "Crear cuenta")}
                         </h2>
                         <p className="text-gray-400 text-sm mt-1">
-                            {mode === "login" ? "Bienvenido de vuelta" : "Empieza gratis con 20 créditos"}
+                            {subtitle ?? (mode === "login" ? "Bienvenido de vuelta" : "Empieza gratis con 20 créditos")}
                         </p>
                     </div>
                     <button onClick={onClose} className="text-gray-500 hover:text-white text-2xl">×</button>
