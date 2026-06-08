@@ -5,6 +5,7 @@ import {
   Users, Tag, Search, Plus, MoreVertical, Trash2, Pencil, RotateCw,
   X, Copy, Check, Loader2, MessageCircle, ShieldCheck, ArrowUpDown,
 } from "lucide-react";
+import { useLocale } from "@/hooks/useLocale";
 
 // ─── Types ───────────────────────────────────────────────────────────────
 
@@ -24,6 +25,7 @@ type SortMode = "recent" | "alpha";
 // ─── Page ────────────────────────────────────────────────────────────────
 
 export default function CollaboratorsPage() {
+  const { t } = useLocale();
   const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -41,11 +43,11 @@ export default function CollaboratorsPage() {
     try {
       const res = await fetch("/api/collaborators");
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Error al cargar");
+      if (!res.ok) throw new Error(data.error || t("collab.error.load"));
       setCollaborators(data.collaborators);
       setError(null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Error desconocido");
+      setError(e instanceof Error ? e.message : t("collab.error.unknown"));
     } finally {
       setLoading(false);
     }
@@ -83,8 +85,8 @@ export default function CollaboratorsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-5 sm:mb-8 gap-3">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-black text-white mb-1">Colaboradores</h1>
-          <p className="text-xs sm:text-sm text-gray-400">Personas y marcas que aparecen en tus flyers</p>
+          <h1 className="text-2xl sm:text-3xl font-black text-white mb-1">{t("collab.title")}</h1>
+          <p className="text-xs sm:text-sm text-gray-400">{t("collab.subtitle")}</p>
         </div>
         <button
           onClick={() => setInviteModalOpen(true)}
@@ -95,7 +97,7 @@ export default function CollaboratorsPage() {
           }}
         >
           <Plus size={16} strokeWidth={2.5} />
-          Invitar colaborador
+          {t("collab.invite")}
         </button>
       </div>
 
@@ -103,11 +105,11 @@ export default function CollaboratorsPage() {
       <div className="flex items-center gap-1 mb-4 sm:mb-5 p-1 bg-white/[0.03] border border-white/5 rounded-xl w-full sm:w-fit">
         <TabButton active={activeTab === "person"} onClick={() => setActiveTab("person")}>
           <Users size={14} strokeWidth={2} />
-          Personas <span className="text-gray-500 font-normal">· {counts.person}</span>
+          {t("collab.tab.people")} <span className="text-gray-500 font-normal">· {counts.person}</span>
         </TabButton>
         <TabButton active={activeTab === "brand"} onClick={() => setActiveTab("brand")}>
           <Tag size={14} strokeWidth={2} />
-          Marcas <span className="text-gray-500 font-normal">· {counts.brand}</span>
+          {t("collab.tab.brands")} <span className="text-gray-500 font-normal">· {counts.brand}</span>
         </TabButton>
       </div>
 
@@ -118,7 +120,7 @@ export default function CollaboratorsPage() {
           <input
             value={query}
             onChange={e => setQuery(e.target.value)}
-            placeholder={`Buscar ${activeTab === "person" ? "personas" : "marcas"}…`}
+            placeholder={activeTab === "person" ? t("collab.search.people") : t("collab.search.brands")}
             className="w-full bg-white/[0.04] border border-white/10 rounded-xl pl-9 pr-3 py-2.5 text-sm text-white placeholder-gray-600 outline-none focus:border-purple-500/40 transition-colors"
           />
         </div>
@@ -127,8 +129,8 @@ export default function CollaboratorsPage() {
           className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-2.5 rounded-xl text-xs font-semibold text-gray-300 bg-white/[0.04] border border-white/10 hover:bg-white/[0.08] transition-colors shrink-0"
         >
           <ArrowUpDown size={13} strokeWidth={2} />
-          <span className="hidden xs:inline">{sort === "recent" ? "Más recientes" : "Alfabético"}</span>
-          <span className="xs:hidden">{sort === "recent" ? "Recientes" : "A-Z"}</span>
+          <span className="hidden xs:inline">{sort === "recent" ? t("collab.sort.recent") : t("collab.sort.alpha")}</span>
+          <span className="xs:hidden">{sort === "recent" ? t("collab.sort.recentShort") : t("collab.sort.alphaShort")}</span>
         </button>
       </div>
 
@@ -221,10 +223,11 @@ function EmptyState({
   hasQuery: boolean;
   onInvite: () => void;
 }) {
+  const { t } = useLocale();
   if (hasQuery) {
     return (
       <div className="text-center py-16">
-        <p className="text-sm text-gray-500">No hay resultados para tu búsqueda</p>
+        <p className="text-sm text-gray-500">{t("collab.empty.noResults")}</p>
       </div>
     );
   }
@@ -238,19 +241,17 @@ function EmptyState({
         {kind === "brand" ? <Tag size={22} /> : <Users size={22} />}
       </div>
       <h3 className="text-base font-bold text-white mb-1">
-        Sin {kind === "brand" ? "marcas" : "personas"} todavía
+        {kind === "brand" ? t("collab.empty.brands.title") : t("collab.empty.people.title")}
       </h3>
       <p className="text-sm text-gray-500 mb-5">
-        {kind === "brand"
-          ? "Invita patrocinadores o empresas colaboradoras"
-          : "Invita a artistas, profes o ponentes a registrarse"}
+        {kind === "brand" ? t("collab.empty.brands.body") : t("collab.empty.people.body")}
       </p>
       <button
         onClick={onInvite}
         className="px-4 py-2 rounded-xl text-xs font-bold text-white transition-all hover:scale-105"
         style={{ background: "linear-gradient(135deg, #7c3aed, #c026d3)" }}
       >
-        Invitar colaborador
+        {t("collab.invite")}
       </button>
     </div>
   );
@@ -267,6 +268,7 @@ function CollaboratorCard({
   onReinvite: () => void;
   onDelete: () => void;
 }) {
+  const { t } = useLocale();
   const [menuOpen, setMenuOpen] = useState(false);
   const isBrand = collab.kind === "brand";
 
@@ -324,7 +326,7 @@ function CollaboratorCard({
                   className="w-full flex items-center gap-2 px-3 py-2 text-left text-xs text-gray-300 hover:bg-white/5 hover:text-white transition-colors"
                 >
                   <Pencil size={12} />
-                  Editar {isBrand ? "marca" : "rol"}
+                  {isBrand ? t("collab.card.editBrand") : t("collab.card.editRole")}
                 </button>
                 {!isBrand && (
                   <button
@@ -332,7 +334,7 @@ function CollaboratorCard({
                     className="w-full flex items-center gap-2 px-3 py-2 text-left text-xs text-gray-300 hover:bg-white/5 hover:text-white transition-colors"
                   >
                     <RotateCw size={12} />
-                    Pedir actualización
+                    {t("collab.card.askUpdate")}
                   </button>
                 )}
                 <div className="h-px bg-white/5" />
@@ -341,7 +343,7 @@ function CollaboratorCard({
                   className="w-full flex items-center gap-2 px-3 py-2 text-left text-xs text-red-400 hover:bg-red-500/10 transition-colors"
                 >
                   <Trash2 size={12} />
-                  Eliminar
+                  {t("collab.card.delete")}
                 </button>
               </div>
             </>
@@ -388,6 +390,7 @@ function ModalShell({
 }
 
 function InviteModal({ onClose }: { onClose: () => void }) {
+  const { t } = useLocale();
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -398,14 +401,15 @@ function InviteModal({ onClose }: { onClose: () => void }) {
       try {
         const res = await fetch("/api/collaborator-invites", { method: "POST" });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error || "Error al generar invitación");
+        if (!res.ok) throw new Error(data.error || t("collab.error.invite"));
         setToken(data.token);
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Error desconocido");
+        setError(e instanceof Error ? e.message : t("collab.error.unknown"));
       } finally {
         setLoading(false);
       }
     })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const url = token ? `${window.location.origin}/upload/${token}` : "";
@@ -418,15 +422,15 @@ function InviteModal({ onClose }: { onClose: () => void }) {
   };
 
   const whatsappMessage = encodeURIComponent(
-    `Hola! Te comparto un enlace para que registres tus datos como colaborador en el próximo evento:\n\n${url}\n\nCaduca en 7 días.`
+    t("collab.invite.whatsappMessage").replace("{url}", url)
   );
   const whatsappUrl = `https://wa.me/?text=${whatsappMessage}`;
 
   return (
     <ModalShell onClose={onClose}>
-      <h2 className="text-xl font-black text-white mb-1">Invitar colaborador</h2>
+      <h2 className="text-xl font-black text-white mb-1">{t("collab.invite.title")}</h2>
       <p className="text-xs text-gray-500 mb-5">
-        Comparte este link. El colaborador decidirá si es persona o marca al abrirlo.
+        {t("collab.invite.body")}
       </p>
 
       {loading && (
@@ -440,7 +444,7 @@ function InviteModal({ onClose }: { onClose: () => void }) {
       {token && (
         <>
           <div className="bg-white/[0.04] border border-white/10 rounded-xl p-3 mb-4">
-            <p className="text-[10px] text-gray-500 mb-1">Enlace único · caduca en 7 días</p>
+            <p className="text-[10px] text-gray-500 mb-1">{t("collab.invite.linkLabel")}</p>
             <p className="text-xs text-white font-mono break-all">{url}</p>
           </div>
 
@@ -449,7 +453,7 @@ function InviteModal({ onClose }: { onClose: () => void }) {
               onClick={copy}
               className="flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold text-white bg-white/[0.06] hover:bg-white/[0.10] border border-white/10 transition-all"
             >
-              {copied ? <><Check size={14} className="text-emerald-400" /> Copiado</> : <><Copy size={14} /> Copiar</>}
+              {copied ? <><Check size={14} className="text-emerald-400" /> {t("collab.invite.copied")}</> : <><Copy size={14} /> {t("collab.invite.copy")}</>}
             </button>
             <a
               href={whatsappUrl}
@@ -459,7 +463,7 @@ function InviteModal({ onClose }: { onClose: () => void }) {
               style={{ background: "#25D366" }}
             >
               <MessageCircle size={14} />
-              WhatsApp
+              {t("collab.invite.whatsapp")}
             </a>
           </div>
         </>
@@ -477,6 +481,7 @@ function EditModal({
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const { t } = useLocale();
   const isBrand = collab.kind === "brand";
   const [name, setName] = useState(collab.artist_name);
   const [role, setRole] = useState(collab.role ?? "");
@@ -495,10 +500,10 @@ function EditModal({
         body: JSON.stringify(body),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Error al guardar");
+      if (!res.ok) throw new Error(data.error || t("collab.error.save"));
       onSaved();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Error desconocido");
+      setError(e instanceof Error ? e.message : t("collab.error.unknown"));
     } finally {
       setSaving(false);
     }
@@ -507,18 +512,16 @@ function EditModal({
   return (
     <ModalShell onClose={onClose}>
       <h2 className="text-xl font-black text-white mb-1">
-        Editar {isBrand ? "marca" : "rol"}
+        {isBrand ? t("collab.modal.editBrand.title") : t("collab.modal.editRole.title")}
       </h2>
       <p className="text-xs text-gray-500 mb-5">
-        {isBrand
-          ? "Puedes editar el nombre y rol de la marca."
-          : "Solo puedes editar el rol (etiqueta interna). Para cambiar nombre/teléfono/foto, usa 'Pedir actualización'."}
+        {isBrand ? t("collab.modal.editBrand.body") : t("collab.modal.editRole.body")}
       </p>
 
       <div className="space-y-4">
         {isBrand && (
           <div>
-            <label className="block text-xs font-semibold text-gray-300 mb-2">Nombre</label>
+            <label className="block text-xs font-semibold text-gray-300 mb-2">{t("collab.modal.name")}</label>
             <input
               type="text"
               value={name}
@@ -529,13 +532,13 @@ function EditModal({
         )}
         <div>
           <label className="block text-xs font-semibold text-gray-300 mb-2">
-            Rol <span className="text-gray-600 font-normal">(opcional)</span>
+            {t("collab.modal.role")} <span className="text-gray-600 font-normal">{t("collab.modal.optional")}</span>
           </label>
           <input
             type="text"
             value={role}
             onChange={e => setRole(e.target.value)}
-            placeholder={isBrand ? "Ej: Patrocinador oficial" : "Ej: DJ, Profesor"}
+            placeholder={isBrand ? t("collab.modal.role.placeholderBrand") : t("collab.modal.role.placeholderPerson")}
             className="w-full bg-white/[0.04] border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 outline-none focus:border-purple-500/40 transition-colors"
           />
         </div>
@@ -544,7 +547,7 @@ function EditModal({
           <div className="flex gap-2 items-start p-3 rounded-xl bg-white/[0.02] border border-white/[0.06]">
             <ShieldCheck size={14} className="text-purple-400 shrink-0 mt-0.5" />
             <p className="text-[11px] text-gray-500 leading-relaxed">
-              Por RGPD no puedes modificar nombre, teléfono ni foto de una persona sin su consentimiento. Usa &quot;Pedir actualización&quot; en el menú para mandarle un nuevo link.
+              {t("collab.modal.gdprNotice")}
             </p>
           </div>
         )}
@@ -560,7 +563,7 @@ function EditModal({
             boxShadow: "0 0 25px rgba(168,85,247,0.30)",
           }}
         >
-          {saving ? "Guardando…" : "Guardar"}
+          {saving ? t("collab.modal.saving") : t("collab.modal.save")}
         </button>
       </div>
     </ModalShell>
@@ -574,6 +577,7 @@ function ReinviteModal({
   collab: Collaborator;
   onClose: () => void;
 }) {
+  const { t } = useLocale();
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -584,14 +588,15 @@ function ReinviteModal({
       try {
         const res = await fetch(`/api/collaborators/${collab.id}/reinvite`, { method: "POST" });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error || "Error al generar enlace");
+        if (!res.ok) throw new Error(data.error || t("collab.error.reinvite"));
         setToken(data.token);
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Error desconocido");
+        setError(e instanceof Error ? e.message : t("collab.error.unknown"));
       } finally {
         setLoading(false);
       }
     })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [collab.id]);
 
   const url = token ? `${window.location.origin}/upload/${token}` : "";
@@ -604,15 +609,21 @@ function ReinviteModal({
   };
 
   const whatsappMessage = encodeURIComponent(
-    `Hola ${collab.artist_name}, ¿podrías actualizar tus datos? Aquí tienes el enlace (caduca en 7 días):\n\n${url}`
+    t("collab.reinvite.whatsappMessage").replace("{name}", collab.artist_name).replace("{url}", url)
   );
   const whatsappUrl = `https://wa.me/?text=${whatsappMessage}`;
 
   return (
     <ModalShell onClose={onClose}>
-      <h2 className="text-xl font-black text-white mb-1">Pedir actualización</h2>
+      <h2 className="text-xl font-black text-white mb-1">{t("collab.reinvite.title")}</h2>
       <p className="text-xs text-gray-500 mb-5">
-        Comparte este link con <span className="text-white">{collab.artist_name}</span> para que actualice sus datos.
+        {/* Sustituimos {name} por un span resaltado en blanco */}
+        {t("collab.reinvite.body").split("{name}").map((piece, i, arr) => (
+          <span key={i}>
+            {piece}
+            {i < arr.length - 1 && <span className="text-white">{collab.artist_name}</span>}
+          </span>
+        ))}
       </p>
 
       {loading && (
@@ -626,7 +637,7 @@ function ReinviteModal({
       {token && (
         <>
           <div className="bg-white/[0.04] border border-white/10 rounded-xl p-3 mb-4">
-            <p className="text-[10px] text-gray-500 mb-1">Enlace único · caduca en 7 días</p>
+            <p className="text-[10px] text-gray-500 mb-1">{t("collab.invite.linkLabel")}</p>
             <p className="text-xs text-white font-mono break-all">{url}</p>
           </div>
 
@@ -635,7 +646,7 @@ function ReinviteModal({
               onClick={copy}
               className="flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold text-white bg-white/[0.06] hover:bg-white/[0.10] border border-white/10 transition-all"
             >
-              {copied ? <><Check size={14} className="text-emerald-400" /> Copiado</> : <><Copy size={14} /> Copiar</>}
+              {copied ? <><Check size={14} className="text-emerald-400" /> {t("collab.invite.copied")}</> : <><Copy size={14} /> {t("collab.invite.copy")}</>}
             </button>
             <a
               href={whatsappUrl}
@@ -645,7 +656,7 @@ function ReinviteModal({
               style={{ background: "#25D366" }}
             >
               <MessageCircle size={14} />
-              WhatsApp
+              {t("collab.invite.whatsapp")}
             </a>
           </div>
         </>
@@ -663,6 +674,7 @@ function DeleteModal({
   onClose: () => void;
   onDeleted: () => void;
 }) {
+  const { t } = useLocale();
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -672,10 +684,10 @@ function DeleteModal({
     try {
       const res = await fetch(`/api/collaborators/${collab.id}`, { method: "DELETE" });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Error al eliminar");
+      if (!res.ok) throw new Error(data.error || t("collab.error.delete"));
       onDeleted();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Error desconocido");
+      setError(e instanceof Error ? e.message : t("collab.error.unknown"));
     } finally {
       setDeleting(false);
     }
@@ -687,10 +699,10 @@ function DeleteModal({
         <Trash2 size={20} />
       </div>
       <h2 className="text-lg font-black text-white text-center mb-1">
-        ¿Eliminar a {collab.artist_name}?
+        {t("collab.delete.title").replace("{name}", collab.artist_name)}
       </h2>
       <p className="text-xs text-gray-500 text-center mb-5">
-        Esta acción es permanente. La foto y todos sus datos se eliminarán definitivamente.
+        {t("collab.delete.body")}
       </p>
 
       {error && <p className="text-xs text-red-400 text-center mb-3">{error}</p>}
@@ -700,14 +712,14 @@ function DeleteModal({
           onClick={onClose}
           className="py-2.5 rounded-xl text-xs font-bold text-white bg-white/[0.06] hover:bg-white/[0.10] border border-white/10 transition-colors"
         >
-          Cancelar
+          {t("collab.delete.cancel")}
         </button>
         <button
           onClick={doDelete}
           disabled={deleting}
           className="py-2.5 rounded-xl text-xs font-bold text-white bg-red-500/80 hover:bg-red-500 transition-colors disabled:opacity-40"
         >
-          {deleting ? "Eliminando…" : "Eliminar"}
+          {deleting ? t("collab.delete.deleting") : t("collab.delete.confirm")}
         </button>
       </div>
     </ModalShell>

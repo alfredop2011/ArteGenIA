@@ -207,7 +207,132 @@ export type TranslationKey =
   | "legal.terms.title"
   | "legal.terms.desc"
   | "legal.cookies.title"
-  | "legal.cookies.desc";
+  | "legal.cookies.desc"
+  // ── /projects ──
+  | "projects.title"
+  | "projects.subtitle.one"
+  | "projects.subtitle.many"
+  | "projects.newFlyer"
+  | "projects.loginRequired.title"
+  | "projects.loginRequired.body"
+  | "projects.loginRequired.cta"
+  | "projects.empty.title"
+  | "projects.empty.body"
+  | "projects.empty.cta"
+  | "projects.card.editAria"
+  | "projects.card.deleteAria"
+  | "projects.card.edit"
+  | "projects.confirmDelete"
+  // ── /history ──
+  | "history.title"
+  | "history.body"
+  // ── /colaboradores ──
+  | "collab.title"
+  | "collab.subtitle"
+  | "collab.invite"
+  | "collab.tab.people"
+  | "collab.tab.brands"
+  | "collab.search.people"
+  | "collab.search.brands"
+  | "collab.sort.recent"
+  | "collab.sort.alpha"
+  | "collab.sort.recentShort"
+  | "collab.sort.alphaShort"
+  | "collab.empty.noResults"
+  | "collab.empty.people.title"
+  | "collab.empty.brands.title"
+  | "collab.empty.people.body"
+  | "collab.empty.brands.body"
+  | "collab.card.editBrand"
+  | "collab.card.editRole"
+  | "collab.card.askUpdate"
+  | "collab.card.delete"
+  | "collab.modal.editBrand.title"
+  | "collab.modal.editRole.title"
+  | "collab.modal.editBrand.body"
+  | "collab.modal.editRole.body"
+  | "collab.modal.name"
+  | "collab.modal.role"
+  | "collab.modal.optional"
+  | "collab.modal.role.placeholderBrand"
+  | "collab.modal.role.placeholderPerson"
+  | "collab.modal.gdprNotice"
+  | "collab.modal.saving"
+  | "collab.modal.save"
+  | "collab.invite.title"
+  | "collab.invite.body"
+  | "collab.invite.linkLabel"
+  | "collab.invite.copied"
+  | "collab.invite.copy"
+  | "collab.invite.whatsapp"
+  | "collab.invite.whatsappMessage"
+  | "collab.reinvite.title"
+  | "collab.reinvite.body"
+  | "collab.reinvite.whatsappMessage"
+  | "collab.delete.title"
+  | "collab.delete.body"
+  | "collab.delete.cancel"
+  | "collab.delete.confirm"
+  | "collab.delete.deleting"
+  | "collab.error.load"
+  | "collab.error.unknown"
+  | "collab.error.invite"
+  | "collab.error.save"
+  | "collab.error.reinvite"
+  | "collab.error.delete"
+  // ── /admin/templates ──
+  | "admin.tpl.title"
+  | "admin.tpl.internal"
+  | "admin.tpl.subtitle"
+  | "admin.tpl.newTemplate"
+  | "admin.tpl.discard"
+  | "admin.tpl.viewChanges"
+  | "admin.tpl.search.placeholder"
+  | "admin.tpl.sort.newFirst"
+  | "admin.tpl.sort.oldFirst"
+  | "admin.tpl.filter.all"
+  | "admin.tpl.filter.untagged"
+  | "admin.tpl.empty"
+  | "admin.tpl.modified"
+  | "admin.tpl.variants"
+  | "admin.tpl.premium"
+  | "admin.tpl.internalTags"
+  | "admin.tpl.pagination.showing"
+  | "admin.tpl.pagination.of"
+  | "admin.tpl.pagination.prev"
+  | "admin.tpl.pagination.next"
+  | "admin.tpl.diff.title.one"
+  | "admin.tpl.diff.title.many"
+  | "admin.tpl.diff.subtitle"
+  | "admin.tpl.diff.noTags"
+  | "admin.tpl.diff.warning"
+  | "admin.tpl.diff.copy"
+  | "admin.tpl.diff.copied"
+  // ── /admin/templates/new ──
+  | "admin.new.title"
+  | "admin.new.subtitle"
+  | "admin.new.create"
+  | "admin.new.creating"
+  | "admin.new.createShort"
+  | "admin.new.tab.drafts"
+  | "admin.new.tab.published"
+  | "admin.new.drafts.empty.title"
+  | "admin.new.drafts.empty.body"
+  | "admin.new.published.empty.title"
+  | "admin.new.published.empty.body"
+  | "admin.new.draft.status.draft"
+  | "admin.new.draft.status.ready"
+  | "admin.new.draft.status.archived"
+  | "admin.new.published.status"
+  | "admin.new.card.delete"
+  | "admin.new.card.unpublish"
+  | "admin.new.card.edit"
+  | "admin.new.confirm.delete"
+  | "admin.new.confirm.unpublish"
+  | "admin.new.error.editPublished"
+  | "admin.new.firstTemplate.title"
+  | "admin.new.firstTemplate.untitled"
+  | "admin.new.firstTemplate.cat";
 
 type Dict = Record<TranslationKey, string>;
 
@@ -400,6 +525,131 @@ const es: Dict = {
   "legal.terms.desc": "Reglas de uso del servicio ArteGenIA en fase beta.",
   "legal.cookies.title": "Política de Cookies",
   "legal.cookies.desc": "Cookies que usa ArteGenIA y cómo gestionarlas.",
+  // /projects
+  "projects.title": "Mis flyers",
+  "projects.subtitle.one": "{n} proyecto guardado",
+  "projects.subtitle.many": "{n} proyectos guardados",
+  "projects.newFlyer": "Nuevo flyer",
+  "projects.loginRequired.title": "Inicia sesión para ver tus flyers",
+  "projects.loginRequired.body": "Guarda y accede a todos tus diseños desde cualquier dispositivo.",
+  "projects.loginRequired.cta": "Ir al inicio",
+  "projects.empty.title": "Aún no tienes flyers guardados",
+  "projects.empty.body": "Crea tu primer flyer y guárdalo para acceder desde cualquier dispositivo.",
+  "projects.empty.cta": "Explorar plantillas",
+  "projects.card.editAria": "Editar",
+  "projects.card.deleteAria": "Eliminar",
+  "projects.card.edit": "Editar",
+  "projects.confirmDelete": "¿Eliminar este proyecto?",
+  // /history
+  "history.title": "Historial",
+  "history.body": "Aquí irá el historial de generaciones y exportaciones.",
+  // /colaboradores
+  "collab.title": "Colaboradores",
+  "collab.subtitle": "Personas y marcas que aparecen en tus flyers",
+  "collab.invite": "Invitar colaborador",
+  "collab.tab.people": "Personas",
+  "collab.tab.brands": "Marcas",
+  "collab.search.people": "Buscar personas…",
+  "collab.search.brands": "Buscar marcas…",
+  "collab.sort.recent": "Más recientes",
+  "collab.sort.alpha": "Alfabético",
+  "collab.sort.recentShort": "Recientes",
+  "collab.sort.alphaShort": "A-Z",
+  "collab.empty.noResults": "No hay resultados para tu búsqueda",
+  "collab.empty.people.title": "Sin personas todavía",
+  "collab.empty.brands.title": "Sin marcas todavía",
+  "collab.empty.people.body": "Invita a artistas, profes o ponentes a registrarse",
+  "collab.empty.brands.body": "Invita patrocinadores o empresas colaboradoras",
+  "collab.card.editBrand": "Editar marca",
+  "collab.card.editRole": "Editar rol",
+  "collab.card.askUpdate": "Pedir actualización",
+  "collab.card.delete": "Eliminar",
+  "collab.modal.editBrand.title": "Editar marca",
+  "collab.modal.editRole.title": "Editar rol",
+  "collab.modal.editBrand.body": "Puedes editar el nombre y rol de la marca.",
+  "collab.modal.editRole.body": "Solo puedes editar el rol (etiqueta interna). Para cambiar nombre/teléfono/foto, usa 'Pedir actualización'.",
+  "collab.modal.name": "Nombre",
+  "collab.modal.role": "Rol",
+  "collab.modal.optional": "(opcional)",
+  "collab.modal.role.placeholderBrand": "Ej: Patrocinador oficial",
+  "collab.modal.role.placeholderPerson": "Ej: DJ, Profesor",
+  "collab.modal.gdprNotice": "Por RGPD no puedes modificar nombre, teléfono ni foto de una persona sin su consentimiento. Usa \"Pedir actualización\" en el menú para mandarle un nuevo link.",
+  "collab.modal.saving": "Guardando…",
+  "collab.modal.save": "Guardar",
+  "collab.invite.title": "Invitar colaborador",
+  "collab.invite.body": "Comparte este link. El colaborador decidirá si es persona o marca al abrirlo.",
+  "collab.invite.linkLabel": "Enlace único · caduca en 7 días",
+  "collab.invite.copied": "Copiado",
+  "collab.invite.copy": "Copiar",
+  "collab.invite.whatsapp": "WhatsApp",
+  "collab.invite.whatsappMessage": "Hola! Te comparto un enlace para que registres tus datos como colaborador en el próximo evento:\n\n{url}\n\nCaduca en 7 días.",
+  "collab.reinvite.title": "Pedir actualización",
+  "collab.reinvite.body": "Comparte este link con {name} para que actualice sus datos.",
+  "collab.reinvite.whatsappMessage": "Hola {name}, ¿podrías actualizar tus datos? Aquí tienes el enlace (caduca en 7 días):\n\n{url}",
+  "collab.delete.title": "¿Eliminar a {name}?",
+  "collab.delete.body": "Esta acción es permanente. La foto y todos sus datos se eliminarán definitivamente.",
+  "collab.delete.cancel": "Cancelar",
+  "collab.delete.confirm": "Eliminar",
+  "collab.delete.deleting": "Eliminando…",
+  "collab.error.load": "Error al cargar",
+  "collab.error.unknown": "Error desconocido",
+  "collab.error.invite": "Error al generar invitación",
+  "collab.error.save": "Error al guardar",
+  "collab.error.reinvite": "Error al generar enlace",
+  "collab.error.delete": "Error al eliminar",
+  // /admin/templates
+  "admin.tpl.title": "Admin · Plantillas",
+  "admin.tpl.internal": "INTERNO",
+  "admin.tpl.subtitle": "{n} plantillas en el catálogo · Tags solo visibles aquí",
+  "admin.tpl.newTemplate": "✦ Crear nueva plantilla",
+  "admin.tpl.discard": "Descartar",
+  "admin.tpl.viewChanges": "Ver cambios",
+  "admin.tpl.search.placeholder": "Buscar por título, categoría o id…",
+  "admin.tpl.sort.newFirst": "Nuevas primero",
+  "admin.tpl.sort.oldFirst": "Antiguas primero",
+  "admin.tpl.filter.all": "Todas",
+  "admin.tpl.filter.untagged": "Sin tag",
+  "admin.tpl.empty": "Sin resultados con esos filtros",
+  "admin.tpl.modified": "MODIFICADA",
+  "admin.tpl.variants": "variante(s)",
+  "admin.tpl.premium": "Premium",
+  "admin.tpl.internalTags": "Tags internos",
+  "admin.tpl.pagination.showing": "Mostrando",
+  "admin.tpl.pagination.of": "de",
+  "admin.tpl.pagination.prev": "Página anterior",
+  "admin.tpl.pagination.next": "Página siguiente",
+  "admin.tpl.diff.title.one": "{n} cambio pendiente",
+  "admin.tpl.diff.title.many": "{n} cambios pendientes",
+  "admin.tpl.diff.subtitle": "Copia este fragmento y pégalo en data/templates.ts dentro de cada plantilla",
+  "admin.tpl.diff.noTags": "(sin tags)",
+  "admin.tpl.diff.warning": "Estos cambios NO se guardan automáticamente. Tienes que pegarlos en data/templates.ts y hacer commit. Si refrescas esta página, los perderás.",
+  "admin.tpl.diff.copy": "Copiar fragmento TypeScript",
+  "admin.tpl.diff.copied": "Copiado al portapapeles",
+  // /admin/templates/new
+  "admin.new.title": "Creador de plantillas",
+  "admin.new.subtitle": "Crea borradores y publícalos al catálogo",
+  "admin.new.create": "Nueva plantilla",
+  "admin.new.creating": "Creando...",
+  "admin.new.createShort": "Nueva",
+  "admin.new.tab.drafts": "Borradores",
+  "admin.new.tab.published": "Publicadas",
+  "admin.new.drafts.empty.title": "No tienes borradores",
+  "admin.new.drafts.empty.body": "Crea tu primera plantilla con el botón \"Nueva plantilla\".",
+  "admin.new.published.empty.title": "No has publicado plantillas todavía",
+  "admin.new.published.empty.body": "Termina un borrador y pulsa \"Publicar\" para que aparezca en el catálogo.",
+  "admin.new.draft.status.draft": "Borrador",
+  "admin.new.draft.status.ready": "Listo",
+  "admin.new.draft.status.archived": "Archivado",
+  "admin.new.published.status": "Publicada",
+  "admin.new.card.delete": "Eliminar borrador",
+  "admin.new.card.unpublish": "Despublicar",
+  "admin.new.card.edit": "Editar",
+  "admin.new.confirm.delete": "¿Eliminar borrador \"{title}\"?",
+  "admin.new.confirm.unpublish": "¿Despublicar \"{title}\"? Dejara de verse en /templates.",
+  "admin.new.error.editPublished": "No se pudo abrir la plantilla para editar.",
+  "admin.new.firstTemplate.title": "Nueva plantilla",
+  "admin.new.firstTemplate.untitled": "Plantilla sin título",
+  "admin.new.firstTemplate.cat": "Otros",
 };
 
 const en: Dict = {
@@ -591,6 +841,131 @@ const en: Dict = {
   "legal.terms.desc": "Rules of use for the ArteGenIA service in beta.",
   "legal.cookies.title": "Cookie Policy",
   "legal.cookies.desc": "Cookies used by ArteGenIA and how to manage them.",
+  // /projects
+  "projects.title": "My flyers",
+  "projects.subtitle.one": "{n} project saved",
+  "projects.subtitle.many": "{n} projects saved",
+  "projects.newFlyer": "New flyer",
+  "projects.loginRequired.title": "Sign in to see your flyers",
+  "projects.loginRequired.body": "Save and access all your designs from any device.",
+  "projects.loginRequired.cta": "Go to home",
+  "projects.empty.title": "You don't have any saved flyers yet",
+  "projects.empty.body": "Create your first flyer and save it to access from any device.",
+  "projects.empty.cta": "Explore templates",
+  "projects.card.editAria": "Edit",
+  "projects.card.deleteAria": "Delete",
+  "projects.card.edit": "Edit",
+  "projects.confirmDelete": "Delete this project?",
+  // /history
+  "history.title": "History",
+  "history.body": "Your generation and export history will appear here.",
+  // /colaboradores
+  "collab.title": "Collaborators",
+  "collab.subtitle": "People and brands appearing in your flyers",
+  "collab.invite": "Invite collaborator",
+  "collab.tab.people": "People",
+  "collab.tab.brands": "Brands",
+  "collab.search.people": "Search people…",
+  "collab.search.brands": "Search brands…",
+  "collab.sort.recent": "Most recent",
+  "collab.sort.alpha": "Alphabetical",
+  "collab.sort.recentShort": "Recent",
+  "collab.sort.alphaShort": "A-Z",
+  "collab.empty.noResults": "No results for your search",
+  "collab.empty.people.title": "No people yet",
+  "collab.empty.brands.title": "No brands yet",
+  "collab.empty.people.body": "Invite artists, teachers or speakers to register",
+  "collab.empty.brands.body": "Invite sponsors or partner companies",
+  "collab.card.editBrand": "Edit brand",
+  "collab.card.editRole": "Edit role",
+  "collab.card.askUpdate": "Request update",
+  "collab.card.delete": "Delete",
+  "collab.modal.editBrand.title": "Edit brand",
+  "collab.modal.editRole.title": "Edit role",
+  "collab.modal.editBrand.body": "You can edit the brand name and role.",
+  "collab.modal.editRole.body": "You can only edit the role (internal label). To change name/phone/photo, use 'Request update'.",
+  "collab.modal.name": "Name",
+  "collab.modal.role": "Role",
+  "collab.modal.optional": "(optional)",
+  "collab.modal.role.placeholderBrand": "Eg: Official sponsor",
+  "collab.modal.role.placeholderPerson": "Eg: DJ, Teacher",
+  "collab.modal.gdprNotice": "By GDPR you can't modify a person's name, phone or photo without their consent. Use \"Request update\" in the menu to send them a new link.",
+  "collab.modal.saving": "Saving…",
+  "collab.modal.save": "Save",
+  "collab.invite.title": "Invite collaborator",
+  "collab.invite.body": "Share this link. The collaborator decides if they're a person or brand when they open it.",
+  "collab.invite.linkLabel": "Unique link · expires in 7 days",
+  "collab.invite.copied": "Copied",
+  "collab.invite.copy": "Copy",
+  "collab.invite.whatsapp": "WhatsApp",
+  "collab.invite.whatsappMessage": "Hi! Here's a link to register your details as a collaborator for the next event:\n\n{url}\n\nExpires in 7 days.",
+  "collab.reinvite.title": "Request update",
+  "collab.reinvite.body": "Share this link with {name} so they can update their details.",
+  "collab.reinvite.whatsappMessage": "Hi {name}, could you update your details? Here's the link (expires in 7 days):\n\n{url}",
+  "collab.delete.title": "Delete {name}?",
+  "collab.delete.body": "This action is permanent. The photo and all their data will be deleted definitively.",
+  "collab.delete.cancel": "Cancel",
+  "collab.delete.confirm": "Delete",
+  "collab.delete.deleting": "Deleting…",
+  "collab.error.load": "Loading error",
+  "collab.error.unknown": "Unknown error",
+  "collab.error.invite": "Error generating invitation",
+  "collab.error.save": "Save error",
+  "collab.error.reinvite": "Error generating link",
+  "collab.error.delete": "Delete error",
+  // /admin/templates
+  "admin.tpl.title": "Admin · Templates",
+  "admin.tpl.internal": "INTERNAL",
+  "admin.tpl.subtitle": "{n} templates in catalog · Tags only visible here",
+  "admin.tpl.newTemplate": "✦ Create new template",
+  "admin.tpl.discard": "Discard",
+  "admin.tpl.viewChanges": "View changes",
+  "admin.tpl.search.placeholder": "Search by title, category or id…",
+  "admin.tpl.sort.newFirst": "Newest first",
+  "admin.tpl.sort.oldFirst": "Oldest first",
+  "admin.tpl.filter.all": "All",
+  "admin.tpl.filter.untagged": "Untagged",
+  "admin.tpl.empty": "No results with those filters",
+  "admin.tpl.modified": "MODIFIED",
+  "admin.tpl.variants": "variant(s)",
+  "admin.tpl.premium": "Premium",
+  "admin.tpl.internalTags": "Internal tags",
+  "admin.tpl.pagination.showing": "Showing",
+  "admin.tpl.pagination.of": "of",
+  "admin.tpl.pagination.prev": "Previous page",
+  "admin.tpl.pagination.next": "Next page",
+  "admin.tpl.diff.title.one": "{n} pending change",
+  "admin.tpl.diff.title.many": "{n} pending changes",
+  "admin.tpl.diff.subtitle": "Copy this snippet and paste it into data/templates.ts in each template",
+  "admin.tpl.diff.noTags": "(no tags)",
+  "admin.tpl.diff.warning": "These changes are NOT saved automatically. You have to paste them into data/templates.ts and commit. If you refresh this page, you'll lose them.",
+  "admin.tpl.diff.copy": "Copy TypeScript snippet",
+  "admin.tpl.diff.copied": "Copied to clipboard",
+  // /admin/templates/new
+  "admin.new.title": "Template creator",
+  "admin.new.subtitle": "Create drafts and publish them to the catalog",
+  "admin.new.create": "New template",
+  "admin.new.creating": "Creating...",
+  "admin.new.createShort": "New",
+  "admin.new.tab.drafts": "Drafts",
+  "admin.new.tab.published": "Published",
+  "admin.new.drafts.empty.title": "No drafts yet",
+  "admin.new.drafts.empty.body": "Create your first template with the \"New template\" button.",
+  "admin.new.published.empty.title": "You haven't published templates yet",
+  "admin.new.published.empty.body": "Finish a draft and click \"Publish\" so it appears in the catalog.",
+  "admin.new.draft.status.draft": "Draft",
+  "admin.new.draft.status.ready": "Ready",
+  "admin.new.draft.status.archived": "Archived",
+  "admin.new.published.status": "Published",
+  "admin.new.card.delete": "Delete draft",
+  "admin.new.card.unpublish": "Unpublish",
+  "admin.new.card.edit": "Edit",
+  "admin.new.confirm.delete": "Delete draft \"{title}\"?",
+  "admin.new.confirm.unpublish": "Unpublish \"{title}\"? It will no longer appear in /templates.",
+  "admin.new.error.editPublished": "Could not open template for editing.",
+  "admin.new.firstTemplate.title": "New template",
+  "admin.new.firstTemplate.untitled": "Untitled template",
+  "admin.new.firstTemplate.cat": "Other",
 };
 
 const fr: Dict = {
@@ -782,6 +1157,131 @@ const fr: Dict = {
   "legal.terms.desc": "Règles d'utilisation du service ArteGenIA en bêta.",
   "legal.cookies.title": "Politique de Cookies",
   "legal.cookies.desc": "Cookies utilisés par ArteGenIA et comment les gérer.",
+  // /projects
+  "projects.title": "Mes flyers",
+  "projects.subtitle.one": "{n} projet enregistré",
+  "projects.subtitle.many": "{n} projets enregistrés",
+  "projects.newFlyer": "Nouveau flyer",
+  "projects.loginRequired.title": "Connecte-toi pour voir tes flyers",
+  "projects.loginRequired.body": "Enregistre et accède à tous tes designs depuis n'importe quel appareil.",
+  "projects.loginRequired.cta": "Aller à l'accueil",
+  "projects.empty.title": "Tu n'as pas encore de flyers enregistrés",
+  "projects.empty.body": "Crée ton premier flyer et enregistre-le pour y accéder depuis n'importe quel appareil.",
+  "projects.empty.cta": "Explorer les modèles",
+  "projects.card.editAria": "Éditer",
+  "projects.card.deleteAria": "Supprimer",
+  "projects.card.edit": "Éditer",
+  "projects.confirmDelete": "Supprimer ce projet ?",
+  // /history
+  "history.title": "Historique",
+  "history.body": "Ton historique de générations et d'exports apparaîtra ici.",
+  // /colaboradores
+  "collab.title": "Collaborateurs",
+  "collab.subtitle": "Personnes et marques qui apparaissent dans tes flyers",
+  "collab.invite": "Inviter un collaborateur",
+  "collab.tab.people": "Personnes",
+  "collab.tab.brands": "Marques",
+  "collab.search.people": "Rechercher des personnes…",
+  "collab.search.brands": "Rechercher des marques…",
+  "collab.sort.recent": "Plus récents",
+  "collab.sort.alpha": "Alphabétique",
+  "collab.sort.recentShort": "Récents",
+  "collab.sort.alphaShort": "A-Z",
+  "collab.empty.noResults": "Aucun résultat pour ta recherche",
+  "collab.empty.people.title": "Aucune personne pour l'instant",
+  "collab.empty.brands.title": "Aucune marque pour l'instant",
+  "collab.empty.people.body": "Invite des artistes, profs ou intervenants à s'inscrire",
+  "collab.empty.brands.body": "Invite des sponsors ou entreprises partenaires",
+  "collab.card.editBrand": "Éditer la marque",
+  "collab.card.editRole": "Éditer le rôle",
+  "collab.card.askUpdate": "Demander mise à jour",
+  "collab.card.delete": "Supprimer",
+  "collab.modal.editBrand.title": "Éditer la marque",
+  "collab.modal.editRole.title": "Éditer le rôle",
+  "collab.modal.editBrand.body": "Tu peux éditer le nom et le rôle de la marque.",
+  "collab.modal.editRole.body": "Tu peux uniquement éditer le rôle (étiquette interne). Pour changer nom/téléphone/photo, utilise 'Demander mise à jour'.",
+  "collab.modal.name": "Nom",
+  "collab.modal.role": "Rôle",
+  "collab.modal.optional": "(optionnel)",
+  "collab.modal.role.placeholderBrand": "Ex : Sponsor officiel",
+  "collab.modal.role.placeholderPerson": "Ex : DJ, Professeur",
+  "collab.modal.gdprNotice": "Par RGPD tu ne peux pas modifier le nom, téléphone ou photo d'une personne sans son consentement. Utilise \"Demander mise à jour\" dans le menu pour lui envoyer un nouveau lien.",
+  "collab.modal.saving": "Enregistrement…",
+  "collab.modal.save": "Enregistrer",
+  "collab.invite.title": "Inviter un collaborateur",
+  "collab.invite.body": "Partage ce lien. Le collaborateur décidera s'il est une personne ou une marque en l'ouvrant.",
+  "collab.invite.linkLabel": "Lien unique · expire dans 7 jours",
+  "collab.invite.copied": "Copié",
+  "collab.invite.copy": "Copier",
+  "collab.invite.whatsapp": "WhatsApp",
+  "collab.invite.whatsappMessage": "Salut ! Voici un lien pour enregistrer tes informations comme collaborateur pour le prochain événement :\n\n{url}\n\nExpire dans 7 jours.",
+  "collab.reinvite.title": "Demander mise à jour",
+  "collab.reinvite.body": "Partage ce lien avec {name} pour qu'il/elle mette à jour ses informations.",
+  "collab.reinvite.whatsappMessage": "Salut {name}, peux-tu mettre à jour tes informations ? Voici le lien (expire dans 7 jours) :\n\n{url}",
+  "collab.delete.title": "Supprimer {name} ?",
+  "collab.delete.body": "Cette action est permanente. La photo et toutes ses données seront supprimées définitivement.",
+  "collab.delete.cancel": "Annuler",
+  "collab.delete.confirm": "Supprimer",
+  "collab.delete.deleting": "Suppression…",
+  "collab.error.load": "Erreur de chargement",
+  "collab.error.unknown": "Erreur inconnue",
+  "collab.error.invite": "Erreur lors de la génération de l'invitation",
+  "collab.error.save": "Erreur d'enregistrement",
+  "collab.error.reinvite": "Erreur lors de la génération du lien",
+  "collab.error.delete": "Erreur de suppression",
+  // /admin/templates
+  "admin.tpl.title": "Admin · Modèles",
+  "admin.tpl.internal": "INTERNE",
+  "admin.tpl.subtitle": "{n} modèles dans le catalogue · Tags visibles uniquement ici",
+  "admin.tpl.newTemplate": "✦ Créer nouveau modèle",
+  "admin.tpl.discard": "Annuler",
+  "admin.tpl.viewChanges": "Voir les changements",
+  "admin.tpl.search.placeholder": "Rechercher par titre, catégorie ou id…",
+  "admin.tpl.sort.newFirst": "Nouveaux d'abord",
+  "admin.tpl.sort.oldFirst": "Anciens d'abord",
+  "admin.tpl.filter.all": "Tous",
+  "admin.tpl.filter.untagged": "Sans tag",
+  "admin.tpl.empty": "Aucun résultat avec ces filtres",
+  "admin.tpl.modified": "MODIFIÉ",
+  "admin.tpl.variants": "variante(s)",
+  "admin.tpl.premium": "Premium",
+  "admin.tpl.internalTags": "Tags internes",
+  "admin.tpl.pagination.showing": "Affichage",
+  "admin.tpl.pagination.of": "de",
+  "admin.tpl.pagination.prev": "Page précédente",
+  "admin.tpl.pagination.next": "Page suivante",
+  "admin.tpl.diff.title.one": "{n} changement en attente",
+  "admin.tpl.diff.title.many": "{n} changements en attente",
+  "admin.tpl.diff.subtitle": "Copie ce fragment et colle-le dans data/templates.ts dans chaque modèle",
+  "admin.tpl.diff.noTags": "(sans tags)",
+  "admin.tpl.diff.warning": "Ces changements ne sont PAS enregistrés automatiquement. Tu dois les coller dans data/templates.ts et commiter. Si tu rafraîchis cette page, tu les perdras.",
+  "admin.tpl.diff.copy": "Copier le fragment TypeScript",
+  "admin.tpl.diff.copied": "Copié dans le presse-papiers",
+  // /admin/templates/new
+  "admin.new.title": "Créateur de modèles",
+  "admin.new.subtitle": "Crée des brouillons et publie-les au catalogue",
+  "admin.new.create": "Nouveau modèle",
+  "admin.new.creating": "Création...",
+  "admin.new.createShort": "Nouveau",
+  "admin.new.tab.drafts": "Brouillons",
+  "admin.new.tab.published": "Publiés",
+  "admin.new.drafts.empty.title": "Aucun brouillon",
+  "admin.new.drafts.empty.body": "Crée ton premier modèle avec le bouton \"Nouveau modèle\".",
+  "admin.new.published.empty.title": "Tu n'as pas encore publié de modèles",
+  "admin.new.published.empty.body": "Termine un brouillon et clique sur \"Publier\" pour qu'il apparaisse dans le catalogue.",
+  "admin.new.draft.status.draft": "Brouillon",
+  "admin.new.draft.status.ready": "Prêt",
+  "admin.new.draft.status.archived": "Archivé",
+  "admin.new.published.status": "Publié",
+  "admin.new.card.delete": "Supprimer le brouillon",
+  "admin.new.card.unpublish": "Dépublier",
+  "admin.new.card.edit": "Éditer",
+  "admin.new.confirm.delete": "Supprimer le brouillon \"{title}\" ?",
+  "admin.new.confirm.unpublish": "Dépublier \"{title}\" ? Il n'apparaîtra plus dans /templates.",
+  "admin.new.error.editPublished": "Impossible d'ouvrir le modèle pour l'éditer.",
+  "admin.new.firstTemplate.title": "Nouveau modèle",
+  "admin.new.firstTemplate.untitled": "Modèle sans titre",
+  "admin.new.firstTemplate.cat": "Autres",
 };
 
 const pt: Dict = {
@@ -973,6 +1473,131 @@ const pt: Dict = {
   "legal.terms.desc": "Regras de utilização do serviço ArteGenIA em beta.",
   "legal.cookies.title": "Política de Cookies",
   "legal.cookies.desc": "Cookies usados pela ArteGenIA e como geri-los.",
+  // /projects
+  "projects.title": "Meus flyers",
+  "projects.subtitle.one": "{n} projeto guardado",
+  "projects.subtitle.many": "{n} projetos guardados",
+  "projects.newFlyer": "Novo flyer",
+  "projects.loginRequired.title": "Inicia sessão para ver os teus flyers",
+  "projects.loginRequired.body": "Guarda e acede a todos os teus designs de qualquer dispositivo.",
+  "projects.loginRequired.cta": "Ir para o início",
+  "projects.empty.title": "Ainda não tens flyers guardados",
+  "projects.empty.body": "Cria o teu primeiro flyer e guarda-o para aceder de qualquer dispositivo.",
+  "projects.empty.cta": "Explorar modelos",
+  "projects.card.editAria": "Editar",
+  "projects.card.deleteAria": "Eliminar",
+  "projects.card.edit": "Editar",
+  "projects.confirmDelete": "Eliminar este projeto?",
+  // /history
+  "history.title": "Histórico",
+  "history.body": "Aqui aparecerá o histórico de gerações e exportações.",
+  // /colaboradores
+  "collab.title": "Colaboradores",
+  "collab.subtitle": "Pessoas e marcas que aparecem nos teus flyers",
+  "collab.invite": "Convidar colaborador",
+  "collab.tab.people": "Pessoas",
+  "collab.tab.brands": "Marcas",
+  "collab.search.people": "Procurar pessoas…",
+  "collab.search.brands": "Procurar marcas…",
+  "collab.sort.recent": "Mais recentes",
+  "collab.sort.alpha": "Alfabético",
+  "collab.sort.recentShort": "Recentes",
+  "collab.sort.alphaShort": "A-Z",
+  "collab.empty.noResults": "Sem resultados para a tua pesquisa",
+  "collab.empty.people.title": "Sem pessoas ainda",
+  "collab.empty.brands.title": "Sem marcas ainda",
+  "collab.empty.people.body": "Convida artistas, professores ou oradores para se registarem",
+  "collab.empty.brands.body": "Convida patrocinadores ou empresas parceiras",
+  "collab.card.editBrand": "Editar marca",
+  "collab.card.editRole": "Editar função",
+  "collab.card.askUpdate": "Pedir atualização",
+  "collab.card.delete": "Eliminar",
+  "collab.modal.editBrand.title": "Editar marca",
+  "collab.modal.editRole.title": "Editar função",
+  "collab.modal.editBrand.body": "Podes editar o nome e função da marca.",
+  "collab.modal.editRole.body": "Só podes editar a função (etiqueta interna). Para mudar nome/telefone/foto, usa 'Pedir atualização'.",
+  "collab.modal.name": "Nome",
+  "collab.modal.role": "Função",
+  "collab.modal.optional": "(opcional)",
+  "collab.modal.role.placeholderBrand": "Ex: Patrocinador oficial",
+  "collab.modal.role.placeholderPerson": "Ex: DJ, Professor",
+  "collab.modal.gdprNotice": "Pelo RGPD não podes modificar nome, telefone ou foto de uma pessoa sem o consentimento dela. Usa \"Pedir atualização\" no menu para lhe enviar um novo link.",
+  "collab.modal.saving": "A guardar…",
+  "collab.modal.save": "Guardar",
+  "collab.invite.title": "Convidar colaborador",
+  "collab.invite.body": "Partilha este link. O colaborador decidirá se é pessoa ou marca ao abrir.",
+  "collab.invite.linkLabel": "Link único · expira em 7 dias",
+  "collab.invite.copied": "Copiado",
+  "collab.invite.copy": "Copiar",
+  "collab.invite.whatsapp": "WhatsApp",
+  "collab.invite.whatsappMessage": "Olá! Partilho um link para registares os teus dados como colaborador no próximo evento:\n\n{url}\n\nExpira em 7 dias.",
+  "collab.reinvite.title": "Pedir atualização",
+  "collab.reinvite.body": "Partilha este link com {name} para que atualize os seus dados.",
+  "collab.reinvite.whatsappMessage": "Olá {name}, podes atualizar os teus dados? Aqui tens o link (expira em 7 dias):\n\n{url}",
+  "collab.delete.title": "Eliminar {name}?",
+  "collab.delete.body": "Esta ação é permanente. A foto e todos os seus dados serão eliminados definitivamente.",
+  "collab.delete.cancel": "Cancelar",
+  "collab.delete.confirm": "Eliminar",
+  "collab.delete.deleting": "A eliminar…",
+  "collab.error.load": "Erro a carregar",
+  "collab.error.unknown": "Erro desconhecido",
+  "collab.error.invite": "Erro a gerar convite",
+  "collab.error.save": "Erro a guardar",
+  "collab.error.reinvite": "Erro a gerar link",
+  "collab.error.delete": "Erro a eliminar",
+  // /admin/templates
+  "admin.tpl.title": "Admin · Modelos",
+  "admin.tpl.internal": "INTERNO",
+  "admin.tpl.subtitle": "{n} modelos no catálogo · Tags só visíveis aqui",
+  "admin.tpl.newTemplate": "✦ Criar novo modelo",
+  "admin.tpl.discard": "Descartar",
+  "admin.tpl.viewChanges": "Ver mudanças",
+  "admin.tpl.search.placeholder": "Procurar por título, categoria ou id…",
+  "admin.tpl.sort.newFirst": "Novos primeiro",
+  "admin.tpl.sort.oldFirst": "Antigos primeiro",
+  "admin.tpl.filter.all": "Todos",
+  "admin.tpl.filter.untagged": "Sem tag",
+  "admin.tpl.empty": "Sem resultados com esses filtros",
+  "admin.tpl.modified": "MODIFICADO",
+  "admin.tpl.variants": "variante(s)",
+  "admin.tpl.premium": "Premium",
+  "admin.tpl.internalTags": "Tags internos",
+  "admin.tpl.pagination.showing": "A mostrar",
+  "admin.tpl.pagination.of": "de",
+  "admin.tpl.pagination.prev": "Página anterior",
+  "admin.tpl.pagination.next": "Página seguinte",
+  "admin.tpl.diff.title.one": "{n} mudança pendente",
+  "admin.tpl.diff.title.many": "{n} mudanças pendentes",
+  "admin.tpl.diff.subtitle": "Copia este fragmento e cola-o em data/templates.ts em cada modelo",
+  "admin.tpl.diff.noTags": "(sem tags)",
+  "admin.tpl.diff.warning": "Estas mudanças NÃO são guardadas automaticamente. Tens de as colar em data/templates.ts e fazer commit. Se atualizares esta página, perde-las.",
+  "admin.tpl.diff.copy": "Copiar fragmento TypeScript",
+  "admin.tpl.diff.copied": "Copiado para área de transferência",
+  // /admin/templates/new
+  "admin.new.title": "Criador de modelos",
+  "admin.new.subtitle": "Cria rascunhos e publica-os no catálogo",
+  "admin.new.create": "Novo modelo",
+  "admin.new.creating": "A criar...",
+  "admin.new.createShort": "Novo",
+  "admin.new.tab.drafts": "Rascunhos",
+  "admin.new.tab.published": "Publicados",
+  "admin.new.drafts.empty.title": "Sem rascunhos",
+  "admin.new.drafts.empty.body": "Cria o teu primeiro modelo com o botão \"Novo modelo\".",
+  "admin.new.published.empty.title": "Ainda não publicaste modelos",
+  "admin.new.published.empty.body": "Termina um rascunho e clica em \"Publicar\" para aparecer no catálogo.",
+  "admin.new.draft.status.draft": "Rascunho",
+  "admin.new.draft.status.ready": "Pronto",
+  "admin.new.draft.status.archived": "Arquivado",
+  "admin.new.published.status": "Publicado",
+  "admin.new.card.delete": "Eliminar rascunho",
+  "admin.new.card.unpublish": "Despublicar",
+  "admin.new.card.edit": "Editar",
+  "admin.new.confirm.delete": "Eliminar rascunho \"{title}\"?",
+  "admin.new.confirm.unpublish": "Despublicar \"{title}\"? Deixará de aparecer em /templates.",
+  "admin.new.error.editPublished": "Não foi possível abrir o modelo para editar.",
+  "admin.new.firstTemplate.title": "Novo modelo",
+  "admin.new.firstTemplate.untitled": "Modelo sem título",
+  "admin.new.firstTemplate.cat": "Outros",
 };
 
 export const TRANSLATIONS: Record<Locale, Dict> = { es, en, fr, pt };
