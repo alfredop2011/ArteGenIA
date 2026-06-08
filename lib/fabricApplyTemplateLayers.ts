@@ -12,13 +12,18 @@ export async function applyTemplateLayers(
     for (const layer of layers) {
         // ── SHAPE ──────────────────────────────────────────────────────────
         if (layer.type === "shape") {
+            // NOTA: ignoramos layer.selectable === false. El usuario quiere
+            // poder seleccionar TODOS los objetos (incluso fondos y decoraciones)
+            // para reposicionarlos / modificarlos. Si rompe la plantilla por
+            // error, undo (Cmd+Z) restaura. La proteccion original venia de
+            // marcar fondos como no-selectable, pero limitaba demasiado.
             const common = {
                 left: (layer.x ?? 0) * scale,
                 top: (layer.y ?? 0) * scale,
                 fill: layer.fill,
                 opacity: layer.opacity ?? 1,
-                selectable: layer.selectable ?? true,
-                evented: layer.selectable ?? true,
+                selectable: true,
+                evented: true,
                 originX: layer.originX ?? "left",
                 originY: layer.originY ?? "top",
                 angle: layer.angle ?? 0,
@@ -44,6 +49,7 @@ export async function applyTemplateLayers(
         }
 
         // ── SHAPE PATTERN (bucles generativos: rayas, puntos, etc.) ──────
+        // Tambien selectable=true (decision de usuario: todo manipulable).
         if (layer.type === "shape-pattern") {
             for (let i = 0; i < layer.count; i++) {
                 const dx = (layer.offsetX ?? 0) * i;
@@ -56,8 +62,8 @@ export async function applyTemplateLayers(
                     fill: layer.fill,
                     opacity: layer.opacity ?? 1,
                     angle: layer.angle ?? 0,
-                    selectable: false,
-                    evented: false,
+                    selectable: true,
+                    evented: true,
                     originX: "left",
                     originY: "top",
                     strokeWidth: 0,
