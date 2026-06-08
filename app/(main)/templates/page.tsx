@@ -2,488 +2,865 @@
 
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
-  LayoutGrid,
-  Search,
-  PartyPopper,
-  Mic2,
-  Star,
-  Footprints,
-  SlidersHorizontal,
-  BriefcaseBusiness,
-  GraduationCap,
-  Clapperboard,
-  Palette,
-  Landmark,
-  Megaphone,
-  School,
-  Crown,
-  Check,
-  Trash2,
-  SearchX,
-  Copy,
-  Sparkles,
-  ArrowUp,
+  LayoutGrid, List, Search, Plus, Heart, MoreVertical,
+  Sparkles, Crown, ChevronDown, ChevronRight,
+  PartyPopper, Mic2, Star, Footprints, BriefcaseBusiness,
+  Megaphone, Ticket, Rocket, GraduationCap,
+  Music, Maximize2, Upload, FolderOpen, Palette, Type,
+  Home as HomeIcon, FileText, Users, History as HistoryIcon,
   type LucideIcon,
 } from "lucide-react";
-import { templates, type Template, type AudienceId, type TemplateVariant } from "@/data/templates";
+import { templates, type Template, type AudienceId, type TemplateVariant, type UseCase } from "@/data/templates";
 import { type FormatId } from "@/data/formats";
 import TemplateFabricThumbnail from "@/components/templates/TemplateFabricThumbnail";
 import FormatPickerModal from "@/components/templates/FormatPickerModal";
-import FormatDestinationPicker from "@/components/templates/FormatDestinationPicker";
 import { supabase, type TemplatePublished } from "@/lib/supabase";
+import { useLocale } from "@/hooks/useLocale";
+import { useAuth } from "@/hooks/useAuth";
+import type { TranslationKey } from "@/lib/translations";
+import { matchesUseCase } from "@/lib/useCases";
 
-type CategoryItem = { id: string; label: string; icon: LucideIcon };
-type AudienceItem = { id: AudienceId; label: string; icon: LucideIcon };
+// ════════════════════════════════════════════════════════════════════════════
+//  /templates — Discovery page rediseñada (mockup ChatGPT-like).
+//
+//  Layout 3 columnas desktop:
+//    [Sidebar 280px] [Main content 1fr] [Right rail 240px]
+//
+//  En mobile colapsa a 1 columna (drawer para sidebar/right rail).
+// ════════════════════════════════════════════════════════════════════════════
+
+// ─── ICONOS DE REDES SOCIALES (SVG inline) ────────────────────────────────
+type SocialProps = { size?: number; className?: string };
+
+function InstagramIcon({ size = 18, className = "" }: SocialProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+      <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+    </svg>
+  );
+}
+function FacebookIcon({ size = 18, className = "" }: SocialProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" className={className}>
+      <path d="M22 12a10 10 0 1 0-11.56 9.88V14.9H7.9V12h2.54V9.8c0-2.5 1.49-3.89 3.78-3.89 1.09 0 2.24.2 2.24.2v2.46h-1.26c-1.24 0-1.63.77-1.63 1.56V12h2.77l-.44 2.9h-2.33v6.98A10 10 0 0 0 22 12z" />
+    </svg>
+  );
+}
+function TikTokIcon({ size = 18, className = "" }: SocialProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" className={className}>
+      <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5.8 20.1a6.34 6.34 0 0 0 10.86-4.43V8.69a8.16 8.16 0 0 0 4.77 1.52V6.69a4.77 4.77 0 0 1-1.84-.01z"/>
+    </svg>
+  );
+}
+function WhatsAppIcon({ size = 18, className = "" }: SocialProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" className={className}>
+      <path d="M17.5 14.4c-.3-.1-1.7-.8-2-.9-.3-.1-.5-.2-.7.2-.2.3-.7.9-.9 1.1-.2.2-.3.2-.6.1-.3-.1-1.3-.5-2.5-1.5-.9-.8-1.5-1.8-1.7-2.1-.2-.3 0-.5.1-.6.1-.1.3-.3.4-.5.1-.2.2-.3.3-.5.1-.2 0-.4 0-.5 0-.1-.7-1.6-.9-2.2-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.5s1.1 2.9 1.2 3.1c.2.2 2.1 3.2 5 4.5 1.7.7 2.4.8 3.3.7.5-.1 1.7-.7 1.9-1.4.2-.7.2-1.2.2-1.4-.1-.2-.3-.2-.5-.3zM12 2C6.5 2 2 6.5 2 12c0 1.9.5 3.7 1.5 5.3L2 22l4.8-1.5c1.5.8 3.3 1.3 5.2 1.3 5.5 0 10-4.5 10-10S17.5 2 12 2z"/>
+    </svg>
+  );
+}
+function LinkedInIcon({ size = 18, className = "" }: SocialProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" className={className}>
+      <path d="M20.45 20.45h-3.55v-5.57c0-1.33-.02-3.03-1.85-3.03-1.85 0-2.13 1.45-2.13 2.94v5.66H9.36V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.38-1.85 3.61 0 4.27 2.37 4.27 5.47v6.27zM5.34 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12zM7.12 20.45H3.56V9h3.56v11.45zM22.23 0H1.77C.79 0 0 .77 0 1.72v20.56C0 23.23.79 24 1.77 24h20.46c.98 0 1.77-.77 1.77-1.72V1.72C24 .77 23.21 0 22.23 0z"/>
+    </svg>
+  );
+}
+function YouTubeIcon({ size = 18, className = "" }: SocialProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" className={className}>
+      <path d="M23.5 6.2c-.3-1-1-1.8-2-2C19.5 3.7 12 3.7 12 3.7s-7.5 0-9.5.5c-1 .3-1.8 1-2 2C0 8.2 0 12 0 12s0 3.8.5 5.8c.3 1 1 1.8 2 2 2 .5 9.5.5 9.5.5s7.5 0 9.5-.5c1-.3 1.8-1 2-2 .5-2 .5-5.8.5-5.8s0-3.8-.5-5.8zM9.5 15.5v-7l6.5 3.5-6.5 3.5z"/>
+    </svg>
+  );
+}
+
+// ─── DATOS DE REDES (PUBLICAR EN) ────────────────────────────────────────
+// Cada red mapea a un formato del catalogo (FormatId) cuando aplica.
+// Si seleccionas una, el grid filtra por ese formato automaticamente.
+type PublishOption = {
+  key: string;
+  i18nKey: TranslationKey;
+  format: FormatId | null; // null = no filter (custom o sin equivalente)
+  ratio: string;            // texto debajo (ej "9:16")
+  brandColor: string;       // hex para el fondo del logo
+  Icon: (p: SocialProps) => React.ReactElement;
+};
+
+const PUBLISH_NETWORKS: PublishOption[] = [
+  { key: "ig-feed",  i18nKey: "templates.publish.igFeed",   format: "square",   ratio: "Feed",  brandColor: "#E1306C", Icon: InstagramIcon },
+  { key: "ig-story", i18nKey: "templates.publish.igStory",  format: "story",    ratio: "9:16",  brandColor: "#833AB4", Icon: InstagramIcon },
+  { key: "tiktok",   i18nKey: "templates.publish.tiktok",   format: "story",    ratio: "9:16",  brandColor: "#000000", Icon: TikTokIcon },
+  { key: "facebook", i18nKey: "templates.publish.facebook", format: "fb-cover", ratio: "16:9",  brandColor: "#1877F2", Icon: FacebookIcon },
+  { key: "whatsapp", i18nKey: "templates.publish.whatsapp", format: "story",    ratio: "9:16",  brandColor: "#25D366", Icon: WhatsAppIcon },
+  { key: "linkedin", i18nKey: "templates.publish.linkedin", format: "portrait", ratio: "Post",  brandColor: "#0A66C2", Icon: LinkedInIcon },
+  { key: "youtube",  i18nKey: "templates.publish.youtube",  format: "fb-cover", ratio: "16:9",  brandColor: "#FF0000", Icon: YouTubeIcon },
+];
+
+// ─── USE CASES (¿PARA QUÉ LO NECESITAS?) ─────────────────────────────────
+// Pills de propósito. `id` debe matchear con el tipo UseCase para que el
+// filtro pase directo a matchesUseCase(). "all" es virtual (sin filtro).
+type UseCaseOption = { id: UseCase | "all"; i18nKey: TranslationKey; icon: LucideIcon };
+const USE_CASES: UseCaseOption[] = [
+  { id: "all",             i18nKey: "categories.all",                    icon: LayoutGrid },
+  { id: "promote",         i18nKey: "templates.useCase.promote",         icon: Megaphone },
+  { id: "sellTickets",     i18nKey: "templates.useCase.sellTickets",     icon: Ticket },
+  { id: "launch",          i18nKey: "templates.useCase.launch",          icon: Rocket },
+  { id: "attractStudents", i18nKey: "templates.useCase.attractStudents", icon: GraduationCap },
+  { id: "announceArtist",  i18nKey: "templates.useCase.announceArtist",  icon: Star },
+];
+
+// ─── CATEGORIAS y AUDIENCES (sidebar filtros) ────────────────────────────
+type CategoryItem = { id: string; i18nKey: TranslationKey; icon: LucideIcon };
+type AudienceItem = { id: AudienceId; i18nKey: TranslationKey; icon: LucideIcon };
 
 const CATEGORIES: CategoryItem[] = [
-    { id: "todas", label: "Todas", icon: LayoutGrid },
-    { id: "fiesta", label: "Fiesta", icon: PartyPopper },
-    { id: "concierto", label: "Conciertos", icon: Mic2 },
-    { id: "festival", label: "Festival", icon: Star },
-    { id: "clases", label: "Clases de baile", icon: Footprints },
-    { id: "discoteca", label: "Club / Discoteca", icon: SlidersHorizontal },
-    { id: "gala", label: "Corporativo", icon: BriefcaseBusiness },
+  { id: "todas",      i18nKey: "categories.all",            icon: LayoutGrid },
+  { id: "fiesta",     i18nKey: "categories.party",          icon: PartyPopper },
+  { id: "concierto",  i18nKey: "templates.cat.concerts",    icon: Mic2 },
+  { id: "festival",   i18nKey: "categories.festival",       icon: Star },
+  { id: "clases",     i18nKey: "templates.cat.classesDance",icon: Footprints },
+  { id: "discoteca",  i18nKey: "templates.cat.clubDisco",   icon: Music },
+  { id: "gala",       i18nKey: "templates.cat.corporate",   icon: BriefcaseBusiness },
 ];
 
 const AUDIENCES: AudienceItem[] = [
-    { id: "academias",     label: "Academias",     icon: GraduationCap },
-    { id: "productoras",   label: "Productoras",   icon: Clapperboard },
-    { id: "freelance",     label: "Freelance",     icon: Palette },
-    { id: "instituciones", label: "Instituciones", icon: Landmark },
-    { id: "agencias",      label: "Agencias",      icon: Megaphone },
-    { id: "colegios",      label: "Colegios",      icon: School },
+  { id: "academias",     i18nKey: "audience.academies",    icon: GraduationCap },
+  { id: "productoras",   i18nKey: "audience.producers",    icon: BriefcaseBusiness },
+  { id: "freelance",     i18nKey: "audience.freelance",    icon: Palette },
+  { id: "instituciones", i18nKey: "audience.institutions", icon: BriefcaseBusiness },
+  { id: "agencias",      i18nKey: "audience.agencies",     icon: Megaphone },
+  { id: "colegios",      i18nKey: "audience.schools",      icon: GraduationCap },
 ];
 
-const TOP_FILTERS = ["Todas", "Festival"];
+// Sidebar nav (separado del nav global porque el mockup lo duplica aqui).
+type SidebarNavItem = { href: string; i18nKey: TranslationKey; icon: LucideIcon };
+const SIDEBAR_NAV: SidebarNavItem[] = [
+  { href: "/",              i18nKey: "templates.nav.home",       icon: HomeIcon },
+  { href: "/templates",     i18nKey: "nav.templates",            icon: FileText },
+  { href: "/projects",      i18nKey: "nav.projects",             icon: FolderOpen },
+  { href: "/colaboradores", i18nKey: "nav.collaborators",        icon: Users },
+  { href: "/history",       i18nKey: "nav.history",              icon: HistoryIcon },
+  { href: "/projects?tab=favorites", i18nKey: "templates.nav.favorites", icon: Heart },
+];
 
-// Ratios CSS para que las cards adapten su altura según el formato activo
+// Aspect ratios para mostrar bien cada formato en el grid
 const FORMAT_ASPECT: Record<FormatId, string> = {
-    "square":       "1 / 1",
-    "portrait":     "4 / 5",
-    "story":        "9 / 16",
-    "print":        "1240 / 1748",
-    "fb-cover":     "1920 / 1005",
-    "flyer-legacy": "430 / 540",
+  "square":       "1 / 1",
+  "portrait":     "4 / 5",
+  "story":        "9 / 16",
+  "print":        "1240 / 1748",
+  "fb-cover":     "1920 / 1005",
+  "flyer-legacy": "430 / 540",
 };
 
+// ════════════════════════════════════════════════════════════════════════════
+//  MAIN
+// ════════════════════════════════════════════════════════════════════════════
+
 export default function TemplatesPage() {
-    const router = useRouter();
-    const [activeFormat, setActiveFormat] = useState<FormatId>("portrait");
-    const [activeCategory, setActiveCategory] = useState("todas");
-    const [activeAudiences, setActiveAudiences] = useState<AudienceId[]>([]);
-    const [activeTopFilter, setActiveTopFilter] = useState("Todas");
-    const [searchQuery, setSearchQuery] = useState("");
-    const [modalTemplate, setModalTemplate] = useState<Template | null>(null);
-    const [showSidebarMobile, setShowSidebarMobile] = useState(false);
-    // Boton flotante "subir": ref al contenedor scrollable + visibilidad
-    const scrollRef = useRef<HTMLDivElement>(null);
-    const [showScrollTop, setShowScrollTop] = useState(false);
+  const router = useRouter();
+  const { t } = useLocale();
+  const { user, profile } = useAuth();
 
-    // ─── Templates publicadas desde Supabase (admin creator) ──────────────
-    // Se cargan en background y se concatenan AL INICIO de templates oficiales.
-    // Si la carga falla o no hay publicadas, el catalogo funciona igual con
-    // solo data/templates.ts. Decision: publicadas primero (lo mas nuevo arriba).
-    const [publishedTemplates, setPublishedTemplates] = useState<Template[]>([]);
-    useEffect(() => {
-        (async () => {
-            try {
-                const { data, error } = await supabase
-                    .from("templates_published")
-                    .select("*")
-                    .order("published_at", { ascending: false });
-                if (error) {
-                    console.warn("[templates] no se pudo cargar publicadas:", error.message);
-                    return;
-                }
-                const pubs = (data ?? []) as TemplatePublished[];
-                // Convertir TemplatePublished -> Template (mismo shape para filtros)
-                // Usamos ids negativos (-1, -2...) para no chocar con los numericos de
-                // data/templates.ts y para que el router pueda distinguir mas adelante.
-                // Por ahora el editor solo soporta abrir plantillas oficiales o drafts,
-                // las publicadas redirigen a /editor/draft-{uuid}?mode=template-creator
-                // si admin, o se podran clonar como flyer normal cuando se enchufe
-                // el cargador correspondiente.
-                const converted: Template[] = pubs.map((p, idx) => ({
-                    id: -1000 - idx, // ids negativos = publicadas (placeholder)
-                    title: p.title,
-                    category: p.category,
-                    image: p.thumbnail_url ?? "",
-                    premium: p.premium,
-                    audience: p.audience as AudienceId[],
-                    internalTags: ["beta"], // marcamos como beta para distinguir
-                    variants: (p.variants as TemplateVariant[]) ?? [],
-                    // Anadimos un campo no-tipado para que router pueda identificar
-                    // el id de Supabase real (uuid string)
-                    __publishedId: p.id,
-                } as Template & { __publishedId: string }));
-                setPublishedTemplates(converted);
-            } catch (e) {
-                console.warn("[templates] error inesperado:", e);
-            }
-        })();
-    }, []);
+  const [activeFormat, setActiveFormat] = useState<FormatId>("portrait");
+  const [activeNetwork, setActiveNetwork] = useState<string | null>(null);
+  const [activeCategory, setActiveCategory] = useState("todas");
+  const [activeAudiences, setActiveAudiences] = useState<AudienceId[]>([]);
+  const [activeUseCase, setActiveUseCase] = useState<UseCase | "all">("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [modalTemplate, setModalTemplate] = useState<Template | null>(null);
+  const [showSidebarMobile, setShowSidebarMobile] = useState(false);
+  const [favorites, setFavorites] = useState<Set<number>>(new Set());
+  const [visibleCount, setVisibleCount] = useState(10);
+  const [showAllCategories, setShowAllCategories] = useState(false);
 
-    // Catalogo combinado: publicadas Supabase PRIMERO, luego oficiales data/templates.ts
-    const allTemplates = useMemo(() => [...publishedTemplates, ...templates], [publishedTemplates]);
+  // Toggle favorito (solo visual por ahora — sin persistencia Supabase)
+  const toggleFavorite = (id: number) => {
+    setFavorites(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
 
-    const toggleAudience = (id: AudienceId) => {
-        setActiveAudiences(prev =>
-            prev.includes(id) ? prev.filter(a => a !== id) : [...prev, id]
-        );
-    };
+  // ─── PLANTILLAS PUBLICADAS (Supabase admin) ──────────────────────────
+  const [publishedTemplates, setPublishedTemplates] = useState<Template[]>([]);
+  useEffect(() => {
+    (async () => {
+      try {
+        const { data, error } = await supabase
+          .from("templates_published")
+          .select("*")
+          .order("published_at", { ascending: false });
+        if (error) { console.warn("[templates] no se pudo cargar publicadas:", error.message); return; }
+        const pubs = (data ?? []) as TemplatePublished[];
+        const converted: Template[] = pubs.map((p, idx) => ({
+          id: -1000 - idx,
+          title: p.title,
+          category: p.category,
+          image: p.thumbnail_url ?? "",
+          premium: p.premium,
+          audience: p.audience as AudienceId[],
+          internalTags: ["beta"],
+          variants: (p.variants as TemplateVariant[]) ?? [],
+          __publishedId: p.id,
+        } as Template & { __publishedId: string }));
+        setPublishedTemplates(converted);
+      } catch (e) {
+        console.warn("[templates] error inesperado:", e);
+      }
+    })();
+  }, []);
 
-    const handleUseTemplate = (template: Template) => {
-        // Helper: si la plantilla viene de Supabase published, usar URL especial
-        const tpl = template as Template & { __publishedId?: string };
-        const idForUrl = tpl.__publishedId ? `published-${tpl.__publishedId}` : String(template.id);
+  const allTemplates = useMemo(() => [...publishedTemplates, ...templates], [publishedTemplates]);
 
-        // Si la plantilla tiene la variante del formato activo, ir directo a ella
-        const directVariant = template.variants.find(v => v.format === activeFormat);
-        if (directVariant) {
-            router.push(`/editor/${idForUrl}?format=${activeFormat}`);
-            return;
-        }
-        // Si solo hay 1 variante saltamos el modal y abrimos directamente
-        if (template.variants.length <= 1) {
-            const fmt = template.variants[0]?.format;
-            router.push(fmt ? `/editor/${idForUrl}?format=${fmt}` : `/editor/${idForUrl}`);
-            return;
-        }
-        // Más de 1 variante: pedir al usuario que elija
-        setModalTemplate(template);
-    };
+  // ─── Handler: usar plantilla ─────────────────────────────────────────
+  const handleUseTemplate = (template: Template) => {
+    const tpl = template as Template & { __publishedId?: string };
+    const idForUrl = tpl.__publishedId ? `published-${tpl.__publishedId}` : String(template.id);
+    const directVariant = template.variants.find(v => v.format === activeFormat);
+    if (directVariant) { router.push(`/editor/${idForUrl}?format=${activeFormat}`); return; }
+    if (template.variants.length <= 1) {
+      const fmt = template.variants[0]?.format;
+      router.push(fmt ? `/editor/${idForUrl}?format=${fmt}` : `/editor/${idForUrl}`);
+      return;
+    }
+    setModalTemplate(template);
+  };
 
-    // Contadores por formato (cuántas plantillas tienen cada variante)
-    const formatCounts = useMemo<Record<"square" | "story" | "portrait" | "fb-cover", number>>(() => ({
-        "square":   allTemplates.filter(t => t.variants.some(v => v.format === "square")).length,
-        "story":    allTemplates.filter(t => t.variants.some(v => v.format === "story")).length,
-        "portrait": allTemplates.filter(t => t.variants.some(v => v.format === "portrait")).length,
-        "fb-cover": allTemplates.filter(t => t.variants.some(v => v.format === "fb-cover")).length,
-    }), [allTemplates]);
+  // ─── Filtrado ────────────────────────────────────────────────────────
+  const toggleAudience = (id: AudienceId) => {
+    setActiveAudiences(prev => prev.includes(id) ? prev.filter(a => a !== id) : [...prev, id]);
+  };
 
-    const filtered = useMemo(() => {
-        const list = allTemplates.filter((t) => {
-            // Filtrado estricto por formato activo
-            const matchFormat = t.variants.some(v => v.format === activeFormat);
-            if (!matchFormat) return false;
+  const filtered = useMemo(() => {
+    const list = allTemplates.filter((tpl) => {
+      const matchFormat = tpl.variants.some(v => v.format === activeFormat);
+      if (!matchFormat) return false;
+      const cat = tpl.category.toLowerCase();
+      const matchCat = activeCategory === "todas"
+        || cat === activeCategory
+        || cat.includes(activeCategory)
+        || activeCategory.includes(cat.split(" ")[0])
+        || (activeCategory === "gala" && cat.includes("corporativo"))
+        || (activeCategory === "discoteca" && cat.includes("club"));
+      const matchAudience = activeAudiences.length === 0 ||
+        activeAudiences.every(a => tpl.audience.includes(a));
+      const matchSearch = searchQuery === "" ||
+        tpl.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        tpl.category.toLowerCase().includes(searchQuery.toLowerCase());
+      // Use case: usa inferUseCases() via helper. "all" no filtra.
+      const matchUseCase = matchesUseCase(tpl, activeUseCase);
+      return matchCat && matchAudience && matchSearch && matchUseCase;
+    });
+    return [...list].sort((a, b) => {
+      const aPub = a.id < 0; const bPub = b.id < 0;
+      if (aPub && !bPub) return -1;
+      if (!aPub && bPub) return 1;
+      if (aPub && bPub) return a.id - b.id;
+      return b.id - a.id; // mas recientes primero
+    });
+  }, [allTemplates, activeFormat, activeCategory, activeAudiences, searchQuery, activeUseCase]);
 
-            const cat = t.category.toLowerCase();
-            const matchCat = activeCategory === "todas"
-                || cat === activeCategory
-                || cat.includes(activeCategory)
-                || activeCategory.includes(cat.split(" ")[0])
-                || (activeCategory === "gala" && cat.includes("corporativo"))
-                || (activeCategory === "discoteca" && cat.includes("club"));
+  // Slice paginado en cliente — "Cargar mas" suma 10
+  const visibleTemplates = filtered.slice(0, visibleCount);
+  const hasMore = filtered.length > visibleCount;
 
-            // Audiencias: AND lógico — la plantilla debe servir a TODAS las activas
-            const matchAudience = activeAudiences.length === 0 ||
-                activeAudiences.every(a => t.audience.includes(a));
+  // Cuando cambia el filtro, reseteamos visibleCount
+  useEffect(() => { setVisibleCount(10); }, [activeFormat, activeCategory, activeAudiences, searchQuery, activeUseCase]);
 
-            const matchSearch = searchQuery === "" ||
-                t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                t.category.toLowerCase().includes(searchQuery.toLowerCase());
-            const matchTop = activeTopFilter === "Todas" ||
-                (activeTopFilter === "Premium" && t.premium) ||
-                cat.includes(activeTopFilter.toLowerCase());
-            return matchCat && matchAudience && matchSearch && matchTop;
-        });
-        // Orden: publicadas Supabase (id negativo) conservan su orden por
-        // published_at desc al inicio. Las oficiales (data/templates.ts) van
-        // detras ordenadas por id descendente — la mas nueva (#48) primero,
-        // la mas antigua (#1) al final.
-        return [...list].sort((a, b) => {
-            const aPub = a.id < 0;
-            const bPub = b.id < 0;
-            if (aPub && !bPub) return -1;
-            if (!aPub && bPub) return 1;
-            if (aPub && bPub) return a.id - b.id; // mantienen orden array
-            return b.id - a.id; // oficiales: id desc
-        });
-    }, [allTemplates, activeFormat, activeCategory, activeAudiences, searchQuery, activeTopFilter]);
+  const clearFilters = () => {
+    setActiveFormat("portrait");
+    setActiveCategory("todas");
+    setActiveAudiences([]);
+    setActiveUseCase("all");
+    setActiveNetwork(null);
+    setSearchQuery("");
+  };
 
-    const clearFilters = () => {
-        setActiveFormat("portrait");
-        setActiveCategory("todas");
-        setActiveAudiences([]);
-        setActiveTopFilter("Todas");
-        setSearchQuery("");
-    };
+  // Selector de red social: cambia tambien el formato activo si la red lo
+  // tiene definido. Al deselecccionar (click en la misma), restaura "todas las redes".
+  const handleNetworkClick = (net: PublishOption) => {
+    if (activeNetwork === net.key) {
+      setActiveNetwork(null);
+      return;
+    }
+    setActiveNetwork(net.key);
+    if (net.format) setActiveFormat(net.format);
+  };
 
-    return (
-        <div className="flex h-[calc(100vh-56px)] md:h-[calc(100vh-56px)]">
-            {/* Overlay sidebar mobile */}
-            {showSidebarMobile && (
-                <div
-                    onClick={() => setShowSidebarMobile(false)}
-                    className="md:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
-                />
-            )}
+  // Nombre saludo: profile.name > primer parte del email > fallback
+  const greetingName = profile?.name?.split(" ")[0] ?? user?.email?.split("@")[0] ?? "";
+  const greeting = greetingName
+    ? t("templates.greeting").replace("{name}", greetingName)
+    : t("templates.greetingFallback");
 
-            {/* Sidebar - DESKTOP: fijo lateral. MOBILE: drawer deslizable desde izq */}
-            <aside className={`
-                ${showSidebarMobile ? "translate-x-0" : "-translate-x-full"} md:translate-x-0
-                fixed md:static inset-y-0 left-0 top-14 md:top-0
-                z-50 md:z-auto
-                w-72 md:w-64 shrink-0
-                border-r border-white/[0.06] bg-[#0c0c12]
-                overflow-y-auto p-4 flex flex-col gap-5
-                transition-transform duration-300 ease-out
-            `}>
-                <div className="flex items-center justify-between md:block">
-                    <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">Filtros</h3>
-                    {/* Boton cerrar drawer SOLO MOBILE */}
-                    <button onClick={() => setShowSidebarMobile(false)} className="md:hidden text-gray-400 active:text-white mb-3">
-                        <span className="text-xl leading-none">×</span>
-                    </button>
-                </div>
-                <div>
-                    <div className="relative">
-                        <Search size={16} strokeWidth={1.8} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
-                        <input
-                            type="text"
-                            placeholder="Buscar plantillas..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full bg-white/[0.05] border border-white/[0.08] rounded-xl pl-9 pr-3 py-2 text-sm text-white placeholder-gray-600 outline-none focus:border-purple-500/50 transition-colors"
-                        />
-                    </div>
-                </div>
+  const visibleCats = showAllCategories ? CATEGORIES : CATEGORIES.slice(0, 5);
+  const totalCount = allTemplates.length;
 
-                <div>
-                    <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">Categorías</h3>
-                    <div className="space-y-0.5">
-                        {CATEGORIES.map((cat) => {
-                            const Icon = cat.icon;
-                            const isActive = activeCategory === cat.id;
-                            return (
-                                <button
-                                    key={cat.id}
-                                    onClick={() => setActiveCategory(cat.id)}
-                                    aria-label={cat.label}
-                                    aria-pressed={isActive}
-                                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all ${
-                                        isActive
-                                            ? "bg-purple-600/20 text-white border border-purple-500/30"
-                                            : "text-gray-400 hover:text-white hover:bg-white/[0.04]"
-                                    }`}
-                                >
-                                    <Icon
-                                        size={18}
-                                        strokeWidth={1.8}
-                                        className={`shrink-0 ${isActive ? "text-yellow-400" : ""}`}
-                                    />
-                                    <span>{cat.label}</span>
-                                    {isActive && (
-                                        <Check size={15} strokeWidth={2} className="ml-auto text-purple-300" />
-                                    )}
-                                </button>
-                            );
-                        })}
-                    </div>
-                </div>
+  return (
+    <div className="min-h-[calc(100vh-56px)]" style={{ background: "var(--home-bg)", color: "var(--home-text)" }}>
+      {/* Drawer mobile overlay */}
+      {showSidebarMobile && (
+        <div onClick={() => setShowSidebarMobile(false)}
+             className="lg:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40" />
+      )}
 
-                <div>
-                    <div className="flex items-baseline justify-between mb-3">
-                        <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest">Para quién es</h3>
-                        {activeAudiences.length > 0 && (
-                            <button
-                                onClick={() => setActiveAudiences([])}
-                                className="text-[10px] text-purple-400 hover:text-purple-300 transition-colors"
-                            >
-                                Limpiar
-                            </button>
-                        )}
-                    </div>
-                    <div className="space-y-0.5">
-                        {AUDIENCES.map((aud) => {
-                            const Icon = aud.icon;
-                            const isActive = activeAudiences.includes(aud.id);
-                            return (
-                                <button
-                                    key={aud.id}
-                                    onClick={() => toggleAudience(aud.id)}
-                                    aria-label={aud.label}
-                                    aria-pressed={isActive}
-                                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all ${
-                                        isActive
-                                            ? "bg-purple-600/20 text-white border border-purple-500/30"
-                                            : "text-gray-400 hover:text-white hover:bg-white/[0.04] border border-transparent"
-                                    }`}
-                                >
-                                    <Icon
-                                        size={16}
-                                        strokeWidth={1.8}
-                                        className={`shrink-0 ${isActive ? "text-yellow-400" : ""}`}
-                                    />
-                                    <span>{aud.label}</span>
-                                    {isActive && (
-                                        <Check size={13} strokeWidth={2.4} className="ml-auto text-purple-300" />
-                                    )}
-                                </button>
-                            );
-                        })}
-                    </div>
-                </div>
+      <div className="max-w-[1600px] mx-auto grid grid-cols-1 lg:grid-cols-[260px_1fr] xl:grid-cols-[260px_1fr_240px] gap-3 lg:gap-4 px-3 sm:px-4 lg:px-5 py-3 sm:py-4">
 
-                <button
-                    onClick={clearFilters}
-                    aria-label="Borrar todos los filtros"
-                    className="mt-auto flex items-center gap-2 justify-center w-full border border-white/10 rounded-xl py-2.5 text-sm text-gray-400 hover:text-white hover:border-white/20 transition-colors"
-                >
-                    <Trash2 size={16} strokeWidth={1.8} />
-                    Borrar filtros
+        {/* ════════════════════════════════════════════════════════════════
+            COLUMNA 1: SIDEBAR IZQUIERDA (drawer mobile / fija desktop)
+        ════════════════════════════════════════════════════════════════ */}
+        <aside className={`
+          ${showSidebarMobile ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0
+          fixed lg:sticky top-14 lg:top-[72px] left-0
+          h-[calc(100vh-56px)] lg:h-[calc(100vh-90px)]
+          w-72 lg:w-auto z-50 lg:z-auto
+          overflow-y-auto scrollbar-hide
+          transition-transform duration-300 ease-out
+          rounded-2xl p-4 flex flex-col gap-5
+        `} style={{ background: "var(--home-bg-soft)", border: "1px solid var(--home-card-border)" }}>
+
+          {/* Navegacion */}
+          <div>
+            <h3 className="text-[10px] font-bold tracking-widest mb-2.5 uppercase"
+                style={{ color: "var(--home-text-soft)" }}>{t("templates.nav.title")}</h3>
+            <div className="space-y-0.5">
+              {SIDEBAR_NAV.map(item => {
+                const Icon = item.icon;
+                const isActive = item.href === "/templates";
+                return (
+                  <Link key={item.href} href={item.href} onClick={() => setShowSidebarMobile(false)}
+                        className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+                        style={isActive ? {
+                          background: "rgba(168,85,247,0.15)",
+                          color: "var(--home-text)",
+                          border: "1px solid rgba(168,85,247,0.3)",
+                        } : { color: "var(--home-text-muted)" }}>
+                    <Icon size={16} strokeWidth={2}
+                          className={isActive ? "text-purple-400" : ""} />
+                    {t(item.i18nKey)}
+                    {isActive && <ChevronRight size={14} strokeWidth={2.5} className="ml-auto text-purple-400" />}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Filtros */}
+          <div>
+            <h3 className="text-[10px] font-bold tracking-widest mb-2.5 uppercase"
+                style={{ color: "var(--home-text-soft)" }}>{t("templates.sidebar.filters")}</h3>
+            <div className="relative">
+              <Search size={14} strokeWidth={2} className="absolute left-2.5 top-1/2 -translate-y-1/2"
+                      style={{ color: "var(--home-text-soft)" }} />
+              <input
+                type="text"
+                placeholder={t("home.search.placeholder")}
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                className="w-full pl-8 pr-7 py-1.5 rounded-lg text-xs outline-none"
+                style={{
+                  background: "var(--home-card-bg)",
+                  border: "1px solid var(--home-card-border)",
+                  color: "var(--home-text)",
+                }} />
+              <kbd className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] font-bold px-1 rounded"
+                   style={{ background: "var(--home-card-border)", color: "var(--home-text-muted)" }}>/</kbd>
+            </div>
+          </div>
+
+          {/* Categorias */}
+          <div>
+            <button onClick={() => setShowAllCategories(v => !v)}
+                    className="w-full flex items-center justify-between mb-2.5">
+              <h3 className="text-[10px] font-bold tracking-widest uppercase"
+                  style={{ color: "var(--home-text-soft)" }}>{t("templates.sidebar.categories")}</h3>
+              <ChevronDown size={12} strokeWidth={2.5}
+                           className={`transition-transform ${showAllCategories ? "rotate-180" : ""}`}
+                           style={{ color: "var(--home-text-soft)" }} />
+            </button>
+            <div className="space-y-0.5">
+              {visibleCats.map(cat => {
+                const Icon = cat.icon;
+                const isActive = activeCategory === cat.id;
+                const label = t(cat.i18nKey);
+                return (
+                  <button key={cat.id} onClick={() => setActiveCategory(cat.id)} aria-label={label} aria-pressed={isActive}
+                          className="w-full flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-xs transition-colors"
+                          style={isActive ? {
+                            background: "rgba(168,85,247,0.15)",
+                            color: "var(--home-text)",
+                            border: "1px solid rgba(168,85,247,0.3)",
+                          } : { color: "var(--home-text-muted)" }}>
+                    <Icon size={14} strokeWidth={2} className={isActive ? "text-purple-400" : ""} />
+                    <span>{label}</span>
+                  </button>
+                );
+              })}
+              {!showAllCategories && CATEGORIES.length > 5 && (
+                <button onClick={() => setShowAllCategories(true)}
+                        className="w-full flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-xs font-medium text-purple-400 hover:text-purple-300">
+                  <ChevronDown size={14} strokeWidth={2} />
+                  {t("templates.cat.moreCategories")}
                 </button>
-            </aside>
+              )}
+            </div>
+          </div>
 
-            {/* Contenido principal */}
-            <div
-                ref={scrollRef}
-                onScroll={(e) => {
-                    // Mostrar boton "subir" si bajamos mas de ~400px
-                    setShowScrollTop(e.currentTarget.scrollTop > 400);
-                }}
-                className="flex-1 overflow-y-auto relative"
-            >
-                <div className="p-3 sm:p-6">
-                    <div className="flex items-start justify-between mb-4 sm:mb-6 gap-3">
-                        <div className="min-w-0">
-                            <h1 className="text-xl sm:text-2xl font-bold text-white">Plantillas</h1>
-                            <p className="text-xs sm:text-sm text-gray-500 mt-1 truncate">
-                                {activeCategory === "todas"
-                                    ? "Elige una plantilla lista para editar"
-                                    : `Explorando: ${CATEGORIES.find(c => c.id === activeCategory)?.label}`}
-                            </p>
-                        </div>
-                        <div className="flex items-center gap-2 shrink-0">
-                            {/* Boton Filtros - SOLO MOBILE */}
-                            <button
-                                onClick={() => setShowSidebarMobile(true)}
-                                className="md:hidden flex items-center gap-1.5 bg-white/[0.05] border border-white/[0.08] rounded-xl px-3 py-2 text-xs font-medium text-gray-300 active:bg-white/10"
-                            >
-                                <SlidersHorizontal size={14} strokeWidth={2} />
-                                Filtros
-                            </button>
-                            <select className="hidden sm:block bg-white/[0.05] border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-gray-300 outline-none">
-                                <option className="bg-[#1a1a2e]">Más recientes</option>
-                                <option className="bg-[#1a1a2e]">Más populares</option>
-                                <option className="bg-[#1a1a2e]">Premium primero</option>
-                            </select>
-                        </div>
-                    </div>
+          {/* Audiences */}
+          <div>
+            <div className="flex items-center justify-between mb-2.5">
+              <h3 className="text-[10px] font-bold tracking-widest uppercase"
+                  style={{ color: "var(--home-text-soft)" }}>{t("templates.sidebar.audience")}</h3>
+              {activeAudiences.length > 0 && (
+                <button onClick={() => setActiveAudiences([])}
+                        className="text-[9px] text-purple-400 hover:text-purple-300">
+                  {t("templates.sidebar.clear")}
+                </button>
+              )}
+            </div>
+            <div className="space-y-0.5">
+              {AUDIENCES.map(aud => {
+                const Icon = aud.icon;
+                const isActive = activeAudiences.includes(aud.id);
+                const label = t(aud.i18nKey);
+                return (
+                  <button key={aud.id} onClick={() => toggleAudience(aud.id)} aria-label={label} aria-pressed={isActive}
+                          className="w-full flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-xs transition-colors"
+                          style={isActive ? {
+                            background: "rgba(168,85,247,0.15)",
+                            color: "var(--home-text)",
+                            border: "1px solid rgba(168,85,247,0.3)",
+                          } : { color: "var(--home-text-muted)" }}>
+                    <Icon size={14} strokeWidth={2} className={isActive ? "text-purple-400" : ""} />
+                    <span>{label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
 
-                    {/* ─── Selector de formato premium con parallax ─── */}
-                    <FormatDestinationPicker
-                        selectedFormat={activeFormat as "square" | "story" | "portrait" | "fb-cover"}
-                        onFormatChange={(id) => setActiveFormat(id)}
-                        counts={formatCounts}
-                    />
+          {/* Card promo PRO */}
+          <div className="mt-auto rounded-xl p-3"
+               style={{
+                 background: "linear-gradient(135deg, rgba(250,204,21,0.12), rgba(245,158,11,0.08))",
+                 border: "1px solid rgba(250,204,21,0.3)",
+               }}>
+            <div className="flex items-center gap-1.5 mb-1.5">
+              <Crown size={14} strokeWidth={2.2} className="text-amber-400 fill-amber-400" />
+              <span className="text-xs font-black text-amber-300">{t("templates.proCard.title")}</span>
+            </div>
+            <p className="text-[10px] leading-snug mb-2.5" style={{ color: "var(--home-text-muted)" }}>
+              {t("templates.proCard.body")}
+            </p>
+            <button onClick={clearFilters}
+                    className="w-full py-1.5 rounded-lg text-[11px] font-bold text-black transition-transform hover:scale-[1.02]"
+                    style={{ background: "linear-gradient(135deg,#facc15,#f59e0b)" }}>
+              {t("templates.proCard.cta")}
+            </button>
+          </div>
+        </aside>
 
-                    {/* Filtros rápidos */}
-                    <div className="flex flex-wrap gap-2 mb-4 sm:mb-6">
-                        {TOP_FILTERS.map((filter) => {
-                            const isActive = activeTopFilter === filter;
-                            const isPremium = filter === "Premium";
-                            return (
-                                <button
-                                    key={filter}
-                                    onClick={() => setActiveTopFilter(filter)}
-                                    aria-pressed={isActive}
-                                    className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
-                                        isActive
-                                            ? "bg-purple-600 text-white"
-                                            : "border border-white/10 text-gray-400 hover:border-white/20 hover:text-white"
-                                    }`}
-                                >
-                                    {isPremium && <Crown size={14} strokeWidth={1.8} />}
-                                    {filter}
-                                </button>
-                            );
-                        })}
-                    </div>
+        {/* ════════════════════════════════════════════════════════════════
+            COLUMNA 2: MAIN CONTENT
+        ════════════════════════════════════════════════════════════════ */}
+        <div className="min-w-0 space-y-4">
 
-                    {/* Grid - 2 cols mobile, 2 sm, 3 lg, 4 xl */}
-                    {filtered.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-24 text-gray-600">
-                            <SearchX size={40} strokeWidth={1.5} className="mb-4 text-gray-700" />
-                            <p className="text-lg font-medium">No hay plantillas en este formato todavía</p>
-                            <p className="text-sm mt-1">Prueba con otro formato o quita algún filtro</p>
-                            <button onClick={clearFilters} className="mt-4 text-purple-400 text-sm hover:text-purple-300">
-                                Limpiar filtros
-                            </button>
-                        </div>
-                    ) : (
-                        <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                            {filtered.map((template) => (
-                                <article
-                                    key={`${template.id}-${activeFormat}`}
-                                    className="group overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.03] hover:border-purple-500/30 transition-all hover:shadow-2xl hover:shadow-purple-900/20 hover:-translate-y-1 duration-300"
-                                >
-                                    <div
-                                        className="relative overflow-hidden"
-                                        style={{ aspectRatio: FORMAT_ASPECT[activeFormat] }}
-                                    >
-                                        <TemplateFabricThumbnail
-                                            template={template}
-                                            formatId={activeFormat}
-                                            className="absolute inset-0 h-full w-full transition duration-500 group-hover:scale-[1.02]"
-                                        />
-                                        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
-
-                                        <span className="absolute left-3 top-3 rounded-full bg-black/60 border border-white/20 px-2.5 py-1 text-xs font-medium text-white backdrop-blur-sm">
-                                            {template.category}
-                                        </span>
-
-                                        {template.premium && (
-                                            <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-yellow-400 px-2 py-0.5 text-xs font-bold text-black">
-                                                <Crown size={11} strokeWidth={2.2} />
-                                                PRO
-                                            </span>
-                                        )}
-
-                                        <div className="absolute bottom-0 left-0 right-0 p-3">
-                                            <h2 className="text-base font-bold text-white leading-tight">{template.title}</h2>
-                                        </div>
-                                    </div>
-
-                                    <div className="p-3">
-                                        <button
-                                            onClick={() => handleUseTemplate(template)}
-                                            className="flex items-center justify-center gap-2 w-full rounded-xl bg-white/[0.06] border border-white/10 px-4 py-2.5 text-sm font-semibold text-white hover:bg-purple-600 hover:border-purple-600 transition-all"
-                                            aria-label={`Usar plantilla ${template.title}`}
-                                        >
-                                            <Copy size={15} strokeWidth={1.8} />
-                                            Usar plantilla
-                                            <Sparkles size={13} strokeWidth={1.8} className="ml-0.5 text-yellow-300 opacity-0 group-hover:opacity-100 transition-opacity" />
-                                        </button>
-                                    </div>
-                                </article>
-                            ))}
-                        </div>
-                    )}
-                </div>
+          {/* HERO: saludo + CTA */}
+          <section className="relative rounded-2xl overflow-hidden p-4 sm:p-5"
+                   style={{
+                     background: "linear-gradient(135deg, rgba(168,85,247,0.08), rgba(124,58,237,0.04))",
+                     border: "1px solid var(--home-card-border)",
+                   }}>
+            {/* Decoracion derecha — gradient blob estilo "neon disco" */}
+            <div className="absolute right-0 top-0 bottom-0 w-1/3 pointer-events-none opacity-70"
+                 style={{
+                   background: "radial-gradient(ellipse at 80% 50%, rgba(236,72,153,0.4), transparent 60%), radial-gradient(circle at 90% 30%, rgba(250,204,21,0.35), transparent 40%)",
+                 }} />
+            <div className="relative flex items-start justify-between gap-3 flex-wrap">
+              <div className="min-w-0 flex-1">
+                <h1 className="text-xl sm:text-2xl font-black flex items-center gap-2">
+                  {greeting} <span className="inline-block">👋</span>
+                </h1>
+                <p className="text-xs sm:text-sm mt-1" style={{ color: "var(--home-text-muted)" }}>
+                  {t("templates.tagline")}
+                </p>
+              </div>
+              <Link href="/create"
+                    className="shrink-0 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl font-bold text-xs sm:text-sm text-black transition-transform hover:scale-[1.03]"
+                    style={{ background: "linear-gradient(135deg,#facc15,#f59e0b)", boxShadow: "0 0 22px rgba(250,204,21,0.35)" }}>
+                <Plus size={14} strokeWidth={2.5} />
+                {t("templates.createFlyer")}
+              </Link>
             </div>
 
-            {modalTemplate && (
-                <FormatPickerModal
-                    template={modalTemplate}
-                    onClose={() => setModalTemplate(null)}
-                />
-            )}
+            {/* BANNER PUBLICAR EN */}
+            <div className="relative mt-4 rounded-xl p-3"
+                 style={{ background: "var(--home-card-bg)", border: "1px solid var(--home-card-border)" }}>
+              <div className="flex items-center gap-3">
+                <div className="hidden sm:block shrink-0 max-w-[140px]">
+                  <div className="flex items-center gap-1.5 mb-0.5">
+                    <Sparkles size={11} strokeWidth={2.5} className="text-amber-400" />
+                    <span className="text-[9px] font-black tracking-widest uppercase" style={{ color: "var(--home-text)" }}>
+                      {t("templates.publishIn")}
+                    </span>
+                  </div>
+                  <p className="text-[10px]" style={{ color: "var(--home-text-soft)" }}>
+                    {t("templates.publishIn.sub")}
+                  </p>
+                </div>
+                <div className="flex-1 min-w-0 flex items-center gap-2 overflow-x-auto scrollbar-hide pb-1">
+                  {PUBLISH_NETWORKS.map(net => (
+                    <NetworkCard key={net.key} net={net}
+                                 active={activeNetwork === net.key}
+                                 label={t(net.i18nKey)}
+                                 onClick={() => handleNetworkClick(net)} />
+                  ))}
+                  <CustomFormatCard label={t("templates.publish.custom")} sub={t("templates.publish.custom.sub")} />
+                </div>
+              </div>
+            </div>
+          </section>
 
-            {/* Boton flotante "subir arriba". Aparece al scrollear >400px en el
-                contenedor principal, y al hacer click vuelve al top suavemente. */}
-            <button
-                onClick={() => scrollRef.current?.scrollTo({ top: 0, behavior: "smooth" })}
-                aria-label="Volver arriba"
-                className={`fixed bottom-5 right-5 sm:bottom-6 sm:right-6 z-40 flex items-center justify-center rounded-full bg-purple-600 hover:bg-purple-500 text-white shadow-lg shadow-purple-900/40 border border-white/10 transition-all duration-200 h-12 w-12 sm:h-14 sm:w-14 ${
-                    showScrollTop
-                        ? "opacity-100 translate-y-0 pointer-events-auto"
-                        : "opacity-0 translate-y-3 pointer-events-none"
-                }`}
-            >
-                <ArrowUp size={22} strokeWidth={2.2} />
-            </button>
+          {/* SECCION: ¿PARA QUÉ LO NECESITAS? */}
+          <section className="rounded-xl p-3"
+                   style={{ background: "var(--home-bg-soft)", border: "1px solid var(--home-card-border)" }}>
+            <div className="flex items-center gap-3 flex-wrap">
+              <div className="shrink-0 min-w-0">
+                <div className="text-[9px] font-black tracking-widest uppercase" style={{ color: "var(--home-text)" }}>
+                  {t("templates.useCase.title")}
+                </div>
+                <div className="text-[10px]" style={{ color: "var(--home-text-soft)" }}>
+                  {t("templates.useCase.sub")}
+                </div>
+              </div>
+              <div className="flex-1 min-w-0 flex items-center gap-1.5 overflow-x-auto scrollbar-hide pb-1">
+                {USE_CASES.map(uc => {
+                  const Icon = uc.icon;
+                  const isActive = activeUseCase === uc.id;
+                  return (
+                    <button key={uc.id} onClick={() => setActiveUseCase(uc.id)}
+                            className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] sm:text-xs font-semibold transition-all"
+                            style={isActive ? {
+                              background: "linear-gradient(135deg,#7c3aed,#a855f7)",
+                              color: "#fff",
+                              boxShadow: "0 0 12px rgba(168,85,247,0.3)",
+                            } : {
+                              background: "var(--home-card-bg)",
+                              border: "1px solid var(--home-card-border)",
+                              color: "var(--home-text-muted)",
+                            }}>
+                      <Icon size={12} strokeWidth={2} />
+                      {t(uc.i18nKey)}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </section>
+
+          {/* HEADER GRID: titulo + conteo + sort + view toggle */}
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-2">
+              {/* Boton Filtros mobile */}
+              <button onClick={() => setShowSidebarMobile(true)}
+                      className="lg:hidden flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold"
+                      style={{
+                        background: "var(--home-card-bg)",
+                        border: "1px solid var(--home-card-border)",
+                        color: "var(--home-text)",
+                      }}>
+                <LayoutGrid size={13} strokeWidth={2} />
+                {t("templates.sidebar.filters")}
+              </button>
+              <h2 className="text-base sm:text-lg font-black inline-flex items-center gap-2">
+                {t("templates.grid.title")}
+                <Sparkles size={14} strokeWidth={2.4} className="text-amber-400" fill="currentColor" />
+              </h2>
+              <span className="text-xs" style={{ color: "var(--home-text-soft)" }}>
+                +{t("templates.grid.count").replace("{n}", String(totalCount))}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="hidden sm:inline text-[11px]" style={{ color: "var(--home-text-soft)" }}>
+                {t("templates.grid.sort")}:
+              </span>
+              <select className="rounded-lg px-2 py-1 text-xs outline-none"
+                      style={{
+                        background: "var(--home-card-bg)",
+                        border: "1px solid var(--home-card-border)",
+                        color: "var(--home-text)",
+                      }}>
+                <option>{t("templates.sort.recent")}</option>
+                <option>{t("templates.sort.popular")}</option>
+                <option>{t("templates.sort.premiumFirst")}</option>
+              </select>
+              <div className="hidden sm:flex rounded-lg overflow-hidden"
+                   style={{ background: "var(--home-card-bg)", border: "1px solid var(--home-card-border)" }}>
+                <button className="w-7 h-7 flex items-center justify-center"
+                        style={{ background: "rgba(168,85,247,0.15)", color: "#a855f7" }}>
+                  <LayoutGrid size={13} strokeWidth={2} />
+                </button>
+                <button className="w-7 h-7 flex items-center justify-center"
+                        style={{ color: "var(--home-text-soft)" }}>
+                  <List size={13} strokeWidth={2} />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* GRID DE PLANTILLAS */}
+          {filtered.length === 0 ? (
+            <div className="rounded-xl py-16 text-center text-xs"
+                 style={{ background: "var(--home-card-bg)", border: "1px solid var(--home-card-border)", color: "var(--home-text-muted)" }}>
+              <p className="font-semibold mb-1">{t("templates.empty.title")}</p>
+              <p>{t("templates.empty.sub")}</p>
+              <button onClick={clearFilters} className="mt-3 text-purple-400 text-xs hover:text-purple-300 font-semibold">
+                {t("templates.empty.cta")}
+              </button>
+            </div>
+          ) : (
+            <div className="grid gap-3 grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+              {visibleTemplates.map(tpl => (
+                <TemplateCard key={`${tpl.id}-${activeFormat}`}
+                              template={tpl}
+                              formatId={activeFormat}
+                              aspect={FORMAT_ASPECT[activeFormat]}
+                              isFavorite={favorites.has(tpl.id)}
+                              onToggleFavorite={() => toggleFavorite(tpl.id)}
+                              onUse={() => handleUseTemplate(tpl)} />
+              ))}
+            </div>
+          )}
+
+          {/* CARGAR MAS */}
+          {hasMore && (
+            <div className="flex justify-center pt-3">
+              <button onClick={() => setVisibleCount(c => c + 10)}
+                      className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-colors"
+                      style={{
+                        background: "var(--home-card-bg)",
+                        border: "1px solid var(--home-card-border)",
+                        color: "var(--home-text)",
+                      }}>
+                <ChevronDown size={14} strokeWidth={2} />
+                {t("templates.grid.loadMore")}
+              </button>
+            </div>
+          )}
         </div>
-    );
+
+        {/* ════════════════════════════════════════════════════════════════
+            COLUMNA 3: RIGHT RAIL (acciones rapidas + promo IA)
+        ════════════════════════════════════════════════════════════════ */}
+        <aside className="hidden xl:block space-y-3">
+          {/* Quick actions */}
+          <div className="sticky top-[72px] space-y-3">
+            <div className="rounded-2xl p-3"
+                 style={{ background: "var(--home-bg-soft)", border: "1px solid var(--home-card-border)" }}>
+              <div className="flex items-center gap-1.5 mb-2.5">
+                <div className="w-7 h-7 rounded-lg flex items-center justify-center"
+                     style={{ background: "rgba(168,85,247,0.15)", border: "1px solid rgba(168,85,247,0.3)" }}>
+                  <Sparkles size={13} strokeWidth={2} className="text-purple-400" />
+                </div>
+                <h3 className="text-xs font-black">{t("templates.quickActions.title")}</h3>
+              </div>
+              <div className="space-y-0.5">
+                <QuickAction icon={Maximize2} label={t("templates.quickActions.customSize")} />
+                <QuickAction icon={Upload}    label={t("templates.quickActions.uploadImage")} />
+                <QuickAction icon={FolderOpen} label={t("templates.quickActions.myResources")} href="/projects" />
+                <QuickAction icon={Palette}   label={t("templates.quickActions.myColors")} />
+                <QuickAction icon={Type}      label={t("templates.quickActions.myFonts")} />
+              </div>
+            </div>
+
+            {/* Card promo IA */}
+            <div className="rounded-2xl p-3 relative overflow-hidden"
+                 style={{
+                   background: "linear-gradient(135deg, rgba(168,85,247,0.15), rgba(124,58,237,0.08))",
+                   border: "1px solid rgba(168,85,247,0.3)",
+                 }}>
+              <span className="text-[9px] font-black tracking-widest uppercase text-purple-300">
+                {t("templates.aiCard.tag")}
+              </span>
+              <h3 className="text-sm font-black mt-1 mb-1">{t("templates.aiCard.title")}</h3>
+              <p className="text-[10px] leading-snug mb-2.5" style={{ color: "var(--home-text-muted)" }}>
+                {t("templates.aiCard.body")}
+              </p>
+              <Link href="/create"
+                    className="inline-flex items-center gap-1.5 text-[11px] font-bold text-purple-300 hover:text-purple-200">
+                <Sparkles size={11} strokeWidth={2.5} />
+                {t("templates.createFlyer")}
+              </Link>
+              {/* Bot emoji decorativo */}
+              <div className="absolute -bottom-2 -right-2 text-3xl opacity-60 pointer-events-none">🤖</div>
+            </div>
+          </div>
+        </aside>
+      </div>
+
+      {modalTemplate && (
+        <FormatPickerModal template={modalTemplate} onClose={() => setModalTemplate(null)} />
+      )}
+    </div>
+  );
 }
+
+// ════════════════════════════════════════════════════════════════════════════
+//  SUB-COMPONENTES
+// ════════════════════════════════════════════════════════════════════════════
+
+/** Card de red social en el banner "PUBLICAR EN". */
+function NetworkCard({
+  net, active, label, onClick,
+}: { net: PublishOption; active: boolean; label: string; onClick: () => void }) {
+  const Icon = net.Icon;
+  return (
+    <button onClick={onClick}
+            className="shrink-0 rounded-xl px-2.5 py-1.5 flex items-center gap-2 transition-all"
+            style={active ? {
+              background: "linear-gradient(135deg,#7c3aed,#a855f7)",
+              border: "1px solid rgba(168,85,247,0.5)",
+              boxShadow: "0 0 12px rgba(168,85,247,0.3)",
+            } : {
+              background: "var(--home-card-bg)",
+              border: "1px solid var(--home-card-border)",
+            }}>
+      <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+           style={{ background: net.brandColor, color: "#fff" }}>
+        <Icon size={14} />
+      </div>
+      <div className="text-left min-w-0">
+        <div className="text-[11px] font-bold leading-tight truncate" style={{ color: active ? "#fff" : "var(--home-text)" }}>
+          {label}
+        </div>
+        <div className="text-[9px] leading-tight" style={{ color: active ? "rgba(255,255,255,0.8)" : "var(--home-text-soft)" }}>
+          {net.ratio}
+        </div>
+      </div>
+    </button>
+  );
+}
+
+/** Card "Formato personalizado" — variante del banner. */
+function CustomFormatCard({ label, sub }: { label: string; sub: string }) {
+  return (
+    <button className="shrink-0 rounded-xl px-2.5 py-1.5 flex items-center gap-2 transition-all border-dashed"
+            style={{
+              background: "var(--home-card-bg)",
+              border: "1.5px dashed var(--home-card-border)",
+            }}>
+      <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+           style={{ background: "var(--home-card-bg)", border: "1px solid var(--home-card-border)" }}>
+        <Maximize2 size={13} strokeWidth={2} style={{ color: "var(--home-text-muted)" }} />
+      </div>
+      <div className="text-left min-w-0">
+        <div className="text-[11px] font-bold leading-tight truncate" style={{ color: "var(--home-text)" }}>
+          {label}
+        </div>
+        <div className="text-[9px] leading-tight" style={{ color: "var(--home-text-soft)" }}>
+          {sub}
+        </div>
+      </div>
+    </button>
+  );
+}
+
+/** Acción rápida en el panel lateral derecho. */
+function QuickAction({ icon: Icon, label, href }: { icon: LucideIcon; label: string; href?: string }) {
+  const className = "w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-xs transition-colors hover:opacity-80";
+  const style = { color: "var(--home-text-muted)" };
+  const content = (
+    <>
+      <Icon size={14} strokeWidth={2} className="text-purple-400" />
+      <span>{label}</span>
+    </>
+  );
+  if (href) return <Link href={href} className={className} style={style}>{content}</Link>;
+  return <button className={className} style={style}>{content}</button>;
+}
+
+/** Card de plantilla — replica el mockup: tag arriba izq, PRO arriba dcha,
+ *  heart hover, imagen full, title + meta debajo, more menu. */
+function TemplateCard({
+  template, formatId, aspect, isFavorite, onToggleFavorite, onUse,
+}: {
+  template: Template;
+  formatId: FormatId;
+  aspect: string;
+  isFavorite: boolean;
+  onToggleFavorite: () => void;
+  onUse: () => void;
+}) {
+  const { t } = useLocale();
+
+  // Meta debajo del titulo: "Post · Instagram (4:5)" — derivado del formato
+  const formatMetaMap: Record<FormatId, string> = {
+    "portrait":     "Post · Instagram (4:5)",
+    "square":       "Post · Instagram (1:1)",
+    "story":        "Story · Reel (9:16)",
+    "fb-cover":     "Banner · Facebook (16:9)",
+    "print":        "Impresión",
+    "flyer-legacy": "Flyer",
+  };
+
+  return (
+    <article className="group rounded-xl overflow-hidden transition-all hover:scale-[1.02]"
+             style={{ background: "var(--home-bg-soft)", border: "1px solid var(--home-card-border)", boxShadow: "0 6px 18px rgba(0,0,0,0.35)" }}>
+      <div className="relative overflow-hidden cursor-pointer" style={{ aspectRatio: aspect }} onClick={onUse}>
+        <TemplateFabricThumbnail template={template} formatId={formatId}
+                                 className="absolute inset-0 h-full w-full transition-transform duration-500 group-hover:scale-[1.04]" />
+
+        {/* Tag categoria arriba izquierda */}
+        <span className="absolute top-1.5 left-1.5 z-10 text-[9px] font-bold tracking-wider px-1.5 py-0.5 rounded-md bg-black/65 text-white backdrop-blur-sm border border-white/15">
+          {template.category}
+        </span>
+
+        {/* Badge PRO arriba derecha */}
+        {template.premium && (
+          <span className="absolute top-1.5 right-1.5 z-10 inline-flex items-center gap-0.5 text-[9px] font-black tracking-wider px-1.5 py-0.5 rounded-md text-black"
+                style={{ background: "linear-gradient(135deg,#facc15,#f59e0b)" }}>
+            <Crown size={9} strokeWidth={2.5} fill="currentColor" />
+            PRO
+          </span>
+        )}
+
+        {/* Heart favorito — visible siempre si esta activo, hover en otros */}
+        <button onClick={(e) => { e.stopPropagation(); onToggleFavorite(); }}
+                aria-label="favorite"
+                className={`absolute z-10 w-7 h-7 rounded-full flex items-center justify-center backdrop-blur-md transition-all
+                  ${isFavorite ? "opacity-100" : "opacity-0 group-hover:opacity-100"}
+                  ${template.premium ? "top-7 right-1.5" : "top-1.5 right-1.5"}`}
+                style={{ background: "rgba(0,0,0,0.55)" }}>
+          <Heart size={12} strokeWidth={2}
+                 className={isFavorite ? "text-pink-400" : "text-white"}
+                 fill={isFavorite ? "currentColor" : "none"} />
+        </button>
+      </div>
+
+      {/* Info block */}
+      <div className="p-2 sm:p-2.5 flex items-start justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <h3 className="text-xs sm:text-sm font-bold truncate" style={{ color: "var(--home-text)" }}>
+            {template.title}
+          </h3>
+          <p className="text-[10px] truncate" style={{ color: "var(--home-text-soft)" }}>
+            {formatMetaMap[formatId]}
+          </p>
+        </div>
+        <button aria-label="more"
+                className="shrink-0 w-6 h-6 rounded-md flex items-center justify-center transition-colors hover:opacity-80"
+                style={{ color: "var(--home-text-soft)" }}>
+          <MoreVertical size={13} strokeWidth={2} />
+        </button>
+      </div>
+    </article>
+  );
+}
+

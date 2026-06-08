@@ -50,6 +50,7 @@ import { useTemplateDrafts } from "@/hooks/useTemplateDrafts";
 import { useAuth } from "@/hooks/useAuth";
 import AuthModal from "@/components/auth/AuthModal";
 import { supabase } from "@/lib/supabase";
+import { applyWatermark, shouldWatermark } from "@/lib/applyWatermark";
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
 
@@ -331,7 +332,7 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
   // ─── AUTH MODAL ──────────────────────────────────────────────────────────
   // Modal de login/registro que se abre cuando intentas descargar o guardar
   // sin sesion iniciada. Tras login exitoso, `onSuccess` reintenta la accion.
-  const { user: authUser } = useAuth();
+  const { user: authUser, profile: authProfile } = useAuth();
   const [authModalConfig, setAuthModalConfig] = useState<{ title: string; subtitle: string; onSuccess: () => void } | null>(null);
   /**
    * Si hay sesion, ejecuta `action` directamente. Si no, abre el AuthModal y
@@ -1689,21 +1690,35 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
 
   // ─── EXPORT ───────────────────────────────────────────────────────────────
 
-  // Logica pura de export: hace toDataURL y dispara la descarga. NO checkea
-  // sesion (eso lo hace el wrapper publico `exportFlyer`).
-  const doExport = useCallback((format: "png" | "jpg" = "png") => {
+  // Logica pura de export: hace toDataURL, aplica marca de agua si el usuario
+  // es free, y dispara la descarga. NO checkea sesion (eso lo hace el wrapper
+  // publico `exportFlyer`).
+  const doExport = useCallback(async (format: "png" | "jpg" = "png") => {
     const canvas = fabricRef.current;
     if (!canvas) return;
     const currentZoom = canvas.getZoom();
     canvas.setZoom(1);
     canvas.setDimensions({ width: canvasSize.w, height: canvasSize.h });
-    const dataUrl = canvas.toDataURL({ format: format === "jpg" ? "jpeg" : "png", quality: 0.95, multiplier: 1 });
+    const rawDataUrl = canvas.toDataURL({ format: format === "jpg" ? "jpeg" : "png", quality: 0.95, multiplier: 1 });
     canvas.setZoom(currentZoom);
     canvas.setDimensions({ width: canvasSize.w * currentZoom, height: canvasSize.h * currentZoom });
     canvas.renderAll();
+
+    // Marca de agua solo en plan free. Pro/Enterprise descargan limpio.
+    // Si applyWatermark falla por cualquier motivo, no bloqueamos el export
+    // — preferimos dar al usuario su descarga (sin watermark) a romperle el flow.
+    let finalDataUrl = rawDataUrl;
+    if (shouldWatermark(authProfile?.plan)) {
+      try {
+        finalDataUrl = await applyWatermark(rawDataUrl);
+      } catch (err) {
+        console.warn("Watermark failed, fallback a imagen sin marca:", err);
+      }
+    }
+
     const link = document.createElement("a");
-    link.download = `artegenia-flyer.${format}`; link.href = dataUrl; link.click();
-  }, [canvasSize]);
+    link.download = `artegenia-flyer.${format}`; link.href = finalDataUrl; link.click();
+  }, [canvasSize, authProfile?.plan]);
 
   // Wrapper publico: pide sesion antes de descargar. Si no hay, abre AuthModal
   // y reintenta tras login. Si hay sesion, descarga directo.

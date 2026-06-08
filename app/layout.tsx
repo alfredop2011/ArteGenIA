@@ -12,9 +12,67 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+// Dominio canonico para resolver URLs absolutas (og:image, sitemap, etc.).
+// Cuando se compre dominio propio, cambiar aqui o setear NEXT_PUBLIC_SITE_URL en Vercel.
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://artegenia.vercel.app";
+
 export const metadata: Metadata = {
-  title: "ArteGenIA — Generador de Flyers",
-  description: "Crea flyers profesionales para tus eventos",
+  metadataBase: new URL(SITE_URL),
+  // Title template: paginas hijas pueden sobreescribir; sino se usa el default.
+  // Ej: una pagina con title="Plantillas" mostrara "Plantillas · ArteGenIA"
+  title: {
+    default: "ArteGenIA — Crea flyers profesionales con IA en minutos",
+    template: "%s · ArteGenIA",
+  },
+  description:
+    "Diseña flyers para eventos, conciertos, talleres y clases de baile usando plantillas profesionales e IA. Recorta personas, elimina fondos y descarga en alta calidad. Gratis.",
+  keywords: [
+    "generador de flyers",
+    "crear flyers online",
+    "flyers para eventos",
+    "diseño con IA",
+    "plantillas flyer",
+    "flyers para conciertos",
+    "flyers clases de baile",
+    "recortar personas IA",
+    "eliminar fondo foto",
+  ],
+  authors: [{ name: "ArteGenIA" }],
+  creator: "ArteGenIA",
+  publisher: "ArteGenIA",
+  applicationName: "ArteGenIA",
+  // OpenGraph: como se ve cuando compartes el link en WhatsApp/FB/LinkedIn.
+  // La imagen se genera dinamicamente desde app/opengraph-image.tsx — Next 16
+  // la detecta automaticamente, no hace falta listarla aqui.
+  openGraph: {
+    type: "website",
+    locale: "es_ES",
+    url: SITE_URL,
+    siteName: "ArteGenIA",
+    title: "ArteGenIA — Crea flyers profesionales con IA en minutos",
+    description:
+      "Diseña flyers para eventos, conciertos, talleres y clases de baile con plantillas profesionales e IA. Gratis.",
+  },
+  // Twitter card: como se ve cuando compartes en X/Twitter
+  twitter: {
+    card: "summary_large_image",
+    title: "ArteGenIA — Crea flyers profesionales con IA",
+    description: "Diseña flyers profesionales en minutos con plantillas e IA. Gratis.",
+  },
+  // Robots: permitir indexacion completa (queremos SEO)
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+  alternates: {
+    canonical: SITE_URL,
+  },
 };
 
 // Fix critico mobile: sin este export iOS Safari renderiza la pagina a

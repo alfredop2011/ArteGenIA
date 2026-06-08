@@ -101,6 +101,27 @@ export type AudienceId =
     | "colegios";
 
 /**
+ * Casos de uso de una plantilla. Sirve para el filtro "¿Para qué lo necesitas?"
+ * en /templates. Una plantilla puede servir a varios casos.
+ *
+ * - promote:         Promocionar/anunciar un evento (uso mas general)
+ * - sellTickets:     Vender entradas (eventos pagados, conciertos, fiestas)
+ * - launch:          Lanzamiento de algo nuevo (apertura, estreno, nueva temporada)
+ * - attractStudents: Captar alumnos (clases, workshops, academias)
+ * - announceArtist:  Anunciar artista/profesor (cartel con foto de persona)
+ *
+ * Si una plantilla NO declara useCases explicito, se INFIEREN por categoria
+ * y titulo via `inferUseCases()` en lib/useCases.ts. Esto evita tener que
+ * editar 48 plantillas; solo añades useCases cuando quieres OVERRIDE manual.
+ */
+export type UseCase =
+    | "promote"
+    | "sellTickets"
+    | "launch"
+    | "attractStudents"
+    | "announceArtist";
+
+/**
  * Tags internos del catálogo de plantillas. NO se muestran al usuario final;
  * solo aparecen en /admin/templates para mantenimiento del catálogo.
  *
@@ -164,6 +185,12 @@ export type Template = {
      * Editables desde /admin/templates con generación de diff pegable.
      */
     internalTags?: InternalTag[];
+    /**
+     * Casos de uso. OPCIONAL — si no se declara, se infieren automaticamente
+     * por categoria + titulo en `inferUseCases()` (ver lib/useCases.ts).
+     * Solo declararlo cuando quieras OVERRIDE manual de la inferencia.
+     */
+    useCases?: UseCase[];
     variants: TemplateVariant[];
 };
 

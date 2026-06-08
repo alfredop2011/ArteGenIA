@@ -8,6 +8,9 @@ import {
 import { ArtistLibraryCard, ArtistLibraryModal } from "@/components/wizard/ArtistLibrary";
 import type { ArtistEntry } from "@/components/wizard/ArtistLibrary";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { useAuth } from "@/hooks/useAuth";
+import { isAdmin } from "@/lib/admin";
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
 
@@ -41,6 +44,14 @@ const CHIPS = ["Fiesta este sábado", "Concierto en directo", "Festival al aire 
 
 export default function CreatePage() {
   const router = useRouter();
+  // ─── ADMIN GATING ──────────────────────────────────────────────────────
+  // La generacion con IA esta limitada al admin mientras pulimos coste y
+  // calidad. Para el resto de usuarios el flujo se muestra como "Proximamente"
+  // (no se oculta para que vean que existe). Las plantillas en /templates
+  // siguen abiertas a todos.
+  const { user } = useAuth();
+  const userIsAdmin = isAdmin(user?.email);
+
   // userText = lo que el usuario escribe (sin el sufijo de campos)
   // prompt = derivado: userText + ", " + suffix(fields)
   const [userText, setUserText] = useState("");
@@ -295,6 +306,13 @@ export default function CreatePage() {
 
   const handleGenerate = useCallback(async () => {
     if (!prompt.trim()) return;
+    // Gating: si el usuario no es admin, no ejecutamos la generacion.
+    // El boton ya esta deshabilitado en la UI; este return es la segunda
+    // barrera por si Enter llega aqui o si la verificacion del boton falla.
+    if (!userIsAdmin) {
+      alert("Esta función estará disponible próximamente.");
+      return;
+    }
     setIsGenerating(true);
 
     try {
@@ -425,7 +443,7 @@ export default function CreatePage() {
       setIsGenerating(false);
       setGenStep("");
     }
-  }, [prompt, artistsAndLogos, router]);
+  }, [prompt, artistsAndLogos, router, userIsAdmin]);
 
   // ─── RENDER: GENERATING (intacto de /create) ─────────────────────────────
 
@@ -478,8 +496,22 @@ export default function CreatePage() {
     <div className="min-h-[calc(100vh-56px)] bg-[#0e0e14] text-white flex flex-col items-center px-3 sm:px-4 py-6 sm:py-12">
       <div className="w-full max-w-5xl mx-auto">
 
-        {/* Título estilo home */}
+        {/* Título estilo home + badge "Proximamente" para no-admin.
+            El badge es visible pero suave: comunica que la generacion con IA
+            llegara pronto sin romper la sensacion de producto. */}
         <div className="text-center mb-8">
+          {!userIsAdmin && (
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full mb-3"
+                 style={{
+                   background: "linear-gradient(135deg, rgba(250,204,21,0.18), rgba(245,158,11,0.12))",
+                   border: "1px solid rgba(250,204,21,0.4)",
+                 }}>
+              <Sparkles size={11} strokeWidth={2.2} className="text-amber-300" />
+              <span className="text-[11px] font-bold tracking-wider text-amber-300 uppercase">
+                Próximamente
+              </span>
+            </div>
+          )}
           <h1 className="font-black tracking-tight mb-2"
               style={{ fontSize: "clamp(1.9rem, 3.2vw, 3rem)" }}>
             Diseña flyers que{" "}
@@ -488,7 +520,10 @@ export default function CreatePage() {
             </span>
           </h1>
           <p className="text-gray-400 text-sm">
-            Describe tu evento y la <span className="text-purple-400 font-semibold">IA</span> genera el flyer perfecto.
+            {userIsAdmin
+              ? <>Describe tu evento y la <span className="text-purple-400 font-semibold">IA</span> genera el flyer perfecto.</>
+              : <>Generación con IA llegará pronto. Mientras tanto, <Link href="/templates" className="text-purple-400 font-semibold hover:text-purple-300">explora nuestras plantillas</Link>.</>
+            }
           </p>
         </div>
 
@@ -913,22 +948,42 @@ export default function CreatePage() {
             />
           </div>
 
-          {/* Botón Generar — última sección, alineado a la derecha */}
-          <div className="border-t border-white/[0.06] px-5 py-3 flex justify-end">
+          {/* Botón Generar — última sección, alineado a la derecha.
+              Para no-admin se muestra como "Proximamente" y no dispara la
+              generacion (handleGenerate tiene segunda barrera interna). */}
+          <div className="border-t border-white/[0.06] px-5 py-3 flex justify-end items-center gap-3">
+            {!userIsAdmin && (
+              <span className="text-[11px] text-amber-300/80 hidden sm:inline">
+                Esta función estará disponible próximamente.
+              </span>
+            )}
             <button
               onClick={handleGenerate}
-              disabled={!prompt.trim()}
+              disabled={!userIsAdmin || !prompt.trim()}
+              title={!userIsAdmin ? "Esta función estará disponible próximamente." : undefined}
               className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${
-                prompt.trim()
+                userIsAdmin && prompt.trim()
                   ? "text-white hover:scale-105"
+                  : !userIsAdmin
+                  ? "text-black cursor-not-allowed opacity-95"
                   : "bg-white/5 text-gray-600 cursor-not-allowed"
               }`}
-              style={prompt.trim() ? {
-                background: "linear-gradient(135deg, #7c3aed, #c026d3, #d97706)",
-                boxShadow: "0 0 25px rgba(168,85,247,0.55), 0 4px 15px rgba(0,0,0,0.3)"
-              } : {}}>
+              style={
+                userIsAdmin && prompt.trim()
+                  ? {
+                      background: "linear-gradient(135deg, #7c3aed, #c026d3, #d97706)",
+                      boxShadow: "0 0 25px rgba(168,85,247,0.55), 0 4px 15px rgba(0,0,0,0.3)",
+                    }
+                  : !userIsAdmin
+                  ? {
+                      background: "linear-gradient(135deg,#facc15,#f59e0b)",
+                      boxShadow: "0 0 18px rgba(250,204,21,0.4)",
+                    }
+                  : {}
+              }
+            >
               <Sparkles size={15} strokeWidth={2} />
-              Generar flyer
+              {userIsAdmin ? "Generar flyer" : "Generar flyer · Próximamente"}
             </button>
           </div>
         </div>

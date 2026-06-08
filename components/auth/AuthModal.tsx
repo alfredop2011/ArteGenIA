@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { useLocale } from "@/hooks/useLocale";
 
 type Props = {
     onClose: () => void;
@@ -14,10 +15,14 @@ type Props = {
 };
 
 export default function AuthModal({ onClose, title, subtitle, onAuthSuccess }: Props) {
+    const { t } = useLocale();
     const [mode, setMode] = useState<"login" | "register">("login");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [name, setName] = useState("");
+    // GDPR Art. 7: consentimiento explicito, NO premarcado (jurisprudencia
+    // Planet49 C-673/17). Si esto cambia a true por defecto, rompe cumplimiento.
+    const [acceptedTerms, setAcceptedTerms] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
@@ -25,7 +30,13 @@ export default function AuthModal({ onClose, title, subtitle, onAuthSuccess }: P
     const { signInWithEmail, signUpWithEmail, signInWithGoogle } = useAuth();
 
     const handleSubmit = async () => {
-        setError(""); setSuccess(""); setLoading(true);
+        setError(""); setSuccess("");
+        // Validacion legal antes de tocar el backend
+        if (mode === "register" && !acceptedTerms) {
+            setError(t("auth.error.terms"));
+            return;
+        }
+        setLoading(true);
         try {
             if (mode === "login") {
                 const { error } = await signInWithEmail(email, password);
@@ -36,10 +47,10 @@ export default function AuthModal({ onClose, title, subtitle, onAuthSuccess }: P
             } else {
                 const { error } = await signUpWithEmail(email, password, name);
                 if (error) throw error;
-                setSuccess("¡Cuenta creada! Revisa tu email para confirmar.");
+                setSuccess(t("auth.success.created"));
             }
         } catch (e: any) {
-            setError(e.message || "Error al autenticar");
+            setError(e.message || t("auth.error.generic"));
         } finally {
             setLoading(false);
         }
@@ -54,10 +65,10 @@ export default function AuthModal({ onClose, title, subtitle, onAuthSuccess }: P
                 <div className="flex items-center justify-between mb-6">
                     <div>
                         <h2 className="text-2xl font-black text-white">
-                            {title ?? (mode === "login" ? "Iniciar sesión" : "Crear cuenta")}
+                            {title ?? (mode === "login" ? t("auth.title.login") : t("auth.title.register"))}
                         </h2>
                         <p className="text-gray-400 text-sm mt-1">
-                            {subtitle ?? (mode === "login" ? "Bienvenido de vuelta" : "Empieza gratis con 20 créditos")}
+                            {subtitle ?? (mode === "login" ? t("auth.subtitle.login") : t("auth.subtitle.register"))}
                         </p>
                     </div>
                     <button onClick={onClose} className="text-gray-500 hover:text-white text-2xl">×</button>
@@ -71,41 +82,80 @@ export default function AuthModal({ onClose, title, subtitle, onAuthSuccess }: P
                         <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
                         <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
                     </svg>
-                    Continuar con Google
+                    {t("auth.google")}
                 </button>
 
                 <div className="flex items-center gap-3 mb-4">
                     <div className="flex-1 h-px bg-white/10" />
-                    <span className="text-gray-600 text-xs">o con email</span>
+                    <span className="text-gray-600 text-xs">{t("auth.divider")}</span>
                     <div className="flex-1 h-px bg-white/10" />
                 </div>
 
                 <div className="space-y-3">
                     {mode === "register" && (
-                        <input type="text" placeholder="Tu nombre" value={name} onChange={e => setName(e.target.value)}
+                        <input type="text" placeholder={t("auth.placeholder.name")} value={name} onChange={e => setName(e.target.value)}
                             className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-white text-sm outline-none focus:border-purple-500 transition-colors" />
                     )}
-                    <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)}
+                    <input type="email" placeholder={t("auth.placeholder.email")} value={email} onChange={e => setEmail(e.target.value)}
                         className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-white text-sm outline-none focus:border-purple-500 transition-colors" />
-                    <input type="password" placeholder="Contraseña" value={password} onChange={e => setPassword(e.target.value)}
+                    <input type="password" placeholder={t("auth.placeholder.password")} value={password} onChange={e => setPassword(e.target.value)}
                         onKeyDown={e => e.key === "Enter" && handleSubmit()}
                         className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-white text-sm outline-none focus:border-purple-500 transition-colors" />
                 </div>
 
+                {/* Checkbox de aceptacion obligatoria — solo en registro.
+                    GDPR / LSSI: consentimiento explicito antes de crear cuenta. */}
+                {mode === "register" && (
+                    <label className="flex items-start gap-2 mt-4 cursor-pointer select-none">
+                        <input
+                            type="checkbox"
+                            checked={acceptedTerms}
+                            onChange={e => setAcceptedTerms(e.target.checked)}
+                            className="mt-0.5 w-4 h-4 rounded border-white/20 bg-white/5 accent-purple-500 cursor-pointer shrink-0"
+                        />
+                        <span className="text-xs text-gray-400 leading-relaxed">
+                            {t("auth.terms.iAccept")}{" "}
+                            <a href="/terminos" target="_blank" rel="noopener noreferrer" className="text-purple-400 hover:text-purple-300 underline">
+                                {t("auth.terms.linkTerms")}
+                            </a>
+                            {" "}{t("auth.terms.and")}{" "}
+                            <a href="/privacidad" target="_blank" rel="noopener noreferrer" className="text-purple-400 hover:text-purple-300 underline">
+                                {t("auth.terms.linkPrivacy")}
+                            </a>
+                            .
+                        </span>
+                    </label>
+                )}
+
                 {error && <p className="text-red-400 text-xs mt-3">{error}</p>}
                 {success && <p className="text-green-400 text-xs mt-3">{success}</p>}
 
-                <button onClick={handleSubmit} disabled={loading}
-                    className="w-full mt-4 py-3 rounded-xl font-bold text-sm text-white transition-all hover:scale-105 disabled:opacity-50"
+                <button onClick={handleSubmit} disabled={loading || (mode === "register" && !acceptedTerms)}
+                    className="w-full mt-4 py-3 rounded-xl font-bold text-sm text-white transition-all hover:scale-105 disabled:opacity-50 disabled:hover:scale-100 disabled:cursor-not-allowed"
                     style={{ background: "linear-gradient(135deg,#7c3aed,#a855f7)" }}>
-                    {loading ? "Cargando..." : mode === "login" ? "Iniciar sesión" : "Crear cuenta gratis"}
+                    {loading
+                        ? t("auth.button.loading")
+                        : mode === "login"
+                        ? t("auth.button.login")
+                        : t("auth.button.register")}
                 </button>
 
+                {/* En login tambien mostramos los links para acceso facil */}
+                {mode === "login" && (
+                    <p className="text-center text-gray-600 text-[10px] mt-3">
+                        {t("auth.terms.byLogin")}{" "}
+                        <a href="/terminos" target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-gray-300 underline">{t("auth.terms.linkTerms")}</a>
+                        {" "}{t("auth.terms.and")}{" "}
+                        <a href="/privacidad" target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-gray-300 underline">{t("auth.terms.linkPrivacy")}</a>
+                        .
+                    </p>
+                )}
+
                 <p className="text-center text-gray-500 text-xs mt-4">
-                    {mode === "login" ? "¿No tienes cuenta? " : "¿Ya tienes cuenta? "}
+                    {mode === "login" ? t("auth.switch.noAccount") : t("auth.switch.hasAccount")}{" "}
                     <button onClick={() => setMode(mode === "login" ? "register" : "login")}
                         className="text-purple-400 hover:text-purple-300 font-semibold">
-                        {mode === "login" ? "Regístrate gratis" : "Inicia sesión"}
+                        {mode === "login" ? t("auth.switch.registerAction") : t("auth.switch.loginAction")}
                     </button>
                 </p>
             </div>

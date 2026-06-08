@@ -1,6 +1,52 @@
 @import "tailwindcss";
 
-:root {
+/* ─── THEME TOKENS ─────────────────────────────────────────────────────────
+   Definimos dos temas como variables CSS. El hook useTheme alterna
+   class="theme-light" / "theme-dark" en <html>. Si no hay class, default
+   = dark (manteniendo el look actual de la app que es dark-first).
+
+   La mayoria de la app sigue con clases Tailwind hardcoded oscuras (no las
+   tocamos para no introducir regresiones). Solo el HOME consume estas vars
+   para dar soporte de toggle visible. Otras paginas se migran si hace falta. */
+
+:root, .theme-dark {
+  --home-bg:           #05050b;
+  --home-bg-soft:      #0a0a10;
+  --home-text:         #ffffff;
+  --home-text-muted:   #9ca3af;
+  --home-text-soft:    #6b7280;
+  --home-card-bg:      rgba(255,255,255,0.04);
+  --home-card-border:  rgba(255,255,255,0.10);
+  --home-card-hover:   rgba(255,255,255,0.08);
+  --home-pill-text:    #9ca3af;
+  --home-divider:      rgba(255,255,255,0.06);
+  --home-feature-bg:   rgba(168,85,247,0.06);
+  --home-feature-bg2:  rgba(168,85,247,0.02);
+  --home-feature-border: rgba(168,85,247,0.18);
+  --header-bg:         rgba(14,14,20,0.95);
+  --header-border:     rgba(255,255,255,0.06);
+
+  --background: #0a0a0a;
+  --foreground: #ededed;
+}
+
+.theme-light {
+  --home-bg:           #f8f9fc;
+  --home-bg-soft:      #ffffff;
+  --home-text:         #0e0e14;
+  --home-text-muted:   #4b5563;
+  --home-text-soft:    #6b7280;
+  --home-card-bg:      rgba(15,15,30,0.04);
+  --home-card-border:  rgba(15,15,30,0.10);
+  --home-card-hover:   rgba(15,15,30,0.08);
+  --home-pill-text:    #4b5563;
+  --home-divider:      rgba(15,15,30,0.06);
+  --home-feature-bg:   rgba(124,58,237,0.06);
+  --home-feature-bg2:  rgba(124,58,237,0.02);
+  --home-feature-border: rgba(124,58,237,0.20);
+  --header-bg:         rgba(248,249,252,0.92);
+  --header-border:     rgba(15,15,30,0.08);
+
   --background: #ffffff;
   --foreground: #171717;
 }
@@ -10,13 +56,6 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 body {
@@ -41,6 +80,52 @@ body {
 }
 .animate-slide-up {
   animation: slide-up 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ─── ANIMACIONES DE ENTRADA DEL HOME ───────────────────────────────────
+   Usadas para que el hero "respire" al cargar. delay-NNN para escalonar
+   elementos sin reach a framer-motion. */
+
+@keyframes home-fade-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes home-card-in {
+  /* Cards entran desde la derecha con leve rotacion + fade. Encajan con
+     el stack del hero (mockup tipo Canva/UnFold). */
+  from {
+    opacity: 0;
+    transform: translateX(40px) translateY(20px) rotate(8deg) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) translateY(0) rotate(var(--home-card-rot, 0deg)) scale(1);
+  }
+}
+
+.animate-home-fade {
+  animation: home-fade-in 0.6s cubic-bezier(0.34, 1.2, 0.64, 1) both;
+}
+.animate-home-card {
+  animation: home-card-in 0.7s cubic-bezier(0.34, 1.2, 0.64, 1) both;
+}
+
+/* Helpers de delay — granularidad 100ms, suficiente para escalonar 6 elementos. */
+.delay-100 { animation-delay: 100ms; }
+.delay-200 { animation-delay: 200ms; }
+.delay-300 { animation-delay: 300ms; }
+.delay-400 { animation-delay: 400ms; }
+.delay-500 { animation-delay: 500ms; }
+.delay-600 { animation-delay: 600ms; }
+
+/* Respect user preference: si pide reducir movimiento, no animamos. */
+@media (prefers-reduced-motion: reduce) {
+  .animate-home-fade,
+  .animate-home-card,
+  .animate-slide-up {
+    animation: none !important;
+  }
 }
 
 /* Aumenta zona tactil de botones en mobile (Apple HIG: minimo 44x44px) */

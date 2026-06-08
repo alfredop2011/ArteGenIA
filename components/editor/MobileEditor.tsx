@@ -28,6 +28,7 @@ import type { FormatId } from "@/data/formats";
 import { useAuth } from "@/hooks/useAuth";
 import AuthModal from "@/components/auth/AuthModal";
 import { applyTemplateLayers } from "@/lib/fabricApplyTemplateLayers";
+import { applyWatermark, shouldWatermark } from "@/lib/applyWatermark";
 
 // ════════════════════════════════════════════════════════════════════════════
 //  MobileEditor — editor mobile-first separado del desktop
@@ -82,7 +83,7 @@ export default function MobileEditor({ templateId, formatId }: Props) {
 
   // Auth: si el usuario intenta descargar sin sesion abrimos AuthModal y
   // reintentamos la descarga al hacer login exitoso.
-  const { user: authUser } = useAuth();
+  const { user: authUser, profile: authProfile } = useAuth();
   const [authModalConfig, setAuthModalConfig] = useState<{ title: string; subtitle: string; onSuccess: () => void } | null>(null);
   const requireAuth = useCallback((action: () => void, opts: { title: string; subtitle: string }) => {
     if (authUser) action();
@@ -523,8 +524,9 @@ export default function MobileEditor({ templateId, formatId }: Props) {
   }, [selectedLayer, tempText, updateProp]);
 
   // ─── 4. Export PNG ─────────────────────────────────────────────────────
-  // Logica pura del export. NO checkea sesion (lo hace el wrapper handleExport).
-  const doExport = useCallback(() => {
+  // Logica pura del export. Aplica marca de agua si el usuario es free.
+  // NO checkea sesion (lo hace el wrapper handleExport).
+  const doExport = useCallback(async () => {
     const fc = fabricRef.current;
     if (!fc) return;
     fc.discardActiveObject();
@@ -541,7 +543,7 @@ export default function MobileEditor({ templateId, formatId }: Props) {
     fc.setDimensions({ width: canvasSize.w, height: canvasSize.h });
     fc.renderAll();
 
-    const url = fc.toDataURL({ format: "png", multiplier: 2 });
+    const rawUrl = fc.toDataURL({ format: "png", multiplier: 2 });
 
     // Restaurar exactamente como estaba
     fc.setDimensions({ width: prevW, height: prevH });
@@ -549,12 +551,23 @@ export default function MobileEditor({ templateId, formatId }: Props) {
     fc.setViewportTransform(prevVpt as [number, number, number, number, number, number]);
     fc.renderAll();
 
+    // Marca de agua solo en plan free. Pro/Enterprise descargan limpio.
+    // Si falla, fallback a la imagen sin marca para no romper la descarga.
+    let finalUrl = rawUrl;
+    if (shouldWatermark(authProfile?.plan)) {
+      try {
+        finalUrl = await applyWatermark(rawUrl);
+      } catch (err) {
+        console.warn("Watermark failed, fallback a imagen sin marca:", err);
+      }
+    }
+
     const a = document.createElement("a");
     a.download = `flyer-${template?.title ?? "diseno"}.png`;
-    a.href = url;
+    a.href = finalUrl;
     a.click();
     setActiveSheet(null);
-  }, [template, canvasSize.w, canvasSize.h]);
+  }, [template, canvasSize.w, canvasSize.h, authProfile?.plan]);
 
   // Wrapper publico: pide sesion antes de descargar. Si no hay, abre el
   // AuthModal y reintenta el export tras login exitoso.
