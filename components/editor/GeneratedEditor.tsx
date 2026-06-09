@@ -51,6 +51,7 @@ import { useAuth } from "@/hooks/useAuth";
 import AuthModal from "@/components/auth/AuthModal";
 import { supabase } from "@/lib/supabase";
 import { applyWatermark, shouldWatermark } from "@/lib/applyWatermark";
+import { useLocale } from "@/hooks/useLocale";
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
 
@@ -333,6 +334,7 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
   // Modal de login/registro que se abre cuando intentas descargar o guardar
   // sin sesion iniciada. Tras login exitoso, `onSuccess` reintenta la accion.
   const { user: authUser, profile: authProfile } = useAuth();
+  const { t } = useLocale();
   const [authModalConfig, setAuthModalConfig] = useState<{ title: string; subtitle: string; onSuccess: () => void } | null>(null);
   /**
    * Si hay sesion, ejecuta `action` directamente. Si no, abre el AuthModal y
@@ -1491,33 +1493,83 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
     setSaveState("unsaved");
   }, []);
 
+  /**
+   * Sube una imagen desde el ordenador y la añade como capa NUEVA al canvas
+   * (no reemplaza la actual). Se invoca desde la barra flotante y desde el
+   * panel de capas. La imagen se escala para entrar en ~60% del canvas y
+   * se centra. El usuario después la mueve/escala como cualquier capa.
+   */
+  const addNewImage = useCallback(async () => {
+    const canvas = fabricRef.current;
+    if (!canvas) return;
+
+    // 1. Pedir foto al usuario
+    const file = await new Promise<File | null>((resolve) => {
+      const input = document.createElement("input");
+      input.type = "file";
+      input.accept = "image/*";
+      input.onchange = (e) => resolve((e.target as HTMLInputElement).files?.[0] ?? null);
+      input.click();
+    });
+    if (!file) return;
+
+    const dataUrl = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = () => reject(new Error("read"));
+      reader.readAsDataURL(file);
+    });
+
+    // 2. Cargar como FabricImage
+    const fabric = await import("fabric");
+    const img = await fabric.FabricImage.fromURL(dataUrl, { crossOrigin: "anonymous" });
+
+    // 3. Escalar para entrar en ~60% del canvas (alto o ancho dominante)
+    const imgW = img.width ?? 1;
+    const imgH = img.height ?? 1;
+    const targetMax = Math.min(canvasSize.w, canvasSize.h) * 0.6;
+    const scale = Math.min(targetMax / imgW, targetMax / imgH, 1);
+    img.set({
+      left: canvasSize.w / 2,
+      top: canvasSize.h / 2,
+      originX: "center",
+      originY: "center",
+      scaleX: scale,
+      scaleY: scale,
+      selectable: true,
+      evented: true,
+    });
+
+    addShapeToCanvas(img, t("editor.layerName.image"));
+  }, [canvasSize, addShapeToCanvas, t]);
+
   const addRect = useCallback(() => {
     addShapeToCanvas(
       new FabricRect({ left: canvasSize.w / 2 - 150, top: canvasSize.h / 2 - 150, width: 300, height: 300, fill: "#a855f7", opacity: 0.85, selectable: true, evented: true }),
-      "Rectángulo",
+      t("editor.layerName.rect"),
     );
-  }, [canvasSize, addShapeToCanvas]);
+  }, [canvasSize, addShapeToCanvas, t]);
 
   const addCircle = useCallback(() => {
     addShapeToCanvas(
       new FabricCircle({ left: canvasSize.w / 2 - 150, top: canvasSize.h / 2 - 150, radius: 150, fill: "#fb923c", opacity: 0.85, selectable: true, evented: true }),
-      "Círculo",
+      t("editor.layerName.circle"),
     );
-  }, [canvasSize, addShapeToCanvas]);
+  }, [canvasSize, addShapeToCanvas, t]);
 
   const addTriangle = useCallback(() => {
     addShapeToCanvas(
       new FabricTriangle({ left: canvasSize.w / 2 - 150, top: canvasSize.h / 2 - 130, width: 300, height: 260, fill: "#fb923c", opacity: 0.85, selectable: true, evented: true }),
-      "Triángulo",
+      t("editor.layerName.triangle"),
     );
-  }, [canvasSize, addShapeToCanvas]);
+  }, [canvasSize, addShapeToCanvas, t]);
 
   const addLine = useCallback(() => {
     addShapeToCanvas(
       new FabricLine([canvasSize.w / 2 - 200, canvasSize.h / 2, canvasSize.w / 2 + 200, canvasSize.h / 2], { stroke: "#a855f7", strokeWidth: 8, strokeLineCap: "round", selectable: true, evented: true }),
-      "Línea",
+      t("editor.layerName.line"),
     );
-  }, [canvasSize, addShapeToCanvas]);
+  }, [canvasSize, addShapeToCanvas, t]);
 
   const addStar = useCallback(() => {
     const outerR = 150, innerR = 65;
@@ -1529,9 +1581,9 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
     }
     addShapeToCanvas(
       new FabricPolygon(points, { left: canvasSize.w / 2 - outerR, top: canvasSize.h / 2 - outerR, fill: "#facc15", opacity: 0.9, selectable: true, evented: true }),
-      "Estrella",
+      t("editor.layerName.star"),
     );
-  }, [canvasSize, addShapeToCanvas]);
+  }, [canvasSize, addShapeToCanvas, t]);
 
   const addHexagon = useCallback(() => {
     const r = 150;
@@ -1542,24 +1594,24 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
     }
     addShapeToCanvas(
       new FabricPolygon(points, { left: canvasSize.w / 2 - r, top: canvasSize.h / 2 - r, fill: "#22d3ee", opacity: 0.85, selectable: true, evented: true }),
-      "Hexágono",
+      t("editor.layerName.hexagon"),
     );
-  }, [canvasSize, addShapeToCanvas]);
+  }, [canvasSize, addShapeToCanvas, t]);
 
   const addArrow = useCallback(() => {
     const arrowPath = "M 0 30 L 320 30 L 320 0 L 400 50 L 320 100 L 320 70 L 0 70 Z";
     addShapeToCanvas(
       new FabricPath(arrowPath, { left: canvasSize.w / 2 - 200, top: canvasSize.h / 2 - 50, fill: "#a855f7", opacity: 0.9, selectable: true, evented: true }),
-      "Flecha",
+      t("editor.layerName.arrow"),
     );
-  }, [canvasSize, addShapeToCanvas]);
+  }, [canvasSize, addShapeToCanvas, t]);
 
   const addFrame = useCallback(() => {
     addShapeToCanvas(
       new FabricRect({ left: canvasSize.w / 2 - 200, top: canvasSize.h / 2 - 200, width: 400, height: 400, fill: "transparent", stroke: "#ffffff", strokeWidth: 6, selectable: true, evented: true }),
-      "Marco",
+      t("editor.layerName.frame"),
     );
-  }, [canvasSize, addShapeToCanvas]);
+  }, [canvasSize, addShapeToCanvas, t]);
 
   // ─── MASK: recortar imagen a forma (clipPath) ────────────────────────────
   /** Aplica un clipPath al objeto activo (debe ser image). */
@@ -2003,15 +2055,15 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
   // ─── LEFT TOOLS ───────────────────────────────────────────────────────────
 
   const TOOLS: Array<{ id: LeftTool; label: string; icon: React.ReactNode; comingSoon?: boolean }> = [
-    { id: "design",    label: "Diseño",    icon: <LayoutGrid className="w-5 h-5" strokeWidth={1.5} /> },
-    { id: "text",      label: "Texto",     icon: <Type className="w-5 h-5" strokeWidth={1.5} /> },
-    { id: "elements",  label: "Elementos", icon: <SparklesIcon className="w-5 h-5" strokeWidth={1.5} /> },
-    { id: "photos",    label: "Fotos",     icon: <ImageIcon className="w-5 h-5" strokeWidth={1.5} /> },
-    { id: "background",label: "Fondo",     icon: <Mountain className="w-5 h-5" strokeWidth={1.5} /> },
-    { id: "layers",    label: "Capas",     icon: <LayersIcon className="w-5 h-5" strokeWidth={1.5} /> },
-    { id: "ai",        label: "IA Tools",  icon: <Wand2 className="w-5 h-5" strokeWidth={1.5} />, comingSoon: true },
-    { id: "brand",     label: "Brand Kit", icon: <Tag className="w-5 h-5" strokeWidth={1.5} />, comingSoon: true },
-    { id: "favorites", label: "Favoritos", icon: <Heart className="w-5 h-5" strokeWidth={1.5} />, comingSoon: true },
+    { id: "design",    label: t("editor.tool.design"),     icon: <LayoutGrid className="w-5 h-5" strokeWidth={1.5} /> },
+    { id: "text",      label: t("editor.tool.text"),       icon: <Type className="w-5 h-5" strokeWidth={1.5} /> },
+    { id: "elements",  label: t("editor.tool.elements"),   icon: <SparklesIcon className="w-5 h-5" strokeWidth={1.5} /> },
+    { id: "photos",    label: t("editor.tool.photos"),     icon: <ImageIcon className="w-5 h-5" strokeWidth={1.5} /> },
+    { id: "background",label: t("editor.tool.background"), icon: <Mountain className="w-5 h-5" strokeWidth={1.5} /> },
+    { id: "layers",    label: t("editor.tool.layers"),     icon: <LayersIcon className="w-5 h-5" strokeWidth={1.5} /> },
+    { id: "ai",        label: t("editor.tool.ai"),         icon: <Wand2 className="w-5 h-5" strokeWidth={1.5} />, comingSoon: true },
+    { id: "brand",     label: t("editor.tool.brand"),      icon: <Tag className="w-5 h-5" strokeWidth={1.5} />, comingSoon: true },
+    { id: "favorites", label: t("editor.tool.favorites"),  icon: <Heart className="w-5 h-5" strokeWidth={1.5} />, comingSoon: true },
   ];
 
   const isBackground = selectedLayer?.type === "background";
@@ -2084,14 +2136,14 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
         <button
           onClick={undo}
           disabled={!canUndo}
-          title="Deshacer (⌘Z)"
+          title={`${t("editor.action.undo")} (⌘Z)`}
           className={`ag-icon-btn ${canUndo ? "" : "opacity-30 cursor-not-allowed"}`}>
           <Undo2 className="w-4 h-4" strokeWidth={2} />
         </button>
         <button
           onClick={redo}
           disabled={!canRedo}
-          title="Rehacer (⌘⇧Z)"
+          title={`${t("editor.action.redo")} (⌘⇧Z)`}
           className={`ag-icon-btn ${canRedo ? "" : "opacity-30 cursor-not-allowed"}`}>
           <Redo2 className="w-4 h-4" strokeWidth={2} />
         </button>
@@ -2154,7 +2206,7 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
 
         {/* Share - oculto en admin */}
         {!isAdminMode && (
-          <button title="Compartir (próximamente)" className="ag-icon-btn opacity-60 hidden md:flex">
+          <button title={t("editor.action.shareSoon")} className="ag-icon-btn opacity-60 hidden md:flex">
             <Share2 className="w-4 h-4" strokeWidth={1.5} />
           </button>
         )}
@@ -2192,7 +2244,7 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
           <button
             onClick={handleAdminSaveDraft}
             disabled={adminSaving}
-            title="Guardar borrador (Supabase)"
+            title={t("editor.action.save")}
             className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.08] border border-white/[0.08] text-white text-xs font-semibold transition-all disabled:opacity-50"
           >
             {adminSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin"/> : (adminSavedRecently ? <><span className="w-2 h-2 rounded-full bg-emerald-400"/><span className="hidden sm:inline">Guardado</span></> : <><Save className="w-3.5 h-3.5" strokeWidth={2}/><span className="hidden sm:inline">Guardar borrador</span></>)}
@@ -3031,38 +3083,48 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
                   input.click();
                 }
               }}
-              title="Editar"
+              title={t("editor.fab.edit")}
               className="ag-fab-btn"><Edit3 className="w-4 h-4" strokeWidth={2} />
-              <span>Editar</span>
+              <span>{t("editor.fab.edit")}</span>
             </button>
 
             {/* Estilos → scroll to panel */}
             <button
               onClick={() => setOpenSections(p => ({ ...p, style: true }))}
-              title="Abrir panel de estilos"
+              title={t("editor.fab.stylesTitle")}
               className="ag-fab-btn"><SparklesIcon className="w-4 h-4" strokeWidth={2} />
-              <span>Estilos</span>
+              <span>{t("editor.fab.styles")}</span>
+            </button>
+
+            {/* Añadir imagen NUEVA al canvas (no reemplaza la seleccionada,
+                añade una capa adicional). Util para meter foto de invitado,
+                logo, decoracion, etc. sin abrir el panel lateral. */}
+            <button
+              onClick={() => { void addNewImage(); }}
+              title={t("editor.fab.imageTitle")}
+              className="ag-fab-btn"><ImageIcon className="w-4 h-4" strokeWidth={2} />
+              <span>{t("editor.fab.image")}</span>
             </button>
 
             {/* Alinear (popup) */}
             <div className="relative">
               <button
                 onClick={() => setFloatingToolbar(p => ({ ...p, alignOpen: !p.alignOpen, moreOpen: false }))}
-                title="Alinear"
+                title={t("editor.fab.alignTitle")}
                 className={`ag-fab-btn ${floatingToolbar.alignOpen ? "bg-purple-600/20 text-purple-200" : ""}`}>
                 <AlignCenterHorizontal className="w-4 h-4" strokeWidth={2} />
-                <span>Alinear</span>
+                <span>{t("editor.fab.align")}</span>
               </button>
               {floatingToolbar.alignOpen && (
                 <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 ag-glass border border-white/[0.08] rounded-xl p-1.5 shadow-2xl">
                   <div className="grid grid-cols-3 gap-1 w-32">
                     {[
-                      { pos: "left",     label: "Izq", icon: <AlignStartVertical    className="w-3.5 h-3.5" strokeWidth={2} /> },
-                      { pos: "center-h", label: "C·H", icon: <AlignCenterVertical   className="w-3.5 h-3.5" strokeWidth={2} /> },
-                      { pos: "right",    label: "Der", icon: <AlignEndVertical      className="w-3.5 h-3.5" strokeWidth={2} /> },
-                      { pos: "top",      label: "Arr", icon: <AlignStartHorizontal  className="w-3.5 h-3.5" strokeWidth={2} /> },
-                      { pos: "center-v", label: "C·V", icon: <AlignCenterHorizontal className="w-3.5 h-3.5" strokeWidth={2} /> },
-                      { pos: "bottom",   label: "Aba", icon: <AlignEndHorizontal    className="w-3.5 h-3.5" strokeWidth={2} /> },
+                      { pos: "left",     label: t("editor.align.left"),    icon: <AlignStartVertical    className="w-3.5 h-3.5" strokeWidth={2} /> },
+                      { pos: "center-h", label: t("editor.align.centerH"), icon: <AlignCenterVertical   className="w-3.5 h-3.5" strokeWidth={2} /> },
+                      { pos: "right",    label: t("editor.align.right"),   icon: <AlignEndVertical      className="w-3.5 h-3.5" strokeWidth={2} /> },
+                      { pos: "top",      label: t("editor.align.top"),     icon: <AlignStartHorizontal  className="w-3.5 h-3.5" strokeWidth={2} /> },
+                      { pos: "center-v", label: t("editor.align.centerV"), icon: <AlignCenterHorizontal className="w-3.5 h-3.5" strokeWidth={2} /> },
+                      { pos: "bottom",   label: t("editor.align.bottom"),  icon: <AlignEndHorizontal    className="w-3.5 h-3.5" strokeWidth={2} /> },
                     ].map(item => (
                       <button key={item.pos} onClick={() => { alignSelectedTo(item.pos as "left" | "center-h" | "right" | "top" | "center-v" | "bottom"); setFloatingToolbar(p => ({ ...p, alignOpen: false })); }} title={item.label} className="aspect-square rounded-lg bg-white/5 hover:bg-purple-600/20 text-gray-400 hover:text-purple-200 transition-all flex items-center justify-center">
                         {item.icon}
@@ -3076,21 +3138,21 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
             {/* Bloquear */}
             <button
               onClick={() => toggleLock(selectedLayer.id)}
-              title={selectedLayer.locked ? "Desbloquear" : "Bloquear"}
+              title={selectedLayer.locked ? t("editor.fab.unlock") : t("editor.fab.lock")}
               className={`ag-fab-btn ${selectedLayer.locked ? "bg-amber-500/20 text-amber-300" : ""}`}>
               {selectedLayer.locked
                 ? <Lock   className="w-4 h-4" strokeWidth={2} />
                 : <Unlock className="w-4 h-4" strokeWidth={2} />}
-              <span>{selectedLayer.locked ? "Desbloq." : "Bloquear"}</span>
+              <span>{selectedLayer.locked ? t("editor.fab.unlock") : t("editor.fab.lock")}</span>
             </button>
 
             {/* Eliminar */}
             <button
               onClick={() => deleteLayer(selectedLayer.id)}
-              title="Eliminar"
+              title={t("editor.fab.delete")}
               className="ag-fab-btn ag-fab-btn-danger">
               <Trash2 className="w-4 h-4" strokeWidth={2} />
-              <span>Eliminar</span>
+              <span>{t("editor.fab.delete")}</span>
             </button>
 
             <div className="w-px h-6 bg-white/10 mx-0.5"/>
@@ -3099,19 +3161,19 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
             <div className="relative">
               <button
                 onClick={() => setFloatingToolbar(p => ({ ...p, moreOpen: !p.moreOpen, alignOpen: false }))}
-                title="Más opciones"
+                title={t("editor.fab.more")}
                 className={`ag-fab-btn ${floatingToolbar.moreOpen ? "bg-white/10 text-white" : ""}`}>
                 <MoreHorizontal className="w-4 h-4" strokeWidth={2} />
               </button>
               {floatingToolbar.moreOpen && (
                 <div className="absolute top-full right-0 mt-2 ag-glass border border-white/[0.08] rounded-xl py-1 shadow-2xl min-w-[180px]">
                   {[
-                    { label: "Duplicar", onClick: duplicateActiveObject },
-                    { label: "Subir capa", onClick: () => moveLayer(selectedLayer.id, "up") },
-                    { label: "Bajar capa", onClick: () => moveLayer(selectedLayer.id, "down") },
+                    { label: t("editor.fab.duplicate"), onClick: duplicateActiveObject },
+                    { label: t("editor.fab.layerUp"),   onClick: () => moveLayer(selectedLayer.id, "up") },
+                    { label: t("editor.fab.layerDown"), onClick: () => moveLayer(selectedLayer.id, "down") },
                     ...(selectedLayer.type === "image" ? [
-                      { label: "Voltear H", onClick: () => { const obj = fabricRef.current?.getActiveObject(); if (obj) { obj.set("flipX", !obj.flipX); fabricRef.current?.renderAll(); setSaveState("unsaved"); } } },
-                      { label: "Voltear V", onClick: () => { const obj = fabricRef.current?.getActiveObject(); if (obj) { obj.set("flipY", !obj.flipY); fabricRef.current?.renderAll(); setSaveState("unsaved"); } } },
+                      { label: t("editor.fab.flipH"), onClick: () => { const obj = fabricRef.current?.getActiveObject(); if (obj) { obj.set("flipX", !obj.flipX); fabricRef.current?.renderAll(); setSaveState("unsaved"); } } },
+                      { label: t("editor.fab.flipV"), onClick: () => { const obj = fabricRef.current?.getActiveObject(); if (obj) { obj.set("flipY", !obj.flipY); fabricRef.current?.renderAll(); setSaveState("unsaved"); } } },
                     ] : []),
                   ].map((item, i) => (
                     <button key={i} onClick={() => { item.onClick(); setFloatingToolbar(p => ({ ...p, moreOpen: false })); }}

@@ -29,6 +29,7 @@ import { useAuth } from "@/hooks/useAuth";
 import AuthModal from "@/components/auth/AuthModal";
 import { applyTemplateLayers } from "@/lib/fabricApplyTemplateLayers";
 import { applyWatermark, shouldWatermark } from "@/lib/applyWatermark";
+import { useLocale } from "@/hooks/useLocale";
 
 // ════════════════════════════════════════════════════════════════════════════
 //  MobileEditor — editor mobile-first separado del desktop
@@ -84,6 +85,7 @@ export default function MobileEditor({ templateId, formatId }: Props) {
   // Auth: si el usuario intenta descargar sin sesion abrimos AuthModal y
   // reintentamos la descarga al hacer login exitoso.
   const { user: authUser, profile: authProfile } = useAuth();
+  const { t } = useLocale();
   const [authModalConfig, setAuthModalConfig] = useState<{ title: string; subtitle: string; onSuccess: () => void } | null>(null);
   const requireAuth = useCallback((action: () => void, opts: { title: string; subtitle: string }) => {
     if (authUser) action();
@@ -1205,14 +1207,14 @@ export default function MobileEditor({ templateId, formatId }: Props) {
           <ArrowLeft size={20} strokeWidth={2}/>
         </button>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold truncate">{template?.title ?? "Editor"}</p>
+          <p className="text-sm font-semibold truncate">{template?.title ?? t("editor.fallback.title")}</p>
           <p className="text-[10px] text-gray-500">{canvasSize.w} × {canvasSize.h}</p>
         </div>
         {selectedLayer && (
           <button
             onClick={handleDeleteSelected}
             className="w-10 h-10 rounded-xl flex items-center justify-center text-red-400 active:bg-red-500/10"
-            aria-label="Eliminar capa"
+            aria-label={t("editor.deleteLayer")}
           >
             <Trash2 size={18} strokeWidth={2}/>
           </button>
@@ -1222,7 +1224,7 @@ export default function MobileEditor({ templateId, formatId }: Props) {
           className="px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-fuchsia-600 active:from-purple-700 active:to-fuchsia-700 text-white text-sm font-bold flex items-center gap-1.5"
         >
           <Download size={15} strokeWidth={2.5}/>
-          Exportar
+          {t("editor.action.download")}
         </button>
       </header>
 

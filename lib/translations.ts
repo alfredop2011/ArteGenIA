@@ -397,7 +397,60 @@ export type TranslationKey =
   | "create.ctaSoon"
   | "create.soonNote"
   | "create.soonTooltip"
-  | "create.footer";
+  | "create.footer"
+  // ── Editor (subset visible: sidebar tools + top toolbar + floating bar) ──
+  | "editor.tool.design"
+  | "editor.tool.text"
+  | "editor.tool.elements"
+  | "editor.tool.photos"
+  | "editor.tool.background"
+  | "editor.tool.layers"
+  | "editor.tool.ai"
+  | "editor.tool.brand"
+  | "editor.tool.favorites"
+  | "editor.tool.comingSoon"
+  | "editor.action.undo"
+  | "editor.action.redo"
+  | "editor.action.save"
+  | "editor.action.download"
+  | "editor.action.share"
+  | "editor.action.shareSoon"
+  | "editor.action.saveDraft"
+  | "editor.action.exporting"
+  | "editor.fab.edit"
+  | "editor.fab.image"
+  | "editor.fab.imageTitle"
+  | "editor.fab.styles"
+  | "editor.fab.stylesTitle"
+  | "editor.fab.align"
+  | "editor.fab.alignTitle"
+  | "editor.fab.lock"
+  | "editor.fab.unlock"
+  | "editor.fab.delete"
+  | "editor.fab.more"
+  | "editor.fab.duplicate"
+  | "editor.fab.layerUp"
+  | "editor.fab.layerDown"
+  | "editor.fab.flipH"
+  | "editor.fab.flipV"
+  | "editor.align.left"
+  | "editor.align.centerH"
+  | "editor.align.right"
+  | "editor.align.top"
+  | "editor.align.centerV"
+  | "editor.align.bottom"
+  | "editor.layerName.image"
+  | "editor.layerName.rect"
+  | "editor.layerName.circle"
+  | "editor.layerName.triangle"
+  | "editor.layerName.line"
+  | "editor.layerName.star"
+  | "editor.layerName.hexagon"
+  | "editor.layerName.arrow"
+  | "editor.layerName.frame"
+  | "editor.layerName.text"
+  | "editor.fallback.title"
+  | "editor.deleteLayer";
 
 type Dict = Record<TranslationKey, string>;
 
@@ -780,6 +833,59 @@ const es: Dict = {
   "create.soonNote": "Esta función estará disponible próximamente.",
   "create.soonTooltip": "Esta función estará disponible próximamente.",
   "create.footer": "El fondo se genera sin texto · Todo es editable después",
+  // Editor
+  "editor.tool.design": "Diseño",
+  "editor.tool.text": "Texto",
+  "editor.tool.elements": "Elementos",
+  "editor.tool.photos": "Fotos",
+  "editor.tool.background": "Fondo",
+  "editor.tool.layers": "Capas",
+  "editor.tool.ai": "IA Tools",
+  "editor.tool.brand": "Brand Kit",
+  "editor.tool.favorites": "Favoritos",
+  "editor.tool.comingSoon": "próximamente",
+  "editor.action.undo": "Deshacer",
+  "editor.action.redo": "Rehacer",
+  "editor.action.save": "Guardar borrador (Supabase)",
+  "editor.action.download": "Descargar",
+  "editor.action.share": "Compartir",
+  "editor.action.shareSoon": "Compartir (próximamente)",
+  "editor.action.saveDraft": "Guardar",
+  "editor.action.exporting": "Exportando…",
+  "editor.fab.edit": "Editar",
+  "editor.fab.image": "Imagen",
+  "editor.fab.imageTitle": "Añadir imagen",
+  "editor.fab.styles": "Estilos",
+  "editor.fab.stylesTitle": "Abrir panel de estilos",
+  "editor.fab.align": "Alinear",
+  "editor.fab.alignTitle": "Alinear",
+  "editor.fab.lock": "Bloquear",
+  "editor.fab.unlock": "Desbloq.",
+  "editor.fab.delete": "Eliminar",
+  "editor.fab.more": "Más opciones",
+  "editor.fab.duplicate": "Duplicar",
+  "editor.fab.layerUp": "Subir capa",
+  "editor.fab.layerDown": "Bajar capa",
+  "editor.fab.flipH": "Voltear H",
+  "editor.fab.flipV": "Voltear V",
+  "editor.align.left": "Izq",
+  "editor.align.centerH": "C·H",
+  "editor.align.right": "Der",
+  "editor.align.top": "Arr",
+  "editor.align.centerV": "C·V",
+  "editor.align.bottom": "Aba",
+  "editor.layerName.image": "Imagen",
+  "editor.layerName.rect": "Rectángulo",
+  "editor.layerName.circle": "Círculo",
+  "editor.layerName.triangle": "Triángulo",
+  "editor.layerName.line": "Línea",
+  "editor.layerName.star": "Estrella",
+  "editor.layerName.hexagon": "Hexágono",
+  "editor.layerName.arrow": "Flecha",
+  "editor.layerName.frame": "Marco",
+  "editor.layerName.text": "Texto",
+  "editor.fallback.title": "Editor",
+  "editor.deleteLayer": "Eliminar capa",
 };
 
 const en: Dict = {
@@ -1161,6 +1267,59 @@ const en: Dict = {
   "create.soonNote": "This feature will be available soon.",
   "create.soonTooltip": "This feature will be available soon.",
   "create.footer": "Background generated without text · Everything is editable after",
+  // Editor
+  "editor.tool.design": "Design",
+  "editor.tool.text": "Text",
+  "editor.tool.elements": "Elements",
+  "editor.tool.photos": "Photos",
+  "editor.tool.background": "Background",
+  "editor.tool.layers": "Layers",
+  "editor.tool.ai": "AI Tools",
+  "editor.tool.brand": "Brand Kit",
+  "editor.tool.favorites": "Favorites",
+  "editor.tool.comingSoon": "soon",
+  "editor.action.undo": "Undo",
+  "editor.action.redo": "Redo",
+  "editor.action.save": "Save draft (Supabase)",
+  "editor.action.download": "Download",
+  "editor.action.share": "Share",
+  "editor.action.shareSoon": "Share (coming soon)",
+  "editor.action.saveDraft": "Save",
+  "editor.action.exporting": "Exporting…",
+  "editor.fab.edit": "Edit",
+  "editor.fab.image": "Image",
+  "editor.fab.imageTitle": "Add image",
+  "editor.fab.styles": "Styles",
+  "editor.fab.stylesTitle": "Open styles panel",
+  "editor.fab.align": "Align",
+  "editor.fab.alignTitle": "Align",
+  "editor.fab.lock": "Lock",
+  "editor.fab.unlock": "Unlock",
+  "editor.fab.delete": "Delete",
+  "editor.fab.more": "More options",
+  "editor.fab.duplicate": "Duplicate",
+  "editor.fab.layerUp": "Layer up",
+  "editor.fab.layerDown": "Layer down",
+  "editor.fab.flipH": "Flip H",
+  "editor.fab.flipV": "Flip V",
+  "editor.align.left": "Left",
+  "editor.align.centerH": "C·H",
+  "editor.align.right": "Right",
+  "editor.align.top": "Top",
+  "editor.align.centerV": "C·V",
+  "editor.align.bottom": "Bot",
+  "editor.layerName.image": "Image",
+  "editor.layerName.rect": "Rectangle",
+  "editor.layerName.circle": "Circle",
+  "editor.layerName.triangle": "Triangle",
+  "editor.layerName.line": "Line",
+  "editor.layerName.star": "Star",
+  "editor.layerName.hexagon": "Hexagon",
+  "editor.layerName.arrow": "Arrow",
+  "editor.layerName.frame": "Frame",
+  "editor.layerName.text": "Text",
+  "editor.fallback.title": "Editor",
+  "editor.deleteLayer": "Delete layer",
 };
 
 const fr: Dict = {
@@ -1542,6 +1701,59 @@ const fr: Dict = {
   "create.soonNote": "Cette fonctionnalité sera bientôt disponible.",
   "create.soonTooltip": "Cette fonctionnalité sera bientôt disponible.",
   "create.footer": "Fond généré sans texte · Tout est éditable ensuite",
+  // Editor
+  "editor.tool.design": "Design",
+  "editor.tool.text": "Texte",
+  "editor.tool.elements": "Éléments",
+  "editor.tool.photos": "Photos",
+  "editor.tool.background": "Fond",
+  "editor.tool.layers": "Calques",
+  "editor.tool.ai": "IA Tools",
+  "editor.tool.brand": "Brand Kit",
+  "editor.tool.favorites": "Favoris",
+  "editor.tool.comingSoon": "bientôt",
+  "editor.action.undo": "Annuler",
+  "editor.action.redo": "Rétablir",
+  "editor.action.save": "Enregistrer brouillon (Supabase)",
+  "editor.action.download": "Télécharger",
+  "editor.action.share": "Partager",
+  "editor.action.shareSoon": "Partager (bientôt)",
+  "editor.action.saveDraft": "Enregistrer",
+  "editor.action.exporting": "Export en cours…",
+  "editor.fab.edit": "Éditer",
+  "editor.fab.image": "Image",
+  "editor.fab.imageTitle": "Ajouter image",
+  "editor.fab.styles": "Styles",
+  "editor.fab.stylesTitle": "Ouvrir le panneau styles",
+  "editor.fab.align": "Aligner",
+  "editor.fab.alignTitle": "Aligner",
+  "editor.fab.lock": "Verrouiller",
+  "editor.fab.unlock": "Déverr.",
+  "editor.fab.delete": "Supprimer",
+  "editor.fab.more": "Plus d'options",
+  "editor.fab.duplicate": "Dupliquer",
+  "editor.fab.layerUp": "Calque haut",
+  "editor.fab.layerDown": "Calque bas",
+  "editor.fab.flipH": "Miroir H",
+  "editor.fab.flipV": "Miroir V",
+  "editor.align.left": "Gau",
+  "editor.align.centerH": "C·H",
+  "editor.align.right": "Dro",
+  "editor.align.top": "Haut",
+  "editor.align.centerV": "C·V",
+  "editor.align.bottom": "Bas",
+  "editor.layerName.image": "Image",
+  "editor.layerName.rect": "Rectangle",
+  "editor.layerName.circle": "Cercle",
+  "editor.layerName.triangle": "Triangle",
+  "editor.layerName.line": "Ligne",
+  "editor.layerName.star": "Étoile",
+  "editor.layerName.hexagon": "Hexagone",
+  "editor.layerName.arrow": "Flèche",
+  "editor.layerName.frame": "Cadre",
+  "editor.layerName.text": "Texte",
+  "editor.fallback.title": "Éditeur",
+  "editor.deleteLayer": "Supprimer calque",
 };
 
 const pt: Dict = {
@@ -1923,6 +2135,59 @@ const pt: Dict = {
   "create.soonNote": "Esta função estará disponível em breve.",
   "create.soonTooltip": "Esta função estará disponível em breve.",
   "create.footer": "O fundo é gerado sem texto · Tudo é editável depois",
+  // Editor
+  "editor.tool.design": "Design",
+  "editor.tool.text": "Texto",
+  "editor.tool.elements": "Elementos",
+  "editor.tool.photos": "Fotos",
+  "editor.tool.background": "Fundo",
+  "editor.tool.layers": "Camadas",
+  "editor.tool.ai": "IA Tools",
+  "editor.tool.brand": "Brand Kit",
+  "editor.tool.favorites": "Favoritos",
+  "editor.tool.comingSoon": "em breve",
+  "editor.action.undo": "Anular",
+  "editor.action.redo": "Refazer",
+  "editor.action.save": "Guardar rascunho (Supabase)",
+  "editor.action.download": "Descarregar",
+  "editor.action.share": "Partilhar",
+  "editor.action.shareSoon": "Partilhar (em breve)",
+  "editor.action.saveDraft": "Guardar",
+  "editor.action.exporting": "A exportar…",
+  "editor.fab.edit": "Editar",
+  "editor.fab.image": "Imagem",
+  "editor.fab.imageTitle": "Adicionar imagem",
+  "editor.fab.styles": "Estilos",
+  "editor.fab.stylesTitle": "Abrir painel de estilos",
+  "editor.fab.align": "Alinhar",
+  "editor.fab.alignTitle": "Alinhar",
+  "editor.fab.lock": "Bloquear",
+  "editor.fab.unlock": "Desblq.",
+  "editor.fab.delete": "Eliminar",
+  "editor.fab.more": "Mais opções",
+  "editor.fab.duplicate": "Duplicar",
+  "editor.fab.layerUp": "Subir camada",
+  "editor.fab.layerDown": "Descer camada",
+  "editor.fab.flipH": "Espelhar H",
+  "editor.fab.flipV": "Espelhar V",
+  "editor.align.left": "Esq",
+  "editor.align.centerH": "C·H",
+  "editor.align.right": "Dir",
+  "editor.align.top": "Cima",
+  "editor.align.centerV": "C·V",
+  "editor.align.bottom": "Baixo",
+  "editor.layerName.image": "Imagem",
+  "editor.layerName.rect": "Retângulo",
+  "editor.layerName.circle": "Círculo",
+  "editor.layerName.triangle": "Triângulo",
+  "editor.layerName.line": "Linha",
+  "editor.layerName.star": "Estrela",
+  "editor.layerName.hexagon": "Hexágono",
+  "editor.layerName.arrow": "Seta",
+  "editor.layerName.frame": "Moldura",
+  "editor.layerName.text": "Texto",
+  "editor.fallback.title": "Editor",
+  "editor.deleteLayer": "Eliminar camada",
 };
 
 export const TRANSLATIONS: Record<Locale, Dict> = { es, en, fr, pt };
