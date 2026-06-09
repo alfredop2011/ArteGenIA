@@ -1,11 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { uploadToR2, makeKey } from "@/lib/r2";
+import { createSupabaseServerClient } from "@/lib/supabaseServer";
+import { checkRateLimit } from "@/lib/rateLimit";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
 export async function POST(req: NextRequest) {
   try {
+    // ─── AUTH + RATE LIMIT ──────────────────────────────────────────────
+    // V8: este endpoint NO tenia auth → cualquiera podia llamarlo y vaciar
+    // remove.bg ($0.18/call). Ahora exige sesion + rate limit (15/min).
+    const supabase = await createSupabaseServerClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return NextResponse.json({ error: "Inicia sesion para usar esta funcion" }, { status: 401 });
+    }
+    const limitRes = await checkRateLimit(supabase, user.id, "remove-bg");
+    if (limitRes) return limitRes;
+
     const apiKey = process.env.REMOVE_BG_API_KEY;
     if (!apiKey) {
       return NextResponse.json(

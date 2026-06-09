@@ -190,6 +190,16 @@ export async function POST(req: Request) {
     const useHd = body.hd === true;
     const action = useHd ? ACTION_HD : ACTION_NORMAL;
 
+    // ─── 2b. RATE LIMIT anti-burst (proteccion presupuesto Fal.ai) ────────
+    // Si el user hace muchas llamadas en poco tiempo, devolvemos 429.
+    // El limite mensual sigue siendo el principal control; esto es solo
+    // para evitar que alguien vacie el presupuesto en minutos por error
+    // o ataque.
+    const { checkRateLimit } = await import("@/lib/rateLimit");
+    const rlAction = useHd ? "segment-person-hd" : "segment-person";
+    const limitRes = await checkRateLimit(supabase, user.id, rlAction);
+    if (limitRes) return limitRes;
+
     // ─── 3. CUOTA: leer plan + contar uso del mes (segun normal/HD) ──────
     const { data: profile } = await supabase
       .from("profiles").select("plan").eq("id", user.id).maybeSingle();

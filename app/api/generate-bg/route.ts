@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createSupabaseServerClient } from "@/lib/supabaseServer";
+import { checkRateLimit } from "@/lib/rateLimit";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -53,6 +55,17 @@ function getDefaultAtmosphere(eventType: string): string {
 export async function POST(req: NextRequest) {
   console.log("[generate-bg] called, FAL_KEY exists:", !!process.env.FAL_KEY);
   try {
+    // ─── AUTH + RATE LIMIT ──────────────────────────────────────────────
+    // V8: este endpoint NO tenia auth → cualquiera podia llamarlo y vaciar
+    // Fal.ai. Ahora exige sesion y aplica rate limit (10/min por user).
+    const supabase = await createSupabaseServerClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return NextResponse.json({ error: "Inicia sesion para usar esta funcion" }, { status: 401 });
+    }
+    const limitRes = await checkRateLimit(supabase, user.id, "generate-bg");
+    if (limitRes) return limitRes;
+
     const body = await req.json() as {
       backgroundDescription?: string;
       eventType?: string;

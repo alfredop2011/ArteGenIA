@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createSupabaseServerClient } from "@/lib/supabaseServer";
+import { checkRateLimit } from "@/lib/rateLimit";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -171,6 +173,17 @@ RESPOND WITH THIS JSON:
 
 export async function POST(req: NextRequest) {
   try {
+    // ─── AUTH + RATE LIMIT (V8) ─────────────────────────────────────────
+    // Llama a Anthropic Claude → coste por tokens. Cualquier user puede
+    // gastar nuestros tokens; protegemos con auth + rate limit (30/min).
+    const supabase = await createSupabaseServerClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return NextResponse.json({ error: "Inicia sesion" }, { status: 401 });
+    }
+    const limitRes = await checkRateLimit(supabase, user.id, "chat-wizard");
+    if (limitRes) return limitRes;
+
     const body = await req.json() as {
       latestUserMessage: string;
       currentEventData: EventData;

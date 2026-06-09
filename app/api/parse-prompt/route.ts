@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createSupabaseServerClient } from "@/lib/supabaseServer";
+import { checkRateLimit } from "@/lib/rateLimit";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -21,6 +23,16 @@ type AnthropicMessage = {
 
 export async function POST(req: NextRequest) {
   try {
+    // ─── AUTH + RATE LIMIT (V8) ─────────────────────────────────────────
+    // Llama a Anthropic Claude → coste por tokens. Protegemos contra abuso.
+    const supabase = await createSupabaseServerClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return NextResponse.json({ error: "Inicia sesion" }, { status: 401 });
+    }
+    const limitRes = await checkRateLimit(supabase, user.id, "parse-prompt");
+    if (limitRes) return limitRes;
+
     const { prompt } = await req.json() as { prompt: string };
     if (!prompt?.trim()) {
       return NextResponse.json({ error: "Falta el prompt" }, { status: 400 });

@@ -49,6 +49,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "No autenticado" }, { status: 401 });
     }
 
+    // Rate limit anti-burst (proteccion presupuesto BRIA: $0.01/call)
+    const { checkRateLimit } = await import("@/lib/rateLimit");
+    const limitRes = await checkRateLimit(supabase, user.id, "refine-hd");
+    if (limitRes) return limitRes;
+
     const body = (await req.json()) as Body;
     if (!body?.imageUrl) {
       return NextResponse.json({ error: "imageUrl obligatorio" }, { status: 400 });
