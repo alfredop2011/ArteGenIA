@@ -57,6 +57,8 @@ import { applyWatermark, shouldWatermark } from "@/lib/applyWatermark";
 import { useLocale } from "@/hooks/useLocale";
 import { useToast } from "@/lib/toast";
 import ColorPickerPopover from "@/components/editor/ColorPickerPopover";
+import KeyboardShortcutsModal from "@/components/editor/KeyboardShortcutsModal";
+import FontPickerPopover from "@/components/editor/FontPickerPopover";
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
 
@@ -327,6 +329,7 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
   const [activeTool, setActiveTool] = useState<LeftTool>("layers");
   const [artistsModalOpen, setArtistsModalOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [docTitle, setDocTitle] = useState("Diseño sin título");
   const [viewMode, setViewMode] = useState<ViewMode>("sidebar");
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
@@ -972,6 +975,60 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
+  }, []);
+
+  // ─── KEYBOARD: tecla "?" abre modal de atajos ──────────────────────────
+  // Separado porque no requiere selectedLayer y debe funcionar siempre.
+  // Excepto cuando el usuario escribe en input/textarea (donde "?" es char).
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key !== "?") return;
+      const tag = document.activeElement?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA") return;
+      e.preventDefault();
+      setShortcutsOpen(s => !s);
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
+
+  // ─── MOBILE KEYBOARD AVOIDANCE ─────────────────────────────────────────
+  // Cuando el teclado nativo (iOS/Android) aparece, cubre la mitad inferior
+  // de la pantalla — si el usuario esta editando texto en la parte baja del
+  // canvas, no ve lo que escribe. Solucion: usamos visualViewport API para
+  // detectar el cambio de altura y hacemos scroll del canvas al centro del
+  // area visible.
+  //
+  // Solo aplica en mobile (desktop nunca tiene teclado virtual). La deteccion
+  // de keyboard es: visualViewport.height significativamente menor que window.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const vv = window.visualViewport;
+    if (!vv) return; // navegadores viejos sin API — degradacion grácil
+    const isMobileViewport = window.innerWidth < 768;
+    if (!isMobileViewport) return;
+    const handleResize = () => {
+      // Heuristica: si la altura visible es <85% de window.innerHeight,
+      // asumimos teclado abierto. Es robusto vs el bottom UI variable de iOS.
+      const isKeyboardOpen = vv.height < window.innerHeight * 0.85;
+      if (!isKeyboardOpen) return;
+      // Si hay un texto en edicion, scroll para que el canvas quede visible
+      const canvas = fabricRef.current;
+      const active = canvas?.getActiveObject();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const isEditing = !!active && ((active as any).isEditing === true);
+      if (!isEditing) return;
+      // Scroll al wrapper del canvas — center en viewport visible
+      const wrapper = canvasWrapperRef.current;
+      if (wrapper) {
+        // requestAnimationFrame para que el browser termine el resize antes
+        requestAnimationFrame(() => {
+          wrapper.scrollIntoView({ behavior: "smooth", block: "center" });
+        });
+      }
+    };
+    vv.addEventListener("resize", handleResize);
+    return () => vv.removeEventListener("resize", handleResize);
   }, []);
 
   // ─── TEXT PROPS ───────────────────────────────────────────────────────────
@@ -2592,7 +2649,14 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
                 setOpenSections={setOpenSections}>
                 {isText && (<>
                   <div><label className="text-[10px] text-gray-500 mb-1 block">Contenido</label><textarea value={textProps.text} onChange={e => applyTextProp("text", e.target.value)} rows={2} className="w-full bg-white/[0.04] border border-white/8 rounded-lg px-2.5 py-2 text-xs text-white resize-none outline-none focus:border-purple-500/50"/></div>
-                  <div><label className="text-[10px] text-gray-500 mb-1 block">Fuente</label><select value={textProps.fontFamily} onChange={e => applyTextProp("fontFamily", e.target.value)} className="w-full bg-white/[0.04] border border-white/8 rounded-lg px-2.5 py-2 text-xs text-white outline-none focus:border-purple-500/50">{FONTS.map(f => <option key={f} value={f}>{f}</option>)}</select></div>
+                  <div>
+                    <label className="text-[10px] text-gray-500 mb-1 block">Fuente</label>
+                    <FontPickerPopover
+                      value={textProps.fontFamily}
+                      fonts={FONTS}
+                      onChange={(f) => applyTextProp("fontFamily", f)}
+                    />
+                  </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
                       <label className="text-[10px] text-gray-500 mb-1 block">
@@ -3418,6 +3482,9 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
       })()}
 
       {/* ─── COMMAND PALETTE ─────────────────────────────────────────── */}
+      {/* Modal de atajos teclado — abre con "?" (sin modifier) */}
+      {shortcutsOpen && <KeyboardShortcutsModal onClose={() => setShortcutsOpen(false)} />}
+
       {paletteOpen && (
         <CommandPalette
           onClose={() => setPaletteOpen(false)}
@@ -3454,6 +3521,7 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
             { id: "view-dock", label: "Vista Dock", desc: "Dock flotante inferior", group: "Vista", icon: <PanelBottom className="w-4 h-4" strokeWidth={2} />, run: () => setViewMode("dock") },
             { id: "zoom-fit", label: "Zoom 50%", desc: "Ajustar al área visible", group: "Vista", icon: <Minimize2 className="w-4 h-4" strokeWidth={2} />, run: () => setZoom(50) },
             { id: "zoom-100", label: "Zoom 100%", desc: "Tamaño real", group: "Vista", icon: <Maximize2 className="w-4 h-4" strokeWidth={2} />, run: () => setZoom(100) },
+            { id: "shortcuts", label: "Ver atajos de teclado", desc: "Lista de atajos (?)", group: "Vista", icon: <Search className="w-4 h-4" strokeWidth={2} />, run: () => setShortcutsOpen(true) },
 
             // ── Exportar ────────────────────────────────────
             { id: "export-png", label: "Exportar como PNG", desc: "Descargar imagen PNG", group: "Exportar", icon: <Download className="w-4 h-4" strokeWidth={2} />, run: () => exportFlyer("png") },

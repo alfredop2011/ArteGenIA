@@ -1,10 +1,12 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Lock, Palette, Pencil, Trash2, Plus } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Lock, Palette, Pencil, Trash2, Plus, Copy } from "lucide-react";
 import { useProjects } from "@/hooks/useProjects";
 import { useAuth } from "@/hooks/useAuth";
 import { useLocale } from "@/hooks/useLocale";
+import { useToast } from "@/lib/toast";
 import type { Project } from "@/lib/supabase";
 
 // Mapea Locale (es/en/fr/pt) a BCP47 para Intl.DateTimeFormat. Si añades
@@ -17,11 +19,14 @@ const LOCALE_TO_BCP47: Record<string, string> = {
 };
 
 export default function ProjectsPage() {
-    const { loadProjects, deleteProject, loading } = useProjects();
+    const { loadProjects, deleteProject, duplicateProject, loading } = useProjects();
     const { user } = useAuth();
     const { t, locale } = useLocale();
+    const { toast } = useToast();
+    const router = useRouter();
     const [projects, setProjects] = useState<Project[]>([]);
     const [deleting, setDeleting] = useState<string | null>(null);
+    const [duplicating, setDuplicating] = useState<string | null>(null);
 
     useEffect(() => {
         if (user) loadProjects().then(setProjects);
@@ -33,6 +38,21 @@ export default function ProjectsPage() {
         const ok = await deleteProject(id);
         if (ok) setProjects(p => p.filter(x => x.id !== id));
         setDeleting(null);
+    };
+
+    // Duplica el proyecto y abre el editor con la copia para edicion inmediata.
+    // Es el camino mas comun de reuso: "Bachata Octubre" → "Bachata Noviembre"
+    // donde solo cambian fecha y artista.
+    const handleDuplicate = async (id: string) => {
+        setDuplicating(id);
+        const newId = await duplicateProject(id);
+        setDuplicating(null);
+        if (newId) {
+            toast.success("Copia creada — abriendo editor");
+            router.push(`/editor/${newId}`);
+        } else {
+            toast.error("No se pudo duplicar");
+        }
     };
 
     if (!user) return (
@@ -101,10 +121,25 @@ export default function ProjectsPage() {
                                     </p>
                                 </div>
                             </Link>
+                            {/* Boton duplicar - siempre visible en mobile, hover en desktop.
+                                Esta a la izquierda del delete (mismo patron Notion/Linear). */}
+                            <button
+                                onClick={() => handleDuplicate(project.id)}
+                                disabled={duplicating === project.id || deleting === project.id}
+                                aria-label="Duplicar proyecto"
+                                title="Duplicar"
+                                className="absolute top-2 right-12 w-8 h-8 rounded-lg bg-black/60 backdrop-blur text-purple-300 hover:bg-purple-900/80 hover:text-white transition-all flex items-center justify-center md:opacity-0 md:group-hover:opacity-100 disabled:opacity-50"
+                            >
+                                {duplicating === project.id ? (
+                                    <span className="w-3 h-3 border-2 border-purple-400/30 border-t-purple-400 rounded-full animate-spin" />
+                                ) : (
+                                    <Copy size={14} strokeWidth={1.8} />
+                                )}
+                            </button>
                             {/* Boton eliminar - SIEMPRE visible en mobile, hover en desktop */}
                             <button
                                 onClick={() => handleDelete(project.id)}
-                                disabled={deleting === project.id}
+                                disabled={deleting === project.id || duplicating === project.id}
                                 aria-label={t("projects.card.deleteAria")}
                                 className="absolute top-2 right-2 w-8 h-8 rounded-lg bg-black/60 backdrop-blur text-red-400 hover:bg-red-900/80 hover:text-red-300 transition-all flex items-center justify-center md:opacity-0 md:group-hover:opacity-100 disabled:opacity-50"
                             >
@@ -114,12 +149,24 @@ export default function ProjectsPage() {
                                     <Trash2 size={14} strokeWidth={1.8} />
                                 )}
                             </button>
-                            {/* Overlay edit - SOLO DESKTOP en hover */}
-                            <div className="hidden md:flex absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex-col items-center justify-center gap-3 pointer-events-none">
+                            {/* Overlay desktop: Edit + Duplicar visibles en hover */}
+                            <div className="hidden md:flex absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex-col items-center justify-center gap-2 pointer-events-none">
                                 <Link href={`/editor/${project.id}`} className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-sm font-bold pointer-events-auto">
                                     <Pencil size={14} strokeWidth={2} />
                                     {t("projects.card.edit")}
                                 </Link>
+                                <button
+                                    onClick={(e) => { e.preventDefault(); handleDuplicate(project.id); }}
+                                    disabled={duplicating === project.id}
+                                    className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold pointer-events-auto disabled:opacity-50"
+                                >
+                                    {duplicating === project.id ? (
+                                        <span className="w-3 h-3 border border-white/40 border-t-white rounded-full animate-spin" />
+                                    ) : (
+                                        <Copy size={12} strokeWidth={2} />
+                                    )}
+                                    Duplicar
+                                </button>
                             </div>
                         </div>
                     ))}
