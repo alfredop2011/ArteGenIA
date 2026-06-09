@@ -44,11 +44,13 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         : user?.email?.[0]?.toUpperCase() ?? "A";
 
     return (
-        <div className="min-h-screen bg-[#0e0e14] text-white flex flex-col">
+        <div className="min-h-screen flex flex-col"
+             style={{ background: "var(--home-bg)", color: "var(--home-text)" }}>
             {showAuth && <AuthModal onClose={() => setShowAuth(false)} />}
 
             {/* Header */}
-            <header className="sticky top-0 z-50 border-b border-white/[0.06] bg-[#0e0e14]/95 backdrop-blur-md">
+            <header className="sticky top-0 z-50 backdrop-blur-md border-b"
+                    style={{ background: "var(--header-bg)", borderColor: "var(--header-border)" }}>
                 <div className="flex items-center justify-between px-4 sm:px-6 h-14">
 
                     {/* Logo */}
@@ -112,7 +114,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                                     </button>
 
                                     {showUserMenu && (
-                                        <div className="absolute right-0 top-10 w-52 rounded-2xl border border-white/10 bg-[#0f0f1a] shadow-2xl overflow-hidden z-50">
+                                        <div className="absolute right-0 top-10 w-52 rounded-2xl border shadow-2xl overflow-hidden z-50"
+                                             style={{ background: "var(--home-bg-soft)", borderColor: "var(--home-card-border)" }}>
                                             <div className="px-4 py-3 border-b border-white/[0.06]">
                                                 <p className="text-white text-sm font-semibold truncate">{profile?.name ?? user.email}</p>
                                                 <p className="text-gray-500 text-xs truncate">{user.email}</p>
@@ -182,7 +185,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             <Footer />
 
             {/* Bottom Navigation Bar - SOLO MOBILE */}
-            <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#0e0e14]/95 backdrop-blur-md border-t border-white/[0.06] safe-area-bottom">
+            <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 backdrop-blur-md border-t safe-area-bottom"
+                 style={{ background: "var(--header-bg)", borderColor: "var(--header-border)" }}>
                 <div className="flex items-center justify-around h-16 px-2">
                     {mobileBottomNav.map((item) => {
                         const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
@@ -213,7 +217,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             {showMobileMenu && (
                 <>
                     <div className="md:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50" onClick={() => setShowMobileMenu(false)} />
-                    <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#0f0f1a] rounded-t-3xl border-t border-white/10 shadow-2xl pb-8 animate-slide-up">
+                    <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 rounded-t-3xl border-t shadow-2xl pb-8 animate-slide-up"
+                         style={{ background: "var(--home-bg-soft)", borderColor: "var(--home-card-border)" }}>
                         <div className="w-12 h-1 bg-white/20 rounded-full mx-auto mt-3 mb-4" />
                         <div className="px-4 space-y-1">
                             <Link href="/history" onClick={() => setShowMobileMenu(false)}

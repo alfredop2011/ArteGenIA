@@ -3,34 +3,13 @@
 /* ─── THEME TOKENS ─────────────────────────────────────────────────────────
    Definimos dos temas como variables CSS. El hook useTheme alterna
    class="theme-light" / "theme-dark" en <html>. Si no hay class, default
-   = dark (manteniendo el look actual de la app que es dark-first).
+   = LIGHT (cambiado en V8 — decision UX: light es mas amigable para B2B).
 
-   La mayoria de la app sigue con clases Tailwind hardcoded oscuras (no las
-   tocamos para no introducir regresiones). Solo el HOME consume estas vars
-   para dar soporte de toggle visible. Otras paginas se migran si hace falta. */
+   La mayoria de la app sigue con clases Tailwind hardcoded oscuras (editor,
+   /create, etc.). Solo el HOME y /templates consumen estas vars y reaccionan
+   al toggle. Otras paginas se migran cuando haga falta. */
 
-:root, .theme-dark {
-  --home-bg:           #05050b;
-  --home-bg-soft:      #0a0a10;
-  --home-text:         #ffffff;
-  --home-text-muted:   #9ca3af;
-  --home-text-soft:    #6b7280;
-  --home-card-bg:      rgba(255,255,255,0.04);
-  --home-card-border:  rgba(255,255,255,0.10);
-  --home-card-hover:   rgba(255,255,255,0.08);
-  --home-pill-text:    #9ca3af;
-  --home-divider:      rgba(255,255,255,0.06);
-  --home-feature-bg:   rgba(168,85,247,0.06);
-  --home-feature-bg2:  rgba(168,85,247,0.02);
-  --home-feature-border: rgba(168,85,247,0.18);
-  --header-bg:         rgba(14,14,20,0.95);
-  --header-border:     rgba(255,255,255,0.06);
-
-  --background: #0a0a0a;
-  --foreground: #ededed;
-}
-
-.theme-light {
+:root, .theme-light {
   --home-bg:           #f8f9fc;
   --home-bg-soft:      #ffffff;
   --home-text:         #0e0e14;
@@ -49,6 +28,27 @@
 
   --background: #ffffff;
   --foreground: #171717;
+}
+
+.theme-dark {
+  --home-bg:           #05050b;
+  --home-bg-soft:      #0a0a10;
+  --home-text:         #ffffff;
+  --home-text-muted:   #9ca3af;
+  --home-text-soft:    #6b7280;
+  --home-card-bg:      rgba(255,255,255,0.04);
+  --home-card-border:  rgba(255,255,255,0.10);
+  --home-card-hover:   rgba(255,255,255,0.08);
+  --home-pill-text:    #9ca3af;
+  --home-divider:      rgba(255,255,255,0.06);
+  --home-feature-bg:   rgba(168,85,247,0.06);
+  --home-feature-bg2:  rgba(168,85,247,0.02);
+  --home-feature-border: rgba(168,85,247,0.18);
+  --header-bg:         rgba(14,14,20,0.95);
+  --header-border:     rgba(255,255,255,0.06);
+
+  --background: #0a0a0a;
+  --foreground: #ededed;
 }
 
 @theme inline {

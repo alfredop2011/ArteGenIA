@@ -7,22 +7,23 @@ import { useEffect, useState, useCallback } from "react";
  * Estrategia:
  *  - Persistencia en localStorage clave "artegenia-theme"
  *  - Aplica class "theme-dark" / "theme-light" en <html>
- *  - Default: dark (matchea el look hardcoded del resto de la app)
- *  - Las variables CSS estan definidas en app/globals.css
+ *  - Default: LIGHT (decisión UX: tema claro es más amigable para usuarios
+ *    nuevos / B2B / impresiones, dark queda como opción opcional)
+ *  - Las variables CSS estan definidas en app/globals.css (:root usa light)
  *
  * NO usamos system preference para evitar flash al cargar: el user elige
- * explicitamente. Si no hay eleccion previa → dark.
+ * explicitamente. Si no hay eleccion previa → light.
  */
 
 export type Theme = "dark" | "light";
 
 const STORAGE_KEY = "artegenia-theme";
 
-/** Lee el theme desde localStorage. Devuelve "dark" si no hay nada o SSR. */
+/** Lee el theme desde localStorage. Devuelve "light" si no hay nada o SSR. */
 function readStoredTheme(): Theme {
-  if (typeof window === "undefined") return "dark";
+  if (typeof window === "undefined") return "light";
   const stored = window.localStorage.getItem(STORAGE_KEY);
-  return stored === "light" ? "light" : "dark";
+  return stored === "dark" ? "dark" : "light";
 }
 
 /** Aplica la class al <html>. Quita la otra para evitar conflictos. */
@@ -34,8 +35,8 @@ function applyThemeClass(theme: Theme) {
 }
 
 export function useTheme() {
-  // Estado inicial = lo guardado. En SSR sera "dark" (matchea default visual).
-  const [theme, setThemeState] = useState<Theme>("dark");
+  // Estado inicial = lo guardado. En SSR sera "light" (matchea default visual).
+  const [theme, setThemeState] = useState<Theme>("light");
 
   // Al montar: leer storage y sincronizar. Si difiere de SSR, hay un
   // flash brevisimo — aceptable para MVP. Para eliminarlo del todo habria

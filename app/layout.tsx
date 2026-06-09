@@ -97,7 +97,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           rel="stylesheet"
         />
       </head>
-      <body className="min-h-full flex flex-col bg-[#0e0e14] text-white">
+      <body className="min-h-full flex flex-col"
+            style={{ background: "var(--home-bg)", color: "var(--home-text)" }}>
         {children}
       </body>
     </html>
