@@ -55,13 +55,25 @@ const CSP = [
   `base-uri 'self'`,
   // plugins: bloqueados
   `object-src 'none'`,
-  // upgrade requests inseguros automaticamente a HTTPS
-  `upgrade-insecure-requests`,
+  // upgrade requests inseguros automaticamente a HTTPS — SOLO produccion.
+  // En dev rompe localhost (que esta en HTTP).
+  ...(process.env.NODE_ENV === "production" ? [`upgrade-insecure-requests`] : []),
 ].join("; ");
 
+// HSTS: solo en producción. En desarrollo NO se envía porque rompería
+// localhost (browser intentaría HTTPS, dev server está en HTTP).
+// Para limpiar HSTS cacheado en el browser:
+//   Chrome: chrome://net-internals/#hsts → Delete domain "localhost"
+//   Safari: vaciar cachés desde DevTools, o borrar ~/Library/Cookies/HSTS.plist
+//   Firefox: about:preferences#privacy → Borrar datos del sitio web
+const isProd = process.env.NODE_ENV === "production";
+
 const securityHeaders = [
-  // HSTS: 2 años, todos subdominios, eligible para preload list
-  { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
+  // HSTS: 2 años, todos subdominios, eligible para preload list (SOLO prod)
+  ...(isProd ? [{
+    key: "Strict-Transport-Security",
+    value: "max-age=63072000; includeSubDomains; preload",
+  }] : []),
   // Anti-clickjacking (CSP frame-ancestors es lo moderno; X-Frame es fallback)
   { key: "X-Frame-Options", value: "DENY" },
   // No MIME sniffing
