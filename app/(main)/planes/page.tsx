@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { isAdmin } from "@/lib/admin";
 import {
@@ -33,7 +33,14 @@ type Plan = {
   id: "free" | "pro" | "business";
   name: string;
   tagline: string;
-  price: { monthly: string; yearly: string };
+  // Tres precios: el mensual normal, el mensual-efectivo cuando se factura
+  // anualmente (con descuento), y el total anual. El display es responsabilidad
+  // del componente segun billingCycle.
+  price: {
+    monthly: string;           // "9,99€"
+    monthlyAnnual: string;     // "8,25€" (precio efectivo /mes en plan anual)
+    yearly: string;            // "99€" (total facturado al año)
+  };
   cta: string;
   featured?: boolean;
   features: PlanFeature[];
@@ -46,7 +53,7 @@ const PLANS: Plan[] = [
     id: "free",
     name: "Gratis",
     tagline: "Para empezar a crear flyers",
-    price: { monthly: "0€", yearly: "0€" },
+    price: { monthly: "0€", monthlyAnnual: "0€", yearly: "0€" },
     cta: "Plan actual",
     // accent.text usa CSS var para que en light sea oscuro y en dark sea claro.
     // El bg/border gris ya tiene buen contraste en ambos temas.
@@ -71,7 +78,8 @@ const PLANS: Plan[] = [
     id: "pro",
     name: "Pro",
     tagline: "Para creadores y profesionales",
-    price: { monthly: "9,99€", yearly: "99€" },
+    // 99€/año = 8,25€/mes efectivo. Ahorro mensual: 1,74€.
+    price: { monthly: "9,99€", monthlyAnnual: "8,25€", yearly: "99€" },
     cta: "Empezar Pro",
     featured: true,
     accent: {
@@ -95,7 +103,8 @@ const PLANS: Plan[] = [
     id: "business",
     name: "Business",
     tagline: "Para academias, productoras y agencias",
-    price: { monthly: "24,99€", yearly: "249€" },
+    // 249€/año = 20,75€/mes efectivo. Ahorro mensual: 4,24€.
+    price: { monthly: "24,99€", monthlyAnnual: "20,75€", yearly: "249€" },
     cta: "Hablar con ventas",
     accent: {
       bg: "linear-gradient(135deg, rgba(250,204,21,0.12), rgba(245,158,11,0.06))",
@@ -116,9 +125,16 @@ const PLANS: Plan[] = [
   },
 ];
 
+// Ciclo de facturacion. "annual" se renderiza como precio efectivo mensual
+// con el descuento (price.yearly / 12), y muestra debajo el total anual.
+type BillingCycle = "monthly" | "annual";
+
 export default function PlanesPage() {
   const router = useRouter();
   const { user, loading } = useAuth();
+  // Default annual: el ahorro es el incentivo, casi todas las webs lo
+  // pre-seleccionan asi por mejor conversion.
+  const [billingCycle, setBillingCycle] = useState<BillingCycle>("annual");
 
   // Gating: solo admin puede ver esta pagina. Resto se redirige al home.
   // El check se hace en useEffect para no romper SSR. Mientras espera,
@@ -175,10 +191,48 @@ export default function PlanesPage() {
           </div>
         </div>
 
-        {/* GRID DE 3 PLANES */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5 mb-12">
+        {/* TOGGLE MENSUAL / ANUAL — segmented control */}
+        {/* En mobile es full-width (ancho 100% del contenedor), en desktop
+            queda centrado con max-width fijo. */}
+        <div className="flex justify-center mb-8 sm:mb-10">
+          <div className="inline-flex p-1 rounded-full"
+               style={{ background: "var(--home-card-bg)", border: "1px solid var(--home-card-border)" }}>
+            <button
+              onClick={() => setBillingCycle("monthly")}
+              className="px-4 sm:px-5 py-1.5 rounded-full text-xs sm:text-sm font-bold transition-all"
+              style={billingCycle === "monthly"
+                ? { background: "linear-gradient(135deg,#7c3aed,#a855f7)", color: "#fff", boxShadow: "0 4px 12px rgba(168,85,247,0.3)" }
+                : { color: "var(--home-text-muted)" }
+              }>
+              Mensual
+            </button>
+            <button
+              onClick={() => setBillingCycle("annual")}
+              className="px-4 sm:px-5 py-1.5 rounded-full text-xs sm:text-sm font-bold transition-all inline-flex items-center gap-1.5"
+              style={billingCycle === "annual"
+                ? { background: "linear-gradient(135deg,#7c3aed,#a855f7)", color: "#fff", boxShadow: "0 4px 12px rgba(168,85,247,0.3)" }
+                : { color: "var(--home-text-muted)" }
+              }>
+              Anual
+              <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full uppercase tracking-wider"
+                    style={billingCycle === "annual"
+                      ? { background: "rgba(255,255,255,0.25)", color: "#fff" }
+                      : { background: "var(--ag-success-bg)", color: "var(--ag-success)" }
+                    }>
+                −17%
+              </span>
+            </button>
+          </div>
+        </div>
+
+        {/* GRID DE 3 PLANES.
+            En mobile: 1 columna apilada con el card "pro" featured (con escala)
+            DEPRECADO el scale en mobile para que no se salga del viewport.
+            Espacio extra mt-4 antes del primer card para acomodar el badge
+            "Más popular" que sobresale. */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-5 mb-12 pt-4">
           {PLANS.map(plan => (
-            <PlanCard key={plan.id} plan={plan} />
+            <PlanCard key={plan.id} plan={plan} billingCycle={billingCycle} />
           ))}
         </div>
 
@@ -231,13 +285,14 @@ export default function PlanesPage() {
 
 // ─── SUB-COMPONENTES ─────────────────────────────────────────────────────
 
-function PlanCard({ plan }: { plan: Plan }) {
+function PlanCard({ plan, billingCycle }: { plan: Plan; billingCycle: BillingCycle }) {
   // Featured plan tiene una escala visual mayor y tag "Más popular".
+  // En mobile NO aplicamos scale (queda mal con el viewport estrecho).
   const isFeatured = plan.featured;
 
   return (
     <article
-      className={`relative rounded-2xl p-5 sm:p-6 transition-all ${
+      className={`relative rounded-2xl p-4 sm:p-6 transition-all ${
         isFeatured ? "md:scale-[1.03] md:-translate-y-1" : ""
       }`}
       style={{
@@ -250,7 +305,7 @@ function PlanCard({ plan }: { plan: Plan }) {
     >
       {/* Badge "Más popular" — solo en el plan featured */}
       {isFeatured && (
-        <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-[10px] font-black tracking-wider uppercase text-white"
+        <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-[10px] font-black tracking-wider uppercase text-white whitespace-nowrap"
              style={{ background: "linear-gradient(135deg,#7c3aed,#a855f7)", boxShadow: "0 4px 12px rgba(168,85,247,0.4)" }}>
           ⭐ Más popular
         </div>
@@ -272,20 +327,55 @@ function PlanCard({ plan }: { plan: Plan }) {
         </div>
       </div>
 
-      {/* Precio */}
+      {/* Precio — cambia segun billingCycle.
+          - monthly: precio mensual normal (9,99€/mes)
+          - annual: precio mensual efectivo del plan anual (8,25€/mes) +
+            tachado del precio original + texto pequeno "facturado anualmente: 99€"
+          El plan Free siempre muestra 0€ sin ningun extra. */}
       <div className="mb-5 mt-4">
-        <div className="flex items-baseline gap-1">
-          <span className="text-4xl font-black tracking-tight" style={{ color: "var(--home-text)" }}>
-            {plan.price.monthly}
-          </span>
-          <span className="text-sm" style={{ color: "var(--home-text-muted)" }}>
-            /mes
-          </span>
-        </div>
-        {plan.id !== "free" && (
-          <p className="text-[11px] mt-1" style={{ color: "var(--home-text-soft)" }}>
-            o {plan.price.yearly}/año <span className="font-bold" style={{ color: plan.accent.text }}>— ahorra 17%</span>
-          </p>
+        {plan.id === "free" ? (
+          <div className="flex items-baseline gap-1">
+            <span className="text-4xl font-black tracking-tight" style={{ color: "var(--home-text)" }}>
+              {plan.price.monthly}
+            </span>
+            <span className="text-sm" style={{ color: "var(--home-text-muted)" }}>
+              /mes
+            </span>
+          </div>
+        ) : billingCycle === "annual" ? (
+          <>
+            <div className="flex items-baseline gap-1.5 flex-wrap">
+              <span className="text-4xl font-black tracking-tight" style={{ color: "var(--home-text)" }}>
+                {plan.price.monthlyAnnual}
+              </span>
+              <span className="text-sm" style={{ color: "var(--home-text-muted)" }}>
+                /mes
+              </span>
+              {/* Tachado del precio mensual normal */}
+              <span className="text-xs line-through opacity-60" style={{ color: "var(--home-text-soft)" }}>
+                {plan.price.monthly}
+              </span>
+            </div>
+            <p className="text-[11px] mt-1" style={{ color: "var(--home-text-soft)" }}>
+              Facturado anualmente: <span className="font-bold" style={{ color: "var(--home-text)" }}>{plan.price.yearly}</span>
+              {" · "}
+              <span className="font-bold" style={{ color: "var(--ag-success)" }}>ahorras 17%</span>
+            </p>
+          </>
+        ) : (
+          <>
+            <div className="flex items-baseline gap-1">
+              <span className="text-4xl font-black tracking-tight" style={{ color: "var(--home-text)" }}>
+                {plan.price.monthly}
+              </span>
+              <span className="text-sm" style={{ color: "var(--home-text-muted)" }}>
+                /mes
+              </span>
+            </div>
+            <p className="text-[11px] mt-1" style={{ color: "var(--home-text-soft)" }}>
+              Facturado mensualmente · cambia a anual y ahorras 17%
+            </p>
+          </>
         )}
       </div>
 
