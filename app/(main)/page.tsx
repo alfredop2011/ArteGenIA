@@ -418,7 +418,223 @@ export default function Home() {
           </div>
         </section>
 
+        {/* ═════ ¿PARA QUIÉN ES? — cards grandes por audiencia ═════ */}
+        {/* Conversion-focused: ayuda al visitante a auto-identificarse y
+            entender que ArteGenIA es para ÉL. */}
+        <section className="mt-12 sm:mt-16">
+          <h2 className="text-xl sm:text-2xl font-black text-center mb-2" style={{ color: "var(--home-text)" }}>
+            Hecho para ti, sea cual sea tu evento
+          </h2>
+          <p className="text-sm text-center mb-6 max-w-xl mx-auto" style={{ color: "var(--home-text-muted)" }}>
+            Plantillas y funciones pensadas para cada tipo de organizador. Sin curva de aprendizaje.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <AudienceCard
+              icon={GraduationCap}
+              accent="#a855f7"
+              title="Academias / Escuelas"
+              desc="Captura alumnos con flyers profesionales de tus clases, workshops y eventos especiales."
+            />
+            <AudienceCard
+              icon={PartyPopper}
+              accent="#ec4899"
+              title="Productoras"
+              desc="Conciertos, fiestas, festivales. Vende entradas con diseños que llamen la atención."
+            />
+            <AudienceCard
+              icon={Sparkles}
+              accent="#facc15"
+              title="DJs / Freelance"
+              desc="Tu marca personal en cada flyer. Listo para Instagram en menos tiempo que pones una canción."
+            />
+            <AudienceCard
+              icon={Music}
+              accent="#22d3ee"
+              title="Discotecas / Clubs"
+              desc="Comunica tu lineup semanal sin gastar en diseñador. Mismo formato, distinto evento, 2 minutos."
+            />
+            <AudienceCard
+              icon={Disc3}
+              accent="#fb923c"
+              title="Agencias / Marketing"
+              desc="Crea variantes en serie para clientes. Brand Kit propio (próximamente Pro)."
+            />
+            <AudienceCard
+              icon={LayoutGrid}
+              accent="#84cc16"
+              title="Cualquier organizador"
+              desc="Si haces eventos, ArteGenIA acelera tu comunicación visual. Sin importar el tamaño."
+            />
+          </div>
+        </section>
+
+        {/* ═════ ¿POR QUÉ NO USAR CANVA? — diferenciador ═════ */}
+        <section className="mt-12 sm:mt-16 rounded-3xl p-5 sm:p-8"
+                 style={{
+                   background: "linear-gradient(135deg, rgba(168,85,247,0.08), rgba(236,72,153,0.04))",
+                   border: "1px solid var(--ag-brand-border)",
+                 }}>
+          <h2 className="text-xl sm:text-2xl font-black text-center mb-2" style={{ color: "var(--home-text)" }}>
+            ¿Y por qué no usar Canva?
+          </h2>
+          <p className="text-sm text-center mb-6 max-w-xl mx-auto" style={{ color: "var(--home-text-muted)" }}>
+            Canva es genial. Para todo. Por eso es lento si tu nicho es eventos hispanos.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
+            <CompareCard
+              icon={Zap}
+              title="Más rápido"
+              desc="Plantillas pensadas para tu nicho. No buscas 30 minutos entre 50.000 templates."
+            />
+            <CompareCard
+              icon={Sparkles}
+              title="IA integrada"
+              desc="Recorta personas, elimina fondos y genera imágenes sin pagar Pro de Canva."
+            />
+            <CompareCard
+              icon={Star}
+              title="En español"
+              desc="Diseñado para tu cultura de eventos (concierto, clases, fiesta, festival)."
+            />
+          </div>
+        </section>
+
+        {/* ═════ FAQ — anti-fricción ═════ */}
+        <section className="mt-12 sm:mt-16">
+          <h2 className="text-xl sm:text-2xl font-black text-center mb-6" style={{ color: "var(--home-text)" }}>
+            Lo que más nos preguntan
+          </h2>
+          <div className="max-w-2xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FaqItem
+              q="¿Tengo que pagar para empezar?"
+              a="No. Crea cuenta y empieza gratis. Las funciones de IA tienen 10 usos/mes sin pagar nada."
+            />
+            <FaqItem
+              q="¿Mis diseños llevan marca de agua?"
+              a="Solo en plan gratis. El plan Pro descarga sin marca (apúntate a la lista para cuando esté listo)."
+            />
+            <FaqItem
+              q="¿Las plantillas son mías o de ArteGenIA?"
+              a="Lo que TÚ creas con la plantilla es 100% tuyo. La plantilla base es nuestra (no la redistribuyas)."
+            />
+            <FaqItem
+              q="¿Funciona en mi móvil?"
+              a="Sí. Editor optimizado para iPhone/Android. Toca, edita, descarga y compártelo en WhatsApp."
+            />
+          </div>
+        </section>
+
+        {/* ═════ CTA FINAL — última oportunidad de conversión ═════ */}
+        <section className="mt-12 sm:mt-16 mb-4 rounded-3xl p-6 sm:p-10 text-center"
+                 style={{
+                   background: "linear-gradient(135deg, rgba(124,58,237,0.12), rgba(236,72,153,0.06))",
+                   border: "1px solid var(--ag-brand-border)",
+                 }}>
+          <h2 className="text-2xl sm:text-3xl font-black mb-2" style={{ color: "var(--home-text)" }}>
+            Tu próximo flyer en{" "}
+            <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-amber-300 bg-clip-text text-transparent">
+              2 minutos
+            </span>
+          </h2>
+          <p className="text-sm sm:text-base mb-6 max-w-md mx-auto" style={{ color: "var(--home-text-muted)" }}>
+            Elige una plantilla, cámbiale el texto, descarga. Así de simple.
+          </p>
+          <Link
+            href="/templates"
+            className="inline-flex items-center gap-2 px-6 sm:px-8 py-3 sm:py-4 rounded-2xl font-bold text-sm sm:text-base text-white transition-transform hover:scale-[1.05]"
+            style={{
+              background: "linear-gradient(135deg,#7c3aed,#a855f7)",
+              boxShadow: "0 0 40px rgba(168,85,247,0.45)",
+            }}
+          >
+            <Sparkles size={18} strokeWidth={2.2} />
+            Crear mi primer flyer gratis
+            <ArrowRight size={18} strokeWidth={2.2} />
+          </Link>
+          <p className="mt-4 text-xs" style={{ color: "var(--home-text-soft)" }}>
+            Sin tarjeta · Cancela cuando quieras · 100% en español
+          </p>
+        </section>
+
       </div>
+    </div>
+  );
+}
+
+// ─── Cards de landing (auto-contenidas, no se reutilizan fuera del home) ──
+
+function AudienceCard({ icon: Icon, accent, title, desc }: {
+  icon: typeof GraduationCap;
+  accent: string;
+  title: string;
+  desc: string;
+}) {
+  return (
+    <div
+      className="rounded-2xl p-4 sm:p-5 transition-transform hover:scale-[1.02]"
+      style={{
+        background: "var(--home-bg-soft)",
+        border: "1px solid var(--home-card-border)",
+      }}
+    >
+      <div
+        className="w-10 h-10 rounded-xl flex items-center justify-center mb-3"
+        style={{ background: `${accent}1a`, border: `1px solid ${accent}55`, color: accent }}
+      >
+        <Icon size={18} strokeWidth={2} />
+      </div>
+      <h3 className="text-sm sm:text-base font-bold mb-1" style={{ color: "var(--home-text)" }}>
+        {title}
+      </h3>
+      <p className="text-xs leading-relaxed" style={{ color: "var(--home-text-muted)" }}>
+        {desc}
+      </p>
+    </div>
+  );
+}
+
+function CompareCard({ icon: Icon, title, desc }: {
+  icon: typeof Zap;
+  title: string;
+  desc: string;
+}) {
+  return (
+    <div className="text-center px-2">
+      <div
+        className="w-12 h-12 mx-auto rounded-2xl flex items-center justify-center mb-3"
+        style={{
+          background: "var(--ag-brand-bg)",
+          border: "1px solid var(--ag-brand-border)",
+          color: "var(--ag-brand)",
+        }}
+      >
+        <Icon size={20} strokeWidth={2} />
+      </div>
+      <h3 className="text-sm sm:text-base font-bold mb-1" style={{ color: "var(--home-text)" }}>
+        {title}
+      </h3>
+      <p className="text-xs leading-relaxed" style={{ color: "var(--home-text-muted)" }}>
+        {desc}
+      </p>
+    </div>
+  );
+}
+
+function FaqItem({ q, a }: { q: string; a: string }) {
+  return (
+    <div
+      className="rounded-xl p-4"
+      style={{
+        background: "var(--home-bg-soft)",
+        border: "1px solid var(--home-card-border)",
+      }}
+    >
+      <h3 className="text-sm font-bold mb-1.5" style={{ color: "var(--home-text)" }}>
+        {q}
+      </h3>
+      <p className="text-xs leading-relaxed" style={{ color: "var(--home-text-muted)" }}>
+        {a}
+      </p>
     </div>
   );
 }
