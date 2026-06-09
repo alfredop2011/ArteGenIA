@@ -105,6 +105,17 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   async headers() {
+    // V8.1: en DEVELOPMENT no aplicamos headers de seguridad. Razon: la CSP
+    // estricta + headers que aplican a /:path* incluyen /_next/static/chunks/*
+    // de Turbopack. Tras varios cambios en config, los chunks pueden chocar
+    // con la CSP y dar errores tipo "module factory not available" o
+    // "Refused to load script".
+    //
+    // En PROD seguimos con todos los headers (audit OWASP, grado A+ en
+    // securityheaders.com).
+    if (process.env.NODE_ENV !== "production") {
+      return [];
+    }
     return [{ source: "/:path*", headers: securityHeaders }];
   },
   // No reveles framework version a atacantes
