@@ -12,6 +12,7 @@ import ThemeToggle from "@/components/layout/ThemeToggle";
 import LocaleSwitcher from "@/components/layout/LocaleSwitcher";
 import { useLocale } from "@/hooks/useLocale";
 import OrganizerTypeModal from "@/components/onboarding/OrganizerTypeModal";
+import FeedbackWidget from "@/components/feedback/FeedbackWidget";
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
@@ -81,6 +82,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                     setOrganizerAnswered(true); // evita re-abrir hasta que profile refresque
                 }} />
             )}
+
+            {/* Widget flotante de feedback. Se oculta automaticamente en
+                rutas tecnicas (/editor, /upload, /auth). */}
+            <FeedbackWidget />
 
             {/* Header */}
             <header className="sticky top-0 z-50 backdrop-blur-md border-b"

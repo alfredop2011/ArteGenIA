@@ -187,7 +187,9 @@ function roundRect(
  *  3. La UI muestre "(con marca de agua)" en el boton de descarga para que
  *     el usuario sepa de antemano lo que va a recibir
  */
-const WATERMARK_ENABLED = false;
+// V8.2: activado. Crea incentivo real para validar interes en plan Pro.
+// Sin diferencia visible entre free y pro, nadie se apunta a la waitlist.
+const WATERMARK_ENABLED = true;
 
 /**
  * Helper booleano: ¿este perfil debe llevar watermark al descargar?

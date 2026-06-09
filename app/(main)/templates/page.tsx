@@ -451,11 +451,10 @@ export default function TemplatesPage() {
             </div>
           </div>
 
-          {/* Card promo PRO — SOLO ADMIN.
-              La página /planes está oculta para usuarios normales hasta que
-              tengamos el sistema de pagos integrado. Cuando se libere al
-              publico, eliminar la condicion isAdmin(). */}
-          {isAdmin(user?.email) && (
+          {/* Card promo PRO — visible para TODOS.
+              /planes ahora es publica y los CTAs capturan emails en
+              waitlist (validar interes antes de implementar checkout). */}
+          {(
             <div className="mt-auto rounded-xl p-3"
                  style={{
                    background: "linear-gradient(135deg, rgba(250,204,21,0.12), rgba(245,158,11,0.08))",

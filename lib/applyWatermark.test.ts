@@ -1,39 +1,30 @@
 import { describe, it, expect } from "vitest";
 import { shouldWatermark } from "./applyWatermark";
 
-describe("shouldWatermark", () => {
-  // El comportamiento depende de la constante WATERMARK_ENABLED interna.
-  // En MVP esta en `false` → siempre devuelve false sin importar el plan.
-  // Cuando se active a `true`, devolvera true para free y false para pro+.
+describe("shouldWatermark (V8.2 activado)", () => {
+  // WATERMARK_ENABLED esta en true desde V8.2.
+  // - free / null / undefined / desconocido → watermark (true)
+  // - pro / enterprise → sin watermark (false)
 
-  it("free siempre return false (flag desactivado en MVP)", () => {
-    expect(shouldWatermark("free")).toBe(false);
+  it("free → watermark (incentivo para upgrade)", () => {
+    expect(shouldWatermark("free")).toBe(true);
   });
 
-  it("pro return false (no llevan watermark)", () => {
+  it("pro → sin watermark", () => {
     expect(shouldWatermark("pro")).toBe(false);
   });
 
-  it("enterprise return false", () => {
+  it("enterprise → sin watermark", () => {
     expect(shouldWatermark("enterprise")).toBe(false);
   });
 
-  it("null/undefined no rompe", () => {
-    expect(shouldWatermark(null)).toBe(false);
-    expect(shouldWatermark(undefined)).toBe(false);
-    expect(shouldWatermark()).toBe(false);
+  it("null/undefined → watermark por seguridad (asume free)", () => {
+    expect(shouldWatermark(null)).toBe(true);
+    expect(shouldWatermark(undefined)).toBe(true);
+    expect(shouldWatermark()).toBe(true);
   });
 
-  it("string desconocida no rompe", () => {
-    expect(shouldWatermark("custom_plan_unknown")).toBe(false);
+  it("string desconocida → watermark (no fallar a free)", () => {
+    expect(shouldWatermark("custom_plan_unknown")).toBe(true);
   });
 });
-
-// NOTA: applyWatermark() en si NO se testa por dos motivos:
-//   1. Requiere DOM real (HTMLImageElement, canvas) — happy-dom no implementa
-//      canvas 2D context completo
-//   2. Es composicion pura — si dataURL entra valido, sale valido (probado
-//      manualmente en producción)
-// Si en el futuro se añade Puppeteer/headless Chrome al CI, se puede
-// añadir un test que renderice una imagen base y verifique pixel del
-// quadrant inferior derecho.
