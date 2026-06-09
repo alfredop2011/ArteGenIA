@@ -11,6 +11,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
 import { isAdmin } from "@/lib/admin";
+import { useLocale } from "@/hooks/useLocale";
+import type { TranslationKey } from "@/lib/translations";
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
 
@@ -28,22 +30,21 @@ type ExtractedData = {
 };
 
 // ─── EJEMPLOS QUE SE ESCRIBEN SOLOS EN EL PLACEHOLDER ─────────────────────────
-
-const EXAMPLES = [
-  "Crea un flyer para un concierto con 2 artistas…",
-  "Diseña un cartel para una fiesta este sábado…",
-  "Haz un flyer con neón morado y dorado…",
-  "Festival con 10 artistas y entrada premium…",
+// Las claves apuntan al dict (es/en/fr/pt). El componente resuelve via t().
+const EXAMPLE_KEYS: TranslationKey[] = [
+  "create.examples.0", "create.examples.1", "create.examples.2", "create.examples.3",
 ];
 
 // ─── CHIPS QUE SE AÑADEN AL PROMPT ────────────────────────────────────────────
-
-const CHIPS = ["Fiesta este sábado", "Concierto en directo", "Festival al aire libre", "Clase abierta"];
+const CHIP_KEYS: TranslationKey[] = [
+  "create.chips.0", "create.chips.1", "create.chips.2", "create.chips.3",
+];
 
 // ─── MAIN ─────────────────────────────────────────────────────────────────────
 
 export default function CreatePage() {
   const router = useRouter();
+  const { t, locale } = useLocale();
   // ─── ADMIN GATING ──────────────────────────────────────────────────────
   // La generacion con IA esta limitada al admin mientras pulimos coste y
   // calidad. Para el resto de usuarios el flujo se muestra como "Proximamente"
@@ -51,6 +52,10 @@ export default function CreatePage() {
   // siguen abiertas a todos.
   const { user } = useAuth();
   const userIsAdmin = isAdmin(user?.email);
+
+  // Mapeo Locale→BCP47 para Intl.DateTimeFormat. Cuando se añadan idiomas,
+  // ampliar tambien aqui.
+  const BCP47: Record<string, string> = { es: "es-ES", en: "en-US", fr: "fr-FR", pt: "pt-PT" };
 
   // userText = lo que el usuario escribe (sin el sufijo de campos)
   // prompt = derivado: userText + ", " + suffix(fields)
@@ -93,7 +98,7 @@ export default function CreatePage() {
     if (!value) return "";
     try {
       const d = new Date(value);
-      return d.toLocaleDateString("es-ES", { day: "numeric", month: "short" }).replace(".", "");
+      return d.toLocaleDateString(BCP47[locale] ?? "es-ES", { day: "numeric", month: "short" }).replace(".", "");
     } catch {
       return value;
     }
@@ -104,13 +109,13 @@ export default function CreatePage() {
     if (timeMode === "fixed" && timeFixed.trim()) return timeFixed.trim();
     if (timeMode === "range") {
       const f = timeFrom.trim();
-      const t = timeTo.trim();
-      if (f && t) return `${f} — ${t}`;
-      if (f) return `Desde ${f}`;
-      if (t) return `Hasta ${t}`;
+      const tt = timeTo.trim();
+      if (f && tt) return `${f} — ${tt}`;
+      if (f) return t("create.chip.timeFromShort").replace("{time}", f);
+      if (tt) return t("create.chip.timeToShort").replace("{time}", tt);
     }
     return "";
-  }, [timeMode, timeFixed, timeFrom, timeTo]);
+  }, [timeMode, timeFixed, timeFrom, timeTo, t]);
 
   const timeAsText = timeChipLabel; // mismo formato en chip y en prompt
 
@@ -145,11 +150,12 @@ export default function CreatePage() {
   const placeAsText = useCallback((): string => {
     const v = venue.trim();
     const c = city.trim();
-    if (v && c) return `en ${v}, ${c}`;
-    if (v) return `en ${v}`;
-    if (c) return `en ${c}`;
+    const tpl = t("create.chip.placeIn");
+    if (v && c) return tpl.replace("{place}", `${v}, ${c}`);
+    if (v) return tpl.replace("{place}", v);
+    if (c) return tpl.replace("{place}", c);
     return "";
-  }, [venue, city]);
+  }, [venue, city, t]);
 
   const clearPlace = useCallback(() => {
     setVenue("");
@@ -158,21 +164,21 @@ export default function CreatePage() {
 
   // Texto que muestra el chip de precio (compacto)
   const priceChipLabel = useCallback((): string => {
-    if (priceMode === "free") return "Entrada libre";
+    if (priceMode === "free") return t("create.chip.priceFree");
     if (priceMode === "paid" && prices.length > 0) {
       const filled = prices.filter(p => p.label.trim() || p.amount.trim());
       if (filled.length === 0) return "";
       const first = filled[0];
       const firstStr = [first.label, first.amount].filter(Boolean).join(" ").trim();
       if (filled.length === 1) return firstStr;
-      return `${firstStr} +${filled.length - 1} más`;
+      return t("create.chip.pricePlus").replace("{first}", firstStr).replace("{rest}", String(filled.length - 1));
     }
     return "";
-  }, [priceMode, prices]);
+  }, [priceMode, prices, t]);
 
   // Texto que va al prompt (todos los precios concatenados)
   const priceAsText = useCallback((): string => {
-    if (priceMode === "free") return "Entrada libre";
+    if (priceMode === "free") return t("create.chip.priceFree");
     if (priceMode === "paid" && prices.length > 0) {
       return prices
         .filter(p => p.label.trim() || p.amount.trim())
@@ -181,7 +187,7 @@ export default function CreatePage() {
         .join(", ");
     }
     return "";
-  }, [priceMode, prices]);
+  }, [priceMode, prices, t]);
 
   // Sufijo derivado de TODOS los campos
   const fieldsAsText = useCallback((): string => {
@@ -261,32 +267,33 @@ export default function CreatePage() {
 
   useEffect(() => {
     if (prompt) return; // pausar animación cuando el usuario escribe
-    const current = EXAMPLES[exIdx];
-    let t: ReturnType<typeof setTimeout>;
+    // Renombramos a `timer` para evitar shadowing con `t` (i18n)
+    const current = t(EXAMPLE_KEYS[exIdx]);
+    let timer: ReturnType<typeof setTimeout>;
     if (phase === "typing") {
       if (charIdx.current < current.length) {
-        t = setTimeout(() => {
+        timer = setTimeout(() => {
           setAnimatedText(current.slice(0, charIdx.current + 1));
           charIdx.current++;
         }, 40);
       } else {
-        t = setTimeout(() => setPhase("pause"), 2000);
+        timer = setTimeout(() => setPhase("pause"), 2000);
       }
     } else if (phase === "pause") {
-      t = setTimeout(() => setPhase("erasing"), 400);
+      timer = setTimeout(() => setPhase("erasing"), 400);
     } else {
       if (charIdx.current > 0) {
-        t = setTimeout(() => {
+        timer = setTimeout(() => {
           charIdx.current--;
           setAnimatedText(current.slice(0, charIdx.current));
         }, 18);
       } else {
-        setExIdx(i => (i + 1) % EXAMPLES.length);
+        setExIdx(i => (i + 1) % EXAMPLE_KEYS.length);
         setPhase("typing");
       }
     }
-    return () => clearTimeout(t);
-  }, [animatedText, phase, exIdx, prompt]);
+    return () => clearTimeout(timer);
+  }, [animatedText, phase, exIdx, prompt, t]);
 
   // ─── Auto-resize del textarea ──────────────────────────────────────────
   useEffect(() => {
@@ -310,14 +317,14 @@ export default function CreatePage() {
     // El boton ya esta deshabilitado en la UI; este return es la segunda
     // barrera por si Enter llega aqui o si la verificacion del boton falla.
     if (!userIsAdmin) {
-      alert("Esta función estará disponible próximamente.");
+      alert(t("create.soonNote"));
       return;
     }
     setIsGenerating(true);
 
     try {
       // Step 1: Extract event data from prompt using AI
-      setGenStep("Analizando tu evento...");
+      setGenStep(t("create.gen.step.analyze"));
       let extracted: ExtractedData = {
         eventName: prompt.slice(0, 60),
         eventType: "event",
@@ -363,7 +370,7 @@ export default function CreatePage() {
       } catch (e) { console.warn("Extract error:", e); }
 
       // Step 2: Generate background
-      setGenStep("Generando fondo premium...");
+      setGenStep(t("create.gen.step.bg"));
       const bgRes = await fetch("/api/generate-bg", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -377,7 +384,7 @@ export default function CreatePage() {
       const bgData = await bgRes.json() as { url: string; width: number; height: number };
 
       // Step 3: Remove background from artist photos
-      setGenStep("Procesando artistas...");
+      setGenStep(t("create.gen.step.artists"));
       const processedArtists: Array<{ name: string; photoUrl: string }> = [];
 
       // Logos — keep as-is (no remove-bg), use base64 directly
@@ -415,12 +422,12 @@ export default function CreatePage() {
       }
 
       // Step 4: Save to localStorage and go to preview
-      setGenStep("Componiendo preview...");
+      setGenStep(t("create.gen.step.preview"));
       const generatedData = {
         eventName:   extracted.eventName,
         eventDate:   [extracted.date, extracted.time].filter(Boolean).join(" · "),
         eventVenue:  [extracted.venue, extracted.city].filter(Boolean).join(", "),
-        eventPrice:  extracted.price || (extracted.isFree ? "Entrada libre" : ""),
+        eventPrice:  extracted.price || (extracted.isFree ? t("create.chip.priceFree") : ""),
         eventType:   extracted.eventType,
         artistPhotoUrl: processedArtists[0]?.photoUrl ?? null,
         artists:        processedArtists,
@@ -439,11 +446,12 @@ export default function CreatePage() {
       router.push("/preview");
     } catch (err) {
       console.error("Error:", err);
-      alert(`Error: ${err instanceof Error ? err.message : "desconocido"}`);
+      const errMsg = err instanceof Error ? err.message : t("create.gen.error.unknown");
+      alert(`${t("create.gen.error")}: ${errMsg}`);
       setIsGenerating(false);
       setGenStep("");
     }
-  }, [prompt, artistsAndLogos, router, userIsAdmin]);
+  }, [prompt, artistsAndLogos, router, userIsAdmin, t]);
 
   // ─── RENDER: GENERATING (intacto de /create) ─────────────────────────────
 
@@ -462,29 +470,43 @@ export default function CreatePage() {
               <Sparkles size={22} strokeWidth={1.8} className="animate-pulse" />
             </div>
           </div>
-          <h2 className="text-xl font-black text-white mb-2">Creando tu flyer</h2>
+          <h2 className="text-xl font-black text-white mb-2">{t("create.gen.title")}</h2>
           <p className="text-sm text-gray-500 mb-8">{genStep}</p>
 
+          {/* Steps de progreso. Matching contra el step actual via la key
+              traducida del paso (no contra substring fragil del label).
+              Esto evita que en idiomas no-ES no detecte el step activo. */}
           <div className="space-y-3 text-left">
             {[
-              { label: "Analizando evento", done: genStep !== "Analizando tu evento..." },
-              { label: "Generando fondo premium", done: !["Analizando tu evento...", "Generando fondo premium..."].includes(genStep) },
-              { label: "Procesando artistas",     done: genStep === "Componiendo preview..." },
-              { label: "Componiendo preview",     done: false },
-            ].map((s, i) => (
-              <div key={i} className="flex items-center gap-3">
-                <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${
-                  s.done ? "bg-green-500 text-black" : genStep.includes(s.label.split(" ")[0]) ? "border-2 border-purple-400" : "border-2 border-white/10"
-                }`}>
-                  {s.done ? <Check size={11} strokeWidth={3} /> : genStep.includes(s.label.split(" ")[0]) ?
-                    <div className="w-2.5 h-2.5 border-2 border-purple-400 border-t-transparent rounded-full animate-spin"/> : ""}
+              { label: t("create.gen.label.analyze"), stepKey: "create.gen.step.analyze" as const, order: 0 },
+              { label: t("create.gen.label.bg"),      stepKey: "create.gen.step.bg" as const,      order: 1 },
+              { label: t("create.gen.label.artists"), stepKey: "create.gen.step.artists" as const, order: 2 },
+              { label: t("create.gen.label.preview"), stepKey: "create.gen.step.preview" as const, order: 3 },
+            ].map((s, i) => {
+              // Conocemos el orden del genStep actual comparando contra cada uno
+              const currentOrder = [
+                t("create.gen.step.analyze"),
+                t("create.gen.step.bg"),
+                t("create.gen.step.artists"),
+                t("create.gen.step.preview"),
+              ].indexOf(genStep);
+              const done = currentOrder > s.order;
+              const active = currentOrder === s.order;
+              return (
+                <div key={i} className="flex items-center gap-3">
+                  <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${
+                    done ? "bg-green-500 text-black" : active ? "border-2 border-purple-400" : "border-2 border-white/10"
+                  }`}>
+                    {done ? <Check size={11} strokeWidth={3} /> : active ?
+                      <div className="w-2.5 h-2.5 border-2 border-purple-400 border-t-transparent rounded-full animate-spin"/> : ""}
+                  </div>
+                  <span className={`text-xs ${done ? "text-green-400" : active ? "text-white" : "text-white/20"}`}>{s.label}</span>
                 </div>
-                <span className={`text-xs ${s.done ? "text-green-400" : genStep.includes(s.label.split(" ")[0]) ? "text-white" : "text-white/20"}`}>{s.label}</span>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
-          <div className="mt-8 text-xs text-gray-600">El fondo se genera sin texto — el texto se añade como capa editable</div>
+          <div className="mt-8 text-xs text-gray-600">{t("create.gen.footnote")}</div>
         </div>
       </div>
     );
@@ -508,21 +530,21 @@ export default function CreatePage() {
                  }}>
               <Sparkles size={11} strokeWidth={2.2} className="text-amber-300" />
               <span className="text-[11px] font-bold tracking-wider text-amber-300 uppercase">
-                Próximamente
+                {t("create.badge.soon")}
               </span>
             </div>
           )}
           <h1 className="font-black tracking-tight mb-2"
               style={{ fontSize: "clamp(1.9rem, 3.2vw, 3rem)" }}>
-            Diseña flyers que{" "}
+            {t("create.title.line1")}{" "}
             <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-yellow-300 bg-clip-text text-transparent">
-              impactan
+              {t("create.title.highlight")}
             </span>
           </h1>
           <p className="text-gray-400 text-sm">
             {userIsAdmin
-              ? <>Describe tu evento y la <span className="text-purple-400 font-semibold">IA</span> genera el flyer perfecto.</>
-              : <>Generación con IA llegará pronto. Mientras tanto, <Link href="/templates" className="text-purple-400 font-semibold hover:text-purple-300">explora nuestras plantillas</Link>.</>
+              ? <>{t("create.sub.admin.lead")}<span className="text-purple-400 font-semibold">{t("create.sub.admin.ai")}</span>{t("create.sub.admin.tail")}</>
+              : <>{t("create.sub.guest.lead")}<Link href="/templates" className="text-purple-400 font-semibold hover:text-purple-300">{t("create.sub.guest.link")}</Link>{t("create.sub.guest.tail")}</>
             }
           </p>
         </div>
@@ -561,12 +583,15 @@ export default function CreatePage() {
 
           {/* Chips (se AÑADEN al prompt, no sustituyen) */}
           <div className="px-3 sm:px-5 pb-2 flex flex-wrap gap-1.5">
-            {CHIPS.map(c => (
-              <button key={c} onClick={() => appendChip(c)}
-                className="text-xs px-2.5 py-0.5 rounded-full bg-white/5 hover:bg-purple-500/20 border border-white/10 hover:border-purple-500/30 text-gray-400 hover:text-white transition-all">
-                {c}
-              </button>
-            ))}
+            {CHIP_KEYS.map(key => {
+              const label = t(key);
+              return (
+                <button key={key} onClick={() => appendChip(label)}
+                  className="text-xs px-2.5 py-0.5 rounded-full bg-white/5 hover:bg-purple-500/20 border border-white/10 hover:border-purple-500/30 text-gray-400 hover:text-white transition-all">
+                  {label}
+                </button>
+              );
+            })}
           </div>
 
           {/* Campos estructurados: Fecha, Hora, Lugar, Precio (con popover) */}
@@ -589,7 +614,7 @@ export default function CreatePage() {
                       }`}
                     >
                       <Calendar size={12} strokeWidth={1.8} />
-                      {hasValue ? displayValue : "Fecha"}
+                      {hasValue ? displayValue : t("create.chip.date")}
                       {hasValue && (
                         <span
                           role="button"
@@ -645,7 +670,7 @@ export default function CreatePage() {
                       }`}
                     >
                       <Clock size={12} strokeWidth={1.8} />
-                      {hasValue ? chipText : "Hora"}
+                      {hasValue ? chipText : t("create.chip.time")}
                       {hasValue && (
                         <span
                           role="button"
@@ -678,7 +703,7 @@ export default function CreatePage() {
                                   : "text-gray-400 hover:text-white"
                               }`}
                             >
-                              Hora fija
+                              {t("create.chip.timeFixed")}
                             </button>
                             <button
                               onClick={selectTimeRange}
@@ -688,7 +713,7 @@ export default function CreatePage() {
                                   : "text-gray-400 hover:text-white"
                               }`}
                             >
-                              Rango horario
+                              {t("create.chip.timeRange")}
                             </button>
                           </div>
 
@@ -698,7 +723,7 @@ export default function CreatePage() {
                               value={timeFixed}
                               onChange={(e) => setTimeFixed(e.target.value)}
                               onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); setOpenPopover(null); } }}
-                              placeholder="Ej: 22:00"
+                              placeholder={t("create.chip.timePlaceholder")}
                               autoFocus
                               className="w-full bg-white/[0.04] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 outline-none focus:border-purple-500/40"
                             />
@@ -707,24 +732,24 @@ export default function CreatePage() {
                           {timeMode === "range" && (
                             <div className="flex items-center gap-2">
                               <div className="flex-1">
-                                <label className="block text-[10px] text-gray-500 uppercase tracking-wide mb-1">Desde</label>
+                                <label className="block text-[10px] text-gray-500 uppercase tracking-wide mb-1">{t("create.chip.from")}</label>
                                 <input
                                   type="text"
                                   value={timeFrom}
                                   onChange={(e) => setTimeFrom(e.target.value)}
-                                  placeholder="22:00"
+                                  placeholder={t("create.chip.fromPlaceholder")}
                                   autoFocus
                                   className="w-full bg-white/[0.04] border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-gray-600 outline-none focus:border-purple-500/40"
                                 />
                               </div>
                               <div className="flex-1">
-                                <label className="block text-[10px] text-gray-500 uppercase tracking-wide mb-1">Hasta</label>
+                                <label className="block text-[10px] text-gray-500 uppercase tracking-wide mb-1">{t("create.chip.to")}</label>
                                 <input
                                   type="text"
                                   value={timeTo}
                                   onChange={(e) => setTimeTo(e.target.value)}
                                   onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); setOpenPopover(null); } }}
-                                  placeholder="06:00"
+                                  placeholder={t("create.chip.toPlaceholder")}
                                   className="w-full bg-white/[0.04] border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-gray-600 outline-none focus:border-purple-500/40"
                                 />
                               </div>
@@ -732,7 +757,7 @@ export default function CreatePage() {
                           )}
 
                           {timeMode === "none" && (
-                            <p className="text-xs text-gray-500 text-center py-2">Elige una opción</p>
+                            <p className="text-xs text-gray-500 text-center py-2">{t("create.chip.timeEmpty")}</p>
                           )}
                         </div>
                       </>
@@ -759,7 +784,7 @@ export default function CreatePage() {
                       }`}
                     >
                       <MapPin size={12} strokeWidth={1.8} />
-                      {hasValue ? chipText : "Lugar"}
+                      {hasValue ? chipText : t("create.chip.place")}
                       {hasValue && (
                         <span
                           role="button"
@@ -784,24 +809,24 @@ export default function CreatePage() {
                         >
                           <div className="space-y-2">
                             <div>
-                              <label className="block text-[10px] text-gray-500 uppercase tracking-wide mb-1">Sala</label>
+                              <label className="block text-[10px] text-gray-500 uppercase tracking-wide mb-1">{t("create.chip.venue")}</label>
                               <input
                                 type="text"
                                 value={venue}
                                 onChange={(e) => setVenue(e.target.value)}
-                                placeholder="Ej: Sala Apolo"
+                                placeholder={t("create.chip.venuePlaceholder")}
                                 autoFocus
                                 className="w-full bg-white/[0.04] border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white placeholder-gray-600 outline-none focus:border-purple-500/40"
                               />
                             </div>
                             <div>
-                              <label className="block text-[10px] text-gray-500 uppercase tracking-wide mb-1">Ciudad</label>
+                              <label className="block text-[10px] text-gray-500 uppercase tracking-wide mb-1">{t("create.chip.city")}</label>
                               <input
                                 type="text"
                                 value={city}
                                 onChange={(e) => setCity(e.target.value)}
                                 onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); setOpenPopover(null); } }}
-                                placeholder="Ej: Madrid"
+                                placeholder={t("create.chip.cityPlaceholder")}
                                 className="w-full bg-white/[0.04] border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white placeholder-gray-600 outline-none focus:border-purple-500/40"
                               />
                             </div>
@@ -831,7 +856,7 @@ export default function CreatePage() {
                       }`}
                     >
                       <Euro size={12} strokeWidth={1.8} />
-                      {hasValue ? chipText : "Precio"}
+                      {hasValue ? chipText : t("create.chip.price")}
                       {hasValue && (
                         <span
                           role="button"
@@ -864,7 +889,7 @@ export default function CreatePage() {
                                   : "text-gray-400 hover:text-white"
                               }`}
                             >
-                              Entrada libre
+                              {t("create.chip.priceFree")}
                             </button>
                             <button
                               onClick={selectPaidMode}
@@ -874,7 +899,7 @@ export default function CreatePage() {
                                   : "text-gray-400 hover:text-white"
                               }`}
                             >
-                              Con precio
+                              {t("create.chip.pricePaid")}
                             </button>
                           </div>
 
@@ -887,7 +912,7 @@ export default function CreatePage() {
                                     type="text"
                                     value={p.label}
                                     onChange={(e) => updatePriceRow(p.id, "label", e.target.value)}
-                                    placeholder="Etiqueta"
+                                    placeholder={t("create.chip.priceLabel")}
                                     autoFocus={idx === prices.length - 1 && !p.label && !p.amount}
                                     className="flex-1 min-w-0 bg-white/[0.04] border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-gray-600 outline-none focus:border-purple-500/40"
                                   />
@@ -895,13 +920,13 @@ export default function CreatePage() {
                                     type="text"
                                     value={p.amount}
                                     onChange={(e) => updatePriceRow(p.id, "amount", e.target.value)}
-                                    placeholder="8€"
+                                    placeholder={t("create.chip.priceAmount")}
                                     className="w-20 bg-white/[0.04] border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-gray-600 outline-none focus:border-purple-500/40"
                                   />
                                   <button
                                     onClick={() => removePriceRow(p.id)}
                                     className="shrink-0 w-6 h-6 rounded-md flex items-center justify-center text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-all"
-                                    title="Eliminar precio"
+                                    title={t("create.chip.priceRemove")}
                                   >
                                     <X size={13} strokeWidth={2} />
                                   </button>
@@ -911,20 +936,20 @@ export default function CreatePage() {
                                 onClick={addPriceRow}
                                 className="w-full text-xs py-1.5 rounded-lg border border-dashed border-white/15 text-purple-300 hover:bg-purple-500/10 hover:border-purple-500/40 transition-all"
                               >
-                                + Añadir precio
+                                {t("create.chip.priceAdd")}
                               </button>
                             </div>
                           )}
 
                           {priceMode === "free" && (
                             <p className="text-xs text-gray-500 text-center py-2">
-                              El flyer indicará que la entrada es libre
+                              {t("create.chip.priceFreeNote")}
                             </p>
                           )}
 
                           {priceMode === "none" && (
                             <p className="text-xs text-gray-500 text-center py-2">
-                              Elige una opción
+                              {t("create.chip.choose")}
                             </p>
                           )}
                         </div>
@@ -940,7 +965,7 @@ export default function CreatePage() {
           <div className="border-t border-white/[0.06] px-5 py-4">
             <div className="inline-flex items-center gap-1.5 text-xs text-gray-400 mb-2.5">
               <ImagePlus size={13} strokeWidth={1.8} />
-              Artistas y logos <span className="text-gray-600">(opcional)</span>
+              {t("create.artists.title")} <span className="text-gray-600">{t("create.artists.optional")}</span>
             </div>
             <ArtistLibraryCard
               selected={artistsAndLogos}
@@ -954,13 +979,13 @@ export default function CreatePage() {
           <div className="border-t border-white/[0.06] px-5 py-3 flex justify-end items-center gap-3">
             {!userIsAdmin && (
               <span className="text-[11px] text-amber-300/80 hidden sm:inline">
-                Esta función estará disponible próximamente.
+                {t("create.soonNote")}
               </span>
             )}
             <button
               onClick={handleGenerate}
               disabled={!userIsAdmin || !prompt.trim()}
-              title={!userIsAdmin ? "Esta función estará disponible próximamente." : undefined}
+              title={!userIsAdmin ? t("create.soonTooltip") : undefined}
               className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${
                 userIsAdmin && prompt.trim()
                   ? "text-white hover:scale-105"
@@ -983,7 +1008,7 @@ export default function CreatePage() {
               }
             >
               <Sparkles size={15} strokeWidth={2} />
-              {userIsAdmin ? "Generar flyer" : "Generar flyer · Próximamente"}
+              {userIsAdmin ? t("create.cta") : t("create.ctaSoon")}
             </button>
           </div>
         </div>
@@ -991,7 +1016,7 @@ export default function CreatePage() {
         {/* Footer info debajo del container */}
         <div className="flex items-center justify-center gap-2 mt-4 text-[11px] text-gray-600">
           <Zap size={11} strokeWidth={2} className="text-yellow-500/60" />
-          El fondo se genera sin texto · Todo es editable después
+          {t("create.footer")}
         </div>
       </div>
 

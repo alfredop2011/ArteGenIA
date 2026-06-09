@@ -332,7 +332,72 @@ export type TranslationKey =
   | "admin.new.error.editPublished"
   | "admin.new.firstTemplate.title"
   | "admin.new.firstTemplate.untitled"
-  | "admin.new.firstTemplate.cat";
+  | "admin.new.firstTemplate.cat"
+  // ── /create (Wizard IA) ──
+  | "create.examples.0"
+  | "create.examples.1"
+  | "create.examples.2"
+  | "create.examples.3"
+  | "create.chips.0"
+  | "create.chips.1"
+  | "create.chips.2"
+  | "create.chips.3"
+  | "create.gen.title"
+  | "create.gen.step.analyze"
+  | "create.gen.step.bg"
+  | "create.gen.step.artists"
+  | "create.gen.step.preview"
+  | "create.gen.label.analyze"
+  | "create.gen.label.bg"
+  | "create.gen.label.artists"
+  | "create.gen.label.preview"
+  | "create.gen.footnote"
+  | "create.gen.error"
+  | "create.gen.error.unknown"
+  | "create.badge.soon"
+  | "create.title.line1"
+  | "create.title.highlight"
+  | "create.sub.admin.lead"
+  | "create.sub.admin.ai"
+  | "create.sub.admin.tail"
+  | "create.sub.guest.lead"
+  | "create.sub.guest.link"
+  | "create.sub.guest.tail"
+  | "create.chip.date"
+  | "create.chip.time"
+  | "create.chip.timeFixed"
+  | "create.chip.timeRange"
+  | "create.chip.from"
+  | "create.chip.to"
+  | "create.chip.timeFromShort"
+  | "create.chip.timeToShort"
+  | "create.chip.timePlaceholder"
+  | "create.chip.fromPlaceholder"
+  | "create.chip.toPlaceholder"
+  | "create.chip.timeEmpty"
+  | "create.chip.place"
+  | "create.chip.venue"
+  | "create.chip.city"
+  | "create.chip.venuePlaceholder"
+  | "create.chip.cityPlaceholder"
+  | "create.chip.price"
+  | "create.chip.priceFree"
+  | "create.chip.pricePaid"
+  | "create.chip.priceLabel"
+  | "create.chip.priceAmount"
+  | "create.chip.priceAdd"
+  | "create.chip.priceRemove"
+  | "create.chip.priceFreeNote"
+  | "create.chip.choose"
+  | "create.chip.placeIn"
+  | "create.chip.pricePlus"
+  | "create.artists.title"
+  | "create.artists.optional"
+  | "create.cta"
+  | "create.ctaSoon"
+  | "create.soonNote"
+  | "create.soonTooltip"
+  | "create.footer";
 
 type Dict = Record<TranslationKey, string>;
 
@@ -650,6 +715,71 @@ const es: Dict = {
   "admin.new.firstTemplate.title": "Nueva plantilla",
   "admin.new.firstTemplate.untitled": "Plantilla sin título",
   "admin.new.firstTemplate.cat": "Otros",
+  // /create
+  "create.examples.0": "Crea un flyer para un concierto con 2 artistas…",
+  "create.examples.1": "Diseña un cartel para una fiesta este sábado…",
+  "create.examples.2": "Haz un flyer con neón morado y dorado…",
+  "create.examples.3": "Festival con 10 artistas y entrada premium…",
+  "create.chips.0": "Fiesta este sábado",
+  "create.chips.1": "Concierto en directo",
+  "create.chips.2": "Festival al aire libre",
+  "create.chips.3": "Clase abierta",
+  "create.gen.title": "Creando tu flyer",
+  "create.gen.step.analyze": "Analizando tu evento...",
+  "create.gen.step.bg": "Generando fondo premium...",
+  "create.gen.step.artists": "Procesando artistas...",
+  "create.gen.step.preview": "Componiendo preview...",
+  "create.gen.label.analyze": "Analizando evento",
+  "create.gen.label.bg": "Generando fondo premium",
+  "create.gen.label.artists": "Procesando artistas",
+  "create.gen.label.preview": "Componiendo preview",
+  "create.gen.footnote": "El fondo se genera sin texto — el texto se añade como capa editable",
+  "create.gen.error": "Error",
+  "create.gen.error.unknown": "desconocido",
+  "create.badge.soon": "Próximamente",
+  "create.title.line1": "Diseña flyers que",
+  "create.title.highlight": "impactan",
+  "create.sub.admin.lead": "Describe tu evento y la ",
+  "create.sub.admin.ai": "IA",
+  "create.sub.admin.tail": " genera el flyer perfecto.",
+  "create.sub.guest.lead": "Generación con IA llegará pronto. Mientras tanto, ",
+  "create.sub.guest.link": "explora nuestras plantillas",
+  "create.sub.guest.tail": ".",
+  "create.chip.date": "Fecha",
+  "create.chip.time": "Hora",
+  "create.chip.timeFixed": "Hora fija",
+  "create.chip.timeRange": "Rango horario",
+  "create.chip.from": "Desde",
+  "create.chip.to": "Hasta",
+  "create.chip.timeFromShort": "Desde {time}",
+  "create.chip.timeToShort": "Hasta {time}",
+  "create.chip.timePlaceholder": "Ej: 22:00",
+  "create.chip.fromPlaceholder": "22:00",
+  "create.chip.toPlaceholder": "06:00",
+  "create.chip.timeEmpty": "Elige una opción",
+  "create.chip.place": "Lugar",
+  "create.chip.venue": "Sala",
+  "create.chip.city": "Ciudad",
+  "create.chip.venuePlaceholder": "Ej: Sala Apolo",
+  "create.chip.cityPlaceholder": "Ej: Madrid",
+  "create.chip.price": "Precio",
+  "create.chip.priceFree": "Entrada libre",
+  "create.chip.pricePaid": "Con precio",
+  "create.chip.priceLabel": "Etiqueta",
+  "create.chip.priceAmount": "8€",
+  "create.chip.priceAdd": "+ Añadir precio",
+  "create.chip.priceRemove": "Eliminar precio",
+  "create.chip.priceFreeNote": "El flyer indicará que la entrada es libre",
+  "create.chip.choose": "Elige una opción",
+  "create.chip.placeIn": "en {place}",
+  "create.chip.pricePlus": "{first} +{rest} más",
+  "create.artists.title": "Artistas y logos",
+  "create.artists.optional": "(opcional)",
+  "create.cta": "Generar flyer",
+  "create.ctaSoon": "Generar flyer · Próximamente",
+  "create.soonNote": "Esta función estará disponible próximamente.",
+  "create.soonTooltip": "Esta función estará disponible próximamente.",
+  "create.footer": "El fondo se genera sin texto · Todo es editable después",
 };
 
 const en: Dict = {
@@ -966,6 +1096,71 @@ const en: Dict = {
   "admin.new.firstTemplate.title": "New template",
   "admin.new.firstTemplate.untitled": "Untitled template",
   "admin.new.firstTemplate.cat": "Other",
+  // /create
+  "create.examples.0": "Create a flyer for a concert with 2 artists…",
+  "create.examples.1": "Design a poster for a party this Saturday…",
+  "create.examples.2": "Make a flyer with purple and gold neon…",
+  "create.examples.3": "Festival with 10 artists and premium entry…",
+  "create.chips.0": "Party this Saturday",
+  "create.chips.1": "Live concert",
+  "create.chips.2": "Outdoor festival",
+  "create.chips.3": "Open class",
+  "create.gen.title": "Creating your flyer",
+  "create.gen.step.analyze": "Analyzing your event...",
+  "create.gen.step.bg": "Generating premium background...",
+  "create.gen.step.artists": "Processing artists...",
+  "create.gen.step.preview": "Composing preview...",
+  "create.gen.label.analyze": "Analyzing event",
+  "create.gen.label.bg": "Generating premium background",
+  "create.gen.label.artists": "Processing artists",
+  "create.gen.label.preview": "Composing preview",
+  "create.gen.footnote": "The background is generated without text — text is added as an editable layer",
+  "create.gen.error": "Error",
+  "create.gen.error.unknown": "unknown",
+  "create.badge.soon": "Coming soon",
+  "create.title.line1": "Design flyers that",
+  "create.title.highlight": "stand out",
+  "create.sub.admin.lead": "Describe your event and ",
+  "create.sub.admin.ai": "AI",
+  "create.sub.admin.tail": " generates the perfect flyer.",
+  "create.sub.guest.lead": "AI generation coming soon. Meanwhile, ",
+  "create.sub.guest.link": "explore our templates",
+  "create.sub.guest.tail": ".",
+  "create.chip.date": "Date",
+  "create.chip.time": "Time",
+  "create.chip.timeFixed": "Fixed time",
+  "create.chip.timeRange": "Time range",
+  "create.chip.from": "From",
+  "create.chip.to": "To",
+  "create.chip.timeFromShort": "From {time}",
+  "create.chip.timeToShort": "Until {time}",
+  "create.chip.timePlaceholder": "Eg: 22:00",
+  "create.chip.fromPlaceholder": "22:00",
+  "create.chip.toPlaceholder": "06:00",
+  "create.chip.timeEmpty": "Pick an option",
+  "create.chip.place": "Place",
+  "create.chip.venue": "Venue",
+  "create.chip.city": "City",
+  "create.chip.venuePlaceholder": "Eg: Apolo Hall",
+  "create.chip.cityPlaceholder": "Eg: Madrid",
+  "create.chip.price": "Price",
+  "create.chip.priceFree": "Free entry",
+  "create.chip.pricePaid": "With price",
+  "create.chip.priceLabel": "Label",
+  "create.chip.priceAmount": "8€",
+  "create.chip.priceAdd": "+ Add price",
+  "create.chip.priceRemove": "Remove price",
+  "create.chip.priceFreeNote": "The flyer will indicate free entry",
+  "create.chip.choose": "Pick an option",
+  "create.chip.placeIn": "at {place}",
+  "create.chip.pricePlus": "{first} +{rest} more",
+  "create.artists.title": "Artists and logos",
+  "create.artists.optional": "(optional)",
+  "create.cta": "Generate flyer",
+  "create.ctaSoon": "Generate flyer · Coming soon",
+  "create.soonNote": "This feature will be available soon.",
+  "create.soonTooltip": "This feature will be available soon.",
+  "create.footer": "Background generated without text · Everything is editable after",
 };
 
 const fr: Dict = {
@@ -1282,6 +1477,71 @@ const fr: Dict = {
   "admin.new.firstTemplate.title": "Nouveau modèle",
   "admin.new.firstTemplate.untitled": "Modèle sans titre",
   "admin.new.firstTemplate.cat": "Autres",
+  // /create
+  "create.examples.0": "Crée un flyer pour un concert avec 2 artistes…",
+  "create.examples.1": "Conçois une affiche pour une soirée ce samedi…",
+  "create.examples.2": "Fais un flyer avec néon violet et doré…",
+  "create.examples.3": "Festival avec 10 artistes et entrée premium…",
+  "create.chips.0": "Soirée ce samedi",
+  "create.chips.1": "Concert live",
+  "create.chips.2": "Festival en plein air",
+  "create.chips.3": "Cours ouvert",
+  "create.gen.title": "Création de ton flyer",
+  "create.gen.step.analyze": "Analyse de ton événement...",
+  "create.gen.step.bg": "Génération du fond premium...",
+  "create.gen.step.artists": "Traitement des artistes...",
+  "create.gen.step.preview": "Composition du preview...",
+  "create.gen.label.analyze": "Analyse événement",
+  "create.gen.label.bg": "Génération fond premium",
+  "create.gen.label.artists": "Traitement artistes",
+  "create.gen.label.preview": "Composition preview",
+  "create.gen.footnote": "Le fond est généré sans texte — le texte est ajouté comme calque éditable",
+  "create.gen.error": "Erreur",
+  "create.gen.error.unknown": "inconnue",
+  "create.badge.soon": "Bientôt",
+  "create.title.line1": "Conçois des flyers qui",
+  "create.title.highlight": "marquent",
+  "create.sub.admin.lead": "Décris ton événement et l'",
+  "create.sub.admin.ai": "IA",
+  "create.sub.admin.tail": " génère le flyer parfait.",
+  "create.sub.guest.lead": "Génération avec IA bientôt disponible. En attendant, ",
+  "create.sub.guest.link": "explore nos modèles",
+  "create.sub.guest.tail": ".",
+  "create.chip.date": "Date",
+  "create.chip.time": "Heure",
+  "create.chip.timeFixed": "Heure fixe",
+  "create.chip.timeRange": "Plage horaire",
+  "create.chip.from": "De",
+  "create.chip.to": "À",
+  "create.chip.timeFromShort": "Dès {time}",
+  "create.chip.timeToShort": "Jusqu'à {time}",
+  "create.chip.timePlaceholder": "Ex : 22:00",
+  "create.chip.fromPlaceholder": "22:00",
+  "create.chip.toPlaceholder": "06:00",
+  "create.chip.timeEmpty": "Choisis une option",
+  "create.chip.place": "Lieu",
+  "create.chip.venue": "Salle",
+  "create.chip.city": "Ville",
+  "create.chip.venuePlaceholder": "Ex : Salle Apolo",
+  "create.chip.cityPlaceholder": "Ex : Paris",
+  "create.chip.price": "Prix",
+  "create.chip.priceFree": "Entrée libre",
+  "create.chip.pricePaid": "Avec prix",
+  "create.chip.priceLabel": "Étiquette",
+  "create.chip.priceAmount": "8€",
+  "create.chip.priceAdd": "+ Ajouter prix",
+  "create.chip.priceRemove": "Supprimer prix",
+  "create.chip.priceFreeNote": "Le flyer indiquera que l'entrée est libre",
+  "create.chip.choose": "Choisis une option",
+  "create.chip.placeIn": "à {place}",
+  "create.chip.pricePlus": "{first} +{rest} de plus",
+  "create.artists.title": "Artistes et logos",
+  "create.artists.optional": "(optionnel)",
+  "create.cta": "Générer flyer",
+  "create.ctaSoon": "Générer flyer · Bientôt",
+  "create.soonNote": "Cette fonctionnalité sera bientôt disponible.",
+  "create.soonTooltip": "Cette fonctionnalité sera bientôt disponible.",
+  "create.footer": "Fond généré sans texte · Tout est éditable ensuite",
 };
 
 const pt: Dict = {
@@ -1598,6 +1858,71 @@ const pt: Dict = {
   "admin.new.firstTemplate.title": "Novo modelo",
   "admin.new.firstTemplate.untitled": "Modelo sem título",
   "admin.new.firstTemplate.cat": "Outros",
+  // /create
+  "create.examples.0": "Cria um flyer para um concerto com 2 artistas…",
+  "create.examples.1": "Desenha um cartaz para uma festa este sábado…",
+  "create.examples.2": "Faz um flyer com néon roxo e dourado…",
+  "create.examples.3": "Festival com 10 artistas e entrada premium…",
+  "create.chips.0": "Festa este sábado",
+  "create.chips.1": "Concerto ao vivo",
+  "create.chips.2": "Festival ao ar livre",
+  "create.chips.3": "Aula aberta",
+  "create.gen.title": "A criar o teu flyer",
+  "create.gen.step.analyze": "A analisar o teu evento...",
+  "create.gen.step.bg": "A gerar fundo premium...",
+  "create.gen.step.artists": "A processar artistas...",
+  "create.gen.step.preview": "A compor preview...",
+  "create.gen.label.analyze": "A analisar evento",
+  "create.gen.label.bg": "A gerar fundo premium",
+  "create.gen.label.artists": "A processar artistas",
+  "create.gen.label.preview": "A compor preview",
+  "create.gen.footnote": "O fundo é gerado sem texto — o texto é adicionado como camada editável",
+  "create.gen.error": "Erro",
+  "create.gen.error.unknown": "desconhecido",
+  "create.badge.soon": "Em breve",
+  "create.title.line1": "Desenha flyers que",
+  "create.title.highlight": "impactam",
+  "create.sub.admin.lead": "Descreve o teu evento e a ",
+  "create.sub.admin.ai": "IA",
+  "create.sub.admin.tail": " gera o flyer perfeito.",
+  "create.sub.guest.lead": "Geração com IA em breve. Entretanto, ",
+  "create.sub.guest.link": "explora os nossos modelos",
+  "create.sub.guest.tail": ".",
+  "create.chip.date": "Data",
+  "create.chip.time": "Hora",
+  "create.chip.timeFixed": "Hora fixa",
+  "create.chip.timeRange": "Intervalo de horas",
+  "create.chip.from": "Desde",
+  "create.chip.to": "Até",
+  "create.chip.timeFromShort": "Desde {time}",
+  "create.chip.timeToShort": "Até {time}",
+  "create.chip.timePlaceholder": "Ex: 22:00",
+  "create.chip.fromPlaceholder": "22:00",
+  "create.chip.toPlaceholder": "06:00",
+  "create.chip.timeEmpty": "Escolhe uma opção",
+  "create.chip.place": "Local",
+  "create.chip.venue": "Sala",
+  "create.chip.city": "Cidade",
+  "create.chip.venuePlaceholder": "Ex: Sala Tejo",
+  "create.chip.cityPlaceholder": "Ex: Lisboa",
+  "create.chip.price": "Preço",
+  "create.chip.priceFree": "Entrada livre",
+  "create.chip.pricePaid": "Com preço",
+  "create.chip.priceLabel": "Etiqueta",
+  "create.chip.priceAmount": "8€",
+  "create.chip.priceAdd": "+ Adicionar preço",
+  "create.chip.priceRemove": "Eliminar preço",
+  "create.chip.priceFreeNote": "O flyer indicará que a entrada é livre",
+  "create.chip.choose": "Escolhe uma opção",
+  "create.chip.placeIn": "em {place}",
+  "create.chip.pricePlus": "{first} +{rest} mais",
+  "create.artists.title": "Artistas e logos",
+  "create.artists.optional": "(opcional)",
+  "create.cta": "Gerar flyer",
+  "create.ctaSoon": "Gerar flyer · Em breve",
+  "create.soonNote": "Esta função estará disponível em breve.",
+  "create.soonTooltip": "Esta função estará disponível em breve.",
+  "create.footer": "O fundo é gerado sem texto · Tudo é editável depois",
 };
 
 export const TRANSLATIONS: Record<Locale, Dict> = { es, en, fr, pt };
