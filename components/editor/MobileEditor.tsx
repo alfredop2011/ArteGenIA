@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
   Canvas as FabricCanvas,
@@ -1442,11 +1442,12 @@ export default function MobileEditor({ templateId, formatId }: Props) {
                             setSelectedLayer(layer);
                             setActiveSheet(null);
                           }}
-                          className="flex items-center gap-3 flex-1 text-left active:bg-white/5 rounded-lg px-1 py-1"
+                          className="flex items-center gap-3 flex-1 text-left active:bg-white/5 rounded-lg px-1 py-1 min-w-0"
                         >
-                          <div className="w-8 h-8 rounded-lg bg-white/[0.05] flex items-center justify-center text-gray-400">
-                            {layer.type === "text" ? <Type size={14}/> : layer.type === "image" ? <ImageIcon size={14}/> : <Palette size={14}/>}
-                          </div>
+                          {/* Mini-preview real de la capa (no solo icono) — estilo Canva/Figma.
+                              Reduce ambiguedad para usuarios principiantes: ven un dibujito
+                              de lo que es la capa, no solo un icono generico. */}
+                          <LayerThumbnail layer={layer} />
                           <span className="text-sm text-white flex-1 truncate">{layer.name}</span>
                         </button>
                         {/* Arrows para reordenar - solo visible si esta seleccionada */}
@@ -2089,5 +2090,105 @@ export default function MobileEditor({ templateId, formatId }: Props) {
         </div>
       )}
     </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+//  LAYER THUMBNAIL — preview real de cada capa en el panel
+//
+//  Para usuarios principiantes (Canva/Figma pattern). En lugar de un icono
+//  generico, mostramos:
+//    - Imagen → thumbnail real renderizado del objeto (40x40)
+//    - Texto  → caja con el primer fragmento del texto, con su FUENTE real
+//               y su COLOR real (asi se ve titulo vs cuerpo)
+//    - Forma  → cuadrado con el fill color de la forma
+//
+//  Calculado en useMemo + se regenera cuando cambia el objeto. Para
+//  imagenes usamos toDataURL con multiplier bajo (rapido, ~10kb).
+// ════════════════════════════════════════════════════════════════════════════
+
+// Tipos minimos del objeto Fabric que necesitamos (sin acoplar a una version)
+type FabricLayerObj = {
+  type?: string;
+  fill?: string;
+  text?: string;
+  fontFamily?: string;
+  fontWeight?: string | number;
+  width?: number;
+  height?: number;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  toDataURL?: (opts?: any) => string;
+};
+
+function LayerThumbnail({ layer }: { layer: { type: "text" | "image" | "shape"; obj: unknown } }) {
+  const obj = layer.obj as FabricLayerObj;
+
+  // Para imagenes: generamos un thumb pequeño con toDataURL. useMemo
+  // evita regenerar en cada render del padre (cara para imagenes grandes).
+  // La key incluye width/height para refrescar si la imagen cambia.
+  const imageThumb = useMemo(() => {
+    if (layer.type !== "image") return null;
+    if (!obj || typeof obj.toDataURL !== "function") return null;
+    try {
+      // multiplier muy bajo → thumb ~40-60kb, suficiente para 32x32 visual
+      return obj.toDataURL({ format: "jpeg", quality: 0.6, multiplier: 0.12 });
+    } catch {
+      return null;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [layer.type, obj?.width, obj?.height]);
+
+  // ─── IMAGEN ─────────────────────────────────────────────────────────────
+  if (layer.type === "image" && imageThumb) {
+    return (
+      <div className="w-9 h-9 rounded-lg overflow-hidden bg-white/[0.05] shrink-0 border border-white/10">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={imageThumb} alt="" className="w-full h-full object-cover" />
+      </div>
+    );
+  }
+
+  // Fallback si imagen no tiene preview (no se pudo generar)
+  if (layer.type === "image") {
+    return (
+      <div className="w-9 h-9 rounded-lg bg-purple-500/10 border border-purple-500/30 flex items-center justify-center shrink-0 text-purple-300">
+        <ImageIcon size={16} strokeWidth={2} />
+      </div>
+    );
+  }
+
+  // ─── TEXTO ──────────────────────────────────────────────────────────────
+  if (layer.type === "text") {
+    const text = (obj?.text ?? "").toString().trim() || "Aa";
+    const preview = text.slice(0, 3); // primeros 3 chars (caben en 36px)
+    const fill = obj?.fill || "#ffffff";
+    const fontFamily = obj?.fontFamily || "sans-serif";
+    const fontWeight = obj?.fontWeight || "700";
+    return (
+      <div className="w-9 h-9 rounded-lg bg-white/[0.05] border border-white/10 shrink-0 flex items-center justify-center overflow-hidden">
+        <span
+          className="text-base leading-none truncate"
+          style={{
+            color: typeof fill === "string" ? fill : "#ffffff",
+            fontFamily,
+            fontWeight: fontWeight as React.CSSProperties["fontWeight"],
+          }}
+        >
+          {preview}
+        </span>
+      </div>
+    );
+  }
+
+  // ─── FORMA ──────────────────────────────────────────────────────────────
+  // Cuadrado o círculo coloreado con el fill de la forma. Si es circle,
+  // mostramos el preview redondo. Resto: cuadrado redondeado.
+  const fill = (typeof obj?.fill === "string" && obj.fill) ? obj.fill : "#a855f7";
+  const isCircle = obj?.type === "circle";
+  return (
+    <div
+      className={`w-9 h-9 shrink-0 border border-white/15 ${isCircle ? "rounded-full" : "rounded-lg"}`}
+      style={{ background: fill }}
+    />
   );
 }
