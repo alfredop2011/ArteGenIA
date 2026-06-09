@@ -148,7 +148,8 @@ export default function AdminTemplatesPage() {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <h1 className="text-3xl font-black" style={{ color: "var(--home-text)" }}>{t("admin.tpl.title")}</h1>
-            <span className="px-2 py-0.5 rounded-md bg-red-500/15 border border-red-500/30 text-red-300 text-[10px] font-bold tracking-wide">
+            <span className="px-2 py-0.5 rounded-md text-[10px] font-bold tracking-wide"
+                  style={{ background: "var(--ag-danger-bg)", border: "1px solid var(--ag-danger-border)", color: "var(--ag-danger)" }}>
               {t("admin.tpl.internal")}
             </span>
           </div>
@@ -589,7 +590,7 @@ function DiffModal({
         {/* Aviso */}
         <div className="px-5 py-3 flex gap-2 items-start bg-amber-500/[0.06] border-b border-amber-500/20 shrink-0">
           <AlertTriangle size={14} className="text-amber-400 shrink-0 mt-0.5" />
-          <p className="text-[11px] text-amber-200/80 leading-relaxed">
+          <p className="text-[11px] leading-relaxed" style={{ color: "var(--ag-warning)" }}>
             {t("admin.tpl.diff.warning")}
           </p>
         </div>

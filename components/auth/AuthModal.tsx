@@ -138,7 +138,7 @@ export default function AuthModal({ onClose, title, subtitle, onAuthSuccess }: P
                 )}
 
                 {error && <p className="text-red-400 text-xs mt-3">{error}</p>}
-                {success && <p className="text-green-400 text-xs mt-3">{success}</p>}
+                {success && <p className="text-xs mt-3" style={{ color: "var(--ag-success)" }}>{success}</p>}
 
                 <button onClick={handleSubmit} disabled={loading || (mode === "register" && !acceptedTerms)}
                     className="w-full mt-4 py-3 rounded-xl font-bold text-sm text-white transition-all hover:scale-105 disabled:opacity-50 disabled:hover:scale-100 disabled:cursor-not-allowed"

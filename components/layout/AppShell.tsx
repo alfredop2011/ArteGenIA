@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Zap, Bell, Crown, Image as ImageIcon, History, LogOut, Plus, LayoutGrid, FolderOpen, Menu, Users } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import AuthModal from "@/components/auth/AuthModal";
@@ -11,6 +11,7 @@ import Footer from "@/components/layout/Footer";
 import ThemeToggle from "@/components/layout/ThemeToggle";
 import LocaleSwitcher from "@/components/layout/LocaleSwitcher";
 import { useLocale } from "@/hooks/useLocale";
+import OrganizerTypeModal from "@/components/onboarding/OrganizerTypeModal";
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
@@ -19,6 +20,31 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     const [showAuth, setShowAuth] = useState(false);
     const [showUserMenu, setShowUserMenu] = useState(false);
     const [showMobileMenu, setShowMobileMenu] = useState(false);
+
+    // ─── ONBOARDING: modal de tipo de organizador ───────────────────────
+    // Se muestra automaticamente cuando hay user logueado y NUNCA respondio
+    // (organizer_type === null). Tras responder o cerrar, el campo deja
+    // de ser null y el modal no vuelve a aparecer.
+    //
+    // Lo ocultamos en rutas tecnicas (editor, upload) donde el modal
+    // interrumpiria un flujo activo. Solo aparece en paginas de "consumo".
+    //
+    // `organizerAnswered` evita re-abrir el modal mientras el profile
+    // todavia tiene null (entre cerrar y refresh del profile).
+    const [showOrganizerModal, setShowOrganizerModal] = useState(false);
+    const [organizerAnswered, setOrganizerAnswered] = useState(false);
+    const isTechnicalRoute = pathname.startsWith("/editor") || pathname.startsWith("/upload");
+    useEffect(() => {
+        if (organizerAnswered) return;
+        if (showOrganizerModal) return;
+        if (loading || !user || !profile) return;
+        if (profile.organizer_type !== null) return;
+        if (isTechnicalRoute) return;
+        // Pequeno delay para no abrir el modal al instante de login —
+        // que el user vea brevemente la pagina antes.
+        const id = setTimeout(() => setShowOrganizerModal(true), 800);
+        return () => clearTimeout(id);
+    }, [loading, user, profile, isTechnicalRoute, organizerAnswered, showOrganizerModal]);
 
     // Nav links — labels via t() para idiomatizar. href intacto.
     const navLinks = [
@@ -47,6 +73,14 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         <div className="min-h-screen flex flex-col"
              style={{ background: "var(--home-bg)", color: "var(--home-text)" }}>
             {showAuth && <AuthModal onClose={() => setShowAuth(false)} />}
+
+            {/* Modal onboarding: pregunta tipo de organizador la primera vez */}
+            {showOrganizerModal && (
+                <OrganizerTypeModal onClose={() => {
+                    setShowOrganizerModal(false);
+                    setOrganizerAnswered(true); // evita re-abrir hasta que profile refresque
+                }} />
+            )}
 
             {/* Header */}
             <header className="sticky top-0 z-50 backdrop-blur-md border-b"

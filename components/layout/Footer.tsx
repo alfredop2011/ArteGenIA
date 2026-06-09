@@ -24,7 +24,8 @@ export default function Footer() {
               AG
             </div>
             <span>ArteGenIA</span>
-            <span className="px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20 text-[9px] font-bold tracking-wider">
+            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold tracking-wider"
+                  style={{ background: "var(--ag-warning-bg)", color: "var(--ag-warning)", border: "1px solid var(--ag-warning-border)" }}>
               {t("footer.beta")}
             </span>
             <span>·</span>

@@ -48,10 +48,12 @@ const PLANS: Plan[] = [
     tagline: "Para empezar a crear flyers",
     price: { monthly: "0€", yearly: "0€" },
     cta: "Plan actual",
+    // accent.text usa CSS var para que en light sea oscuro y en dark sea claro.
+    // El bg/border gris ya tiene buen contraste en ambos temas.
     accent: {
       bg: "linear-gradient(135deg, rgba(156,163,175,0.10), rgba(107,114,128,0.05))",
       border: "rgba(156,163,175,0.30)",
-      text: "#9ca3af",
+      text: "var(--home-text-muted)",
     },
     features: [
       { text: "Plantillas básicas",                       included: true },
@@ -75,7 +77,7 @@ const PLANS: Plan[] = [
     accent: {
       bg: "linear-gradient(135deg, rgba(168,85,247,0.15), rgba(124,58,237,0.08))",
       border: "rgba(168,85,247,0.45)",
-      text: "#c084fc",
+      text: "var(--ag-brand)",
     },
     features: [
       { text: "Todo lo de Gratis, y además:",             included: true, highlight: true },
@@ -98,7 +100,7 @@ const PLANS: Plan[] = [
     accent: {
       bg: "linear-gradient(135deg, rgba(250,204,21,0.12), rgba(245,158,11,0.06))",
       border: "rgba(250,204,21,0.40)",
-      text: "#facc15",
+      text: "var(--ag-warning)",
     },
     features: [
       { text: "Todo lo de Pro, y además:",                included: true, highlight: true },
@@ -149,9 +151,9 @@ export default function PlanesPage() {
         {/* HEADER */}
         <div className="text-center mb-10 sm:mb-14">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full mb-4"
-               style={{ background: "rgba(168,85,247,0.12)", border: "1px solid rgba(168,85,247,0.30)" }}>
-            <Sparkles size={11} strokeWidth={2.2} className="text-purple-400" />
-            <span className="text-[11px] font-bold tracking-wider uppercase" style={{ color: "#c084fc" }}>
+               style={{ background: "var(--ag-brand-bg)", border: "1px solid var(--ag-brand-border)" }}>
+            <Sparkles size={11} strokeWidth={2.2} style={{ color: "var(--ag-brand)" }} />
+            <span className="text-[11px] font-bold tracking-wider uppercase" style={{ color: "var(--ag-brand)" }}>
               Planes y precios
             </span>
           </div>
@@ -167,7 +169,7 @@ export default function PlanesPage() {
 
           {/* Badge admin-only (te recuerda que solo tu ves esto) */}
           <div className="mt-6 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold tracking-wider"
-               style={{ background: "rgba(239,68,68,0.10)", border: "1px solid rgba(239,68,68,0.30)", color: "#f87171" }}>
+               style={{ background: "var(--ag-danger-bg)", border: "1px solid var(--ag-danger-border)", color: "var(--ag-danger)" }}>
             <Lock size={10} strokeWidth={2.5} />
             VISTA PREVIA · SOLO ADMIN
           </div>
@@ -254,10 +256,12 @@ function PlanCard({ plan }: { plan: Plan }) {
         </div>
       )}
 
-      {/* Cabecera: icono + nombre + tagline */}
+      {/* Cabecera: icono + nombre + tagline.
+          Caja del icono usa var en vez de rgba(255,255,255,0.08) para que en
+          light se vea con contraste. */}
       <div className="flex items-center gap-2 mb-2">
         <div className="w-9 h-9 rounded-lg flex items-center justify-center"
-             style={{ background: "rgba(255,255,255,0.08)", border: `1px solid ${plan.accent.border}` }}>
+             style={{ background: "var(--home-card-bg)", border: `1px solid ${plan.accent.border}` }}>
           {plan.id === "free" && <Zap size={18} strokeWidth={2} style={{ color: plan.accent.text }} />}
           {plan.id === "pro" && <Crown size={18} strokeWidth={2} style={{ color: plan.accent.text }} fill={plan.accent.text} />}
           {plan.id === "business" && <Users size={18} strokeWidth={2} style={{ color: plan.accent.text }} />}

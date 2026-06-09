@@ -5,6 +5,18 @@ export const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
+// Tipo de organizador — recogido vía modal post-registro para analytics.
+// Coincide con el enum SQL `organizer_type` de la migration 2026_06_09.
+export type OrganizerType =
+    | "academia"
+    | "productora"
+    | "freelance"
+    | "institucion"
+    | "agencia"
+    | "colegio"
+    | "otro"
+    | "skipped";
+
 export type Profile = {
     id: string;
     email: string;
@@ -13,6 +25,8 @@ export type Profile = {
     plan: "free" | "pro" | "enterprise";
     credits: number;
     created_at: string;
+    organizer_type: OrganizerType | null;
+    organizer_type_answered_at: string | null;
 };
 
 export type Project = {

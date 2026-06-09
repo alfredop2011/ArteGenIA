@@ -234,11 +234,11 @@ function EmptyState({
   }
   return (
     <div className="text-center py-16">
-      <div className={`w-14 h-14 mx-auto rounded-2xl flex items-center justify-center mb-4 ${
-        kind === "brand"
-          ? "bg-amber-500/15 border border-amber-500/30 text-amber-300"
-          : "bg-purple-500/15 border border-purple-500/30 text-purple-300"
-      }`}>
+      <div className="w-14 h-14 mx-auto rounded-2xl flex items-center justify-center mb-4 border"
+           style={kind === "brand"
+             ? { background: "var(--ag-warning-bg)", borderColor: "var(--ag-warning-border)", color: "var(--ag-warning)" }
+             : { background: "var(--ag-brand-bg)", borderColor: "var(--ag-brand-border)", color: "var(--ag-brand)" }
+           }>
         {kind === "brand" ? <Tag size={22} /> : <Users size={22} />}
       </div>
       <h3 className="text-base font-bold mb-1" style={{ color: "var(--home-text)" }}>
@@ -455,7 +455,7 @@ function InviteModal({ onClose }: { onClose: () => void }) {
               className="flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold transition-all"
               style={{ background: "var(--home-card-bg)", border: "1px solid var(--home-card-border)", color: "var(--home-text)" }}
             >
-              {copied ? <><Check size={14} className="text-emerald-400" /> {t("collab.invite.copied")}</> : <><Copy size={14} /> {t("collab.invite.copy")}</>}
+              {copied ? <><Check size={14} style={{ color: "var(--ag-success)" }} /> {t("collab.invite.copied")}</> : <><Copy size={14} /> {t("collab.invite.copy")}</>}
             </button>
             <a
               href={whatsappUrl}
@@ -649,7 +649,7 @@ function ReinviteModal({
               className="flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold transition-all"
               style={{ background: "var(--home-card-bg)", border: "1px solid var(--home-card-border)", color: "var(--home-text)" }}
             >
-              {copied ? <><Check size={14} className="text-emerald-400" /> {t("collab.invite.copied")}</> : <><Copy size={14} /> {t("collab.invite.copy")}</>}
+              {copied ? <><Check size={14} style={{ color: "var(--ag-success)" }} /> {t("collab.invite.copied")}</> : <><Copy size={14} /> {t("collab.invite.copy")}</>}
             </button>
             <a
               href={whatsappUrl}

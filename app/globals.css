@@ -26,6 +26,26 @@
   --header-bg:         rgba(248,249,252,0.92);
   --header-border:     rgba(15,15,30,0.08);
 
+  /* Tokens semanticos para acentos. En light usamos tonos OSCUROS para
+     contrastar sobre el fondo claro. */
+  --ag-success:        #047857;  /* emerald-700 */
+  --ag-success-bg:     rgba(4,120,87,0.10);
+  --ag-success-border: rgba(4,120,87,0.30);
+  --ag-warning:        #b45309;  /* amber-700 */
+  --ag-warning-bg:     rgba(180,83,9,0.10);
+  --ag-warning-border: rgba(180,83,9,0.30);
+  --ag-danger:         #b91c1c;  /* red-700 */
+  --ag-danger-bg:      rgba(185,28,28,0.08);
+  --ag-danger-border:  rgba(185,28,28,0.25);
+  --ag-info:           #1d4ed8;  /* blue-700 */
+  --ag-info-bg:        rgba(29,78,216,0.08);
+  --ag-info-border:    rgba(29,78,216,0.25);
+  /* Brand accent — el morado de marca es legible en ambos temas, lo
+     mantenemos consistente. */
+  --ag-brand:          #7c3aed;  /* violet-600 */
+  --ag-brand-bg:       rgba(124,58,237,0.10);
+  --ag-brand-border:   rgba(124,58,237,0.30);
+
   --background: #ffffff;
   --foreground: #171717;
 }
@@ -46,6 +66,24 @@
   --home-feature-border: rgba(168,85,247,0.18);
   --header-bg:         rgba(14,14,20,0.95);
   --header-border:     rgba(255,255,255,0.06);
+
+  /* En dark usamos tonos CLAROS de cada acento para contrastar bien sobre
+     fondo oscuro. */
+  --ag-success:        #34d399;  /* emerald-400 */
+  --ag-success-bg:     rgba(52,211,153,0.10);
+  --ag-success-border: rgba(52,211,153,0.30);
+  --ag-warning:        #fbbf24;  /* amber-400 */
+  --ag-warning-bg:     rgba(251,191,36,0.10);
+  --ag-warning-border: rgba(251,191,36,0.30);
+  --ag-danger:         #f87171;  /* red-400 */
+  --ag-danger-bg:      rgba(248,113,113,0.10);
+  --ag-danger-border:  rgba(248,113,113,0.30);
+  --ag-info:           #60a5fa;  /* blue-400 */
+  --ag-info-bg:        rgba(96,165,250,0.10);
+  --ag-info-border:    rgba(96,165,250,0.30);
+  --ag-brand:          #a855f7;  /* violet-500 */
+  --ag-brand-bg:       rgba(168,85,247,0.12);
+  --ag-brand-border:   rgba(168,85,247,0.35);
 
   --background: #0a0a0a;
   --foreground: #ededed;

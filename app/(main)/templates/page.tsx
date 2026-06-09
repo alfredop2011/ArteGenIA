@@ -462,8 +462,8 @@ export default function TemplatesPage() {
                    border: "1px solid rgba(250,204,21,0.3)",
                  }}>
               <div className="flex items-center gap-1.5 mb-1.5">
-                <Crown size={14} strokeWidth={2.2} className="text-amber-400 fill-amber-400" />
-                <span className="text-xs font-black text-amber-300">{t("templates.proCard.title")}</span>
+                <Crown size={14} strokeWidth={2.2} style={{ color: "var(--ag-warning)" }} fill="currentColor" />
+                <span className="text-xs font-black" style={{ color: "var(--ag-warning)" }}>{t("templates.proCard.title")}</span>
               </div>
               <p className="text-[10px] leading-snug mb-2.5" style={{ color: "var(--home-text-muted)" }}>
                 {t("templates.proCard.body")}
