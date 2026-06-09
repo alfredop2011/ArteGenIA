@@ -49,6 +49,7 @@ import { useUndoRedo } from "@/hooks/useUndoRedo";
 import { useTemplateDrafts } from "@/hooks/useTemplateDrafts";
 import { useAuth } from "@/hooks/useAuth";
 import AuthModal from "@/components/auth/AuthModal";
+import DesktopEditorTour from "@/components/onboarding/DesktopEditorTour";
 import { supabase } from "@/lib/supabase";
 import { applyWatermark, shouldWatermark } from "@/lib/applyWatermark";
 import { useLocale } from "@/hooks/useLocale";
@@ -3269,6 +3270,11 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
           onClose={() => setAuthModalConfig(null)}
         />
       )}
+
+      {/* Tour de bienvenida primera vez en desktop editor. Auto-detecta
+          si ya se vio (localStorage). NO se muestra en modo admin creator
+          (donde el flujo es distinto) ni en mobile (tiene su propio hint). */}
+      {!isAdminMode && <DesktopEditorTour />}
 
       {/* SegmentPersonModal: BROCHA MAGICA. Usuario hace click + arrastra
           sobre la persona como si pintara. Cada movimiento del cursor anade
