@@ -13,6 +13,7 @@ import LocaleSwitcher from "@/components/layout/LocaleSwitcher";
 import { useLocale } from "@/hooks/useLocale";
 import OrganizerTypeModal from "@/components/onboarding/OrganizerTypeModal";
 import FeedbackWidget from "@/components/feedback/FeedbackWidget";
+import { ToastProvider } from "@/lib/toast";
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
@@ -71,6 +72,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         : user?.email?.[0]?.toUpperCase() ?? "A";
 
     return (
+        <ToastProvider>
         <div className="min-h-screen flex flex-col"
              style={{ background: "var(--home-bg)", color: "var(--home-text)" }}>
             {showAuth && <AuthModal onClose={() => setShowAuth(false)} />}
@@ -285,5 +287,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 </>
             )}
         </div>
+        </ToastProvider>
     );
 }

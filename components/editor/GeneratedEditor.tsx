@@ -18,7 +18,9 @@ import {
   // FAB
   Edit3, MoreHorizontal,
   // Collapsible
-  ChevronDown,
+  ChevronDown, ChevronUp,
+  // Text formatting (floating toolbar contextual)
+  Bold, Italic,
   // Command palette icons
   Camera, Copy, Trash, FlipHorizontal, FlipVertical,
   MoveUp, MoveDown, PanelLeft, PanelBottom, Minimize2, Maximize2,
@@ -53,6 +55,8 @@ import DesktopEditorTour from "@/components/onboarding/DesktopEditorTour";
 import { supabase } from "@/lib/supabase";
 import { applyWatermark, shouldWatermark } from "@/lib/applyWatermark";
 import { useLocale } from "@/hooks/useLocale";
+import { useToast } from "@/lib/toast";
+import ColorPickerPopover from "@/components/editor/ColorPickerPopover";
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
 
@@ -356,6 +360,7 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
   const canvasWrapperRef = useRef<HTMLDivElement>(null);
 
   const { saveProject } = useProjects();
+  const { toast } = useToast();
   const [saveState, setSaveState] = useState<SaveState>("saved");
   const [canvasSize, setCanvasSize] = useState({ w: 1080, h: 1350 });
 
@@ -537,7 +542,7 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
       (async () => {
         const d = await getDraft(draftId);
         if (!d) {
-          alert("Borrador no encontrado.");
+          toast.error("Borrador no encontrado");
           router.push("/admin/templates/new");
           return;
         }
@@ -552,7 +557,7 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
         // Tratar el draft como una Template normal
         const variants = (d.variants as TemplateVariant[]) ?? [];
         if (variants.length === 0) {
-          alert("El borrador no tiene variantes.");
+          toast.error("El borrador no tiene variantes");
           router.push("/admin/templates/new");
           return;
         }
@@ -932,6 +937,38 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
         }
       }
       if ((e.metaKey || e.ctrlKey) && e.key === "s") { e.preventDefault(); setSaveState("saved"); }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
+
+  // ─── KEYBOARD: atajos contextuales (z-order y duplicar) ────────────────
+  // Atajos:
+  //   ]      → traer adelante (bring forward)
+  //   [      → enviar atras  (send backward)
+  //   ⌘D     → duplicar elemento seleccionado
+  // No interfieren mientras el usuario escribe en input/textarea.
+  // Usamos refs para `moveLayer` / `duplicateActiveObject` porque estan
+  // declaradas mas abajo en el componente (hoisting block-scoped no aplica
+  // a const). Los refs se actualizan via useEffect cuando esas funciones
+  // cambian — el handler global no se re-attacha.
+  const moveLayerRef = useRef<((id: string, dir: "up" | "down") => void) | null>(null);
+  const duplicateRef = useRef<(() => Promise<void> | void) | null>(null);
+  const selectedLayerRef = useRef<LayerItem | null>(null);
+  useEffect(() => { selectedLayerRef.current = selectedLayer; }, [selectedLayer]);
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const tag = document.activeElement?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA") return;
+      const layer = selectedLayerRef.current;
+      if (!layer) return;
+      if (e.key === "]") { e.preventDefault(); moveLayerRef.current?.(layer.id, "up"); return; }
+      if (e.key === "[") { e.preventDefault(); moveLayerRef.current?.(layer.id, "down"); return; }
+      if ((e.metaKey || e.ctrlKey) && e.key === "d") {
+        e.preventDefault();
+        void duplicateRef.current?.();
+        return;
+      }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
@@ -1460,6 +1497,11 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
     }
   }, [selectedLayer]);
 
+  // Sync de refs para atajos de teclado (], [, ⌘D) — declarados arriba pero
+  // necesitan apuntar a las versiones actuales de moveLayer/duplicate.
+  useEffect(() => { moveLayerRef.current = moveLayer; }, [moveLayer]);
+  useEffect(() => { duplicateRef.current = duplicateActiveObject; }, [duplicateActiveObject]);
+
   const addText = useCallback(async () => {
     const canvas = fabricRef.current;
     if (!canvas) return;
@@ -1772,6 +1814,14 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
     const link = document.createElement("a");
     link.download = `artegenia-flyer.${format}`; link.href = finalDataUrl; link.click();
 
+    // Feedback visual al usuario — confirma que la descarga inicio.
+    // Aviso especifico para plan free indicando watermark.
+    if (shouldWatermark(authProfile?.plan)) {
+      toast.success(`Descargado (${format.toUpperCase()}) · Marca de agua de plan gratis`);
+    } else {
+      toast.success(`Descargado ${format.toUpperCase()}`);
+    }
+
     // Track event para analytics (no bloquea si posthog no esta configurado)
     void import("@/components/analytics/PostHogProvider").then(m =>
       m.trackEvent("flyer_downloaded", {
@@ -1781,7 +1831,7 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
         platform: "desktop",
       })
     );
-  }, [canvasSize, authProfile?.plan]);
+  }, [canvasSize, authProfile?.plan, toast]);
 
   // Wrapper publico: pide sesion antes de descargar. Si no hay, abre AuthModal
   // y reintenta tras login. Si hay sesion, descarga directo.
@@ -1843,18 +1893,19 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
           window.history.replaceState(null, "", `/editor/${result}`);
         }
         setSaveState("saved");
+        toast.success("Diseño guardado");
       } else {
         setSaveState("unsaved");
-        alert("No se pudo guardar. ¿Has iniciado sesión?");
+        toast.error("No se pudo guardar. ¿Has iniciado sesión?");
       }
     } catch (e) {
       console.error("Error guardando:", e);
       setSaveState("unsaved");
-      alert("Error al guardar el diseño.");
+      toast.error("Error al guardar el diseño");
     } finally {
       setSavingProject(false);
     }
-  }, [currentProjectId, docTitle, templateId, template, data, canvasSize, saveProject]);
+  }, [currentProjectId, docTitle, templateId, template, data, canvasSize, saveProject, toast]);
 
   // Wrapper publico: pide sesion antes de guardar. Si no hay, abre AuthModal
   // y reintenta tras login. Si hay sesion, guarda directo.
@@ -2038,10 +2089,11 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
     if (id) {
       setAdminSavedRecently(true);
       setTimeout(() => setAdminSavedRecently(false), 2000);
+      toast.success("Borrador guardado");
     } else {
-      alert("Error guardando borrador.");
+      toast.error("Error guardando borrador");
     }
-  }, [draftId, adminTitle, adminCategory, adminAudience, adminPremium, adminInternalTags, serializeCanvasToVariant, saveDraft, canvasSize.w, canvasSize.h]);
+  }, [draftId, adminTitle, adminCategory, adminAudience, adminPremium, adminInternalTags, serializeCanvasToVariant, saveDraft, canvasSize.w, canvasSize.h, toast]);
 
   const handleAdminPublish = useCallback(async () => {
     if (!draftId) return;
@@ -2054,12 +2106,12 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
     const id = await publishDraft(draftId);
     setAdminPublishing(false);
     if (id) {
-      alert(isEditingPublished
-        ? "¡Cambios publicados! Versión anterior reemplazada en /templates."
-        : "¡Plantilla publicada! Aparecerá en /templates.");
+      toast.success(isEditingPublished
+        ? "Cambios publicados · reemplaza versión anterior"
+        : "Plantilla publicada · ya aparece en /templates");
       router.push("/admin/templates/new");
     } else {
-      alert("Error publicando.");
+      toast.error("Error publicando");
     }
   }, [draftId, adminTitle, isEditingPublished, handleAdminSaveDraft, publishDraft, router]);
 
@@ -2542,7 +2594,36 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
                   <div><label className="text-[10px] text-gray-500 mb-1 block">Contenido</label><textarea value={textProps.text} onChange={e => applyTextProp("text", e.target.value)} rows={2} className="w-full bg-white/[0.04] border border-white/8 rounded-lg px-2.5 py-2 text-xs text-white resize-none outline-none focus:border-purple-500/50"/></div>
                   <div><label className="text-[10px] text-gray-500 mb-1 block">Fuente</label><select value={textProps.fontFamily} onChange={e => applyTextProp("fontFamily", e.target.value)} className="w-full bg-white/[0.04] border border-white/8 rounded-lg px-2.5 py-2 text-xs text-white outline-none focus:border-purple-500/50">{FONTS.map(f => <option key={f} value={f}>{f}</option>)}</select></div>
                   <div className="grid grid-cols-2 gap-2">
-                    <div><label className="text-[10px] text-gray-500 mb-1 block">Tamaño</label><input type="number" value={textProps.fontSize} onChange={e => applyTextProp("fontSize", Number(e.target.value))} className="w-full bg-white/[0.04] border border-white/8 rounded-lg px-2.5 py-2 text-xs text-white outline-none focus:border-purple-500/50"/></div>
+                    <div>
+                      <label className="text-[10px] text-gray-500 mb-1 block">
+                        Tamaño
+                        {textProps.fontSize < 12 && (
+                          <span className="ml-1.5 inline-block px-1.5 py-0.5 rounded text-[8.5px] font-bold uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                            Muy pequeño
+                          </span>
+                        )}
+                      </label>
+                      <input
+                        type="number"
+                        min={8}
+                        max={200}
+                        value={textProps.fontSize}
+                        onChange={e => {
+                          // Clamp en el commit para evitar que un usuario meta 2px
+                          // por accidente. 8-200 cubre todos los casos reales de flyer.
+                          const raw = Number(e.target.value);
+                          if (Number.isNaN(raw)) return;
+                          const clamped = Math.max(8, Math.min(200, raw));
+                          applyTextProp("fontSize", clamped);
+                        }}
+                        className={`w-full bg-white/[0.04] border rounded-lg px-2.5 py-2 text-xs text-white outline-none focus:border-purple-500/50 ${textProps.fontSize < 12 ? "border-amber-500/40" : "border-white/8"}`}
+                      />
+                      {textProps.fontSize < 12 && (
+                        <p className="text-[9.5px] text-amber-400/90 mt-1 leading-snug">
+                          Tamaños menores a 12px pueden ser ilegibles en móvil.
+                        </p>
+                      )}
+                    </div>
                     <div><label className="text-[10px] text-gray-500 mb-1 block">Peso</label><select value={textProps.fontWeight} onChange={e => applyTextProp("fontWeight", e.target.value)} className="w-full bg-white/[0.04] border border-white/8 rounded-lg px-2.5 py-2 text-xs text-white outline-none focus:border-purple-500/50">{["400","500","600","700","800","900"].map(w => <option key={w} value={w}>{w}</option>)}</select></div>
                   </div>
                   <div><label className="text-[10px] text-gray-500 mb-1 block">Color</label><div className="flex items-center gap-2"><input type="color" value={textProps.fill} onChange={e => applyTextProp("fill", e.target.value)} className="w-8 h-8 rounded-lg border-0 cursor-pointer bg-transparent"/><input type="text" value={textProps.fill} onChange={e => applyTextProp("fill", e.target.value)} className="flex-1 bg-white/[0.04] border border-white/8 rounded-lg px-2.5 py-2 text-xs text-white outline-none font-mono focus:border-purple-500/50"/></div></div>
@@ -3061,70 +3142,212 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
         }
       `}</style>
 
-      {/* ─── FLOATING TOOLBAR ─────────────────────────────────────────── */}
-      {floatingToolbar.visible && selectedLayer && (
+      {/* ─── FLOATING TOOLBAR — contextual por tipo de objeto ──────────────
+          Diseno post-auditoria UX (sprint P0):
+            - TEXTO   → tamano stepper, B/I, color picker, align, z-order, dup, lock, del
+            - IMAGEN  → reemplazar (image puro) o color (shape), align, z-order, dup, lock, del
+            - FONDO   → color/reemplazar, z-order, lock
+          Decisiones:
+            - Color y z-order son PRIMARIOS (no submenu) — son las acciones #1 y #2
+              que el usuario reporta como "escondidas".
+            - "More" desaparece: duplicate, layer up/down ya no estan enterrados.
+            - Align se mantiene como popup porque tiene 6 opciones — meterlas
+              inline ocupa demasiado espacio horizontal.
+          ─────────────────────────────────────────────────────────────────── */}
+      {floatingToolbar.visible && selectedLayer && (() => {
+        // Detectamos si la "imagen" es realmente una shape (rect/circle/etc) o
+        // una imagen verdadera. Las shapes admiten color fill; las imagenes admiten
+        // reemplazo de src. Distincion clave para mostrar el control correcto.
+        const activeObj = fabricRef.current?.getActiveObject();
+        const isShape = !!activeObj && SHAPE_TYPES.includes(activeObj.type ?? "");
+        const isRealImage = selectedLayer.type === "image" && !isShape;
+        // Color actual de fill — leer del objeto directamente (mas fiable que
+        // mantener un state separado para shapes).
+        const currentFill = (() => {
+          if (isText) return textProps.fill;
+          if (isShape || selectedLayer.type === "background") {
+            const f = activeObj?.fill;
+            return typeof f === "string" ? f : "#000000";
+          }
+          return "#ffffff";
+        })();
+        // Setter directo de fill para shapes/background (no hay applyShapeProp)
+        const setObjFill = (color: string) => {
+          if (!activeObj) return;
+          activeObj.set("fill", color);
+          fabricRef.current?.renderAll();
+          setSaveState("unsaved");
+        };
+        return (
         <div
           className="fixed z-50 pointer-events-none"
           style={{ left: floatingToolbar.x, top: floatingToolbar.y, transform: "translate(-50%, -100%)" }}>
           <div className="pointer-events-auto ag-glass border border-white/[0.08] rounded-2xl shadow-2xl shadow-purple-500/20 flex items-center gap-0.5 p-1 animate-in fade-in slide-in-from-bottom-1 duration-150">
-            {/* Editar */}
-            <button
-              onClick={() => {
-                const obj = fabricRef.current?.getActiveObject();
-                if (!obj) return;
-                if (selectedLayer.type === "text") {
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  (obj as any).enterEditing?.();
-                  fabricRef.current?.renderAll();
-                } else if (selectedLayer.type === "image") {
-                  const input = document.createElement("input");
-                  input.type = "file"; input.accept = "image/*";
-                  input.onchange = (e) => {
-                    const file = (e.target as HTMLInputElement).files?.[0];
-                    if (!file) return;
-                    const reader = new FileReader();
-                    reader.onload = (ev) => {
-                      const src = ev.target?.result as string;
-                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                      (obj as any).setSrc?.(src, () => { fabricRef.current?.renderAll(); });
-                      setSaveState("unsaved");
+
+            {/* ═══ SECCION TIPO-ESPECIFICA ═══ */}
+
+            {isText && (
+              <>
+                {/* Editar inline (doble-clic equivalente) */}
+                <button
+                  onClick={() => {
+                    const obj = fabricRef.current?.getActiveObject();
+                    if (!obj) return;
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    (obj as any).enterEditing?.();
+                    fabricRef.current?.renderAll();
+                  }}
+                  title={t("editor.fab.edit")}
+                  className="ag-fab-btn">
+                  <Edit3 className="w-4 h-4" strokeWidth={2} />
+                  <span>{t("editor.fab.edit")}</span>
+                </button>
+
+                {/* Tamano con stepper +/- y warning si <12 */}
+                <div className="inline-flex items-center bg-white/5 rounded-lg h-8 px-0.5"
+                     title={textProps.fontSize < 12 ? "Quiza no se lea en movil" : "Tamano de fuente"}>
+                  <button
+                    onClick={() => applyTextProp("fontSize", Math.max(8, Math.round(textProps.fontSize) - 1))}
+                    className="px-1.5 text-gray-400 hover:text-white text-sm leading-none"
+                    aria-label="Reducir tamano">−</button>
+                  <span className={`text-[11px] font-mono tabular-nums px-1 min-w-[26px] text-center ${textProps.fontSize < 12 ? "text-amber-400 font-bold" : "text-white"}`}>
+                    {Math.round(textProps.fontSize)}
+                  </span>
+                  <button
+                    onClick={() => applyTextProp("fontSize", Math.min(200, Math.round(textProps.fontSize) + 1))}
+                    className="px-1.5 text-gray-400 hover:text-white text-sm leading-none"
+                    aria-label="Aumentar tamano">+</button>
+                </div>
+
+                {/* Bold toggle */}
+                <button
+                  onClick={() => applyTextProp("fontWeight", textProps.fontWeight === "700" || textProps.fontWeight === "800" || textProps.fontWeight === "900" ? "400" : "700")}
+                  title="Negrita"
+                  className={`ag-fab-btn ${textProps.fontWeight === "700" || textProps.fontWeight === "800" || textProps.fontWeight === "900" ? "bg-purple-600/30 text-purple-200" : ""}`}>
+                  <Bold className="w-4 h-4" strokeWidth={2.4} />
+                </button>
+
+                {/* Color del texto — PRIMARIO (antes solo en panel lateral) */}
+                <div className="flex items-center px-1">
+                  <ColorPickerPopover
+                    value={currentFill}
+                    onChange={(c) => applyTextProp("fill", c)}
+                    scope="text"
+                    swatchSize={26}
+                    title="Color del texto"
+                  />
+                </div>
+              </>
+            )}
+
+            {isRealImage && (
+              <>
+                {/* Reemplazar imagen — BOTON PROMINENTE (antes escondido en Edit) */}
+                <button
+                  onClick={() => {
+                    const obj = fabricRef.current?.getActiveObject();
+                    if (!obj) return;
+                    const input = document.createElement("input");
+                    input.type = "file"; input.accept = "image/*";
+                    input.onchange = (e) => {
+                      const file = (e.target as HTMLInputElement).files?.[0];
+                      if (!file) return;
+                      const reader = new FileReader();
+                      reader.onload = (ev) => {
+                        const src = ev.target?.result as string;
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        (obj as any).setSrc?.(src, () => { fabricRef.current?.renderAll(); });
+                        setSaveState("unsaved");
+                      };
+                      reader.readAsDataURL(file);
                     };
-                    reader.readAsDataURL(file);
-                  };
-                  input.click();
-                }
-              }}
-              title={t("editor.fab.edit")}
-              className="ag-fab-btn"><Edit3 className="w-4 h-4" strokeWidth={2} />
-              <span>{t("editor.fab.edit")}</span>
-            </button>
+                    input.click();
+                  }}
+                  title="Reemplazar imagen"
+                  className="ag-fab-btn bg-purple-600/20 text-purple-200 hover:bg-purple-600/30">
+                  <ImageIcon className="w-4 h-4" strokeWidth={2.2} />
+                  <span>Reemplazar</span>
+                </button>
 
-            {/* Estilos → scroll to panel */}
-            <button
-              onClick={() => setOpenSections(p => ({ ...p, style: true }))}
-              title={t("editor.fab.stylesTitle")}
-              className="ag-fab-btn"><SparklesIcon className="w-4 h-4" strokeWidth={2} />
-              <span>{t("editor.fab.styles")}</span>
-            </button>
+                {/* Recortar a forma — abre seccion del panel */}
+                <button
+                  onClick={() => setOpenSections(p => ({ ...p, crop: true, style: true }))}
+                  title="Recortar / efectos"
+                  className="ag-fab-btn">
+                  <SparklesIcon className="w-4 h-4" strokeWidth={2} />
+                  <span>Más</span>
+                </button>
+              </>
+            )}
 
-            {/* Añadir imagen NUEVA al canvas (no reemplaza la seleccionada,
-                añade una capa adicional). Util para meter foto de invitado,
-                logo, decoracion, etc. sin abrir el panel lateral. */}
-            <button
-              onClick={() => { void addNewImage(); }}
-              title={t("editor.fab.imageTitle")}
-              className="ag-fab-btn"><ImageIcon className="w-4 h-4" strokeWidth={2} />
-              <span>{t("editor.fab.image")}</span>
-            </button>
+            {isShape && (
+              <>
+                {/* Color de relleno de la forma — PRIMARIO (antes inaccesible
+                    sin abrir panel lateral, la queja #1 del usuario) */}
+                <div className="flex items-center px-1">
+                  <ColorPickerPopover
+                    value={currentFill}
+                    onChange={setObjFill}
+                    scope="shape"
+                    swatchSize={26}
+                    title="Color de relleno"
+                    label="Color"
+                  />
+                </div>
+              </>
+            )}
 
-            {/* Alinear (popup) */}
+            {selectedLayer.type === "background" && (
+              <>
+                {/* Color del fondo si es color, reemplazar si es imagen */}
+                <div className="flex items-center px-1">
+                  <ColorPickerPopover
+                    value={currentFill}
+                    onChange={setObjFill}
+                    scope="background"
+                    swatchSize={26}
+                    title="Color de fondo"
+                  />
+                </div>
+                <button
+                  onClick={() => {
+                    const obj = fabricRef.current?.getActiveObject();
+                    if (!obj) return;
+                    const input = document.createElement("input");
+                    input.type = "file"; input.accept = "image/*";
+                    input.onchange = (e) => {
+                      const file = (e.target as HTMLInputElement).files?.[0];
+                      if (!file) return;
+                      const reader = new FileReader();
+                      reader.onload = (ev) => {
+                        const src = ev.target?.result as string;
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        (obj as any).setSrc?.(src, () => { fabricRef.current?.renderAll(); });
+                        setSaveState("unsaved");
+                      };
+                      reader.readAsDataURL(file);
+                    };
+                    input.click();
+                  }}
+                  title="Reemplazar imagen de fondo"
+                  className="ag-fab-btn">
+                  <ImageIcon className="w-4 h-4" strokeWidth={2} />
+                  <span>Imagen</span>
+                </button>
+              </>
+            )}
+
+            <div className="w-px h-6 bg-white/10 mx-0.5"/>
+
+            {/* ═══ ACCIONES COMUNES (orden de capa, alinear, duplicar, lock, eliminar) ═══ */}
+
+            {/* Alinear — popup porque son 6 opciones (no caben inline) */}
             <div className="relative">
               <button
                 onClick={() => setFloatingToolbar(p => ({ ...p, alignOpen: !p.alignOpen, moreOpen: false }))}
                 title={t("editor.fab.alignTitle")}
                 className={`ag-fab-btn ${floatingToolbar.alignOpen ? "bg-purple-600/20 text-purple-200" : ""}`}>
                 <AlignCenterHorizontal className="w-4 h-4" strokeWidth={2} />
-                <span>{t("editor.fab.align")}</span>
               </button>
               {floatingToolbar.alignOpen && (
                 <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 ag-glass border border-white/[0.08] rounded-xl p-1.5 shadow-2xl">
@@ -3146,6 +3369,30 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
               )}
             </div>
 
+            {/* Z-ORDER PROMOVIDO A PRIMARIO (atajos: ] traer adelante / [ enviar atras) */}
+            <button
+              onClick={() => moveLayer(selectedLayer.id, "up")}
+              title="Traer adelante (])"
+              className="ag-fab-btn">
+              <ChevronUp className="w-4 h-4" strokeWidth={2.4} />
+            </button>
+            <button
+              onClick={() => moveLayer(selectedLayer.id, "down")}
+              title="Enviar atras ([)"
+              className="ag-fab-btn">
+              <ChevronDown className="w-4 h-4" strokeWidth={2.4} />
+            </button>
+
+            {/* Duplicar — PROMOVIDO (antes en submenu "More") */}
+            {selectedLayer.type !== "background" && (
+              <button
+                onClick={() => { void duplicateActiveObject(); }}
+                title={`${t("editor.fab.duplicate")} (⌘D)`}
+                className="ag-fab-btn">
+                <Copy className="w-4 h-4" strokeWidth={2} />
+              </button>
+            )}
+
             {/* Bloquear */}
             <button
               onClick={() => toggleLock(selectedLayer.id)}
@@ -3154,50 +3401,21 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
               {selectedLayer.locked
                 ? <Lock   className="w-4 h-4" strokeWidth={2} />
                 : <Unlock className="w-4 h-4" strokeWidth={2} />}
-              <span>{selectedLayer.locked ? t("editor.fab.unlock") : t("editor.fab.lock")}</span>
             </button>
 
-            {/* Eliminar */}
-            <button
-              onClick={() => deleteLayer(selectedLayer.id)}
-              title={t("editor.fab.delete")}
-              className="ag-fab-btn ag-fab-btn-danger">
-              <Trash2 className="w-4 h-4" strokeWidth={2} />
-              <span>{t("editor.fab.delete")}</span>
-            </button>
-
-            <div className="w-px h-6 bg-white/10 mx-0.5"/>
-
-            {/* Más */}
-            <div className="relative">
+            {/* Eliminar — no aplicable a fondo (no se puede borrar) */}
+            {selectedLayer.type !== "background" && (
               <button
-                onClick={() => setFloatingToolbar(p => ({ ...p, moreOpen: !p.moreOpen, alignOpen: false }))}
-                title={t("editor.fab.more")}
-                className={`ag-fab-btn ${floatingToolbar.moreOpen ? "bg-white/10 text-white" : ""}`}>
-                <MoreHorizontal className="w-4 h-4" strokeWidth={2} />
+                onClick={() => deleteLayer(selectedLayer.id)}
+                title={`${t("editor.fab.delete")} (Supr)`}
+                className="ag-fab-btn ag-fab-btn-danger">
+                <Trash2 className="w-4 h-4" strokeWidth={2} />
               </button>
-              {floatingToolbar.moreOpen && (
-                <div className="absolute top-full right-0 mt-2 ag-glass border border-white/[0.08] rounded-xl py-1 shadow-2xl min-w-[180px]">
-                  {[
-                    { label: t("editor.fab.duplicate"), onClick: duplicateActiveObject },
-                    { label: t("editor.fab.layerUp"),   onClick: () => moveLayer(selectedLayer.id, "up") },
-                    { label: t("editor.fab.layerDown"), onClick: () => moveLayer(selectedLayer.id, "down") },
-                    ...(selectedLayer.type === "image" ? [
-                      { label: t("editor.fab.flipH"), onClick: () => { const obj = fabricRef.current?.getActiveObject(); if (obj) { obj.set("flipX", !obj.flipX); fabricRef.current?.renderAll(); setSaveState("unsaved"); } } },
-                      { label: t("editor.fab.flipV"), onClick: () => { const obj = fabricRef.current?.getActiveObject(); if (obj) { obj.set("flipY", !obj.flipY); fabricRef.current?.renderAll(); setSaveState("unsaved"); } } },
-                    ] : []),
-                  ].map((item, i) => (
-                    <button key={i} onClick={() => { item.onClick(); setFloatingToolbar(p => ({ ...p, moreOpen: false })); }}
-                      className="w-full text-left px-3.5 py-2 text-[11px] text-gray-300 hover:bg-white/5 hover:text-white transition-all">
-                      {item.label}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+            )}
           </div>
         </div>
-      )}
+        );
+      })()}
 
       {/* ─── COMMAND PALETTE ─────────────────────────────────────────── */}
       {paletteOpen && (
