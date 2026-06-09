@@ -19,6 +19,7 @@ import FormatPickerModal from "@/components/templates/FormatPickerModal";
 import { supabase, type TemplatePublished } from "@/lib/supabase";
 import { useLocale } from "@/hooks/useLocale";
 import { useAuth } from "@/hooks/useAuth";
+import { isAdmin } from "@/lib/admin";
 import type { TranslationKey } from "@/lib/translations";
 import { matchesUseCase } from "@/lib/useCases";
 
@@ -450,25 +451,30 @@ export default function TemplatesPage() {
             </div>
           </div>
 
-          {/* Card promo PRO */}
-          <div className="mt-auto rounded-xl p-3"
-               style={{
-                 background: "linear-gradient(135deg, rgba(250,204,21,0.12), rgba(245,158,11,0.08))",
-                 border: "1px solid rgba(250,204,21,0.3)",
-               }}>
-            <div className="flex items-center gap-1.5 mb-1.5">
-              <Crown size={14} strokeWidth={2.2} className="text-amber-400 fill-amber-400" />
-              <span className="text-xs font-black text-amber-300">{t("templates.proCard.title")}</span>
-            </div>
-            <p className="text-[10px] leading-snug mb-2.5" style={{ color: "var(--home-text-muted)" }}>
-              {t("templates.proCard.body")}
-            </p>
-            <button onClick={clearFilters}
-                    className="w-full py-1.5 rounded-lg text-[11px] font-bold text-black transition-transform hover:scale-[1.02]"
+          {/* Card promo PRO — SOLO ADMIN.
+              La página /planes está oculta para usuarios normales hasta que
+              tengamos el sistema de pagos integrado. Cuando se libere al
+              publico, eliminar la condicion isAdmin(). */}
+          {isAdmin(user?.email) && (
+            <div className="mt-auto rounded-xl p-3"
+                 style={{
+                   background: "linear-gradient(135deg, rgba(250,204,21,0.12), rgba(245,158,11,0.08))",
+                   border: "1px solid rgba(250,204,21,0.3)",
+                 }}>
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <Crown size={14} strokeWidth={2.2} className="text-amber-400 fill-amber-400" />
+                <span className="text-xs font-black text-amber-300">{t("templates.proCard.title")}</span>
+              </div>
+              <p className="text-[10px] leading-snug mb-2.5" style={{ color: "var(--home-text-muted)" }}>
+                {t("templates.proCard.body")}
+              </p>
+              <Link href="/planes"
+                    className="w-full inline-block text-center py-1.5 rounded-lg text-[11px] font-bold text-black transition-transform hover:scale-[1.02]"
                     style={{ background: "linear-gradient(135deg,#facc15,#f59e0b)" }}>
-              {t("templates.proCard.cta")}
-            </button>
-          </div>
+                {t("templates.proCard.cta")}
+              </Link>
+            </div>
+          )}
         </aside>
 
         {/* ════════════════════════════════════════════════════════════════
