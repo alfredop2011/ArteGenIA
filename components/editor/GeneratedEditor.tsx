@@ -1770,6 +1770,16 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
 
     const link = document.createElement("a");
     link.download = `artegenia-flyer.${format}`; link.href = finalDataUrl; link.click();
+
+    // Track event para analytics (no bloquea si posthog no esta configurado)
+    void import("@/components/analytics/PostHogProvider").then(m =>
+      m.trackEvent("flyer_downloaded", {
+        format,
+        plan: authProfile?.plan ?? "free",
+        watermarked: shouldWatermark(authProfile?.plan),
+        platform: "desktop",
+      })
+    );
   }, [canvasSize, authProfile?.plan]);
 
   // Wrapper publico: pide sesion antes de descargar. Si no hay, abre AuthModal

@@ -612,6 +612,17 @@ export default function MobileEditor({ templateId, formatId }: Props) {
     a.href = finalUrl;
     a.click();
     setActiveSheet(null);
+
+    // Track event para analytics
+    void import("@/components/analytics/PostHogProvider").then(m =>
+      m.trackEvent("flyer_downloaded", {
+        template_id: template?.id,
+        template_title: template?.title,
+        plan: authProfile?.plan ?? "free",
+        watermarked: shouldWatermark(authProfile?.plan),
+        platform: "mobile",
+      })
+    );
   }, [template, canvasSize.w, canvasSize.h, authProfile?.plan]);
 
   // Wrapper publico: pide sesion antes de descargar. Si no hay, abre el

@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { Suspense } from "react";
 import "./globals.css";
+import PostHogProvider from "@/components/analytics/PostHogProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -99,7 +101,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="min-h-full flex flex-col"
             style={{ background: "var(--home-bg)", color: "var(--home-text)" }}>
-        {children}
+        {/* PostHog wrap todo el arbol. Suspense porque usa useSearchParams
+            (Next 16 lo requiere para componentes que leen search params). */}
+        <Suspense fallback={null}>
+          <PostHogProvider>
+            {children}
+          </PostHogProvider>
+        </Suspense>
       </body>
     </html>
   );
