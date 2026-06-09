@@ -158,11 +158,20 @@ export default function AdminTemplatesPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Link al DASHBOARD de usuarios */}
+          <a
+            href="/admin/usuarios"
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all hover:opacity-80"
+            style={{ background: "var(--ag-info-bg)", border: "1px solid var(--ag-info-border)", color: "var(--ag-info)" }}
+          >
+            📊 Usuarios
+          </a>
           {/* Link al CREADOR de plantillas nuevo (sesion 1 creador admin) */}
           <a
             href="/admin/templates/new"
-            className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-purple-200 bg-purple-500/15 border border-purple-500/30 hover:bg-purple-500/25 transition-all"
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all hover:opacity-80"
+            style={{ background: "var(--ag-brand-bg)", border: "1px solid var(--ag-brand-border)", color: "var(--ag-brand)" }}
           >
             {t("admin.tpl.newTemplate")}
           </a>
