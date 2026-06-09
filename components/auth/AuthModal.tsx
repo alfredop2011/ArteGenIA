@@ -60,18 +60,23 @@ export default function AuthModal({ onClose, title, subtitle, onAuthSuccess }: P
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
             onClick={e => e.target === e.currentTarget && onClose()}>
             <div className="w-full max-w-md mx-4 rounded-3xl p-8"
-                style={{ background: "rgba(15,15,25,0.95)", border: "1px solid rgba(168,85,247,0.35)", boxShadow: "0 0 60px rgba(168,85,247,0.2)" }}>
+                style={{
+                    background: "var(--home-bg-soft)",
+                    border: "1px solid rgba(168,85,247,0.35)",
+                    boxShadow: "0 0 60px rgba(168,85,247,0.2)",
+                    color: "var(--home-text)",
+                }}>
 
                 <div className="flex items-center justify-between mb-6">
                     <div>
-                        <h2 className="text-2xl font-black text-white">
+                        <h2 className="text-2xl font-black" style={{ color: "var(--home-text)" }}>
                             {title ?? (mode === "login" ? t("auth.title.login") : t("auth.title.register"))}
                         </h2>
-                        <p className="text-gray-400 text-sm mt-1">
+                        <p className="text-sm mt-1" style={{ color: "var(--home-text-muted)" }}>
                             {subtitle ?? (mode === "login" ? t("auth.subtitle.login") : t("auth.subtitle.register"))}
                         </p>
                     </div>
-                    <button onClick={onClose} className="text-gray-500 hover:text-white text-2xl">×</button>
+                    <button onClick={onClose} className="text-2xl transition-colors hover:opacity-70" style={{ color: "var(--home-text-soft)" }}>×</button>
                 </div>
 
                 <button onClick={() => signInWithGoogle()}
@@ -86,21 +91,26 @@ export default function AuthModal({ onClose, title, subtitle, onAuthSuccess }: P
                 </button>
 
                 <div className="flex items-center gap-3 mb-4">
-                    <div className="flex-1 h-px bg-white/10" />
-                    <span className="text-gray-600 text-xs">{t("auth.divider")}</span>
-                    <div className="flex-1 h-px bg-white/10" />
+                    <div className="flex-1 h-px" style={{ background: "var(--home-divider)" }} />
+                    <span className="text-xs" style={{ color: "var(--home-text-soft)" }}>{t("auth.divider")}</span>
+                    <div className="flex-1 h-px" style={{ background: "var(--home-divider)" }} />
                 </div>
 
+                {/* Inputs theme-aware: bg + border + texto desde vars para que
+                    funcionen igual en light y dark. */}
                 <div className="space-y-3">
                     {mode === "register" && (
                         <input type="text" placeholder={t("auth.placeholder.name")} value={name} onChange={e => setName(e.target.value)}
-                            className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-white text-sm outline-none focus:border-purple-500 transition-colors" />
+                            className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-colors focus:border-purple-500"
+                            style={{ background: "var(--home-card-bg)", border: "1px solid var(--home-card-border)", color: "var(--home-text)" }} />
                     )}
                     <input type="email" placeholder={t("auth.placeholder.email")} value={email} onChange={e => setEmail(e.target.value)}
-                        className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-white text-sm outline-none focus:border-purple-500 transition-colors" />
+                        className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-colors focus:border-purple-500"
+                        style={{ background: "var(--home-card-bg)", border: "1px solid var(--home-card-border)", color: "var(--home-text)" }} />
                     <input type="password" placeholder={t("auth.placeholder.password")} value={password} onChange={e => setPassword(e.target.value)}
                         onKeyDown={e => e.key === "Enter" && handleSubmit()}
-                        className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-white text-sm outline-none focus:border-purple-500 transition-colors" />
+                        className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-colors focus:border-purple-500"
+                        style={{ background: "var(--home-card-bg)", border: "1px solid var(--home-card-border)", color: "var(--home-text)" }} />
                 </div>
 
                 {/* Checkbox de aceptacion obligatoria — solo en registro.
@@ -142,16 +152,16 @@ export default function AuthModal({ onClose, title, subtitle, onAuthSuccess }: P
 
                 {/* En login tambien mostramos los links para acceso facil */}
                 {mode === "login" && (
-                    <p className="text-center text-gray-600 text-[10px] mt-3">
+                    <p className="text-center text-[10px] mt-3" style={{ color: "var(--home-text-soft)" }}>
                         {t("auth.terms.byLogin")}{" "}
-                        <a href="/terminos" target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-gray-300 underline">{t("auth.terms.linkTerms")}</a>
+                        <a href="/terminos" target="_blank" rel="noopener noreferrer" className="underline hover:opacity-80" style={{ color: "var(--home-text-muted)" }}>{t("auth.terms.linkTerms")}</a>
                         {" "}{t("auth.terms.and")}{" "}
-                        <a href="/privacidad" target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-gray-300 underline">{t("auth.terms.linkPrivacy")}</a>
+                        <a href="/privacidad" target="_blank" rel="noopener noreferrer" className="underline hover:opacity-80" style={{ color: "var(--home-text-muted)" }}>{t("auth.terms.linkPrivacy")}</a>
                         .
                     </p>
                 )}
 
-                <p className="text-center text-gray-500 text-xs mt-4">
+                <p className="text-center text-xs mt-4" style={{ color: "var(--home-text-muted)" }}>
                     {mode === "login" ? t("auth.switch.noAccount") : t("auth.switch.hasAccount")}{" "}
                     <button onClick={() => setMode(mode === "login" ? "register" : "login")}
                         className="text-purple-400 hover:text-purple-300 font-semibold">

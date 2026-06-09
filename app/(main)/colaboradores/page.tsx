@@ -85,7 +85,7 @@ export default function CollaboratorsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-5 sm:mb-8 gap-3">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-black text-white mb-1">{t("collab.title")}</h1>
+          <h1 className="text-2xl sm:text-3xl font-black mb-1" style={{ color: "var(--home-text)" }}>{t("collab.title")}</h1>
           <p className="text-xs sm:text-sm text-gray-400">{t("collab.subtitle")}</p>
         </div>
         <button
@@ -121,7 +121,8 @@ export default function CollaboratorsPage() {
             value={query}
             onChange={e => setQuery(e.target.value)}
             placeholder={activeTab === "person" ? t("collab.search.people") : t("collab.search.brands")}
-            className="w-full bg-white/[0.04] border border-white/10 rounded-xl pl-9 pr-3 py-2.5 text-sm text-white placeholder-gray-600 outline-none focus:border-purple-500/40 transition-colors"
+            className="w-full rounded-xl pl-9 pr-3 py-2.5 text-sm outline-none transition-colors focus:border-purple-500/40"
+            style={{ background: "var(--home-card-bg)", border: "1px solid var(--home-card-border)", color: "var(--home-text)" }}
           />
         </div>
         <button
@@ -240,7 +241,7 @@ function EmptyState({
       }`}>
         {kind === "brand" ? <Tag size={22} /> : <Users size={22} />}
       </div>
-      <h3 className="text-base font-bold text-white mb-1">
+      <h3 className="text-base font-bold mb-1" style={{ color: "var(--home-text)" }}>
         {kind === "brand" ? t("collab.empty.brands.title") : t("collab.empty.people.title")}
       </h3>
       <p className="text-sm text-gray-500 mb-5">
@@ -274,9 +275,9 @@ function CollaboratorCard({
 
   return (
     <div
-      className="relative rounded-2xl p-4 transition-all hover:bg-white/[0.05]"
+      className="relative rounded-2xl p-4 transition-all"
       style={{
-        background: "rgba(15,15,25,0.6)",
+        background: "var(--home-bg-soft)",
         border: isBrand
           ? "1px solid rgba(217,119,6,0.20)"
           : "1px solid rgba(168,85,247,0.20)",
@@ -296,7 +297,7 @@ function CollaboratorCard({
           </div>
         )}
         <div className="flex-1 min-w-0">
-          <h3 className="font-bold text-sm text-white truncate">{collab.artist_name}</h3>
+          <h3 className="font-bold text-sm truncate" style={{ color: "var(--home-text)" }}>{collab.artist_name}</h3>
           {collab.role && (
             <p className="text-[11px] text-gray-400 truncate">{collab.role}</p>
           )}
@@ -372,7 +373,7 @@ function ModalShell({
     >
       <div className={`w-full ${width} rounded-3xl p-6 relative`}
         style={{
-          background: "rgba(15,15,25,0.98)",
+          background: "var(--home-bg-soft)",
           border: "1px solid rgba(168,85,247,0.30)",
           boxShadow: "0 0 60px rgba(168,85,247,0.15)",
         }}
@@ -428,7 +429,7 @@ function InviteModal({ onClose }: { onClose: () => void }) {
 
   return (
     <ModalShell onClose={onClose}>
-      <h2 className="text-xl font-black text-white mb-1">{t("collab.invite.title")}</h2>
+      <h2 className="text-xl font-black mb-1" style={{ color: "var(--home-text)" }}>{t("collab.invite.title")}</h2>
       <p className="text-xs text-gray-500 mb-5">
         {t("collab.invite.body")}
       </p>
@@ -445,13 +446,14 @@ function InviteModal({ onClose }: { onClose: () => void }) {
         <>
           <div className="bg-white/[0.04] border border-white/10 rounded-xl p-3 mb-4">
             <p className="text-[10px] text-gray-500 mb-1">{t("collab.invite.linkLabel")}</p>
-            <p className="text-xs text-white font-mono break-all">{url}</p>
+            <p className="text-xs font-mono break-all" style={{ color: "var(--home-text)" }}>{url}</p>
           </div>
 
           <div className="grid grid-cols-2 gap-2">
             <button
               onClick={copy}
-              className="flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold text-white bg-white/[0.06] hover:bg-white/[0.10] border border-white/10 transition-all"
+              className="flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold transition-all"
+              style={{ background: "var(--home-card-bg)", border: "1px solid var(--home-card-border)", color: "var(--home-text)" }}
             >
               {copied ? <><Check size={14} className="text-emerald-400" /> {t("collab.invite.copied")}</> : <><Copy size={14} /> {t("collab.invite.copy")}</>}
             </button>
@@ -511,7 +513,7 @@ function EditModal({
 
   return (
     <ModalShell onClose={onClose}>
-      <h2 className="text-xl font-black text-white mb-1">
+      <h2 className="text-xl font-black mb-1" style={{ color: "var(--home-text)" }}>
         {isBrand ? t("collab.modal.editBrand.title") : t("collab.modal.editRole.title")}
       </h2>
       <p className="text-xs text-gray-500 mb-5">
@@ -615,7 +617,7 @@ function ReinviteModal({
 
   return (
     <ModalShell onClose={onClose}>
-      <h2 className="text-xl font-black text-white mb-1">{t("collab.reinvite.title")}</h2>
+      <h2 className="text-xl font-black mb-1" style={{ color: "var(--home-text)" }}>{t("collab.reinvite.title")}</h2>
       <p className="text-xs text-gray-500 mb-5">
         {/* Sustituimos {name} por un span resaltado en blanco */}
         {t("collab.reinvite.body").split("{name}").map((piece, i, arr) => (
@@ -638,13 +640,14 @@ function ReinviteModal({
         <>
           <div className="bg-white/[0.04] border border-white/10 rounded-xl p-3 mb-4">
             <p className="text-[10px] text-gray-500 mb-1">{t("collab.invite.linkLabel")}</p>
-            <p className="text-xs text-white font-mono break-all">{url}</p>
+            <p className="text-xs font-mono break-all" style={{ color: "var(--home-text)" }}>{url}</p>
           </div>
 
           <div className="grid grid-cols-2 gap-2">
             <button
               onClick={copy}
-              className="flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold text-white bg-white/[0.06] hover:bg-white/[0.10] border border-white/10 transition-all"
+              className="flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold transition-all"
+              style={{ background: "var(--home-card-bg)", border: "1px solid var(--home-card-border)", color: "var(--home-text)" }}
             >
               {copied ? <><Check size={14} className="text-emerald-400" /> {t("collab.invite.copied")}</> : <><Copy size={14} /> {t("collab.invite.copy")}</>}
             </button>
@@ -698,7 +701,7 @@ function DeleteModal({
       <div className="w-12 h-12 rounded-full bg-red-500/15 border border-red-500/40 flex items-center justify-center text-red-400 mx-auto mb-4">
         <Trash2 size={20} />
       </div>
-      <h2 className="text-lg font-black text-white text-center mb-1">
+      <h2 className="text-lg font-black text-center mb-1" style={{ color: "var(--home-text)" }}>
         {t("collab.delete.title").replace("{name}", collab.artist_name)}
       </h2>
       <p className="text-xs text-gray-500 text-center mb-5">

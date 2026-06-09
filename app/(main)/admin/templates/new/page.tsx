@@ -111,9 +111,9 @@ export default function AdminTemplateCreatorPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] text-white">
+    <div className="min-h-screen" style={{ background: "var(--home-bg)", color: "var(--home-text)" }}>
       {/* HEADER */}
-      <div className="border-b border-white/[0.06] bg-[#0e0e14]">
+      <div className="border-b" style={{ background: "var(--home-bg-soft)", borderColor: "var(--home-card-border)" }}>
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center gap-3">
           <Link href="/admin/templates" className="w-9 h-9 rounded-lg flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/5">
             <ArrowLeft size={18} strokeWidth={2}/>
@@ -229,7 +229,7 @@ function DraftCard({ draft, onDelete }: { draft: TemplateDraft; onDelete: () => 
           )}
         </div>
         <div className="p-2 sm:p-3">
-          <h3 className="text-white font-bold text-xs sm:text-sm truncate">{draft.title}</h3>
+          <h3 className="font-bold text-xs sm:text-sm truncate" style={{ color: "var(--home-text)" }}>{draft.title}</h3>
           <p className="text-gray-500 text-[10px] sm:text-xs mt-0.5 flex items-center gap-1.5">
             {draft.status === "draft" && (<><Clock size={10} strokeWidth={2}/> {t("admin.new.draft.status.draft")}</>)}
             {draft.status === "ready" && (<><CheckCircle2 size={10} strokeWidth={2}/> {t("admin.new.draft.status.ready")}</>)}
@@ -267,7 +267,7 @@ function PublishedCard({ pub, onUnpublish, onEdit }: { pub: TemplatePublished; o
           )}
         </div>
         <div className="p-2 sm:p-3">
-          <h3 className="text-white font-bold text-xs sm:text-sm truncate">{pub.title}</h3>
+          <h3 className="font-bold text-xs sm:text-sm truncate" style={{ color: "var(--home-text)" }}>{pub.title}</h3>
           <p className="text-emerald-300/70 text-[10px] sm:text-xs mt-0.5 flex items-center gap-1.5">
             <CheckCircle2 size={10} strokeWidth={2}/>
             {t("admin.new.published.status")}

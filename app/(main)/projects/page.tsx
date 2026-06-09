@@ -55,7 +55,7 @@ export default function ProjectsPage() {
         <div className="max-w-6xl mx-auto px-3 sm:px-6 py-4 sm:py-10">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-5 sm:mb-8 gap-3">
                 <div>
-                    <h1 className="text-2xl sm:text-3xl font-black text-white mb-1">{t("projects.title")}</h1>
+                    <h1 className="text-2xl sm:text-3xl font-black mb-1" style={{ color: "var(--home-text)" }}>{t("projects.title")}</h1>
                     <p className="text-gray-400 text-xs sm:text-sm">{subtitle}</p>
                 </div>
                 <Link href="/templates" className="inline-flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-sm transition-all hover:scale-105 w-full sm:w-auto">
@@ -95,7 +95,7 @@ export default function ProjectsPage() {
                                     )}
                                 </div>
                                 <div className="p-2 sm:p-3">
-                                    <h3 className="text-white font-bold text-xs sm:text-sm truncate">{project.title}</h3>
+                                    <h3 className="font-bold text-xs sm:text-sm truncate" style={{ color: "var(--home-text)" }}>{project.title}</h3>
                                     <p className="text-gray-500 text-[10px] sm:text-xs mt-0.5">
                                         {new Date(project.updated_at).toLocaleDateString(LOCALE_TO_BCP47[locale] ?? "es-ES", { day: "2-digit", month: "short", year: "numeric" })}
                                     </p>

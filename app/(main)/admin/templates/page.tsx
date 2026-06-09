@@ -147,7 +147,7 @@ export default function AdminTemplatesPage() {
       <div className="flex items-start justify-between mb-6 gap-4 flex-wrap">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <h1 className="text-3xl font-black text-white">{t("admin.tpl.title")}</h1>
+            <h1 className="text-3xl font-black" style={{ color: "var(--home-text)" }}>{t("admin.tpl.title")}</h1>
             <span className="px-2 py-0.5 rounded-md bg-red-500/15 border border-red-500/30 text-red-300 text-[10px] font-bold tracking-wide">
               {t("admin.tpl.internal")}
             </span>
@@ -196,7 +196,8 @@ export default function AdminTemplatesPage() {
             value={query}
             onChange={e => setQuery(e.target.value)}
             placeholder={t("admin.tpl.search.placeholder")}
-            className="w-full bg-white/[0.04] border border-white/10 rounded-xl pl-9 pr-3 py-2.5 text-sm text-white placeholder-gray-600 outline-none focus:border-purple-500/40 transition-colors"
+            className="w-full rounded-xl pl-9 pr-3 py-2.5 text-sm outline-none transition-colors focus:border-purple-500/40"
+            style={{ background: "var(--home-card-bg)", border: "1px solid var(--home-card-border)", color: "var(--home-text)" }}
           />
         </div>
         {/* Toggle orden por id (defecto: nuevas primero) */}
@@ -426,7 +427,7 @@ function TemplateRow({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <span className="text-[10px] text-gray-600 font-mono">#{template.id}</span>
-            <p className="text-sm font-bold text-white truncate">{template.title}</p>
+            <p className="text-sm font-bold truncate" style={{ color: "var(--home-text)" }}>{template.title}</p>
             {dirty && (
               <span className="px-1.5 py-0.5 rounded-md bg-purple-500/30 text-purple-200 text-[9px] font-bold tracking-wide">
                 {t("admin.tpl.modified")}
@@ -537,7 +538,7 @@ function DiffModal({
       <div
         className="w-full max-w-3xl max-h-[85vh] flex flex-col rounded-3xl"
         style={{
-          background: "rgba(15,15,25,0.98)",
+          background: "var(--home-bg-soft)",
           border: "1px solid rgba(168,85,247,0.30)",
           boxShadow: "0 0 60px rgba(168,85,247,0.15)",
         }}
@@ -545,7 +546,7 @@ function DiffModal({
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-white/[0.05] shrink-0">
           <div>
-            <h2 className="text-lg font-black text-white">
+            <h2 className="text-lg font-black" style={{ color: "var(--home-text)" }}>
               {(changes.length === 1 ? t("admin.tpl.diff.title.one") : t("admin.tpl.diff.title.many")).replace("{n}", String(changes.length))}
             </h2>
             <p className="text-xs text-gray-500 mt-0.5">
@@ -565,7 +566,7 @@ function DiffModal({
           {changes.map(c => (
             <div key={c.templateId} className="flex items-start gap-3 py-2 text-xs">
               <span className="font-mono text-gray-600 shrink-0 w-12">#{c.templateId}</span>
-              <span className="text-white shrink-0 max-w-[160px] truncate">{c.templateTitle}</span>
+              <span className="shrink-0 max-w-[160px] truncate" style={{ color: "var(--home-text)" }}>{c.templateTitle}</span>
               <span className="text-gray-500">→</span>
               <div className="flex flex-wrap gap-1 flex-1 min-w-0">
                 {c.after.length === 0 ? (
