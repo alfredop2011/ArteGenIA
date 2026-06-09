@@ -453,115 +453,50 @@ export default function MobileEditor({ templateId, formatId }: Props) {
     };
   }, [layers]);
 
-  // ─── 3c-bis. Auto-zoom + reposicionar viewport al editar capa ──────────
+  // ─── 3c-bis. Reposicionar viewport al editar (SIN tocar zoom) ──────────
   //
-  // V7 (mejora UX mobile): cuando el usuario selecciona una capa y se abre
-  // un sheet, hacemos DOS cosas:
+  // V7.1 (revert del auto-zoom): el auto-zoom agresivo causaba sensacion de
+  // "loquera" al cambiar entre capas (re-zoom en cada seleccion). Movimos
+  // a un comportamiento mas neutro: SOLO ajustamos el pan para que la capa
+  // quede visible por encima del sheet inferior, pero NO tocamos el zoom.
+  // El usuario controla el zoom con pellizco — mas predecible y permite
+  // edicion libre.
   //
-  //   1. ZOOM ADAPTATIVO: si la capa es pequeña en pantalla (ej. un texto
-  //      pequeno que no se lee), hacemos zoom in para que ocupe ~50% del
-  //      area visible. Si ya es grande (foto que ocupa casi toda pantalla),
-  //      mantenemos el zoom actual. Esto evita que el usuario tenga que
-  //      pellizcar para acercarse cada vez que va a editar.
-  //
-  //   2. PAN: ajustamos viewportTransform para que la capa quede centrada
-  //      en la mitad superior visible (por encima del sheet inferior).
-  //
-  // La animacion es un tween de 280ms con easing, suficiente para que se
-  // sienta intencional sin ser molesto.
+  // Si la capa ya está visible en la mitad superior, no movemos nada
+  // (evita micro-jitter al re-seleccionar la misma capa).
   useEffect(() => {
     const fc = fabricRef.current;
     if (!fc || !loaded || !activeSheet || !selectedLayer) return;
 
     // Altura disponible cuando hay sheet abierto: por encima del sheet
-    // Sheet ocupa 30vh, asi que el area visible util es canvas - sheetHeight
     const sheetHpx = window.innerHeight * 0.30;
     const visibleH = canvasArea.h - sheetHpx;
-    const visibleW = canvasArea.w;
 
-    // Bounding box del objeto en coords NATIVAS (sin viewport ni zoom)
+    // Centro del objeto en coords del canvas (sin viewport)
     const obj = selectedLayer.obj;
     const bounds = obj.getBoundingRect();
-    const objW = bounds.width;
-    const objH = bounds.height;
-    const objCenterX = bounds.left + objW / 2;
-    const objCenterY = bounds.top + objH / 2;
+    const objCenterY = bounds.top + bounds.height / 2;
 
-    // ZOOM TARGET: queremos que el objeto ocupe ~50% del area visible mas
-    // pequena (alto o ancho). Calculamos el zoom necesario para llegar ahi.
-    // - Si el objeto YA se ve grande (>35% de la pantalla), no zoom-in.
-    // - Cap zoom maximo en 4 (no acercarse demasiado, pierde contexto).
-    const currentZoom = fc.getZoom();
-    const visualW = objW * currentZoom;
-    const visualH = objH * currentZoom;
-    const currentRatio = Math.max(visualW / visibleW, visualH / visibleH);
-    const TARGET_RATIO = 0.5; // queremos ocupe 50% del lado mas restrictivo
-    const TRIGGER_RATIO = 0.35; // bajo esto, hacemos zoom in
-    const MAX_ZOOM = 4;
-    const MIN_ZOOM = 0.1;
+    const zoom = fc.getZoom();
+    const vpt = fc.viewportTransform;
+    if (!vpt) return;
 
-    let targetZoom = currentZoom;
-    if (currentRatio < TRIGGER_RATIO) {
-      // Necesitamos llegar a TARGET_RATIO
-      const requiredZoom = Math.min(
-        (TARGET_RATIO * visibleW) / objW,
-        (TARGET_RATIO * visibleH) / objH,
-      );
-      targetZoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, requiredZoom));
+    // Donde esta el centro del objeto en pantalla actualmente
+    const currentScreenY = objCenterY * zoom + vpt[5];
+
+    // Si ya esta en la mitad superior visible (con margen), no movemos
+    const safeTopBand = visibleH * 0.15;
+    const safeBottomBand = visibleH * 0.85;
+    if (currentScreenY >= safeTopBand && currentScreenY <= safeBottomBand) {
+      return; // ya esta bien situado, no molestar
     }
 
-    // PAN: con el zoom target, calcular tx/ty para centrar el objeto en la
-    // mitad superior visible. Formula: x_screen = x_canvas * zoom + tx
-    const targetCenterX = visibleW / 2;
+    // Reposicionar: queremos centro del objeto en mitad de la zona visible
     const targetCenterY = visibleH / 2;
-    const targetTx = targetCenterX - objCenterX * targetZoom;
-    const targetTy = targetCenterY - objCenterY * targetZoom;
-
-    // Tween de zoom + pan en 280ms (easeOutCubic). Cancelable si llega otro
-    // selectedLayer mientras animamos.
-    const vptStart = fc.viewportTransform;
-    if (!vptStart) return;
-    const startZoom = currentZoom;
-    const startTx = vptStart[4];
-    const startTy = vptStart[5];
-    const startTime = performance.now();
-    const DURATION = 280;
-    let rafId = 0;
-    let cancelled = false;
-
-    const ease = (t: number) => 1 - Math.pow(1 - t, 3); // easeOutCubic
-
-    const tick = (now: number) => {
-      if (cancelled) return;
-      const elapsed = now - startTime;
-      const progress = Math.min(1, elapsed / DURATION);
-      const eased = ease(progress);
-
-      const z = startZoom + (targetZoom - startZoom) * eased;
-      const tx = startTx + (targetTx - startTx) * eased;
-      const ty = startTy + (targetTy - startTy) * eased;
-
-      // setZoom internamente toca el viewportTransform, asi que aplicamos
-      // primero el zoom y luego sobreescribimos tx/ty.
-      fc.setZoom(z);
-      const v = fc.viewportTransform;
-      if (v) {
-        fc.setViewportTransform([v[0], v[1], v[2], v[3], tx, ty]);
-      }
-      fc.requestRenderAll();
-
-      if (progress < 1) {
-        rafId = requestAnimationFrame(tick);
-      }
-    };
-
-    rafId = requestAnimationFrame(tick);
-
-    return () => {
-      cancelled = true;
-      if (rafId) cancelAnimationFrame(rafId);
-    };
-  }, [activeSheet, selectedLayer, loaded, canvasArea.h, canvasArea.w]);
+    const ty = targetCenterY - objCenterY * zoom;
+    fc.setViewportTransform([vpt[0], vpt[1], vpt[2], vpt[3], vpt[4], ty]);
+    fc.requestRenderAll();
+  }, [activeSheet, selectedLayer, loaded, canvasArea.h]);
 
   // ─── 3d. Auto-abrir sheet contextual al seleccionar capa ────────────────
   //
@@ -1323,7 +1258,7 @@ export default function MobileEditor({ templateId, formatId }: Props) {
                 <div className="text-2xl shrink-0 leading-none">👆</div>
                 <div>
                   <p className="font-bold text-sm">Toca un elemento</p>
-                  <p className="text-xs text-gray-400 mt-0.5">Texto, foto o forma. Se acercará automáticamente para editarlo.</p>
+                  <p className="text-xs text-gray-400 mt-0.5">Texto, foto o forma. Verás las opciones para editarlo abajo.</p>
                 </div>
               </div>
               <div className="flex items-start gap-3 p-3 rounded-2xl bg-white/5 border border-white/10">
