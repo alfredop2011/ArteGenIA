@@ -91,13 +91,58 @@ export default function ProjectsPage() {
             )}
 
             {!loading && projects.length === 0 && (
-                <div className="flex flex-col items-center justify-center py-16 sm:py-24 text-center px-4">
-                    <div className="w-20 h-20 mb-4 rounded-2xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-300">
-                        <Palette size={36} strokeWidth={1.6} />
+                <div className="flex flex-col items-center justify-center py-10 sm:py-14 text-center px-4">
+                    {/* Demo visual: 3 cards "fake" en escalera mostrando el output esperado.
+                        Mejor que un texto frio — el usuario VE como se veran sus flyers.
+                        Sin assets reales (los mock se generan con CSS puro). */}
+                    <div className="relative w-full max-w-md mb-8 h-44 sm:h-52" aria-hidden="true">
+                        {/* Card izquierda — rotada negativa */}
+                        <div className="absolute left-[10%] top-1/2 -translate-y-1/2 w-28 sm:w-32 aspect-[3/4] rounded-xl overflow-hidden -rotate-[8deg] shadow-xl"
+                             style={{ background: "linear-gradient(135deg, #1e1b4b, #581c87)", border: "1px solid rgba(255,255,255,0.1)" }}>
+                            <div className="h-full flex flex-col items-center justify-center p-2 text-center">
+                                <div className="w-10 h-10 rounded-full mb-1.5" style={{ background: "linear-gradient(135deg,#facc15,#f59e0b)", opacity: 0.7 }}/>
+                                <div className="w-16 h-1.5 rounded bg-white/30 mb-0.5"/>
+                                <div className="w-10 h-1 rounded bg-white/15"/>
+                            </div>
+                        </div>
+                        {/* Card central — destacada */}
+                        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-32 sm:w-40 aspect-[3/4] rounded-xl overflow-hidden shadow-2xl z-10"
+                             style={{ background: "linear-gradient(135deg, #831843, #ea580c)", border: "1.5px solid rgba(168,85,247,0.4)", boxShadow: "0 12px 40px rgba(168,85,247,0.25)" }}>
+                            <div className="h-full flex flex-col items-center justify-center p-3 text-center">
+                                <div className="w-12 h-12 rounded-full mb-2" style={{ background: "linear-gradient(135deg,#facc15,#f59e0b)" }}/>
+                                <div className="w-20 h-2 rounded bg-white/50 mb-1"/>
+                                <div className="w-14 h-1.5 rounded bg-white/30 mb-2"/>
+                                <div className="flex gap-1">
+                                    <div className="w-3 h-3 rounded-full bg-white/40"/>
+                                    <div className="w-3 h-3 rounded-full bg-white/40"/>
+                                    <div className="w-3 h-3 rounded-full bg-white/40"/>
+                                </div>
+                            </div>
+                        </div>
+                        {/* Card derecha — rotada positiva */}
+                        <div className="absolute right-[10%] top-1/2 -translate-y-1/2 w-28 sm:w-32 aspect-[3/4] rounded-xl overflow-hidden rotate-[8deg] shadow-xl"
+                             style={{ background: "linear-gradient(135deg, #064e3b, #0e7490)", border: "1px solid rgba(255,255,255,0.1)" }}>
+                            <div className="h-full flex flex-col items-center justify-center p-2 text-center">
+                                <div className="w-10 h-10 rounded-full mb-1.5" style={{ background: "linear-gradient(135deg,#22d3ee,#3b82f6)", opacity: 0.7 }}/>
+                                <div className="w-16 h-1.5 rounded bg-white/30 mb-0.5"/>
+                                <div className="w-10 h-1 rounded bg-white/15"/>
+                            </div>
+                        </div>
+                        {/* Sparkle decorativo */}
+                        <Palette className="absolute -top-3 right-[15%] text-amber-300/40 rotate-12" size={20} />
                     </div>
-                    <h3 className="text-lg sm:text-xl font-bold mb-2">{t("projects.empty.title")}</h3>
-                    <p className="text-gray-400 text-sm mb-6">{t("projects.empty.body")}</p>
-                    <Link href="/templates" className="px-6 py-3 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold">{t("projects.empty.cta")}</Link>
+
+                    <h3 className="text-xl sm:text-2xl font-black mb-2" style={{ color: "var(--home-text)" }}>{t("projects.empty.title")}</h3>
+                    <p className="text-gray-400 text-sm mb-6 max-w-sm">{t("projects.empty.body")}</p>
+                    <Link
+                        href="/templates"
+                        className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-white font-bold transition-all hover:scale-105 shadow-lg shadow-purple-500/30"
+                        style={{ background: "linear-gradient(135deg,#7c3aed,#a855f7)" }}
+                    >
+                        <Plus size={16} strokeWidth={2.4} />
+                        {t("projects.empty.cta")}
+                    </Link>
+                    <p className="text-[11px] text-gray-500 mt-3">Sin tarjeta · Tu primer flyer en 2 minutos</p>
                 </div>
             )}
 

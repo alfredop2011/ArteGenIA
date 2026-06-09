@@ -59,6 +59,8 @@ import { useToast } from "@/lib/toast";
 import ColorPickerPopover from "@/components/editor/ColorPickerPopover";
 import KeyboardShortcutsModal from "@/components/editor/KeyboardShortcutsModal";
 import FontPickerPopover from "@/components/editor/FontPickerPopover";
+import PostDownloadModal from "@/components/editor/PostDownloadModal";
+import { FEATURES } from "@/lib/features";
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
 
@@ -326,10 +328,14 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
   const [template, setTemplate] = useState<Template | null>(null);
   const [layers, setLayers] = useState<LayerItem[]>([]);
   const [selectedLayer, setSelectedLayer] = useState<LayerItem | null>(null);
-  const [activeTool, setActiveTool] = useState<LeftTool>("layers");
+  // Default a "design" (plantillas) — antes era "layers" pero hidden bajo
+  // feature flag, no tendria sentido iniciar en una tab no renderizada.
+  const [activeTool, setActiveTool] = useState<LeftTool>("design");
   const [artistsModalOpen, setArtistsModalOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  // PostDownload modal — guarda dataURL para reuso en compartir/copiar
+  const [postDownload, setPostDownload] = useState<{ dataUrl: string; format: "png" | "jpg" } | null>(null);
   const [docTitle, setDocTitle] = useState("Diseño sin título");
   const [viewMode, setViewMode] = useState<ViewMode>("sidebar");
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
@@ -1574,7 +1580,10 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
     (itext as FabricObject & { customId?: string }).customId = newId;
     canvas.add(itext); canvas.setActiveObject(itext); canvas.renderAll();
     const newLayer: LayerItem = { id: newId, name: "Texto nuevo", type: "text", obj: itext, visible: true, locked: false };
-    setLayers(prev => [newLayer, ...prev]); setSelectedLayer(newLayer); setSaveState("unsaved"); setActiveTool("layers");
+    setLayers(prev => [newLayer, ...prev]); setSelectedLayer(newLayer); setSaveState("unsaved");
+    // Antes setActiveTool("layers") — pero layers esta hidden en MVP, no
+    // hace falta cambiar de tab tras agregar capa.
+    if (FEATURES.layersPanel) setActiveTool("layers");
   }, [canvasSize]);
 
   // ─── ADD SHAPES (rect, circle, triangle, line, star, hex, arrow, frame) ──
@@ -1871,13 +1880,14 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
     const link = document.createElement("a");
     link.download = `artegenia-flyer.${format}`; link.href = finalDataUrl; link.click();
 
-    // Feedback visual al usuario — confirma que la descarga inicio.
-    // Aviso especifico para plan free indicando watermark.
+    // Abrimos el modal post-descarga para extender el momento de exito —
+    // permite compartir/copiar inmediato sin perder al usuario. Si plan
+    // free, el toast adicional aclara el tema watermark (no se duplica
+    // info, solo da contexto rapido antes de abrir el modal).
     if (shouldWatermark(authProfile?.plan)) {
-      toast.success(`Descargado (${format.toUpperCase()}) · Marca de agua de plan gratis`);
-    } else {
-      toast.success(`Descargado ${format.toUpperCase()}`);
+      toast.info("Marca de agua aplicada (plan gratis)", { durationMs: 2500 });
     }
+    setPostDownload({ dataUrl: finalDataUrl, format });
 
     // Track event para analytics (no bloquea si posthog no esta configurado)
     void import("@/components/analytics/PostHogProvider").then(m =>
@@ -2174,17 +2184,23 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
 
   // ─── LEFT TOOLS ───────────────────────────────────────────────────────────
 
-  const TOOLS: Array<{ id: LeftTool; label: string; icon: React.ReactNode; comingSoon?: boolean }> = [
+  // Lista completa de tabs disponibles. Filtramos abajo segun FEATURES.
+  // Reducimos sidebar de 9 → 4 tabs (P2.4) escondiendo elements/background/
+  // brand/favorites/layers bajo flags. La funcionalidad SUBYACENTE sigue
+  // accesible: shapes via "Imagenes", background via click directo en canvas,
+  // capas via floating toolbar contextual.
+  const ALL_TOOLS: Array<{ id: LeftTool; label: string; icon: React.ReactNode; comingSoon?: boolean; hidden?: boolean }> = [
     { id: "design",    label: t("editor.tool.design"),     icon: <LayoutGrid className="w-5 h-5" strokeWidth={1.5} /> },
     { id: "text",      label: t("editor.tool.text"),       icon: <Type className="w-5 h-5" strokeWidth={1.5} /> },
-    { id: "elements",  label: t("editor.tool.elements"),   icon: <SparklesIcon className="w-5 h-5" strokeWidth={1.5} /> },
+    { id: "elements",  label: t("editor.tool.elements"),   icon: <SparklesIcon className="w-5 h-5" strokeWidth={1.5} />, hidden: !FEATURES.elementsTab },
     { id: "photos",    label: t("editor.tool.photos"),     icon: <ImageIcon className="w-5 h-5" strokeWidth={1.5} /> },
-    { id: "background",label: t("editor.tool.background"), icon: <Mountain className="w-5 h-5" strokeWidth={1.5} /> },
-    { id: "layers",    label: t("editor.tool.layers"),     icon: <LayersIcon className="w-5 h-5" strokeWidth={1.5} /> },
+    { id: "background",label: t("editor.tool.background"), icon: <Mountain className="w-5 h-5" strokeWidth={1.5} />, hidden: !FEATURES.backgroundTab },
+    { id: "layers",    label: t("editor.tool.layers"),     icon: <LayersIcon className="w-5 h-5" strokeWidth={1.5} />, hidden: !FEATURES.layersPanel },
     { id: "ai",        label: t("editor.tool.ai"),         icon: <Wand2 className="w-5 h-5" strokeWidth={1.5} />, comingSoon: true },
-    { id: "brand",     label: t("editor.tool.brand"),      icon: <Tag className="w-5 h-5" strokeWidth={1.5} />, comingSoon: true },
-    { id: "favorites", label: t("editor.tool.favorites"),  icon: <Heart className="w-5 h-5" strokeWidth={1.5} />, comingSoon: true },
+    { id: "brand",     label: t("editor.tool.brand"),      icon: <Tag className="w-5 h-5" strokeWidth={1.5} />, comingSoon: true, hidden: !FEATURES.brandKit },
+    { id: "favorites", label: t("editor.tool.favorites"),  icon: <Heart className="w-5 h-5" strokeWidth={1.5} />, comingSoon: true, hidden: !FEATURES.favorites },
   ];
+  const TOOLS = ALL_TOOLS.filter(t => !t.hidden);
 
   const isBackground = selectedLayer?.type === "background";
   const isText = selectedLayer?.type === "text";
@@ -2533,8 +2549,9 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
           </div>
         )}
 
-        {/* LAYERS PANEL - oculto en mobile (se accede por bottom sheet) */}
-        {activeTool === "layers" && !isMobile && (
+        {/* LAYERS PANEL - hidden by feature flag (P2.1). Z-order accesible
+            via floating toolbar contextual. Para reactivar: FEATURES.layersPanel */}
+        {FEATURES.layersPanel && activeTool === "layers" && !isMobile && (
           <div className="w-52 ag-glass border-r border-white/[0.06] flex flex-col shrink-0">
             <div className="px-3 py-2.5 border-b border-white/[0.06]">
               <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-widest">Capas</p>
@@ -3080,8 +3097,8 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
         />
       )}
 
-      {/* MOBILE BOTTOM SHEET: CAPAS */}
-      {isMobile && (
+      {/* MOBILE BOTTOM SHEET: CAPAS — hidden bajo feature flag (P2.1) */}
+      {FEATURES.layersPanel && isMobile && (
         <div className={`
           ${mobilePanelOpen === "layers" ? "translate-y-0" : "translate-y-full"}
           fixed bottom-0 left-0 right-0 z-50 max-h-[70vh] rounded-t-3xl ag-glass
@@ -3484,6 +3501,16 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
       {/* ─── COMMAND PALETTE ─────────────────────────────────────────── */}
       {/* Modal de atajos teclado — abre con "?" (sin modifier) */}
       {shortcutsOpen && <KeyboardShortcutsModal onClose={() => setShortcutsOpen(false)} />}
+
+      {/* Modal post-descarga — abre tras doExport exitoso */}
+      {postDownload && (
+        <PostDownloadModal
+          imageDataUrl={postDownload.dataUrl}
+          format={postDownload.format}
+          currentFormatId={data?.format}
+          onClose={() => setPostDownload(null)}
+        />
+      )}
 
       {paletteOpen && (
         <CommandPalette
