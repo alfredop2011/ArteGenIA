@@ -152,6 +152,10 @@ export default function Home() {
     return withSquare.slice(0, 3);
   }, [curatedTemplates]);
   const featured = heroStack[0] ?? curatedTemplates[0];
+  // Formato preferido para el card "Como funciona" — square si lo tiene,
+  // si no el primero disponible. Necesario porque la prop formatId es required.
+  const featuredFormat: FormatId =
+    featured.variants.find(v => v.format === "square")?.format ?? featured.variants[0].format;
 
   const filtered = useMemo(() => {
     const catMatch = CATEGORIES.find(c => c.key === selectedCat)?.match;
@@ -341,51 +345,79 @@ export default function Home() {
           )}
         </section>
 
-        {/* ═════ COMO FUNCIONA — 3 cards grandes con numero + icono + texto ═════ */}
-        {/* Layout fiel al mockup: card oscura con borde, icono cuadrado morado
-            a la izquierda con badge numero, titulo y subtitulo a la derecha.
-            Lineas punteadas conectoras entre cards en desktop. */}
+        {/* ═════ COMO FUNCIONA — VISUAL con flyer real + 3 pasos compactos ═════
+            En lugar de 3 cards de texto verticales (boring), mostramos:
+              - Mobile: flyer destacado grande arriba (animado), pasos como
+                pills horizontales debajo
+              - Desktop: flyer a la izquierda, pasos a la derecha
+            Esto es lo mas cercano a "demo visual" sin tener video grabado.
+            El flyer es real (TemplateFabricThumbnail) → el visitante VE
+            la calidad antes de registrarse. */}
         <section className="mb-4 animate-home-fade delay-600">
-          <h2 className="text-base sm:text-lg font-black mb-3">{t("home.howItWorks.title")}</h2>
-          <div className="relative grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-            {STEPS.map((s, i) => {
-              const Icon = s.icon;
-              return (
-                <div
-                  key={s.n}
-                  className="relative rounded-2xl p-3 sm:p-4 flex items-center gap-3"
-                  style={{
-                    background: "var(--home-card-bg)",
-                    border: "1px solid var(--home-card-border)",
-                  }}
-                >
-                  <div className="relative shrink-0">
-                    <div className="w-12 h-12 rounded-xl flex items-center justify-center"
-                         style={{ background: "rgba(168,85,247,0.15)", border: "1px solid rgba(168,85,247,0.3)" }}>
-                      <Icon size={20} strokeWidth={1.9} className="text-purple-400" />
-                    </div>
-                    <span className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-purple-500 text-white text-[10px] font-black flex items-center justify-center"
-                          style={{ border: "2px solid var(--home-bg)" }}>
-                      {s.n}
-                    </span>
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <h3 className="text-xs sm:text-sm font-bold mb-0.5" style={{ color: "var(--home-text)" }}>
-                      {t(s.i18nKey)}
-                    </h3>
-                    <p className="text-[10px] sm:text-xs leading-relaxed" style={{ color: "var(--home-text-muted)" }}>
-                      {t(`${s.i18nKey}.sub` as TranslationKey)}
-                    </p>
-                  </div>
-                  {/* Linea punteada conectora — solo desktop, no en el ultimo */}
-                  {i < STEPS.length - 1 && (
-                    <div className="hidden sm:flex absolute top-1/2 left-[calc(100%+0.25rem)] w-3.5 -translate-y-1/2 items-center justify-center pointer-events-none">
-                      <div className="w-full border-t border-dashed border-purple-500/40" />
-                    </div>
-                  )}
+          <h2 className="text-base sm:text-lg font-black mb-3 text-center sm:text-left">{t("home.howItWorks.title")}</h2>
+          <div className="rounded-2xl p-4 sm:p-5 grid grid-cols-1 sm:grid-cols-[1fr_1.3fr] gap-4 sm:gap-6 items-center"
+               style={{
+                 background: "linear-gradient(135deg, rgba(168,85,247,0.08), rgba(124,58,237,0.03))",
+                 border: "1px solid var(--home-card-border)",
+               }}>
+            {/* Flyer destacado real con animacion de glow */}
+            {featured && (
+              <div className="relative mx-auto w-full max-w-[180px] sm:max-w-[220px] aspect-[4/5]">
+                <div className="absolute inset-0 rounded-xl overflow-hidden"
+                     style={{
+                       boxShadow: "0 12px 40px rgba(168,85,247,0.35), 0 0 60px rgba(168,85,247,0.15)",
+                       border: "1.5px solid rgba(168,85,247,0.4)",
+                     }}>
+                  <TemplateFabricThumbnail
+                    template={featured}
+                    formatId={featuredFormat}
+                    className="absolute inset-0 h-full w-full"
+                  />
                 </div>
-              );
-            })}
+                {/* Badge "Ejemplo real" */}
+                <div className="absolute -top-2 -right-2 px-2 py-0.5 rounded-full text-[9px] font-black tracking-wider"
+                     style={{ background: "linear-gradient(135deg,#facc15,#f59e0b)", color: "#000", boxShadow: "0 4px 10px rgba(250,204,21,0.4)" }}>
+                  EJEMPLO REAL
+                </div>
+              </div>
+            )}
+
+            {/* 3 pasos compactos al lado/abajo */}
+            <div className="space-y-2.5 sm:space-y-3">
+              {STEPS.map((s) => {
+                const Icon = s.icon;
+                return (
+                  <div key={s.n} className="flex items-center gap-3">
+                    <div className="relative shrink-0">
+                      <div className="w-10 h-10 rounded-xl flex items-center justify-center"
+                           style={{ background: "linear-gradient(135deg,#7c3aed,#a855f7)", boxShadow: "0 4px 12px rgba(168,85,247,0.35)" }}>
+                        <Icon size={16} strokeWidth={2} className="text-white" />
+                      </div>
+                      <span className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full text-white text-[9px] font-black flex items-center justify-center"
+                            style={{ background: "#fff", color: "#7c3aed", border: "2px solid var(--home-bg)" }}>
+                        {s.n}
+                      </span>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="text-sm font-bold leading-tight" style={{ color: "var(--home-text)" }}>
+                        {t(s.i18nKey)}
+                      </h3>
+                      <p className="text-[11px] leading-snug" style={{ color: "var(--home-text-muted)" }}>
+                        {t(`${s.i18nKey}.sub` as TranslationKey)}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+              <Link
+                href="/templates"
+                className="inline-flex items-center gap-1.5 mt-2 px-4 py-2 rounded-xl font-bold text-xs text-white transition-transform hover:scale-[1.03]"
+                style={{ background: "linear-gradient(135deg,#7c3aed,#a855f7)", boxShadow: "0 4px 14px rgba(168,85,247,0.35)" }}
+              >
+                <Sparkles size={12} strokeWidth={2.4} />
+                Empezar ahora
+              </Link>
+            </div>
           </div>
         </section>
 
