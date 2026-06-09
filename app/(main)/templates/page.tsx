@@ -176,6 +176,10 @@ export default function TemplatesPage() {
   const [modalTemplate, setModalTemplate] = useState<Template | null>(null);
   const [showSidebarMobile, setShowSidebarMobile] = useState(false);
   const [favorites, setFavorites] = useState<Set<number>>(new Set());
+  // Vista grid (tarjetas) o list (filas horizontales). Persistido por sesion
+  // — al recargar empieza en grid (mas comun). Para persistencia entre
+  // sesiones se puede mover a localStorage.
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [visibleCount, setVisibleCount] = useState(10);
   const [showAllCategories, setShowAllCategories] = useState(false);
 
@@ -601,14 +605,27 @@ export default function TemplatesPage() {
                 <option>{t("templates.sort.popular")}</option>
                 <option>{t("templates.sort.premiumFirst")}</option>
               </select>
+              {/* Toggle vista: cuadricula (cards) vs lista (filas) */}
               <div className="hidden sm:flex rounded-lg overflow-hidden"
                    style={{ background: "var(--home-card-bg)", border: "1px solid var(--home-card-border)" }}>
-                <button className="w-7 h-7 flex items-center justify-center"
-                        style={{ background: "rgba(168,85,247,0.15)", color: "#a855f7" }}>
+                <button
+                  onClick={() => setViewMode("grid")}
+                  aria-label="Vista cuadricula"
+                  className="w-7 h-7 flex items-center justify-center transition-colors"
+                  style={viewMode === "grid"
+                    ? { background: "rgba(168,85,247,0.15)", color: "#a855f7" }
+                    : { color: "var(--home-text-soft)" }
+                  }>
                   <LayoutGrid size={13} strokeWidth={2} />
                 </button>
-                <button className="w-7 h-7 flex items-center justify-center"
-                        style={{ color: "var(--home-text-soft)" }}>
+                <button
+                  onClick={() => setViewMode("list")}
+                  aria-label="Vista lista"
+                  className="w-7 h-7 flex items-center justify-center transition-colors"
+                  style={viewMode === "list"
+                    ? { background: "rgba(168,85,247,0.15)", color: "#a855f7" }
+                    : { color: "var(--home-text-soft)" }
+                  }>
                   <List size={13} strokeWidth={2} />
                 </button>
               </div>
@@ -625,7 +642,7 @@ export default function TemplatesPage() {
                 {t("templates.empty.cta")}
               </button>
             </div>
-          ) : (
+          ) : viewMode === "grid" ? (
             <div className="grid gap-3 grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
               {visibleTemplates.map(tpl => (
                 <TemplateCard key={`${tpl.id}-${activeFormat}`}
@@ -635,6 +652,20 @@ export default function TemplatesPage() {
                               isFavorite={favorites.has(tpl.id)}
                               onToggleFavorite={() => toggleFavorite(tpl.id)}
                               onUse={() => handleUseTemplate(tpl)} />
+              ))}
+            </div>
+          ) : (
+            /* Vista LISTA: 1 fila por plantilla. Thumb pequeño izquierda,
+               info al lado, favorito + CTA "Usar plantilla" a la derecha. */
+            <div className="flex flex-col gap-2">
+              {visibleTemplates.map(tpl => (
+                <TemplateRow key={`${tpl.id}-${activeFormat}`}
+                             template={tpl}
+                             formatId={activeFormat}
+                             aspect={FORMAT_ASPECT[activeFormat]}
+                             isFavorite={favorites.has(tpl.id)}
+                             onToggleFavorite={() => toggleFavorite(tpl.id)}
+                             onUse={() => handleUseTemplate(tpl)} />
               ))}
             </div>
           )}
@@ -858,6 +889,102 @@ function TemplateCard({
                 className="shrink-0 w-6 h-6 rounded-md flex items-center justify-center transition-colors hover:opacity-80"
                 style={{ color: "var(--home-text-soft)" }}>
           <MoreVertical size={13} strokeWidth={2} />
+        </button>
+      </div>
+    </article>
+  );
+}
+
+/** Vista LISTA — 1 fila por plantilla. Thumb pequeño + info + acciones.
+ *  Pensada para escaneo rapido cuando el user quiere ver muchas plantillas
+ *  con sus titulos completos (sin truncar como en grid). */
+function TemplateRow({
+  template, formatId, aspect, isFavorite, onToggleFavorite, onUse,
+}: {
+  template: Template;
+  formatId: FormatId;
+  aspect: string;
+  isFavorite: boolean;
+  onToggleFavorite: () => void;
+  onUse: () => void;
+}) {
+  const { t } = useLocale();
+
+  const formatMetaMap: Record<FormatId, string> = {
+    "portrait":     "Post · Instagram (4:5)",
+    "square":       "Post · Instagram (1:1)",
+    "story":        "Story · Reel (9:16)",
+    "fb-cover":     "Banner · Facebook (16:9)",
+    "print":        "Impresión",
+    "flyer-legacy": "Flyer",
+  };
+
+  return (
+    <article
+      className="group flex items-stretch gap-3 rounded-xl overflow-hidden transition-all hover:scale-[1.005]"
+      style={{
+        background: "var(--home-bg-soft)",
+        border: "1px solid var(--home-card-border)",
+        boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+      }}
+    >
+      {/* Thumb compacto izquierda. Aspect ratio igual que en grid para
+          coherencia visual; el ancho lo fijamos con w-16 (mobile) o w-20 (sm+). */}
+      <div
+        className="relative shrink-0 w-16 sm:w-20 cursor-pointer overflow-hidden"
+        style={{ aspectRatio: aspect }}
+        onClick={onUse}
+      >
+        <TemplateFabricThumbnail template={template} formatId={formatId}
+                                 className="absolute inset-0 h-full w-full" />
+        {template.premium && (
+          <span className="absolute top-1 right-1 inline-flex items-center text-[8px] font-black px-1 py-0.5 rounded text-black"
+                style={{ background: "linear-gradient(135deg,#facc15,#f59e0b)" }}>
+            <Crown size={8} strokeWidth={2.5} fill="currentColor" />
+          </span>
+        )}
+      </div>
+
+      {/* Info central — categoria + titulo + meta. Ocupa el espacio
+          restante. cursor-pointer para que al clickar abra la plantilla. */}
+      <button
+        onClick={onUse}
+        className="flex-1 min-w-0 flex flex-col justify-center text-left py-2 pr-1"
+      >
+        <span className="text-[9px] sm:text-[10px] font-bold tracking-wider uppercase mb-0.5"
+              style={{ color: "var(--home-text-soft)" }}>
+          {template.category}
+        </span>
+        <h3 className="text-sm sm:text-base font-bold truncate" style={{ color: "var(--home-text)" }}>
+          {template.title}
+        </h3>
+        <p className="text-[10px] sm:text-xs truncate" style={{ color: "var(--home-text-muted)" }}>
+          {formatMetaMap[formatId]}
+        </p>
+      </button>
+
+      {/* Acciones derecha — favorito + Usar plantilla. */}
+      <div className="shrink-0 flex items-center gap-1.5 pr-2 sm:pr-3 py-2">
+        <button
+          onClick={onToggleFavorite}
+          aria-label="favorite"
+          className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center transition-colors hover:opacity-80"
+          style={{ background: "var(--home-card-bg)", border: "1px solid var(--home-card-border)" }}
+        >
+          <Heart
+            size={13}
+            strokeWidth={2}
+            className={isFavorite ? "text-pink-400" : ""}
+            style={!isFavorite ? { color: "var(--home-text-muted)" } : {}}
+            fill={isFavorite ? "currentColor" : "none"}
+          />
+        </button>
+        <button
+          onClick={onUse}
+          className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-white transition-transform hover:scale-[1.03]"
+          style={{ background: "linear-gradient(135deg,#7c3aed,#a855f7)", boxShadow: "0 0 12px rgba(168,85,247,0.3)" }}
+        >
+          {t("templates.use")}
         </button>
       </div>
     </article>
