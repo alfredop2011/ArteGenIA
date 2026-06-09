@@ -457,7 +457,8 @@ export default function CreatePage() {
 
   if (isGenerating) {
     return (
-      <div className="min-h-[calc(100vh-56px)] bg-[#0a0a18] flex flex-col items-center justify-center p-8 gap-6">
+      <div className="min-h-[calc(100vh-56px)] flex flex-col items-center justify-center p-8 gap-6"
+           style={{ background: "var(--home-bg)", color: "var(--home-text)" }}>
         <div className="w-full max-w-sm text-center">
           <div className="w-16 h-16 mx-auto mb-6 relative">
             <svg className="w-16 h-16 -rotate-90" viewBox="0 0 64 64">
@@ -470,7 +471,7 @@ export default function CreatePage() {
               <Sparkles size={22} strokeWidth={1.8} className="animate-pulse" />
             </div>
           </div>
-          <h2 className="text-xl font-black text-white mb-2">{t("create.gen.title")}</h2>
+          <h2 className="text-xl font-black mb-2" style={{ color: "var(--home-text)" }}>{t("create.gen.title")}</h2>
           <p className="text-sm text-gray-500 mb-8">{genStep}</p>
 
           {/* Steps de progreso. Matching contra el step actual via la key
@@ -515,7 +516,8 @@ export default function CreatePage() {
   // ─── RENDER: CREATE — diseño HeroChat estilo home ──────────────────────────
 
   return (
-    <div className="min-h-[calc(100vh-56px)] bg-[#0e0e14] text-white flex flex-col items-center px-3 sm:px-4 py-6 sm:py-12">
+    <div className="min-h-[calc(100vh-56px)] flex flex-col items-center px-3 sm:px-4 py-6 sm:py-12"
+         style={{ background: "var(--home-bg)", color: "var(--home-text)" }}>
       <div className="w-full max-w-5xl mx-auto">
 
         {/* Título estilo home + badge "Proximamente" para no-admin.
@@ -550,11 +552,13 @@ export default function CreatePage() {
         </div>
 
         {/* === HERO CHAT (idéntico visualmente al home) === */}
+        {/* background usa var --home-bg-soft para adaptar al tema. El glow
+            morado se mantiene en ambos temas (es el accent de marca). */}
         <div className="rounded-3xl overflow-hidden mb-6"
           style={{
-            background: "rgba(17,17,31,0.80)",
+            background: "var(--home-bg-soft)",
             border: "1px solid rgba(168,85,247,0.50)",
-            boxShadow: "0 0 60px rgba(168,85,247,0.30), 0 0 120px rgba(168,85,247,0.10), 0 20px 60px rgba(0,0,0,0.4)",
+            boxShadow: "0 0 60px rgba(168,85,247,0.20), 0 0 120px rgba(168,85,247,0.08), 0 20px 60px rgba(0,0,0,0.15)",
             backdropFilter: "blur(20px)",
           }}>
 
@@ -565,7 +569,8 @@ export default function CreatePage() {
               value={prompt}
               onChange={e => handleTextareaChange(e.target.value)}
               rows={1}
-              className="w-full bg-transparent text-white text-sm sm:text-base outline-none resize-none leading-relaxed"
+              className="w-full bg-transparent text-sm sm:text-base outline-none resize-none leading-relaxed"
+              style={{ color: "var(--home-text)" }}
               onKeyDown={e => {
                 if (e.key === "Enter" && !e.shiftKey && !e.metaKey && !e.ctrlKey) {
                   e.preventDefault();
@@ -632,7 +637,7 @@ export default function CreatePage() {
                         <div
                           className="absolute top-full left-0 mt-1.5 z-50 min-w-[220px] p-2 rounded-xl border border-white/10 shadow-2xl"
                           style={{
-                            background: "rgba(20,20,32,0.98)",
+                            background: "var(--home-bg-soft)",
                             backdropFilter: "blur(20px)",
                             boxShadow: "0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(168,85,247,0.2)",
                           }}
@@ -688,7 +693,7 @@ export default function CreatePage() {
                         <div
                           className="absolute top-full left-0 mt-1.5 z-50 w-[300px] p-3 rounded-xl border border-white/10 shadow-2xl"
                           style={{
-                            background: "rgba(20,20,32,0.98)",
+                            background: "var(--home-bg-soft)",
                             backdropFilter: "blur(20px)",
                             boxShadow: "0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(168,85,247,0.2)",
                           }}
@@ -802,7 +807,7 @@ export default function CreatePage() {
                         <div
                           className="absolute top-full left-0 mt-1.5 z-50 w-[300px] p-3 rounded-xl border border-white/10 shadow-2xl"
                           style={{
-                            background: "rgba(20,20,32,0.98)",
+                            background: "var(--home-bg-soft)",
                             backdropFilter: "blur(20px)",
                             boxShadow: "0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(168,85,247,0.2)",
                           }}
@@ -874,7 +879,7 @@ export default function CreatePage() {
                         <div
                           className="absolute top-full left-0 mt-1.5 z-50 w-[340px] p-3 rounded-xl border border-white/10 shadow-2xl"
                           style={{
-                            background: "rgba(20,20,32,0.98)",
+                            background: "var(--home-bg-soft)",
                             backdropFilter: "blur(20px)",
                             boxShadow: "0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(168,85,247,0.2)",
                           }}
