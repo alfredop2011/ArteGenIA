@@ -1,0 +1,98 @@
+<!--
+  SUPABASE EMAIL TEMPLATE — Magic Link
+  Pegar en: Supabase Dashboard → Auth → Email Templates → Magic Link
+-->
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Iniciar sesión — ArteGenIA</title>
+</head>
+<body style="margin:0;padding:0;background:#f8f9fc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f8f9fc;padding:32px 16px;">
+    <tr>
+      <td align="center">
+
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(15,15,30,0.06);">
+
+          <!-- Header -->
+          <tr>
+            <td style="padding:32px 32px 24px 32px;text-align:left;border-bottom:1px solid rgba(15,15,30,0.06);">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td style="padding-right:10px;vertical-align:middle;">
+                    <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td width="36" height="36" align="center" valign="middle" style="background:linear-gradient(135deg,#facc15,#f97316);border-radius:9px;color:#000000;font-weight:900;font-size:14px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;letter-spacing:-0.5px;">AG</td>
+                      </tr>
+                    </table>
+                  </td>
+                  <td style="vertical-align:middle;">
+                    <span style="font-size:18px;font-weight:700;color:#0e0e14;letter-spacing:-0.3px;">Arte <span style="color:#f59e0b;">Gen</span></span>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Body -->
+          <tr>
+            <td style="padding:32px;color:#0e0e14;">
+
+              <h1 style="margin:0 0 8px 0;font-size:22px;font-weight:900;color:#0e0e14;letter-spacing:-0.5px;line-height:1.2;">
+                Tu link mágico está aquí ✨
+              </h1>
+              <p style="margin:0 0 24px 0;font-size:15px;color:#4b5563;line-height:1.5;">
+                Pulsa el botón para entrar a ArteGenIA sin contraseña.
+              </p>
+
+              <!-- CTA -->
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 24px 0;">
+                <tr>
+                  <td align="center" style="background:linear-gradient(135deg,#7c3aed,#a855f7);border-radius:12px;">
+                    <a href="{{ .ConfirmationURL }}" target="_blank" style="display:inline-block;padding:14px 32px;font-size:15px;font-weight:700;color:#ffffff;text-decoration:none;letter-spacing:-0.2px;">
+                      Entrar a mi cuenta →
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="margin:0 0 16px 0;font-size:12px;color:#6b7280;line-height:1.5;">
+                Si el botón no funciona:<br>
+                <a href="{{ .ConfirmationURL }}" style="color:#7c3aed;text-decoration:underline;word-break:break-all;font-size:11px;">{{ .ConfirmationURL }}</a>
+              </p>
+
+              <p style="margin:24px 0 0 0;font-size:12px;color:#6b7280;line-height:1.5;">
+                Este link caduca en <strong>1 hora</strong> y solo funciona una vez.
+              </p>
+
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="padding:24px 32px;background:#f8f9fc;border-top:1px solid rgba(15,15,30,0.06);text-align:center;">
+              <p style="margin:0 0 8px 0;font-size:12px;color:#4b5563;line-height:1.5;">
+                ArteGenIA · Diseña flyers profesionales con IA
+              </p>
+              <p style="margin:0;font-size:11px;color:#6b7280;">
+                <a href="https://artegenia.vercel.app/privacidad" style="color:#7c3aed;text-decoration:none;">Privacidad</a>
+                &nbsp;·&nbsp;
+                <a href="https://artegenia.vercel.app/terminos" style="color:#7c3aed;text-decoration:none;">Términos</a>
+              </p>
+              <p style="margin:12px 0 0 0;font-size:10px;color:#9ca3af;">
+                Si no solicitaste este link, puedes ignorar este email.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+
+      </td>
+    </tr>
+  </table>
+
+</body>
+</html>
