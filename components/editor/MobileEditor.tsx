@@ -86,6 +86,29 @@ export default function MobileEditor({ templateId, formatId }: Props) {
   // reintentamos la descarga al hacer login exitoso.
   const { user: authUser, profile: authProfile } = useAuth();
   const { t } = useLocale();
+
+  // ─── HINT INICIAL para usuarios nuevos ─────────────────────────────────
+  // V7: primera vez que el usuario abre el editor en mobile, mostramos un
+  // overlay corto con 3 hints. localStorage persistente — al cerrar, no
+  // vuelve a aparecer. Para forzar reaparecer (debug): borrar la key
+  // "artegenia-mobile-hint-seen" desde devtools.
+  const [showHint, setShowHint] = useState(false);
+  useEffect(() => {
+    try {
+      const seen = window.localStorage.getItem("artegenia-mobile-hint-seen");
+      if (!seen) setShowHint(true);
+    } catch {
+      // Modo privado / SSR: ignore
+    }
+  }, []);
+  const dismissHint = useCallback(() => {
+    setShowHint(false);
+    try {
+      window.localStorage.setItem("artegenia-mobile-hint-seen", "1");
+    } catch {
+      // ignore
+    }
+  }, []);
   const [authModalConfig, setAuthModalConfig] = useState<{ title: string; subtitle: string; onSuccess: () => void } | null>(null);
   const requireAuth = useCallback((action: () => void, opts: { title: string; subtitle: string }) => {
     if (authUser) action();
@@ -430,47 +453,131 @@ export default function MobileEditor({ templateId, formatId }: Props) {
     };
   }, [layers]);
 
-  // ─── 3c-bis. Reposicionar viewport cuando hay sheet + capa seleccionada
-  // SESION 6.3 fix: cuando se abre un sheet y hay capa seleccionada, ajustar
-  // el viewportTransform para que la capa quede visible POR ENCIMA del sheet
-  // (en el tercio superior de la pantalla, no detras del sheet inferior).
+  // ─── 3c-bis. Auto-zoom + reposicionar viewport al editar capa ──────────
+  //
+  // V7 (mejora UX mobile): cuando el usuario selecciona una capa y se abre
+  // un sheet, hacemos DOS cosas:
+  //
+  //   1. ZOOM ADAPTATIVO: si la capa es pequeña en pantalla (ej. un texto
+  //      pequeno que no se lee), hacemos zoom in para que ocupe ~50% del
+  //      area visible. Si ya es grande (foto que ocupa casi toda pantalla),
+  //      mantenemos el zoom actual. Esto evita que el usuario tenga que
+  //      pellizcar para acercarse cada vez que va a editar.
+  //
+  //   2. PAN: ajustamos viewportTransform para que la capa quede centrada
+  //      en la mitad superior visible (por encima del sheet inferior).
+  //
+  // La animacion es un tween de 280ms con easing, suficiente para que se
+  // sienta intencional sin ser molesto.
   useEffect(() => {
     const fc = fabricRef.current;
     if (!fc || !loaded || !activeSheet || !selectedLayer) return;
 
     // Altura disponible cuando hay sheet abierto: por encima del sheet
-    // Sheet ocupa 30vh, asi que tenemos 70vh de canvas area total -
-    // header (56) - bottom toolbar (72) ~ 70% del canvas area util
+    // Sheet ocupa 30vh, asi que el area visible util es canvas - sheetHeight
     const sheetHpx = window.innerHeight * 0.30;
-    const visibleH = canvasArea.h - sheetHpx; // altura visible por encima del sheet
+    const visibleH = canvasArea.h - sheetHpx;
+    const visibleW = canvasArea.w;
 
-    // Obtener bounding box del objeto en coords del canvas (sin viewport)
+    // Bounding box del objeto en coords NATIVAS (sin viewport ni zoom)
     const obj = selectedLayer.obj;
-    const objTop = obj.top ?? 0;
-    const objHeight = (obj.height ?? 0) * (obj.scaleY ?? 1);
-    const objCenter = objTop + objHeight / 2;
+    const bounds = obj.getBoundingRect();
+    const objW = bounds.width;
+    const objH = bounds.height;
+    const objCenterX = bounds.left + objW / 2;
+    const objCenterY = bounds.top + objH / 2;
 
-    // Calcular target Y en el viewport para que el objeto quede en
-    // el centro vertical de la zona visible (la mitad superior antes del sheet)
-    const zoom = fc.getZoom();
+    // ZOOM TARGET: queremos que el objeto ocupe ~50% del area visible mas
+    // pequena (alto o ancho). Calculamos el zoom necesario para llegar ahi.
+    // - Si el objeto YA se ve grande (>35% de la pantalla), no zoom-in.
+    // - Cap zoom maximo en 4 (no acercarse demasiado, pierde contexto).
+    const currentZoom = fc.getZoom();
+    const visualW = objW * currentZoom;
+    const visualH = objH * currentZoom;
+    const currentRatio = Math.max(visualW / visibleW, visualH / visibleH);
+    const TARGET_RATIO = 0.5; // queremos ocupe 50% del lado mas restrictivo
+    const TRIGGER_RATIO = 0.35; // bajo esto, hacemos zoom in
+    const MAX_ZOOM = 4;
+    const MIN_ZOOM = 0.1;
+
+    let targetZoom = currentZoom;
+    if (currentRatio < TRIGGER_RATIO) {
+      // Necesitamos llegar a TARGET_RATIO
+      const requiredZoom = Math.min(
+        (TARGET_RATIO * visibleW) / objW,
+        (TARGET_RATIO * visibleH) / objH,
+      );
+      targetZoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, requiredZoom));
+    }
+
+    // PAN: con el zoom target, calcular tx/ty para centrar el objeto en la
+    // mitad superior visible. Formula: x_screen = x_canvas * zoom + tx
+    const targetCenterX = visibleW / 2;
     const targetCenterY = visibleH / 2;
-    // viewportTransform: y_screen = y_canvas * zoom + ty
-    // Queremos que objCenter * zoom + ty = targetCenterY
-    // => ty = targetCenterY - objCenter * zoom
-    const ty = targetCenterY - objCenter * zoom;
+    const targetTx = targetCenterX - objCenterX * targetZoom;
+    const targetTy = targetCenterY - objCenterY * targetZoom;
 
-    const vpt = fc.viewportTransform;
-    if (!vpt) return;
-    fc.setViewportTransform([vpt[0], vpt[1], vpt[2], vpt[3], vpt[4], ty]);
-    fc.requestRenderAll();
-  }, [activeSheet, selectedLayer, loaded, canvasArea.h]);
+    // Tween de zoom + pan en 280ms (easeOutCubic). Cancelable si llega otro
+    // selectedLayer mientras animamos.
+    const vptStart = fc.viewportTransform;
+    if (!vptStart) return;
+    const startZoom = currentZoom;
+    const startTx = vptStart[4];
+    const startTy = vptStart[5];
+    const startTime = performance.now();
+    const DURATION = 280;
+    let rafId = 0;
+    let cancelled = false;
+
+    const ease = (t: number) => 1 - Math.pow(1 - t, 3); // easeOutCubic
+
+    const tick = (now: number) => {
+      if (cancelled) return;
+      const elapsed = now - startTime;
+      const progress = Math.min(1, elapsed / DURATION);
+      const eased = ease(progress);
+
+      const z = startZoom + (targetZoom - startZoom) * eased;
+      const tx = startTx + (targetTx - startTx) * eased;
+      const ty = startTy + (targetTy - startTy) * eased;
+
+      // setZoom internamente toca el viewportTransform, asi que aplicamos
+      // primero el zoom y luego sobreescribimos tx/ty.
+      fc.setZoom(z);
+      const v = fc.viewportTransform;
+      if (v) {
+        fc.setViewportTransform([v[0], v[1], v[2], v[3], tx, ty]);
+      }
+      fc.requestRenderAll();
+
+      if (progress < 1) {
+        rafId = requestAnimationFrame(tick);
+      }
+    };
+
+    rafId = requestAnimationFrame(tick);
+
+    return () => {
+      cancelled = true;
+      if (rafId) cancelAnimationFrame(rafId);
+    };
+  }, [activeSheet, selectedLayer, loaded, canvasArea.h, canvasArea.w]);
 
   // ─── 3d. Auto-abrir sheet contextual al seleccionar capa ────────────────
-  // Sesion 2: al seleccionar capa texto -> abre sheet "text" (propiedades).
-  // Al seleccionar imagen/shape -> abre sheet "color" (cambiar color/opacity).
+  //
+  // V7 (mejora UX mobile): ahora TODOS los tipos de capa auto-abren sheet
+  // para que el usuario VEA inmediatamente las opciones de edicion sin
+  // tener que descubrirlas en la bottom nav. Esto + el auto-zoom del
+  // useEffect anterior hace que la edicion sea "tap → ya estoy editando".
+  //
+  //   - text  → sheet "text" (Bold/Italic/Tamano/Color de texto)
+  //   - image → sheet "color" (Opacidad/efectos basicos)
+  //   - shape → sheet "color" (Color de fondo/Opacidad)
+  //
+  // Al deseleccionar, cerramos el sheet contextual (no los manuales como
+  // "photo" o "more").
   useEffect(() => {
     if (!selectedLayer) {
-      // Si se deselecciona, cerrar sheet si era contextual
       if (activeSheet === "text" || activeSheet === "color") {
         setActiveSheet(null);
       }
@@ -478,9 +585,10 @@ export default function MobileEditor({ templateId, formatId }: Props) {
     }
     if (selectedLayer.type === "text") {
       setActiveSheet("text");
+    } else {
+      // image, shape, etc.
+      setActiveSheet("color");
     }
-    // No autoabrir sheets para shape/image - menos invasivo
-    // El usuario puede tocar el boton "Color" del toolbar si quiere editar
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedLayer]);
 
@@ -1197,6 +1305,52 @@ export default function MobileEditor({ templateId, formatId }: Props) {
   return (
     <div className="fixed inset-0 bg-[#070711] flex flex-col text-white overflow-hidden">
 
+      {/* ═══ HINT INICIAL (primera vez en mobile) ═════════════════════════
+          Overlay corto con 3 pistas visuales para usuarios que abren el
+          editor por primera vez. Se cierra con tap y NO vuelve a aparecer
+          (localStorage). Emojis grandes en vez de iconos por accesibilidad
+          visual — un emoji se entiende sin lectura. */}
+      {showHint && (
+        <div
+          className="fixed inset-0 z-[100] bg-black/85 backdrop-blur-md flex flex-col items-center justify-center px-6 animate-in fade-in duration-300"
+          onClick={dismissHint}
+        >
+          <div className="max-w-sm w-full text-center">
+            <h2 className="text-2xl font-black mb-1">¡Bienvenido al editor!</h2>
+            <p className="text-sm text-gray-400 mb-6">3 cosas para empezar</p>
+            <div className="space-y-4 text-left mb-8">
+              <div className="flex items-start gap-3 p-3 rounded-2xl bg-white/5 border border-white/10">
+                <div className="text-2xl shrink-0 leading-none">👆</div>
+                <div>
+                  <p className="font-bold text-sm">Toca un elemento</p>
+                  <p className="text-xs text-gray-400 mt-0.5">Texto, foto o forma. Se acercará automáticamente para editarlo.</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3 p-3 rounded-2xl bg-white/5 border border-white/10">
+                <div className="text-2xl shrink-0 leading-none">✏️</div>
+                <div>
+                  <p className="font-bold text-sm">Doble tap para escribir</p>
+                  <p className="text-xs text-gray-400 mt-0.5">En cualquier texto. Se abre el teclado y puedes cambiar las palabras.</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3 p-3 rounded-2xl bg-white/5 border border-white/10">
+                <div className="text-2xl shrink-0 leading-none">🤏</div>
+                <div>
+                  <p className="font-bold text-sm">Pellizca para acercar</p>
+                  <p className="text-xs text-gray-400 mt-0.5">Con dos dedos, como en una foto. Suelta y arrastra para mover.</p>
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={dismissHint}
+              className="w-full py-3.5 rounded-xl bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white font-bold text-sm active:scale-[0.98] transition-transform"
+            >
+              Empezar a diseñar
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* ═══ HEADER ═══════════════════════════════════════════════════════ */}
       <header className="h-14 bg-[#0e0e14]/95 backdrop-blur-md border-b border-white/[0.06] flex items-center px-3 gap-2 shrink-0 z-30">
         <button
@@ -1849,15 +2003,17 @@ export default function MobileEditor({ templateId, formatId }: Props) {
         </>
       )}
 
-      {/* ═══ FILE INPUT INVISIBLE (sesion 5) ══════════════════════════════
-          Triggered por handleAddPhotoClick. En iPhone Safari abre selector
-          nativo con opciones "Tomar foto" + "Elegir de la galeria".
+      {/* ═══ FILE INPUT INVISIBLE ════════════════════════════════════════
+          Triggered por handleAddPhotoClick.
+          IMPORTANTE: NO usar `capture="environment"` — eso fuerza la apertura
+          directa de la camara y oculta la galeria. Sin `capture`, iOS/Android
+          muestran el selector nativo con Foto Library + Camara + Archivos,
+          que es el comportamiento esperado para "subir foto".
           ═══════════════════════════════════════════════════════════════════ */}
       <input
         ref={fileInputRef}
         type="file"
         accept="image/*"
-        capture="environment"
         onChange={handleFileSelected}
         style={{ display: "none" }}
       />
