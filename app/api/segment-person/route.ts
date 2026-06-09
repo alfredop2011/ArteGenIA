@@ -187,6 +187,16 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: "Cada punto debe tener {x,y} numericos" }, { status: 400 });
       }
     }
+    // Anti-SSRF: solo aceptar imageUrl de nuestro storage (R2/Supabase) o
+    // de Fal.ai (que es donde retornamos previews). dataURL tambien es OK
+    // porque va embebida (sin request externa).
+    if (body.imageUrl.startsWith("http")) {
+      const { validateImageUrl } = await import("@/lib/inputValidation");
+      const ssrfErr = validateImageUrl(body.imageUrl);
+      if (ssrfErr) {
+        return NextResponse.json({ error: `URL no permitida: ${ssrfErr}` }, { status: 400 });
+      }
+    }
     const useHd = body.hd === true;
     const action = useHd ? ACTION_HD : ACTION_NORMAL;
 

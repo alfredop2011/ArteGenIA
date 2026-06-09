@@ -37,6 +37,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Validar que es una imagen real (magic number) + tamaño max 10MB
+    // Anti: subir .exe disfrazado de .png para abusar de remove.bg
+    const { validateImageFile } = await import("@/lib/inputValidation");
+    const fileErr = await validateImageFile(file);
+    if (fileErr) {
+      return NextResponse.json({ error: fileErr }, { status: 400 });
+    }
+
     // 1) Llamada a remove.bg
     const arrayBuf = await file.arrayBuffer();
     const imageBuffer = Buffer.from(arrayBuf);

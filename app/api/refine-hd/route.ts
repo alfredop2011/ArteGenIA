@@ -59,6 +59,16 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "imageUrl obligatorio" }, { status: 400 });
     }
 
+    // Anti-SSRF: solo aceptar URLs de nuestros dominios. dataURL pasa
+    // porque va embebida.
+    if (body.imageUrl.startsWith("http")) {
+      const { validateImageUrl } = await import("@/lib/inputValidation");
+      const ssrfErr = validateImageUrl(body.imageUrl);
+      if (ssrfErr) {
+        return NextResponse.json({ error: `URL no permitida: ${ssrfErr}` }, { status: 400 });
+      }
+    }
+
     const publicUrl = await ensurePublicUrl(body.imageUrl);
 
     let result;
