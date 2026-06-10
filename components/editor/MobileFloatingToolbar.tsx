@@ -35,13 +35,16 @@ type Props = {
 };
 
 export default function MobileFloatingToolbar({
-  visible, x, y, onBringForward, onSendBackward, onDuplicate, onDelete,
+  visible, onBringForward, onSendBackward, onDuplicate, onDelete,
 }: Props) {
   if (!visible) return null;
+  // Posicion FIJA debajo del header del editor mobile (top:60, centrada).
+  // Despues de multiples intentos posicionar sobre el objeto, optamos por
+  // el approach Figma/Sketch: barra estable que NUNCA tapa el contenido.
   return (
     <div
-      className="fixed z-40 pointer-events-none"
-      style={{ left: x, top: y, transform: "translate(-50%, -100%)" }}
+      className="fixed z-40 pointer-events-none left-1/2"
+      style={{ top: 60, transform: "translateX(-50%)" }}
     >
       <div
         className="
