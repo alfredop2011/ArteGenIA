@@ -3377,9 +3377,20 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
           setSaveState("unsaved");
         };
         return (
+        // ─── TOOLBAR DE POSICION FIJA (estilo Figma/Sketch) ───────────────
+        //   Despues de multiples intentos de posicionar la toolbar arriba/
+        //   abajo del bbox sin tapar el objeto, optamos por el approach
+        //   estandar de Figma: barra FIJA debajo del header del editor,
+        //   horizontalmente centrada sobre el lienzo. SIEMPRE visible
+        //   cuando hay un objeto seleccionado, NUNCA tapa nada.
+        //
+        //   La toolbar es CONTEXTUAL (su contenido depende del tipo de
+        //   objeto: texto / imagen / shape / fondo), pero su POSICION es
+        //   estable. El usuario sabe siempre donde encontrarla.
+        // ──────────────────────────────────────────────────────────────────
         <div
-          className="fixed z-50 pointer-events-none"
-          style={{ left: floatingToolbar.x, top: floatingToolbar.y, transform: "translate(-50%, -100%)" }}>
+          className="fixed z-50 pointer-events-none left-1/2"
+          style={{ top: 64, transform: "translateX(-50%)" }}>
           <div className="pointer-events-auto ag-glass border border-white/[0.08] rounded-2xl shadow-2xl shadow-purple-500/20 flex items-center gap-0.5 p-1 animate-in fade-in slide-in-from-bottom-1 duration-150">
 
             {/* ═══ SECCION TIPO-ESPECIFICA ═══ */}
