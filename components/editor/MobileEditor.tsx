@@ -1253,20 +1253,20 @@ export default function MobileEditor({ templateId, formatId }: Props) {
     const recalc = () => {
       const obj = selectedLayer.obj;
       if (!obj) return;
-      const bounds = obj.getBoundingRect(); // post viewport transform de Fabric
-      const wrapperRect = wrapperRef.current!.getBoundingClientRect();
+      // FIX V3: usar el <canvas> DOM element directamente para evitar offsets
+      // entre wrapper/canvas y escalado manual de coords.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const canvasEl = (fc as any).lowerCanvasEl as HTMLCanvasElement | undefined ?? fc.getElement();
+      const canvasRect = canvasEl?.getBoundingClientRect();
+      if (!canvasRect) return;
+      const bounds = obj.getBoundingRect();
       const TOOLBAR_HEIGHT = 48;
       const PAD = 8;
-      const SAFE_TOP = 64; // header height aprox
-      // En mobile el wrapper CSS = canvasArea dimension, y Fabric usa esas
-      // mismas coords internamente (canvas.setDimensions(canvasArea)), por
-      // lo que bounds esta en pixels CSS directo. No hace falta escalar.
-      const bboxTopAbs = wrapperRect.top + bounds.top;
+      const SAFE_TOP = 64;
+      const bboxTopAbs = canvasRect.top + bounds.top;
       const bboxBottomAbs = bboxTopAbs + bounds.height;
-      const xCenter = wrapperRect.left + bounds.left + bounds.width / 2;
-      // Clamp X al viewport con margen de 70px (toolbar ancho ~140px → half 70)
+      const xCenter = canvasRect.left + bounds.left + bounds.width / 2;
       const clampedX = Math.max(70, Math.min(xCenter, window.innerWidth - 70));
-      // Decidir Y: arriba del bbox preferido, si no cabe → abajo
       let y: number;
       if (bboxTopAbs - PAD - TOOLBAR_HEIGHT >= SAFE_TOP) {
         y = bboxTopAbs - PAD;

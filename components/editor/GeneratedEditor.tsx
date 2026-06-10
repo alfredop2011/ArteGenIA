@@ -1401,39 +1401,37 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
       setFloatingToolbar(prev => ({ ...prev, visible: false, alignOpen: false, moreOpen: false }));
       return;
     }
-    const bounds = obj.getBoundingRect();
-    const wrapperRect = wrapper.getBoundingClientRect();
-    // ─── BUG FIX (mezcla de unidades + viewport overflow):
-    //   bounds.{left,top,width,height} viene en COORDS LOGICAS del canvas
-    //   (e.g. 1080x1350) pero wrapperRect esta en pixels del viewport.
-    //   Si el zoom CSS es 50%, el wrapper mide 540x675 pero bounds.top
-    //   puede llegar a 850 (en coords logicas) — sumar directo da una
-    //   coordenada absurdamente alta fuera del viewport.
+    // ─── FIX V3: usar el <canvas> DOM element directamente. ──────────────
+    //   getBoundingRect() devuelve coords del bbox en CSS px del DOM canvas
+    //   (post viewportTransform de Fabric). Si sumamos canvasEl.getBoundingClientRect()
+    //   obtenemos coords absolutas en el viewport, sin necesidad de scaling
+    //   manual ni asunciones sobre zoom (Fabric ya lo aplica internamente).
     //
-    //   Fix: multiplicar bounds por la relacion wrapperRect/canvasSize.
-    //
-    //   Despues del fix de unidades aplicamos el flow de 3 fallbacks:
-    //     1) cabe arriba del bbox → preferido
-    //     2) cabe abajo del bbox  → segunda opcion
-    //     3) ninguna cabe         → pin al bottom del viewport
+    //   Antes usabamos wrapperRect.top + bounds.top — el wrapper puede tener
+    //   padding distinto del canvas, y si el canvas no llena el wrapper, la
+    //   resta de offsets era inconsistente.
     // ─────────────────────────────────────────────────────────────────────────
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const canvasEl = (canvas as any).lowerCanvasEl as HTMLCanvasElement | undefined ?? canvas.getElement();
+    const canvasRect = canvasEl?.getBoundingClientRect();
+    if (!canvasRect) {
+      setFloatingToolbar(prev => ({ ...prev, visible: false }));
+      return;
+    }
+    const bounds = obj.getBoundingRect(); // post-zoom Fabric, en CSS px
+
     const TOOLBAR_HEIGHT = 56;
     const SAFE_TOP = 70;
     const SAFE_BOTTOM = window.innerHeight - 80;
     const PAD = 12;
 
-    // Factor de escala canvas logico → pixels CSS del wrapper
-    const canvasLogicalW = canvas.getWidth();
-    const canvasLogicalH = canvas.getHeight();
-    const scaleX = canvasLogicalW > 0 ? wrapperRect.width / canvasLogicalW : 1;
-    const scaleY = canvasLogicalH > 0 ? wrapperRect.height / canvasLogicalH : 1;
-
-    // Coords absolutas en viewport (post conversion logico → CSS)
-    const bboxTopAbs = wrapperRect.top + bounds.top * scaleY;
-    const bboxBottomAbs = bboxTopAbs + bounds.height * scaleY;
+    // Coords absolutas del bbox en viewport (sin scaling manual — los pixels
+    // ya estan en CSS px porque getBoundingRect respeta el zoom interno de Fabric)
+    const bboxTopAbs = canvasRect.top + bounds.top;
+    const bboxBottomAbs = bboxTopAbs + bounds.height;
 
     // X centrado en el bbox, clampeado a viewport
-    const x = wrapperRect.left + (bounds.left + bounds.width / 2) * scaleX;
+    const x = canvasRect.left + bounds.left + bounds.width / 2;
     const TOOLBAR_HALF = 230;
     const clampedX = Math.max(TOOLBAR_HALF + 8, Math.min(x, window.innerWidth - TOOLBAR_HALF - 8));
 
