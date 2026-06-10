@@ -1039,16 +1039,27 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
 
   // ─── TEXT PROPS ───────────────────────────────────────────────────────────
 
+  // Tipos Fabric que consideramos "texto editable". Antes era solo
+  // ["i-text","text"] — pero las plantillas crean instancias de Textbox
+  // (ver fabricApplyTemplateLayers.ts:76), asi que TODO cambio en el panel
+  // se ignoraba silenciosamente: fontSize, color, peso, fuente, etc.
+  // FIX P0-mobile/edit: incluir "textbox" + variantes mayusculas que algunos
+  // codecs Fabric reportan.
+  const TEXT_TYPES = ["i-text", "text", "textbox", "IText", "Text", "Textbox"];
+
   const applyTextProp = useCallback(<K extends keyof TextProps>(key: K, value: TextProps[K]) => {
     const canvas = fabricRef.current;
     const obj = canvas?.getActiveObject() as IText | undefined;
-    if (!obj || (obj.type !== "i-text" && obj.type !== "text")) return;
+    if (!obj || !TEXT_TYPES.includes(obj.type ?? "")) return;
     setTextProps(prev => ({ ...prev, [key]: value }));
     if (key === "text") { obj.set("text", String(value)); }
     else if (key === "shadow") { obj.set("shadow", value ? { color: textProps.shadowColor, blur: textProps.shadowBlur, offsetX: 2, offsetY: 2 } as never : null as never); }
     else if (key === "shadowColor" || key === "shadowBlur") { if (textProps.shadow) obj.set("shadow", { color: key === "shadowColor" ? String(value) : textProps.shadowColor, blur: key === "shadowBlur" ? Number(value) : textProps.shadowBlur, offsetX: 2, offsetY: 2 } as never); }
     else { obj.set(key as keyof IText, value as never); }
     canvas?.renderAll(); setSaveState("unsaved");
+    // Tras cambio de tamano/peso/fuente el bbox puede cambiar — sincroniza
+    // los coords para que los handles se redibujen en la posicion correcta.
+    obj.setCoords?.();
   }, [textProps]);
 
   // ─── IMAGE PROPS ──────────────────────────────────────────────────────────
@@ -1392,16 +1403,44 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
     }
     const bounds = obj.getBoundingRect();
     const wrapperRect = wrapper.getBoundingClientRect();
-    // bounds is in canvas-internal coords (already zoomed by Fabric), so add wrapperRect offset
+    // ─── BUG FIX: la toolbar se posicionaba con transform: translate(-50%,-100%)
+    // arriba del bbox. Si el objeto estaba en la mitad inferior del canvas
+    // y/o el canvas estaba scrolled, la toolbar quedaba ABAJO del viewport visible.
+    // Solucion: 3 zonas de fallback (arriba bbox → abajo bbox → pinned a viewport).
+    // ─────────────────────────────────────────────────────────────────────────
+    const TOOLBAR_HEIGHT = 56;       // altura aproximada del toolbar contextual
+    const SAFE_TOP = 70;             // espacio del header
+    const SAFE_BOTTOM = window.innerHeight - 80; // espacio del bottom bar / zoom
+    const PAD = 12;                  // separacion del bbox
+
+    // Coords absolutas en viewport
+    const bboxTopAbs = wrapperRect.top + bounds.top;
+    const bboxBottomAbs = wrapperRect.top + bounds.top + bounds.height;
+
+    // X centrado en el bbox, clampeado a viewport
     const x = wrapperRect.left + bounds.left + bounds.width / 2;
-    let y = wrapperRect.top + bounds.top - 12; // 12px above bounding box
-    // If too close to top of viewport, place below the object instead
-    if (y < 80) y = wrapperRect.top + bounds.top + bounds.height + 12;
-    // Clamp X so the toolbar never overflows the canvas area
     const TOOLBAR_HALF = 230;
-    const minX = wrapperRect.left + TOOLBAR_HALF;
-    const maxX = wrapperRect.right - TOOLBAR_HALF;
-    const clampedX = Math.max(minX, Math.min(x, maxX));
+    const clampedX = Math.max(TOOLBAR_HALF + 8, Math.min(x, window.innerWidth - TOOLBAR_HALF - 8));
+
+    // Y con 3 estrategias en cascada:
+    // 1) Arriba del bbox (la toolbar tiene transform -100% asi que su top = y - TOOLBAR_HEIGHT)
+    //    Requiere que (bboxTopAbs - PAD - TOOLBAR_HEIGHT) >= SAFE_TOP
+    // 2) Abajo del bbox (su top = y, su bottom = y + TOOLBAR_HEIGHT)
+    //    Requiere que (bboxBottomAbs + PAD + TOOLBAR_HEIGHT) <= SAFE_BOTTOM
+    // 3) Fallback: pinned cerca del bottom visible
+    let y: number;
+    if (bboxTopAbs - PAD - TOOLBAR_HEIGHT >= SAFE_TOP) {
+      // Cabe arriba — preferible (no tapa el objeto)
+      y = bboxTopAbs - PAD;
+    } else if (bboxBottomAbs + PAD + TOOLBAR_HEIGHT <= SAFE_BOTTOM) {
+      // Cabe abajo
+      y = bboxBottomAbs + PAD + TOOLBAR_HEIGHT;
+    } else {
+      // Ni arriba ni abajo — pin al bottom visible. Usuario sigue viendo
+      // la toolbar incluso si tapa parcialmente el objeto.
+      y = SAFE_BOTTOM;
+    }
+
     setFloatingToolbar({ visible: true, x: clampedX, y, alignOpen: false, moreOpen: false });
   }, []);
 
