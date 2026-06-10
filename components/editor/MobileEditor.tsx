@@ -31,6 +31,7 @@ import { applyTemplateLayers } from "@/lib/fabricApplyTemplateLayers";
 import { applyWatermark, shouldWatermark } from "@/lib/applyWatermark";
 import { useLocale } from "@/hooks/useLocale";
 import { FEATURES } from "@/lib/features";
+import MobileFloatingToolbar from "@/components/editor/MobileFloatingToolbar";
 
 // ════════════════════════════════════════════════════════════════════════════
 //  MobileEditor — editor mobile-first separado del desktop
@@ -124,6 +125,14 @@ export default function MobileEditor({ templateId, formatId }: Props) {
   // tras cambiar prop del Fabric obj (Fabric muta in-place, React no detecta)
   const [, forceRerender] = useState(0);
   const bumpRender = useCallback(() => forceRerender(n => n + 1), []);
+
+  // ─── MOBILE FLOATING TOOLBAR (mini barra contextual) ──────────────────
+  // Pequena barra que aparece sobre el objeto seleccionado con acciones
+  // rapidas (z-order, duplicar, eliminar). Complementa al bottom sheet
+  // que da contenido detallado — la toolbar es para acciones "1-tap".
+  const [floatingToolbar, setFloatingToolbar] = useState<{
+    visible: boolean; x: number; y: number;
+  }>({ visible: false, x: 0, y: 0 });
 
   // Paleta de colores rapidos para el sheet Color (mobile-friendly tap)
   const COLOR_PALETTE = [
@@ -1230,6 +1239,48 @@ export default function MobileEditor({ templateId, formatId }: Props) {
     setLayers(ordered);
   }, [selectedLayer, layers]);
 
+  // ─── Posicionar mini floating toolbar sobre el objeto seleccionado ─────
+  // Se recalcula cuando: selectedLayer cambia, el usuario hace pinch zoom
+  // (Fabric "after:render" se dispara), o el viewport interno se mueve.
+  // Posicion: centrada X arriba del bbox + offset PAD; si no cabe arriba,
+  // se va abajo del bbox.
+  useEffect(() => {
+    const fc = fabricRef.current;
+    if (!fc || !selectedLayer || !wrapperRef.current) {
+      setFloatingToolbar(p => p.visible ? { visible: false, x: 0, y: 0 } : p);
+      return;
+    }
+    const recalc = () => {
+      const obj = selectedLayer.obj;
+      if (!obj) return;
+      const bounds = obj.getBoundingRect(); // post viewport transform de Fabric
+      const wrapperRect = wrapperRef.current!.getBoundingClientRect();
+      const TOOLBAR_HEIGHT = 48;
+      const PAD = 8;
+      const SAFE_TOP = 64; // header height aprox
+      // En mobile el wrapper CSS = canvasArea dimension, y Fabric usa esas
+      // mismas coords internamente (canvas.setDimensions(canvasArea)), por
+      // lo que bounds esta en pixels CSS directo. No hace falta escalar.
+      const bboxTopAbs = wrapperRect.top + bounds.top;
+      const bboxBottomAbs = bboxTopAbs + bounds.height;
+      const xCenter = wrapperRect.left + bounds.left + bounds.width / 2;
+      // Clamp X al viewport con margen de 70px (toolbar ancho ~140px → half 70)
+      const clampedX = Math.max(70, Math.min(xCenter, window.innerWidth - 70));
+      // Decidir Y: arriba del bbox preferido, si no cabe → abajo
+      let y: number;
+      if (bboxTopAbs - PAD - TOOLBAR_HEIGHT >= SAFE_TOP) {
+        y = bboxTopAbs - PAD;
+      } else {
+        y = bboxBottomAbs + PAD + TOOLBAR_HEIGHT;
+      }
+      setFloatingToolbar({ visible: true, x: clampedX, y });
+    };
+    recalc();
+    // Recalc al renderizar (cuando se mueve/escala/rota o cambia viewport)
+    fc.on("after:render", recalc);
+    return () => { fc.off("after:render", recalc); };
+  }, [selectedLayer]);
+
   // ─── 6. Render ─────────────────────────────────────────────────────────
   return (
     <div className="fixed inset-0 bg-[#070711] flex flex-col text-white overflow-hidden">
@@ -1345,6 +1396,20 @@ export default function MobileEditor({ templateId, formatId }: Props) {
           </button>
         )}
       </div>
+
+      {/* ═══ FLOATING TOOLBAR contextual (mobile) ═════════════════════════
+          Acciones 1-tap: traer adelante / enviar atras / duplicar / eliminar.
+          Aparece sobre el objeto seleccionado. Complementa al bottom sheet
+          (que tiene contenido detallado tipo color picker, font picker, etc.) */}
+      <MobileFloatingToolbar
+        visible={floatingToolbar.visible && !!selectedLayer}
+        x={floatingToolbar.x}
+        y={floatingToolbar.y}
+        onBringForward={handleBringForward}
+        onSendBackward={handleSendBackward}
+        onDuplicate={() => { void handleDuplicateSelected(); }}
+        onDelete={handleDeleteSelected}
+      />
 
       {/* ═══ BOTTOM TOOLBAR ════════════════════════════════════════════════
           P2.1/P2.4 alineado: tab "Capas" hidden bajo FEATURES.layersPanel.
