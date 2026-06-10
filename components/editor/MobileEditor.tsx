@@ -435,13 +435,27 @@ export default function MobileEditor({ templateId, formatId }: Props) {
     };
     const onDeselect = () => setSelectedLayer(null);
 
+    // Ocultar mini floating toolbar al entrar en modo edicion de texto
+    // (doble-tap). Asi no tapa lo que el usuario esta escribiendo.
+    const onEditEntered = () => setFloatingToolbar(p => p.visible ? { visible: false, x: 0, y: 0 } : p);
+    const onEditExited = () => {
+      // Forzar recalc al salir de edicion — el useEffect que actualiza la
+      // toolbar depende de selectedLayer pero no de isEditing, asi que
+      // simulamos cambio de viewport para que se dispare un after:render.
+      fc.requestRenderAll();
+    };
+
     fc.on("selection:created", onSelect);
     fc.on("selection:updated", onSelect);
     fc.on("selection:cleared", onDeselect);
+    fc.on("text:editing:entered", onEditEntered);
+    fc.on("text:editing:exited", onEditExited);
     return () => {
       fc.off("selection:created", onSelect);
       fc.off("selection:updated", onSelect);
       fc.off("selection:cleared", onDeselect);
+      fc.off("text:editing:entered", onEditEntered);
+      fc.off("text:editing:exited", onEditExited);
     };
   }, [layers]);
 

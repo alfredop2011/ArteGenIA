@@ -726,6 +726,15 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
         canvas.on("object:moving",   () => updateFloatingToolbar());
         canvas.on("object:scaling",  () => updateFloatingToolbar());
         canvas.on("object:rotating", () => updateFloatingToolbar());
+        // Ocultar toolbar al entrar en modo edicion de texto (doble-click).
+        // Si no lo hacemos, la toolbar tapa el texto y el usuario no ve lo
+        // que escribe. Al salir del modo, recalcular y mostrar de nuevo.
+        canvas.on("text:editing:entered", () => {
+          setFloatingToolbar(p => ({ ...p, visible: false, alignOpen: false, moreOpen: false }));
+        });
+        canvas.on("text:editing:exited", () => {
+          updateFloatingToolbar();
+        });
 
         // Estado inicial limpio para el historial
         captureInitial();
@@ -902,6 +911,13 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
       canvas.on("object:moving",   () => updateFloatingToolbar());
       canvas.on("object:scaling",  () => updateFloatingToolbar());
       canvas.on("object:rotating", () => updateFloatingToolbar());
+      // Ocultar toolbar al entrar en modo edicion de texto (doble-click).
+      canvas.on("text:editing:entered", () => {
+        setFloatingToolbar(p => ({ ...p, visible: false, alignOpen: false, moreOpen: false }));
+      });
+      canvas.on("text:editing:exited", () => {
+        updateFloatingToolbar();
+      });
 
       // Estado inicial limpio para el historial
       captureInitial();
