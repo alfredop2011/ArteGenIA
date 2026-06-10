@@ -1273,26 +1273,38 @@ export default function MobileEditor({ templateId, formatId }: Props) {
       const canvasEl = (fc as any).lowerCanvasEl as HTMLCanvasElement | undefined ?? fc.getElement();
       const canvasRect = canvasEl?.getBoundingClientRect();
       if (!canvasRect) return;
+      // No mostrar la toolbar si el texto esta en modo edicion
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if ((obj as any).isEditing === true) {
+        setFloatingToolbar(p => p.visible ? { visible: false, x: 0, y: 0 } : p);
+        return;
+      }
       const bounds = obj.getBoundingRect();
-      const TOOLBAR_HEIGHT = 44;
+      const TOOLBAR_HEIGHT = 48;
       const TOOLBAR_WIDTH_APPROX = 220;
-      const PAD = 6;
+      const PAD = 10;
 
       const objTop = canvasRect.top + bounds.top;
       const objBottom = objTop + bounds.height;
       const objCenterX = canvasRect.left + bounds.left + bounds.width / 2;
 
+      // REGLA: NUNCA tapar el bbox. Preferencia arriba > abajo, dentro > fuera.
       const tryAboveY = objTop - PAD;
       const tryBelowY = objBottom + PAD + TOOLBAR_HEIGHT;
+      const aboveTopInVp = tryAboveY - TOOLBAR_HEIGHT;
+      const belowBottomInVp = tryBelowY;
       let y: number;
-      if (tryAboveY - TOOLBAR_HEIGHT >= canvasRect.top) {
+      if (aboveTopInVp >= canvasRect.top) {
         y = tryAboveY;
-      } else if (tryBelowY <= canvasRect.bottom) {
+      } else if (belowBottomInVp <= canvasRect.bottom) {
+        y = tryBelowY;
+      } else if (aboveTopInVp >= 8) {
+        y = tryAboveY;
+      } else if (belowBottomInVp <= window.innerHeight - 8) {
         y = tryBelowY;
       } else {
-        y = canvasRect.top + TOOLBAR_HEIGHT;
+        y = tryBelowY;
       }
-      y = Math.max(canvasRect.top + TOOLBAR_HEIGHT, Math.min(y, canvasRect.bottom));
 
       const halfW = TOOLBAR_WIDTH_APPROX / 2;
       const xMin = canvasRect.left + halfW + PAD;

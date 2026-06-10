@@ -1467,32 +1467,45 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
     }
     const bounds = obj.getBoundingRect();
 
-    const TOOLBAR_HEIGHT = 48;        // altura visual aproximada
-    const TOOLBAR_WIDTH_APPROX = 460; // ancho aproximado del toolbar completo
-    const PAD = 16;                   // separacion del bbox (8 era muy poco —
-                                      //   Fabric dibuja handles ~4px fuera
-                                      //   del bbox y la toolbar quedaba pegada)
+    const TOOLBAR_HEIGHT = 56;        // altura real medida (55px + margen)
+    const TOOLBAR_WIDTH_APPROX = 460; // ancho aproximado
+    const PAD = 12;                   // separacion del bbox
 
     // Bbox del objeto en coords del viewport
     const objTop = canvasRect.top + bounds.top;
     const objBottom = objTop + bounds.height;
     const objCenterX = canvasRect.left + bounds.left + bounds.width / 2;
 
-    // Y dentro del canvas, con preferencia arriba > abajo > clamp
+    // ─── REGLA CRITICA: NUNCA TAPAR EL BBOX ──────────────────────────────
+    // El usuario reporto que la toolbar quedaba encima del objeto impidiendo
+    // editar/mover. Cambio total: la toolbar SIEMPRE va arriba o abajo del
+    // bbox, NUNCA solapada. Si para eso hay que salir del canvas, mejor
+    // afuera que encima — el usuario ve la toolbar pero al objeto tambien.
+    //
+    // Prioridades:
+    //   1) Arriba del bbox dentro del canvas (preferido)
+    //   2) Abajo del bbox dentro del canvas
+    //   3) Arriba del bbox aunque fuera del canvas (en el viewport)
+    //   4) Abajo del bbox aunque fuera del canvas
+    //   5) Forzar abajo (caso patologico — objeto ocupa todo el viewport)
+    // ─────────────────────────────────────────────────────────────────────
     const tryAboveY = objTop - PAD;
     const tryBelowY = objBottom + PAD + TOOLBAR_HEIGHT;
+    const aboveTopInViewport = tryAboveY - TOOLBAR_HEIGHT;
+    const belowBottomInViewport = tryBelowY;
+
     let y: number;
-    if (tryAboveY - TOOLBAR_HEIGHT >= canvasRect.top) {
-      y = tryAboveY;
-    } else if (tryBelowY <= canvasRect.bottom) {
-      y = tryBelowY;
+    if (aboveTopInViewport >= canvasRect.top) {
+      y = tryAboveY;  // arriba bbox dentro canvas
+    } else if (belowBottomInViewport <= canvasRect.bottom) {
+      y = tryBelowY;  // abajo bbox dentro canvas
+    } else if (aboveTopInViewport >= 8) {
+      y = tryAboveY;  // arriba bbox fuera canvas pero en viewport
+    } else if (belowBottomInViewport <= window.innerHeight - 8) {
+      y = tryBelowY;  // abajo bbox fuera canvas pero en viewport
     } else {
-      // Objeto ocupa casi todo el canvas en Y — clampear al borde superior
-      // del canvas para que la toolbar este en el primer renglon visible
-      y = canvasRect.top + TOOLBAR_HEIGHT;
+      y = tryBelowY;  // forzar abajo (clipado abajo del viewport, raro)
     }
-    // Salvaguarda final: nunca fuera del canvas (esquinas)
-    y = Math.max(canvasRect.top + TOOLBAR_HEIGHT, Math.min(y, canvasRect.bottom));
 
     // X centrado bajo el bbox, clampeado al canvas
     const halfW = TOOLBAR_WIDTH_APPROX / 2;
