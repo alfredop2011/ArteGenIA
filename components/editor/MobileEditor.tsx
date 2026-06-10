@@ -228,8 +228,8 @@ export default function MobileEditor({ templateId, formatId }: Props) {
           transparentCorners: false,
           borderColor: "#a855f7",
           borderScaleFactor: 1,
-          cornerSize: 10,                   // tamano visual handle
-          touchCornerSize: 36,              // hit area touch (Apple HIG)
+          cornerSize: 20,                   // tamano visual handle
+          touchCornerSize: 44,              // hit area touch (Apple HIG)
           padding: 4,
           hasRotatingPoint: true,           // habilita rotate handle
         });
@@ -262,8 +262,8 @@ export default function MobileEditor({ templateId, formatId }: Props) {
         obj.set({
           // Valores FIJOS, no divididos por zoom (Fabric ya escala internamente).
           // Esto evita que el bbox crezca enormemente en zoom bajo.
-          cornerSize: 10,
-          touchCornerSize: 36, // hit area touch (no afecta visual)
+          cornerSize: 20,
+          touchCornerSize: 44, // hit area touch (no afecta visual)
           padding: 4,
           borderScaleFactor: 1,
         });
@@ -642,8 +642,8 @@ export default function MobileEditor({ templateId, formatId }: Props) {
       transparentCorners: false,
       borderColor: "#a855f7",
       borderScaleFactor: 1,
-      cornerSize: 10,
-      touchCornerSize: 36,
+      cornerSize: 20,
+      touchCornerSize: 44,
       padding: 4,
       hasRotatingPoint: true,
     });

@@ -17,7 +17,10 @@ test.describe("Mobile editor audit", () => {
 
   test("01 estado inicial canvas", async ({ page, context }) => {
     await context.addInitScript(() => {
-      try { window.localStorage.setItem("artegenia-desktop-editor-tour-seen", "true"); } catch {}
+      try {
+        window.localStorage.setItem("artegenia-desktop-editor-tour-seen", "true");
+        window.localStorage.setItem("artegenia-mobile-hint-seen", "1");
+      } catch {}
     });
     await page.goto(`/editor/${TEMPLATE_ID}?format=portrait`, { waitUntil: "networkidle", timeout: 30_000 });
     await page.waitForSelector("canvas", { timeout: 10_000 });
@@ -27,7 +30,10 @@ test.describe("Mobile editor audit", () => {
 
   test("02 tap en texto - toolbar contextual", async ({ page, context }) => {
     await context.addInitScript(() => {
-      try { window.localStorage.setItem("artegenia-desktop-editor-tour-seen", "true"); } catch {}
+      try {
+        window.localStorage.setItem("artegenia-desktop-editor-tour-seen", "true");
+        window.localStorage.setItem("artegenia-mobile-hint-seen", "1");
+      } catch {}
     });
     await page.goto(`/editor/${TEMPLATE_ID}?format=portrait`, { waitUntil: "networkidle", timeout: 30_000 });
     await page.waitForSelector("canvas", { timeout: 10_000 });
@@ -44,7 +50,10 @@ test.describe("Mobile editor audit", () => {
 
   test("03 viewport completo con dock", async ({ page, context }) => {
     await context.addInitScript(() => {
-      try { window.localStorage.setItem("artegenia-desktop-editor-tour-seen", "true"); } catch {}
+      try {
+        window.localStorage.setItem("artegenia-desktop-editor-tour-seen", "true");
+        window.localStorage.setItem("artegenia-mobile-hint-seen", "1");
+      } catch {}
     });
     await page.goto(`/editor/${TEMPLATE_ID}?format=portrait`, { waitUntil: "networkidle", timeout: 30_000 });
     await page.waitForSelector("canvas", { timeout: 10_000 });
@@ -55,7 +64,10 @@ test.describe("Mobile editor audit", () => {
 
   test("04 abrir dock - texto", async ({ page, context }) => {
     await context.addInitScript(() => {
-      try { window.localStorage.setItem("artegenia-desktop-editor-tour-seen", "true"); } catch {}
+      try {
+        window.localStorage.setItem("artegenia-desktop-editor-tour-seen", "true");
+        window.localStorage.setItem("artegenia-mobile-hint-seen", "1");
+      } catch {}
     });
     await page.goto(`/editor/${TEMPLATE_ID}?format=portrait`, { waitUntil: "networkidle", timeout: 30_000 });
     await page.waitForSelector("canvas", { timeout: 10_000 });
