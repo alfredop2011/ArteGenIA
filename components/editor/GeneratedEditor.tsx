@@ -485,6 +485,11 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
 
   // ─── RECALC TOOLBAR ON ZOOM / RESIZE / SCROLL ─────────────────────────────
   const updateToolbarRef = useRef<() => void>(() => {});
+  // Guard: mientras el usuario edita un texto, NO mostramos la toolbar
+  // (taparia el contenido que esta escribiendo). Se conmuta via fabric
+  // events text:editing:entered/exited. Ref (no state) para que cambios
+  // no causen re-render y porque updateFloatingToolbar lo lee sin deps.
+  const isEditingTextRef = useRef(false);
   useEffect(() => {
     const handler = () => updateToolbarRef.current();
     window.addEventListener("resize", handler);
@@ -727,12 +732,14 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
         canvas.on("object:scaling",  () => updateFloatingToolbar());
         canvas.on("object:rotating", () => updateFloatingToolbar());
         // Ocultar toolbar al entrar en modo edicion de texto (doble-click).
-        // Si no lo hacemos, la toolbar tapa el texto y el usuario no ve lo
-        // que escribe. Al salir del modo, recalcular y mostrar de nuevo.
+        // Marcamos isEditingTextRef PRIMERO para que cualquier otro evento
+        // (selection:updated tras el dblclick, etc.) tambien bail-out.
         canvas.on("text:editing:entered", () => {
+          isEditingTextRef.current = true;
           setFloatingToolbar(p => ({ ...p, visible: false, alignOpen: false, moreOpen: false }));
         });
         canvas.on("text:editing:exited", () => {
+          isEditingTextRef.current = false;
           updateFloatingToolbar();
         });
 
@@ -912,10 +919,14 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
       canvas.on("object:scaling",  () => updateFloatingToolbar());
       canvas.on("object:rotating", () => updateFloatingToolbar());
       // Ocultar toolbar al entrar en modo edicion de texto (doble-click).
+      // Marca el ref guard primero para que cualquier evento posterior
+      // (selection:updated, etc.) tambien respete el bail-out.
       canvas.on("text:editing:entered", () => {
+        isEditingTextRef.current = true;
         setFloatingToolbar(p => ({ ...p, visible: false, alignOpen: false, moreOpen: false }));
       });
       canvas.on("text:editing:exited", () => {
+        isEditingTextRef.current = false;
         updateFloatingToolbar();
       });
 
@@ -1417,6 +1428,12 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
       setFloatingToolbar(prev => ({ ...prev, visible: false, alignOpen: false, moreOpen: false }));
       return;
     }
+    // Guard: si el usuario esta editando un texto, NO mostramos la toolbar
+    // aunque algun otro evento (selection:updated, object:modified) la pida.
+    if (isEditingTextRef.current) {
+      setFloatingToolbar(prev => prev.visible ? { ...prev, visible: false, alignOpen: false, moreOpen: false } : prev);
+      return;
+    }
     // ─── REGLA: TOOLBAR SIEMPRE DENTRO DEL CANVAS (lienzo) ────────────────
     //   Para evitar que la toolbar se vaya al area negra del workspace o se
     //   esconda detras de la zoom bar / panel lateral, la clampeamos siempre
@@ -1448,7 +1465,9 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
 
     const TOOLBAR_HEIGHT = 48;        // altura visual aproximada
     const TOOLBAR_WIDTH_APPROX = 460; // ancho aproximado del toolbar completo
-    const PAD = 8;                    // separacion del bbox
+    const PAD = 16;                   // separacion del bbox (8 era muy poco —
+                                      //   Fabric dibuja handles ~4px fuera
+                                      //   del bbox y la toolbar quedaba pegada)
 
     // Bbox del objeto en coords del viewport
     const objTop = canvasRect.top + bounds.top;
