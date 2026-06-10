@@ -30,6 +30,7 @@ import AuthModal from "@/components/auth/AuthModal";
 import { applyTemplateLayers } from "@/lib/fabricApplyTemplateLayers";
 import { applyWatermark, shouldWatermark } from "@/lib/applyWatermark";
 import { useLocale } from "@/hooks/useLocale";
+import { FEATURES } from "@/lib/features";
 
 // ════════════════════════════════════════════════════════════════════════════
 //  MobileEditor — editor mobile-first separado del desktop
@@ -340,22 +341,18 @@ export default function MobileEditor({ templateId, formatId }: Props) {
         initialMidX = ((t1.clientX + t2.clientX) / 2) - rect.left;
         initialMidY = ((t1.clientY + t2.clientY) / 2) - rect.top;
       } else if (e.touches.length === 1) {
-        // Verificar si toco objeto - si no, modo PAN
-        const t = e.touches[0];
-        const rect = el.getBoundingClientRect();
-        const target = fc.findTarget({ clientX: t.clientX, clientY: t.clientY } as unknown as MouseEvent);
-        if (!target) {
-          // Zona vacia -> pan
-          mode = "pan";
-          lastPanX = t.clientX - rect.left;
-          lastPanY = t.clientY - rect.top;
-        } else {
-          // Hay objeto -> Fabric gestiona drag, no interferir
-          mode = "none";
-        }
+        // FIX (P0-mobile): 1 dedo NUNCA hace pan del lienzo.
+        // El usuario reportaba "el lienzo se mueve" — era porque tocar zona
+        // vacia activaba modo pan. Patron Canva/Figma mobile: 1 dedo solo
+        // selecciona/mueve objetos, 2 dedos (pinch) zoom+pan. Si toca zona
+        // vacia, Fabric simplemente deselecciona — no movemos el lienzo.
+        mode = "none";
       } else {
         mode = "none";
       }
+      // Variables de pan (lastPanX/Y) ya no se usan con 1 dedo.
+      // Solo permanecen para no romper la closure superior.
+      void lastPanX; void lastPanY;
     };
 
     const onTouchMove = (e: TouchEvent) => {
@@ -375,24 +372,10 @@ export default function MobileEditor({ templateId, formatId }: Props) {
         fc.setViewportTransform([newZoom, 0, 0, newZoom, newVptX, newVptY]);
         setZoomDisplay(newZoom);
         fc.requestRenderAll();
-      } else if (mode === "pan" && e.touches.length === 1) {
-        e.preventDefault();
-        e.stopPropagation();
-        const t = e.touches[0];
-        const rect = el.getBoundingClientRect();
-        const x = t.clientX - rect.left;
-        const y = t.clientY - rect.top;
-        const dx = x - lastPanX;
-        const dy = y - lastPanY;
-        const vpt = fc.viewportTransform;
-        if (!vpt) return;
-        vpt[4] += dx;
-        vpt[5] += dy;
-        fc.setViewportTransform(vpt);
-        fc.requestRenderAll();
-        lastPanX = x;
-        lastPanY = y;
       }
+      // Modo "pan" eliminado en el fix P0-mobile — 1 dedo nunca mueve lienzo.
+      // Si necesitas re-pan en el futuro: re-introducir bajo gesto especifico
+      // (e.g. long-press en vacio = pan-mode toggle).
     };
 
     const onTouchEnd = (e: TouchEvent) => {
@@ -1363,15 +1346,18 @@ export default function MobileEditor({ templateId, formatId }: Props) {
         )}
       </div>
 
-      {/* ═══ BOTTOM TOOLBAR ════════════════════════════════════════════════ */}
+      {/* ═══ BOTTOM TOOLBAR ════════════════════════════════════════════════
+          P2.1/P2.4 alineado: tab "Capas" hidden bajo FEATURES.layersPanel.
+          Las acciones de capas (subir/bajar/lock/borrar) siguen accesibles
+          desde el sheet "Mas" cuando hay objeto seleccionado. ═══════════════ */}
       <nav className="h-[72px] bg-[#0e0e14]/95 backdrop-blur-md border-t border-white/[0.08] flex items-center justify-around px-2 shrink-0 z-20 safe-area-bottom">
-        {([
-          { id: "layers" as ToolId, label: "Capas", icon: Layers },
+        {(([
+          ...(FEATURES.layersPanel ? [{ id: "layers" as ToolId, label: "Capas", icon: Layers }] : []),
           { id: "text" as ToolId, label: "Texto", icon: Type },
           { id: "photo" as ToolId, label: "Foto", icon: ImageIcon },
           { id: "color" as ToolId, label: "Color", icon: Palette },
           { id: "more" as ToolId, label: "Más", icon: MoreHorizontal },
-        ]).map(tool => {
+        ])).map(tool => {
           const Icon = tool.icon;
           const isActive = activeSheet === tool.id;
           return (
