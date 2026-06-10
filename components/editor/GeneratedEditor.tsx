@@ -1403,22 +1403,37 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
     }
     const bounds = obj.getBoundingRect();
     const wrapperRect = wrapper.getBoundingClientRect();
-    // ─── BUG FIX: la toolbar se posicionaba con transform: translate(-50%,-100%)
-    // arriba del bbox. Si el objeto estaba en la mitad inferior del canvas
-    // y/o el canvas estaba scrolled, la toolbar quedaba ABAJO del viewport visible.
-    // Solucion: 3 zonas de fallback (arriba bbox → abajo bbox → pinned a viewport).
+    // ─── BUG FIX (mezcla de unidades + viewport overflow):
+    //   bounds.{left,top,width,height} viene en COORDS LOGICAS del canvas
+    //   (e.g. 1080x1350) pero wrapperRect esta en pixels del viewport.
+    //   Si el zoom CSS es 50%, el wrapper mide 540x675 pero bounds.top
+    //   puede llegar a 850 (en coords logicas) — sumar directo da una
+    //   coordenada absurdamente alta fuera del viewport.
+    //
+    //   Fix: multiplicar bounds por la relacion wrapperRect/canvasSize.
+    //
+    //   Despues del fix de unidades aplicamos el flow de 3 fallbacks:
+    //     1) cabe arriba del bbox → preferido
+    //     2) cabe abajo del bbox  → segunda opcion
+    //     3) ninguna cabe         → pin al bottom del viewport
     // ─────────────────────────────────────────────────────────────────────────
-    const TOOLBAR_HEIGHT = 56;       // altura aproximada del toolbar contextual
-    const SAFE_TOP = 70;             // espacio del header
-    const SAFE_BOTTOM = window.innerHeight - 80; // espacio del bottom bar / zoom
-    const PAD = 12;                  // separacion del bbox
+    const TOOLBAR_HEIGHT = 56;
+    const SAFE_TOP = 70;
+    const SAFE_BOTTOM = window.innerHeight - 80;
+    const PAD = 12;
 
-    // Coords absolutas en viewport
-    const bboxTopAbs = wrapperRect.top + bounds.top;
-    const bboxBottomAbs = wrapperRect.top + bounds.top + bounds.height;
+    // Factor de escala canvas logico → pixels CSS del wrapper
+    const canvasLogicalW = canvas.getWidth();
+    const canvasLogicalH = canvas.getHeight();
+    const scaleX = canvasLogicalW > 0 ? wrapperRect.width / canvasLogicalW : 1;
+    const scaleY = canvasLogicalH > 0 ? wrapperRect.height / canvasLogicalH : 1;
+
+    // Coords absolutas en viewport (post conversion logico → CSS)
+    const bboxTopAbs = wrapperRect.top + bounds.top * scaleY;
+    const bboxBottomAbs = bboxTopAbs + bounds.height * scaleY;
 
     // X centrado en el bbox, clampeado a viewport
-    const x = wrapperRect.left + bounds.left + bounds.width / 2;
+    const x = wrapperRect.left + (bounds.left + bounds.width / 2) * scaleX;
     const TOOLBAR_HALF = 230;
     const clampedX = Math.max(TOOLBAR_HALF + 8, Math.min(x, window.innerWidth - TOOLBAR_HALF - 8));
 
@@ -1441,18 +1456,6 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
       y = SAFE_BOTTOM;
     }
 
-    // DEBUG TEMP — para diagnosticar bug positioning reportado por usuario
-    if (typeof window !== "undefined") {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (window as any).__lastToolbarCalc = {
-        bboxTopAbs, bboxBottomAbs, x, clampedX, y,
-        SAFE_TOP, SAFE_BOTTOM, TOOLBAR_HEIGHT,
-        wrapperRect_top: wrapperRect.top,
-        bounds_top: bounds.top,
-        bounds_height: bounds.height,
-        winH: window.innerHeight,
-      };
-    }
     setFloatingToolbar({ visible: true, x: clampedX, y, alignOpen: false, moreOpen: false });
   }, []);
 
