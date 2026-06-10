@@ -1429,8 +1429,12 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
       return;
     }
     // Guard: si el usuario esta editando un texto, NO mostramos la toolbar
-    // aunque algun otro evento (selection:updated, object:modified) la pida.
-    if (isEditingTextRef.current) {
+    // (taparia lo que esta escribiendo). Lee isEditing DIRECTO del objeto
+    // (mas robusto que depender solo del evento text:editing:entered, que
+    // a veces tarda o no se dispara en headless/programatico).
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const isEditing = (obj as any).isEditing === true || isEditingTextRef.current;
+    if (isEditing) {
       setFloatingToolbar(prev => prev.visible ? { ...prev, visible: false, alignOpen: false, moreOpen: false } : prev);
       return;
     }
