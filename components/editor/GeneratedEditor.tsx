@@ -1441,6 +1441,18 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
       y = SAFE_BOTTOM;
     }
 
+    // DEBUG TEMP — para diagnosticar bug positioning reportado por usuario
+    if (typeof window !== "undefined") {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (window as any).__lastToolbarCalc = {
+        bboxTopAbs, bboxBottomAbs, x, clampedX, y,
+        SAFE_TOP, SAFE_BOTTOM, TOOLBAR_HEIGHT,
+        wrapperRect_top: wrapperRect.top,
+        bounds_top: bounds.top,
+        bounds_height: bounds.height,
+        winH: window.innerHeight,
+      };
+    }
     setFloatingToolbar({ visible: true, x: clampedX, y, alignOpen: false, moreOpen: false });
   }, []);
 
