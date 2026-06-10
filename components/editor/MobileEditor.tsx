@@ -1253,26 +1253,43 @@ export default function MobileEditor({ templateId, formatId }: Props) {
     const recalc = () => {
       const obj = selectedLayer.obj;
       if (!obj) return;
-      // FIX V3: usar el <canvas> DOM element directamente para evitar offsets
-      // entre wrapper/canvas y escalado manual de coords.
+      // REGLA: toolbar SIEMPRE dentro del canvas (lienzo). Nunca en el area
+      // negra del workspace ni tapada por el dock inferior.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const canvasEl = (fc as any).lowerCanvasEl as HTMLCanvasElement | undefined ?? fc.getElement();
       const canvasRect = canvasEl?.getBoundingClientRect();
       if (!canvasRect) return;
       const bounds = obj.getBoundingRect();
-      const TOOLBAR_HEIGHT = 48;
-      const PAD = 8;
-      const SAFE_TOP = 64;
-      const bboxTopAbs = canvasRect.top + bounds.top;
-      const bboxBottomAbs = bboxTopAbs + bounds.height;
-      const xCenter = canvasRect.left + bounds.left + bounds.width / 2;
-      const clampedX = Math.max(70, Math.min(xCenter, window.innerWidth - 70));
+      const TOOLBAR_HEIGHT = 44;
+      const TOOLBAR_WIDTH_APPROX = 220;
+      const PAD = 6;
+
+      const objTop = canvasRect.top + bounds.top;
+      const objBottom = objTop + bounds.height;
+      const objCenterX = canvasRect.left + bounds.left + bounds.width / 2;
+
+      const tryAboveY = objTop - PAD;
+      const tryBelowY = objBottom + PAD + TOOLBAR_HEIGHT;
       let y: number;
-      if (bboxTopAbs - PAD - TOOLBAR_HEIGHT >= SAFE_TOP) {
-        y = bboxTopAbs - PAD;
+      if (tryAboveY - TOOLBAR_HEIGHT >= canvasRect.top) {
+        y = tryAboveY;
+      } else if (tryBelowY <= canvasRect.bottom) {
+        y = tryBelowY;
       } else {
-        y = bboxBottomAbs + PAD + TOOLBAR_HEIGHT;
+        y = canvasRect.top + TOOLBAR_HEIGHT;
       }
+      y = Math.max(canvasRect.top + TOOLBAR_HEIGHT, Math.min(y, canvasRect.bottom));
+
+      const halfW = TOOLBAR_WIDTH_APPROX / 2;
+      const xMin = canvasRect.left + halfW + PAD;
+      const xMax = canvasRect.right - halfW - PAD;
+      let clampedX: number;
+      if (xMin >= xMax) {
+        clampedX = (canvasRect.left + canvasRect.right) / 2;
+      } else {
+        clampedX = Math.max(xMin, Math.min(objCenterX, xMax));
+      }
+
       setFloatingToolbar({ visible: true, x: clampedX, y });
     };
     recalc();

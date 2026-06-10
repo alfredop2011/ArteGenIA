@@ -1401,15 +1401,25 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
       setFloatingToolbar(prev => ({ ...prev, visible: false, alignOpen: false, moreOpen: false }));
       return;
     }
-    // ─── FIX V3: usar el <canvas> DOM element directamente. ──────────────
-    //   getBoundingRect() devuelve coords del bbox en CSS px del DOM canvas
-    //   (post viewportTransform de Fabric). Si sumamos canvasEl.getBoundingClientRect()
-    //   obtenemos coords absolutas en el viewport, sin necesidad de scaling
-    //   manual ni asunciones sobre zoom (Fabric ya lo aplica internamente).
+    // ─── REGLA: TOOLBAR SIEMPRE DENTRO DEL CANVAS (lienzo) ────────────────
+    //   Para evitar que la toolbar se vaya al area negra del workspace o se
+    //   esconda detras de la zoom bar / panel lateral, la clampeamos siempre
+    //   al rectangulo del propio canvas. El usuario nunca ve la toolbar fuera
+    //   del lienzo que esta editando.
     //
-    //   Antes usabamos wrapperRect.top + bounds.top — el wrapper puede tener
-    //   padding distinto del canvas, y si el canvas no llena el wrapper, la
-    //   resta de offsets era inconsistente.
+    //   La toolbar se renderiza con transform: translate(-50%, -100%):
+    //     - top:Y → la toolbar ocupa el rango [Y-H, Y] en pantalla
+    //     - left:X → centrada horizontalmente en X
+    //
+    //   Logica Y:
+    //     1) Preferir arriba del bbox si la toolbar entera cabe arriba dentro
+    //        del canvas (Y-H >= canvasRect.top)
+    //     2) Sino, abajo del bbox si su bottom (Y) cabe dentro (Y <= canvasRect.bottom)
+    //     3) Sino (objeto mas grande que toolbar height), clampear a los
+    //        bordes del canvas
+    //
+    //   Logica X: centrado en el bbox, clampeado al canvas para que la toolbar
+    //   entera quepa horizontalmente.
     // ─────────────────────────────────────────────────────────────────────────
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const canvasEl = (canvas as any).lowerCanvasEl as HTMLCanvasElement | undefined ?? canvas.getElement();
@@ -1418,40 +1428,43 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
       setFloatingToolbar(prev => ({ ...prev, visible: false }));
       return;
     }
-    const bounds = obj.getBoundingRect(); // post-zoom Fabric, en CSS px
+    const bounds = obj.getBoundingRect();
 
-    const TOOLBAR_HEIGHT = 56;
-    const SAFE_TOP = 70;
-    const SAFE_BOTTOM = window.innerHeight - 80;
-    const PAD = 12;
+    const TOOLBAR_HEIGHT = 48;        // altura visual aproximada
+    const TOOLBAR_WIDTH_APPROX = 460; // ancho aproximado del toolbar completo
+    const PAD = 8;                    // separacion del bbox
 
-    // Coords absolutas del bbox en viewport (sin scaling manual — los pixels
-    // ya estan en CSS px porque getBoundingRect respeta el zoom interno de Fabric)
-    const bboxTopAbs = canvasRect.top + bounds.top;
-    const bboxBottomAbs = bboxTopAbs + bounds.height;
+    // Bbox del objeto en coords del viewport
+    const objTop = canvasRect.top + bounds.top;
+    const objBottom = objTop + bounds.height;
+    const objCenterX = canvasRect.left + bounds.left + bounds.width / 2;
 
-    // X centrado en el bbox, clampeado a viewport
-    const x = canvasRect.left + bounds.left + bounds.width / 2;
-    const TOOLBAR_HALF = 230;
-    const clampedX = Math.max(TOOLBAR_HALF + 8, Math.min(x, window.innerWidth - TOOLBAR_HALF - 8));
-
-    // Y con 3 estrategias en cascada:
-    // 1) Arriba del bbox (la toolbar tiene transform -100% asi que su top = y - TOOLBAR_HEIGHT)
-    //    Requiere que (bboxTopAbs - PAD - TOOLBAR_HEIGHT) >= SAFE_TOP
-    // 2) Abajo del bbox (su top = y, su bottom = y + TOOLBAR_HEIGHT)
-    //    Requiere que (bboxBottomAbs + PAD + TOOLBAR_HEIGHT) <= SAFE_BOTTOM
-    // 3) Fallback: pinned cerca del bottom visible
+    // Y dentro del canvas, con preferencia arriba > abajo > clamp
+    const tryAboveY = objTop - PAD;
+    const tryBelowY = objBottom + PAD + TOOLBAR_HEIGHT;
     let y: number;
-    if (bboxTopAbs - PAD - TOOLBAR_HEIGHT >= SAFE_TOP) {
-      // Cabe arriba — preferible (no tapa el objeto)
-      y = bboxTopAbs - PAD;
-    } else if (bboxBottomAbs + PAD + TOOLBAR_HEIGHT <= SAFE_BOTTOM) {
-      // Cabe abajo
-      y = bboxBottomAbs + PAD + TOOLBAR_HEIGHT;
+    if (tryAboveY - TOOLBAR_HEIGHT >= canvasRect.top) {
+      y = tryAboveY;
+    } else if (tryBelowY <= canvasRect.bottom) {
+      y = tryBelowY;
     } else {
-      // Ni arriba ni abajo — pin al bottom visible. Usuario sigue viendo
-      // la toolbar incluso si tapa parcialmente el objeto.
-      y = SAFE_BOTTOM;
+      // Objeto ocupa casi todo el canvas en Y — clampear al borde superior
+      // del canvas para que la toolbar este en el primer renglon visible
+      y = canvasRect.top + TOOLBAR_HEIGHT;
+    }
+    // Salvaguarda final: nunca fuera del canvas (esquinas)
+    y = Math.max(canvasRect.top + TOOLBAR_HEIGHT, Math.min(y, canvasRect.bottom));
+
+    // X centrado bajo el bbox, clampeado al canvas
+    const halfW = TOOLBAR_WIDTH_APPROX / 2;
+    const xMin = canvasRect.left + halfW + PAD;
+    const xMax = canvasRect.right - halfW - PAD;
+    let clampedX: number;
+    if (xMin >= xMax) {
+      // Canvas mas estrecho que toolbar — centrar al canvas
+      clampedX = (canvasRect.left + canvasRect.right) / 2;
+    } else {
+      clampedX = Math.max(xMin, Math.min(objCenterX, xMax));
     }
 
     setFloatingToolbar({ visible: true, x: clampedX, y, alignOpen: false, moreOpen: false });
