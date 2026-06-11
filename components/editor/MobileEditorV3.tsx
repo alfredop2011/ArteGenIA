@@ -261,17 +261,25 @@ export default function MobileEditorV3({ templateId, formatId }: Props) {
     return () => ro.disconnect();
   }, [loaded, fitToView]);
 
-  // ─── Selection handlers ─────────────────────────────────────────────────
+  // ─── Selection handlers — ref para evitar re-suscripcion ────────────────
+  // Usamos ref de layerToBlock para que el listener se suscriba UNA sola vez
+  // (al loaded). Si dependieramos de layerToBlock, el listener se re-suscribe
+  // cada render y podria perder eventos durante la transicion.
+  const layerToBlockRef = useRef(layerToBlock);
+  useEffect(() => { layerToBlockRef.current = layerToBlock; }, [layerToBlock]);
+
   useEffect(() => {
     const fc = fabricRef.current;
-    if (!fc) return;
+    if (!fc || !loaded) return;
     const onSelect = (e: { selected?: FabricObject[] }) => {
       const sel = e.selected?.[0];
       if (!sel) return;
       const cid = (sel as FabricObject & { customId?: string }).customId;
-      setSelectedLayerId(cid ?? null);
+      // Activar sub-tools bar SIEMPRE que haya seleccion, aunque el objeto
+      // no tenga customId (objetos manuales o sin schema).
+      setSelectedLayerId(cid ?? "__obj__");
       if (cid) {
-        const block = layerToBlock.get(cid);
+        const block = layerToBlockRef.current.get(cid);
         if (block) {
           setActiveBlockId(block.id);
         }
@@ -279,7 +287,7 @@ export default function MobileEditorV3({ templateId, formatId }: Props) {
     };
     const onDeselect = () => {
       setSelectedLayerId(null);
-      // No cerramos el sheet automaticamente — el usuario lo cierra con check o tap fuera
+      setActiveSubTool(null);
     };
     fc.on("selection:created", onSelect);
     fc.on("selection:updated", onSelect);
@@ -289,7 +297,7 @@ export default function MobileEditorV3({ templateId, formatId }: Props) {
       fc.off("selection:updated", onSelect);
       fc.off("selection:cleared", onDeselect);
     };
-  }, [layerToBlock]);
+  }, [loaded]);
 
   // ─── Aplicar valor de bloque al canvas ──────────────────────────────────
   const applyBlockToCanvas = useCallback((block: EditableBlock, value: string) => {
