@@ -55,8 +55,10 @@ type Props = {
   formatId?: FormatId;
 };
 
-/** Sheet temporal que puede estar abierto. null = canvas limpio (caso comun). */
-type SheetId = null | "texto" | "foto" | "estilo" | "ia" | "plantillas" | "export" | "more";
+/** Sheet temporal que puede estar abierto. null = canvas limpio (caso comun).
+ *  "texto" desaparecio: se reemplazo por sub-tools bar inline cuando hay
+ *  objeto seleccionado (patron Canva). */
+type SheetId = null | "foto" | "estilo" | "ia" | "plantillas" | "export" | "more";
 
 export default function MobileEditorV3({ templateId, formatId }: Props) {
   const router = useRouter();
@@ -86,6 +88,10 @@ export default function MobileEditorV3({ templateId, formatId }: Props) {
   // Estilo state
   const [activePaletteId, setActivePaletteId] = useState<string | null>(null);
   const [activeRemixId, setActiveRemixId] = useState<RemixStyle["id"] | null>(null);
+
+  // Sub-tool activo (cuando hay seleccion): editar/fuente/estilos/tamano/color
+  type SubTool = null | "editar" | "fuente" | "estilos" | "tamano" | "color";
+  const [activeSubTool, setActiveSubTool] = useState<SubTool>(null);
 
   // History + save
   const [canUndo, setCanUndo] = useState(false);
@@ -238,33 +244,22 @@ export default function MobileEditorV3({ templateId, formatId }: Props) {
     fc.requestRenderAll();
   }, [canvasSize.w, canvasSize.h]);
 
+  // Suprimimos warning del lint — focusOnObject queda como helper exportable
+  // por si se necesita en pinch-zoom manual en el futuro.
+  void focusOnObject;
+
   useEffect(() => {
     const fc = fabricRef.current;
     const wrapper = wrapperRef.current;
     if (!fc || !loaded || !wrapper) return;
-    // Encontrar el objeto del bloque activo (si lo hay y el sheet de texto esta abierto)
-    let target: FabricObject | undefined;
-    if (openSheet === "texto" && activeBlockId) {
-      const block = blocks.find(b => b.id === activeBlockId);
-      if (block) {
-        target = fc.getObjects().find(o => {
-          const cid = (o as FabricObject & { customId?: string }).customId;
-          return cid && block.layerIds.includes(cid);
-        });
-      }
-    }
-    if (target) {
-      focusOnObject(fc, target);
-    } else {
-      fitToView(fc);
-    }
-    const ro = new ResizeObserver(() => {
-      if (target) focusOnObject(fc, target);
-      else fitToView(fc);
-    });
+    // Patron Canva: el flyer SIEMPRE fit-to-view. El usuario decide hacer
+    // zoom manual via pinch si necesita ver detalle. Editar texto NO hace
+    // zoom auto (esto provocaba confusion al cambiar de bloque).
+    fitToView(fc);
+    const ro = new ResizeObserver(() => fitToView(fc));
     ro.observe(wrapper);
     return () => ro.disconnect();
-  }, [loaded, openSheet, activeBlockId, blocks, focusOnObject, fitToView]);
+  }, [loaded, fitToView]);
 
   // ─── Selection handlers ─────────────────────────────────────────────────
   useEffect(() => {
@@ -342,6 +337,46 @@ export default function MobileEditorV3({ templateId, formatId }: Props) {
       setSelectedLayerId(null);
       setSaveState("unsaved");
     }
+  }, []);
+
+  // ─── Helpers para sub-tools (leer/escribir propiedades del objeto activo)
+  const getActiveText = useCallback((): Textbox | null => {
+    const obj = fabricRef.current?.getActiveObject();
+    if (!obj) return null;
+    if (obj.type === "textbox" || obj.type === "text" || obj.type === "i-text") {
+      return obj as Textbox;
+    }
+    return null;
+  }, []);
+
+  const setTextProp = useCallback(<K extends keyof Textbox>(key: K, value: Textbox[K]) => {
+    const fc = fabricRef.current;
+    const t = getActiveText();
+    if (!fc || !t) return;
+    t.set(key, value as never);
+    fc.requestRenderAll();
+    setSaveState("unsaved");
+    setCanUndo(true);
+  }, [getActiveText]);
+
+  const setObjFill = useCallback((color: string) => {
+    const fc = fabricRef.current;
+    const obj = fc?.getActiveObject();
+    if (!fc || !obj) return;
+    obj.set("fill", color);
+    fc.requestRenderAll();
+    setSaveState("unsaved");
+    setCanUndo(true);
+  }, []);
+
+  const handleDeselect = useCallback(() => {
+    const fc = fabricRef.current;
+    if (!fc) return;
+    fc.discardActiveObject();
+    fc.requestRenderAll();
+    setSelectedLayerId(null);
+    setActiveSubTool(null);
+    setActiveBlockId(null);
   }, []);
 
   const handleBringForward = useCallback(() => {
@@ -541,7 +576,7 @@ export default function MobileEditorV3({ templateId, formatId }: Props) {
         {selectedLayerId && !openSheet && (
           <div className="absolute left-1/2 -translate-x-1/2 bottom-2 z-20 flex items-center bg-[#1c1c2a]/95 backdrop-blur-xl border border-purple-500/30 rounded-full shadow-2xl shadow-black/50 px-1 py-1 gap-0.5">
             <ChipBtn
-              onClick={() => setOpenSheet("texto")}
+              onClick={() => setActiveSubTool("editar")}
               icon={<TypeIcon size={17} strokeWidth={2.2}/>}
               label="Editar"
             />
@@ -570,38 +605,90 @@ export default function MobileEditorV3({ templateId, formatId }: Props) {
         )}
       </div>
 
-      {/* ═══ BOTTOM BAR (1 línea, 5 botones, ~60px) ═══════════════════════ */}
-      <nav className="h-[68px] border-t border-white/[0.08] bg-[#0a0a14] flex items-center justify-around shrink-0 safe-area-bottom">
-        <BarBtn
-          icon={<LayoutGrid size={20} strokeWidth={2}/>}
-          label="Plantillas"
-          onClick={() => router.push("/templates")}
-        />
-        <BarBtn
-          icon={<TypeIcon size={20} strokeWidth={2}/>}
-          label="Texto"
-          active={openSheet === "texto"}
-          onClick={() => setOpenSheet(s => s === "texto" ? null : "texto")}
-        />
-        <BarBtn
-          icon={<ImageIcon size={20} strokeWidth={2}/>}
-          label="Foto"
-          active={openSheet === "foto"}
-          onClick={() => setOpenSheet(s => s === "foto" ? null : "foto")}
-        />
-        <BarBtn
-          icon={<PaletteIcon size={20} strokeWidth={2}/>}
-          label="Estilo"
-          active={openSheet === "estilo"}
-          onClick={() => setOpenSheet(s => s === "estilo" ? null : "estilo")}
-        />
-        <BarBtn
-          icon={<Sparkles size={20} strokeWidth={2}/>}
-          label="Remix"
-          active={openSheet === "ia"}
-          onClick={() => setOpenSheet(s => s === "ia" ? null : "ia")}
-        />
-      </nav>
+      {/* ═══ FOOTER — sub-tools bar (si seleccion) o bottom bar (si no) ═════
+          Patron Canva: cuando hay objeto seleccionado, la barra inferior
+          se reemplaza por sub-tools del objeto + check verde para cerrar.
+          Si no hay seleccion, bottom bar global con 5 botones.
+          ──────────────────────────────────────────────────────────────── */}
+      {selectedLayerId ? (
+        <div className="shrink-0 border-t border-white/[0.08] bg-[#0a0a14] safe-area-bottom">
+          {/* CONTENIDO del sub-tool activo (aparece arriba) */}
+          {activeSubTool === "editar" && (
+            <TextEditInline
+              blocks={textBlocks}
+              activeBlockId={activeBlockId}
+              blockValues={blockValues}
+              onChange={onBlockChange}
+              onSelectBlock={setActiveBlockId}
+            />
+          )}
+          {activeSubTool === "fuente" && (
+            <FontPills
+              currentFont={getActiveText()?.fontFamily as string | undefined}
+              onPick={f => setTextProp("fontFamily", f)}
+            />
+          )}
+          {activeSubTool === "tamano" && (
+            <SizeSlider
+              currentSize={getActiveText()?.fontSize as number | undefined ?? 24}
+              onChange={n => setTextProp("fontSize", n)}
+            />
+          )}
+          {activeSubTool === "color" && (
+            <ColorSwatches
+              currentColor={(getActiveText()?.fill as string | undefined) ?? "#ffffff"}
+              onPick={setObjFill}
+            />
+          )}
+          {activeSubTool === "estilos" && (
+            <StylePresets
+              onApply={(prop, val) => setTextProp(prop as keyof Textbox, val as never)}
+            />
+          )}
+
+          {/* SUB-TOOLS BAR (5 botones + check verde) */}
+          <div className="h-[68px] flex items-center px-2 gap-1">
+            <SubToolBtn icon="⌨" label="Editar" active={activeSubTool === "editar"} onClick={() => setActiveSubTool(s => s === "editar" ? null : "editar")}/>
+            <SubToolBtn icon="Ff" label="Fuente" active={activeSubTool === "fuente"} onClick={() => setActiveSubTool(s => s === "fuente" ? null : "fuente")} fontStyle="italic"/>
+            <SubToolBtn icon="H" label="Estilos" active={activeSubTool === "estilos"} onClick={() => setActiveSubTool(s => s === "estilos" ? null : "estilos")}/>
+            <SubToolBtn icon="Aa" label="Tamaño" active={activeSubTool === "tamano"} onClick={() => setActiveSubTool(s => s === "tamano" ? null : "tamano")}/>
+            <SubToolBtn icon="🎨" label="Color" active={activeSubTool === "color"} onClick={() => setActiveSubTool(s => s === "color" ? null : "color")} emoji/>
+            <button
+              onClick={handleDeselect}
+              aria-label="Listo"
+              className="w-11 h-11 ml-1 rounded-full bg-emerald-500 text-white flex items-center justify-center active:scale-95 transition-transform shadow-lg shrink-0"
+            >
+              <Check size={18} strokeWidth={3}/>
+            </button>
+          </div>
+        </div>
+      ) : (
+        <nav className="h-[68px] border-t border-white/[0.08] bg-[#0a0a14] flex items-center justify-around shrink-0 safe-area-bottom">
+          <BarBtn
+            icon={<LayoutGrid size={20} strokeWidth={2}/>}
+            label="Plantillas"
+            onClick={() => router.push("/templates")}
+          />
+          <BarBtn
+            icon={<ImageIcon size={20} strokeWidth={2}/>}
+            label="Foto"
+            active={openSheet === "foto"}
+            onClick={() => setOpenSheet(s => s === "foto" ? null : "foto")}
+          />
+          <BarBtn
+            icon={<PaletteIcon size={20} strokeWidth={2}/>}
+            label="Estilo"
+            active={openSheet === "estilo"}
+            onClick={() => setOpenSheet(s => s === "estilo" ? null : "estilo")}
+          />
+          <BarBtn
+            icon={<Sparkles size={20} strokeWidth={2}/>}
+            label="Remix"
+            active={openSheet === "ia"}
+            onClick={() => setOpenSheet(s => s === "ia" ? null : "ia")}
+          />
+        </nav>
+      )}
 
       {/* ═══ SHEETS TEMPORALES (overlay sobre canvas, no permanentes) ════ */}
       {openSheet && (
@@ -615,7 +702,6 @@ export default function MobileEditorV3({ templateId, formatId }: Props) {
             <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mt-2.5 mb-1 shrink-0"/>
             <div className="px-4 py-3 flex items-center justify-between shrink-0 border-b border-white/[0.06]">
               <h2 className="text-[15px] font-bold">
-                {openSheet === "texto" && "Editar texto"}
                 {openSheet === "foto" && "Foto"}
                 {openSheet === "estilo" && "Estilo"}
                 {openSheet === "ia" && "Remix · 4 estilos"}
@@ -631,56 +717,6 @@ export default function MobileEditorV3({ templateId, formatId }: Props) {
             </div>
 
             <div className="flex-1 overflow-y-auto px-4 py-3">
-
-              {/* SHEET TEXTO ─────────────────────────────────────────────── */}
-              {openSheet === "texto" && (
-                <div className="flex flex-col gap-3">
-                  {textBlocks.length === 0 && (
-                    <p className="text-[12px] text-gray-400 text-center py-6">
-                      Esta plantilla no tiene textos editables aún. Toca un texto en el flyer para seleccionarlo.
-                    </p>
-                  )}
-                  {textBlocks.map(block => {
-                    const isActive = activeBlockId === block.id;
-                    const value = blockValues[block.id] ?? "";
-                    const tint = BLOCK_TINTS[block.kind];
-                    return (
-                      <div key={block.id} className={`rounded-2xl border ${isActive ? "border-purple-500/40 bg-purple-500/[0.05]" : "border-white/[0.06] bg-[#13131f]"}`}>
-                        <button
-                          onClick={() => setActiveBlockId(isActive ? null : block.id)}
-                          className="w-full px-3 py-2.5 flex items-center gap-2.5"
-                        >
-                          <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 text-[15px]" style={{ background: `rgba(${tint}, 0.15)` }}>
-                            {BLOCK_ICONS[block.kind]}
-                          </div>
-                          <div className="flex-1 min-w-0 text-left">
-                            <div className="text-[9px] font-bold tracking-widest text-gray-500 uppercase">{block.label}</div>
-                            <div className="text-[12px] font-semibold text-white truncate">
-                              {value || <span className="text-gray-500">{block.placeholder}</span>}
-                            </div>
-                          </div>
-                        </button>
-                        {isActive && (
-                          <div className="px-3 pb-3">
-                            <input
-                              type="text"
-                              value={value}
-                              onChange={e => onBlockChange(block, e.target.value)}
-                              placeholder={block.placeholder}
-                              autoFocus
-                              // font-size 16px+ es OBLIGATORIO para que iOS Safari
-                              // NO haga zoom automatico al enfocar el input (zoom
-                              // destructivo que rompe el layout del editor).
-                              style={{ fontSize: 16 }}
-                              className="w-full bg-[#0a0a14] border border-purple-500/40 rounded-lg px-3 py-3 text-white font-medium outline-none focus:border-purple-500"
-                            />
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
 
               {/* SHEET FOTO ──────────────────────────────────────────────── */}
               {openSheet === "foto" && (
@@ -842,6 +878,172 @@ function MoreRow({
         <div className="text-[11px] text-gray-500">{subtitle}</div>
       </div>
       {disabled && <span className="text-[9px] text-amber-400 font-bold">PRÓXIMO</span>}
+    </div>
+  );
+}
+
+// ─── Sub-tools inline components (patron Canva) ────────────────────────
+
+function SubToolBtn({
+  icon, label, active, onClick, fontStyle, emoji,
+}: {
+  icon: string;
+  label: string;
+  active?: boolean;
+  onClick: () => void;
+  fontStyle?: string;
+  emoji?: boolean;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`flex-1 h-full flex flex-col items-center justify-center gap-0.5 rounded-lg ${active ? "bg-purple-500/12 text-purple-300" : "text-gray-300"}`}
+    >
+      <div
+        className="text-[18px] font-bold leading-none"
+        style={{ fontStyle, fontFamily: emoji ? undefined : "Georgia, serif" }}
+      >
+        {icon}
+      </div>
+      <span className="text-[9px] font-semibold">{label}</span>
+    </button>
+  );
+}
+
+/** Editar inline — muestra los bloques editables como pills horizontales
+ *  + input grande del bloque activo. Sustituye al sheet grande. */
+function TextEditInline({
+  blocks, activeBlockId, blockValues, onChange, onSelectBlock,
+}: {
+  blocks: EditableBlock[];
+  activeBlockId: string | null;
+  blockValues: Record<string, string>;
+  onChange: (b: EditableBlock, v: string) => void;
+  onSelectBlock: (id: string | null) => void;
+}) {
+  const active = blocks.find(b => b.id === activeBlockId) ?? blocks[0];
+  const value = active ? blockValues[active.id] ?? "" : "";
+  return (
+    <div className="border-b border-white/[0.06] flex flex-col gap-2 px-3 pt-2.5 pb-3">
+      {/* Pills de bloques disponibles */}
+      <div className="flex gap-1.5 overflow-x-auto scrollbar-hide -mx-1 px-1">
+        {blocks.map(b => {
+          const isAct = active?.id === b.id;
+          return (
+            <button
+              key={b.id}
+              onClick={() => onSelectBlock(b.id)}
+              className={`shrink-0 px-3 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap ${isAct ? "bg-purple-500 text-white" : "bg-white/[0.05] text-gray-300"}`}
+            >
+              {b.label}
+            </button>
+          );
+        })}
+      </div>
+      {/* Input del bloque activo */}
+      {active && (
+        <input
+          type="text"
+          value={value}
+          onChange={e => onChange(active, e.target.value)}
+          placeholder={active.placeholder}
+          autoFocus
+          style={{ fontSize: 16 }}
+          className="w-full bg-[#0a0a14] border border-purple-500/40 rounded-xl px-3 py-2.5 text-white font-medium outline-none focus:border-purple-500"
+        />
+      )}
+    </div>
+  );
+}
+
+/** Fuentes — pills scroll horizontal con preview de cada fuente. */
+const AVAILABLE_FONTS = [
+  "Anton", "Bebas Neue", "Playfair Display", "Cormorant Garamond",
+  "Montserrat", "Inter", "Oswald", "Roboto Condensed",
+];
+function FontPills({ currentFont, onPick }: { currentFont?: string; onPick: (f: string) => void }) {
+  return (
+    <div className="border-b border-white/[0.06] flex gap-2 overflow-x-auto scrollbar-hide px-3 py-3">
+      {AVAILABLE_FONTS.map(f => {
+        const isAct = currentFont === f;
+        return (
+          <button
+            key={f}
+            onClick={() => onPick(f)}
+            className={`shrink-0 px-4 py-2 rounded-full border-2 whitespace-nowrap text-[15px] ${isAct ? "border-purple-500 bg-purple-500/15 text-purple-200" : "border-transparent bg-white/[0.05] text-white"}`}
+            style={{ fontFamily: f }}
+          >
+            {f}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/** Tamaño — slider compacto rango 8-200. */
+function SizeSlider({ currentSize, onChange }: { currentSize: number; onChange: (n: number) => void }) {
+  return (
+    <div className="border-b border-white/[0.06] px-4 py-3">
+      <div className="flex justify-between mb-1.5">
+        <span className="text-[11px] text-gray-400 font-semibold">Tamaño</span>
+        <span className="text-[11px] text-purple-400 font-bold">{Math.round(currentSize)} px</span>
+      </div>
+      <input
+        type="range"
+        min={8} max={200} step={1}
+        value={currentSize}
+        onChange={e => onChange(Number(e.target.value))}
+        className="w-full accent-purple-500"
+      />
+    </div>
+  );
+}
+
+/** Color — swatches scroll horizontal. */
+const QUICK_COLORS = [
+  "#ffffff", "#000000", "#a855f7", "#ec4899", "#facc15", "#22d3ee",
+  "#22c55e", "#ef4444", "#fb923c", "#3b82f6", "#fef3c7", "#d8b4fe",
+];
+function ColorSwatches({ currentColor, onPick }: { currentColor: string; onPick: (c: string) => void }) {
+  return (
+    <div className="border-b border-white/[0.06] flex gap-2 overflow-x-auto scrollbar-hide px-3 py-3">
+      {QUICK_COLORS.map(c => {
+        const isAct = currentColor.toLowerCase() === c.toLowerCase();
+        return (
+          <button
+            key={c}
+            onClick={() => onPick(c)}
+            aria-label={`Color ${c}`}
+            className={`shrink-0 w-9 h-9 rounded-full border-2 ${isAct ? "border-purple-400 scale-110" : "border-white/15"} transition-transform`}
+            style={{ background: c, boxShadow: "inset 0 0 0 1px rgba(0,0,0,0.15)" }}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
+/** Estilos preset — Bold / Italic / Underline (toggle). */
+function StylePresets({ onApply }: { onApply: (prop: string, val: string | boolean) => void }) {
+  return (
+    <div className="border-b border-white/[0.06] flex gap-2 px-3 py-3">
+      <button
+        onClick={() => onApply("fontWeight", "900")}
+        className="flex-1 py-2 rounded-xl bg-white/[0.05] text-white font-black"
+      >B</button>
+      <button
+        onClick={() => onApply("fontStyle", "italic")}
+        className="flex-1 py-2 rounded-xl bg-white/[0.05] text-white italic font-bold"
+      >I</button>
+      <button
+        onClick={() => onApply("underline", true)}
+        className="flex-1 py-2 rounded-xl bg-white/[0.05] text-white underline font-bold"
+      >U</button>
+      <button
+        onClick={() => onApply("fontWeight", "400")}
+        className="flex-1 py-2 rounded-xl bg-white/[0.05] text-gray-400 text-[11px]"
+      >Reset</button>
     </div>
   );
 }
