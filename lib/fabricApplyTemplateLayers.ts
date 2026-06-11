@@ -1,5 +1,17 @@
-import { Circle, FabricImage, Rect, Shadow, Textbox, type Canvas, type StaticCanvas } from "fabric";
+import { Circle, FabricImage, type FabricObject, Rect, Shadow, Textbox, type Canvas, type StaticCanvas } from "fabric";
 import type { TemplateLayer } from "@/data/templates";
+
+/** Wrapper: añade el objeto al canvas asignando customId desde layer.id
+ *  para identificarlo despues (usado por MobileEditorV2 y GeneratedEditor
+ *  para mapear bloques editables → objetos Fabric concretos). */
+function addWithId(canvas: Canvas | StaticCanvas, obj: FabricObject, id?: string) {
+    if (id) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (obj as any).customId = id;
+    }
+    canvas.add(obj);
+    return obj;
+}
 
 /** Añade todas las capas de una plantilla al lienzo, incluyendo imágenes async */
 export async function applyTemplateLayers(
@@ -32,19 +44,19 @@ export async function applyTemplateLayers(
                 strokeDashArray: layer.strokeDashArray,
             };
             if (layer.shape === "rect") {
-                canvas.add(new Rect({
+                addWithId(canvas, new Rect({
                     ...common,
                     width: layer.width * scale,
                     height: layer.height * scale,
                     rx: (layer.radius ?? 0) * scale,
                     ry: (layer.radius ?? 0) * scale,
-                }));
+                }), layer.id);
             }
             if (layer.shape === "circle") {
-                canvas.add(new Circle({
+                addWithId(canvas, new Circle({
                     ...common,
                     radius: (layer.width / 2) * scale,
-                }));
+                }), layer.id);
             }
         }
 
@@ -54,7 +66,7 @@ export async function applyTemplateLayers(
             for (let i = 0; i < layer.count; i++) {
                 const dx = (layer.offsetX ?? 0) * i;
                 const dy = (layer.offsetY ?? 0) * i;
-                canvas.add(new Rect({
+                addWithId(canvas, new Rect({
                     left: (layer.x + dx) * scale,
                     top: (layer.y + dy) * scale,
                     width: layer.width * scale,
@@ -67,13 +79,13 @@ export async function applyTemplateLayers(
                     originX: "left",
                     originY: "top",
                     strokeWidth: 0,
-                }));
+                }), `${layer.id ?? "pat"}-${i}`);
             }
         }
 
         // ── TEXT ───────────────────────────────────────────────────────────
         if (layer.type === "text") {
-            canvas.add(new Textbox(layer.text, {
+            addWithId(canvas, new Textbox(layer.text, {
                 left: layer.x * scale,
                 top: layer.y * scale,
                 width: layer.width * scale,
@@ -98,7 +110,7 @@ export async function applyTemplateLayers(
                 // cambia el comportamiento por defecto.
                 selectable: true,
                 evented: true,
-            }));
+            }), layer.id);
         }
 
         // ── IMAGE ──────────────────────────────────────────────────────────
@@ -155,7 +167,7 @@ export async function applyTemplateLayers(
                         offsetY: layer.shadow.offsetY ?? 0,
                     }));
                 }
-                canvas.add(img);
+                addWithId(canvas, img, layer.id);
             } catch (e) {
                 console.warn("Error cargando imagen:", e);
             }
