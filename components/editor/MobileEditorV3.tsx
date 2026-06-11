@@ -55,6 +55,9 @@ import { applyWatermark, shouldWatermark } from "@/lib/applyWatermark";
 import { getBlocksForTemplate, BLOCK_ICONS, BLOCK_TINTS, type EditableBlock } from "@/data/templateBlocks";
 import { getPalettesForCategory, type Palette } from "@/data/templatePalettes";
 import { REMIX_STYLES, type RemixStyle } from "@/data/templateRemixes";
+import { useProjects } from "@/hooks/useProjects";
+import { supabase } from "@/lib/supabase";
+import { Save, FolderOpen } from "lucide-react";
 
 type Props = {
   templateId?: number;
@@ -67,8 +70,25 @@ type Props = {
  *  objeto seleccionado (patron Canva). */
 type SheetId = null | "foto" | "estilo" | "ia" | "plantillas" | "export" | "more";
 
-export default function MobileEditorV3({ templateId, formatId }: Props) {
+export default function MobileEditorV3({ templateId, projectId, formatId }: Props) {
   const router = useRouter();
+  // ─── Persistencia (Fase E) ──────────────────────────────────────────────
+  // Si recibimos projectId, abrimos un proyecto guardado. Cargamos el JSON
+  // de Fabric desde Supabase y lo hidratamos en lugar de aplicar el template.
+  // Si recibimos templateId, flujo normal: aplicar template + (al guardar)
+  // crear nuevo proyecto y redirigir a /editor/<uuid>.
+  const { saveProject } = useProjects();
+  const [currentProjectId, setCurrentProjectId] = useState<string | null>(projectId ?? null);
+  const [docTitle, setDocTitle] = useState<string>("");
+  // JSON pendiente para hidratar canvas al crearse (load mode)
+  const pendingFabricJsonRef = useRef<object | null>(null);
+  const [pendingProjectMeta, setPendingProjectMeta] = useState<{
+    title: string;
+    templateId: number | null;
+    width: number;
+    height: number;
+    format: string;
+  } | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricRef = useRef<FabricCanvas | null>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -127,12 +147,47 @@ export default function MobileEditorV3({ templateId, formatId }: Props) {
   const [saveState, setSaveState] = useState<"saved" | "saving" | "unsaved">("saved");
   const [exporting, setExporting] = useState(false);
 
-  // ─── Cargar template ────────────────────────────────────────────────────
+  // ─── Cargar template (modo plantilla nueva) ────────────────────────────
   useEffect(() => {
     if (!templateId) return;
     const t = templates.find(t => t.id === templateId);
-    if (t) setTemplate(t);
+    if (t) {
+      setTemplate(t);
+      setDocTitle(t.title);
+    }
   }, [templateId]);
+
+  // ─── Cargar proyecto guardado (modo Fase E) ────────────────────────────
+  // Lee la fila projects + setea Template (si templateId existe) + guarda
+  // fabric_json para hidratar el canvas en el otro useEffect.
+  useEffect(() => {
+    if (!projectId) return;
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { router.push("/"); return; }
+      const { data: row, error } = await supabase
+        .from("projects")
+        .select("*")
+        .eq("id", projectId)
+        .eq("user_id", user.id)
+        .single();
+      if (error || !row) { router.push("/projects"); return; }
+      setCurrentProjectId(row.id);
+      setDocTitle(row.title ?? "Diseño sin título");
+      if (row.template_id) {
+        const t = templates.find(t => t.id === row.template_id);
+        if (t) setTemplate(t);
+      }
+      setPendingProjectMeta({
+        title: row.title ?? "Diseño sin título",
+        templateId: row.template_id ?? null,
+        width: row.width ?? 1080,
+        height: row.height ?? 1350,
+        format: row.format ?? "portrait",
+      });
+      pendingFabricJsonRef.current = row.fabric_json ?? null;
+    })();
+  }, [projectId, router]);
 
   // ─── KEYBOARD AVOIDANCE (visualViewport API) ───────────────────────────
   // Cuando el teclado virtual sube en mobile, redimensionamos el editor
@@ -163,15 +218,27 @@ export default function MobileEditorV3({ templateId, formatId }: Props) {
     return map;
   }, [blocks]);
 
-  // ─── Inicializar Fabric + aplicar plantilla ─────────────────────────────
+  // ─── Inicializar Fabric + aplicar plantilla O cargar JSON guardado ─────
   useEffect(() => {
-    if (!canvasRef.current || !template) return;
-    const variant = getVariant(template, formatId);
-    if (!variant) return;
+    if (!canvasRef.current) return;
+
+    // Modo proyecto guardado: usamos las dimensiones del proyecto guardado
+    const isLoadMode = !!projectId && !!pendingFabricJsonRef.current && !!pendingProjectMeta;
+    if (!isLoadMode && !template) return;
+    let width: number, height: number;
+    if (isLoadMode && pendingProjectMeta) {
+      width = pendingProjectMeta.width;
+      height = pendingProjectMeta.height;
+    } else {
+      const variant = getVariant(template!, formatId);
+      if (!variant) return;
+      width = variant.width;
+      height = variant.height;
+    }
 
     const fc = new FabricCanvas(canvasRef.current, {
-      width: variant.width,
-      height: variant.height,
+      width,
+      height,
       backgroundColor: "#000",
       enableRetinaScaling: true,
       allowTouchScrolling: false,
@@ -180,9 +247,9 @@ export default function MobileEditorV3({ templateId, formatId }: Props) {
       uniformScaling: false,
     });
     fabricRef.current = fc;
-    setCanvasSize({ w: variant.width, h: variant.height });
+    setCanvasSize({ w: width, h: height });
 
-    applyTemplateLayers(fc, variant.layers).then(() => {
+    const setupAfterLoad = () => {
       fc.getObjects().forEach(obj => {
         obj.set({
           cornerColor: "#a855f7",
@@ -196,7 +263,6 @@ export default function MobileEditorV3({ templateId, formatId }: Props) {
           padding: 4,
         });
       });
-      // Initial blockValues
       const initial: Record<string, string> = {};
       blocks.forEach(b => {
         const obj = fc.getObjects().find(o => {
@@ -212,14 +278,30 @@ export default function MobileEditorV3({ templateId, formatId }: Props) {
       });
       setBlockValues(initial);
       setLoaded(true);
+      setSaveState("saved");
       fc.renderAll();
-    });
+    };
+
+    if (isLoadMode) {
+      // Hidrata canvas desde el JSON guardado. Despues de loadFromJSON
+      // los objetos no traen customId si fueron serializados sin pasarlo
+      // a toJSON, pero el desktop lo hace, asi que customId esta presente.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (fc.loadFromJSON as any)(pendingFabricJsonRef.current).then(() => {
+        pendingFabricJsonRef.current = null;
+        setupAfterLoad();
+      });
+    } else {
+      const variant = getVariant(template!, formatId);
+      if (!variant) return;
+      applyTemplateLayers(fc, variant.layers).then(setupAfterLoad);
+    }
 
     return () => {
       fc.dispose();
       fabricRef.current = null;
     };
-  }, [template, formatId, blocks]);
+  }, [template, formatId, blocks, projectId, pendingProjectMeta]);
 
   // ─── Auto-fit + ResizeObserver + zoom-to-element ───────────────────────
   //
@@ -572,6 +654,77 @@ export default function MobileEditorV3({ templateId, formatId }: Props) {
     if (fc && obj) { fc.sendObjectBackwards(obj); fc.requestRenderAll(); setSaveState("unsaved"); }
   }, []);
 
+  // ─── Save / Persistencia (Fase E) ───────────────────────────────────────
+  // Serializa el canvas (incluyendo customId), genera thumbnail JPEG inline
+  // y guarda o actualiza en Supabase. Si es nuevo, redirige URL a /editor/<uuid>
+  // sin recargar (replaceState).
+  const doSave = useCallback(async (silent = false) => {
+    const fc = fabricRef.current;
+    if (!fc || !loaded) return;
+    setSaveState("saving");
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const fabricJson = (fc.toJSON as any)(["customId"]) as object;
+      // Thumbnail JPEG ~320px
+      let thumbnailUrl: string | null = null;
+      try {
+        const zoom = fc.getZoom();
+        const vpt = fc.viewportTransform ? [...fc.viewportTransform] : null;
+        fc.setZoom(1);
+        fc.setDimensions({ width: canvasSize.w, height: canvasSize.h });
+        const thumbScale = 320 / Math.max(canvasSize.w, canvasSize.h);
+        thumbnailUrl = fc.toDataURL({ format: "jpeg", quality: 0.6, multiplier: thumbScale });
+        fc.setZoom(zoom);
+        if (vpt) fc.setViewportTransform(vpt as [number, number, number, number, number, number]);
+        fc.renderAll();
+      } catch (e) { console.warn("thumb error", e); }
+
+      const result = await saveProject(
+        currentProjectId,
+        docTitle || template?.title || "Diseño sin título",
+        templateId ?? template?.id ?? 0,
+        fabricJson,
+        formatId ?? "portrait",
+        canvasSize.w,
+        canvasSize.h,
+        thumbnailUrl,
+      );
+      if (result) {
+        if (!currentProjectId) {
+          setCurrentProjectId(result);
+          // Cambia URL a /editor/<uuid> sin recargar
+          window.history.replaceState(null, "", `/editor/${result}`);
+        }
+        setSaveState("saved");
+        if (!silent) toast.success("Diseño guardado");
+      } else {
+        setSaveState("unsaved");
+        if (!silent) toast.error("No se pudo guardar");
+      }
+    } catch (e) {
+      console.error("save error", e);
+      setSaveState("unsaved");
+      if (!silent) toast.error("Error al guardar");
+    }
+  }, [loaded, currentProjectId, docTitle, templateId, template, formatId, canvasSize, saveProject, toast]);
+
+  const handleSave = useCallback(() => {
+    if (!authUser) { toast.info("Inicia sesión para guardar"); return; }
+    void doSave(false);
+  }, [authUser, doSave, toast]);
+
+  // ─── Auto-save (cada 12s si hay cambios sin guardar y user autenticado) ─
+  // Si dispara mientras una guardada esta en curso, se ignora porque saveState
+  // sera "saving". Auto-save SOLO actua sobre proyectos ya creados (con
+  // currentProjectId) — no creamos automaticamente para evitar bloating de
+  // proyectos vacios accidentales.
+  useEffect(() => {
+    if (!authUser || !loaded || !currentProjectId) return;
+    if (saveState !== "unsaved") return;
+    const t = window.setTimeout(() => { void doSave(true); }, 12_000);
+    return () => window.clearTimeout(t);
+  }, [authUser, loaded, currentProjectId, saveState, doSave]);
+
   // ─── Export ─────────────────────────────────────────────────────────────
   const doExport = useCallback(async (format: "png" | "jpg" = "png") => {
     const fc = fabricRef.current;
@@ -882,6 +1035,19 @@ export default function MobileEditorV3({ templateId, formatId }: Props) {
           className="w-9 h-9 rounded-lg flex items-center justify-center text-gray-300 active:bg-white/10 disabled:opacity-25"
         >
           <Redo2 size={17} strokeWidth={2}/>
+        </button>
+        <button
+          aria-label="Guardar"
+          onClick={handleSave}
+          disabled={saveState === "saving"}
+          className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors disabled:opacity-50 ${
+            saveState === "saved" && currentProjectId
+              ? "text-emerald-400 active:bg-white/10"
+              : "text-gray-300 active:bg-white/10"
+          }`}
+          title={currentProjectId ? "Guardar cambios" : "Guardar nuevo diseño"}
+        >
+          <Save size={16} strokeWidth={2.2}/>
         </button>
         <button
           aria-label="Mas"
@@ -1326,6 +1492,12 @@ export default function MobileEditorV3({ templateId, formatId }: Props) {
               {/* SHEET MAS ───────────────────────────────────────────────── */}
               {openSheet === "more" && (
                 <div className="flex flex-col gap-2">
+                  <MoreRowLink
+                    icon={<FolderOpen size={18}/>}
+                    label="Mis flyers"
+                    subtitle="Volver a tus diseños guardados"
+                    onClick={() => { setOpenSheet(null); router.push("/projects"); }}
+                  />
                   <MoreRow icon={<Wand2 size={18}/>} label="Asistente IA" subtitle="Genera variaciones desde texto" disabled/>
                   <MoreRow icon={<LayoutGrid size={18}/>} label="Cambiar formato" subtitle="Story 9:16, Post 4:5, etc." disabled/>
                   <MoreRow icon={<XIcon size={18}/>} label="Reiniciar plantilla" subtitle="Volver al diseño original" disabled/>
@@ -1413,6 +1585,30 @@ function MoreRow({
       </div>
       {disabled && <span className="text-[9px] text-amber-400 font-bold">PRÓXIMO</span>}
     </div>
+  );
+}
+
+function MoreRowLink({
+  icon, label, subtitle, onClick,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  subtitle: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="px-3 py-2.5 rounded-xl bg-[#13131f] border border-white/[0.06] flex items-center gap-3 active:bg-[#1c1c2a] transition-colors text-left w-full"
+    >
+      <div className="w-10 h-10 rounded-xl bg-purple-500/15 flex items-center justify-center text-purple-300 shrink-0">
+        {icon}
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="text-[13px] font-bold">{label}</div>
+        <div className="text-[11px] text-gray-500">{subtitle}</div>
+      </div>
+    </button>
   );
 }
 

@@ -45,9 +45,10 @@ export default async function EditorPage({ params, searchParams }: EditorPagePro
     // Modo "generated" — flyer generado desde el wizard, lee localStorage
     if (id === "generated") return <GeneratedEditorWrapper />;
 
-    // Modo "proyecto guardado" — id es un UUID de Supabase
+    // Modo "proyecto guardado" — id es un UUID de Supabase.
+    // EditorRouter elige mobile V3 o desktop segun viewport.
     if (UUID_RE.test(id)) {
-        return <GeneratedEditor projectId={id} />;
+        return <EditorRouter projectId={id} formatId={formatId} />;
     }
 
     // Modo plantilla — id numérico, busca en data/templates.ts

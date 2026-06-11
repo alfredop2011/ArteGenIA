@@ -39,7 +39,8 @@ export default function EditorRouter(props: Props) {
     );
   }
 
-  if (isMobile && props.templateId) {
+  // Mobile V3 acepta tanto templateId (plantilla nueva) como projectId (proyecto guardado).
+  if (isMobile && (props.templateId || props.projectId)) {
     return <MobileEditorV3 {...props}/>;
   }
 
