@@ -186,20 +186,33 @@ export default function MobileEditorV2({ templateId, formatId }: Props) {
     };
   }, [template, formatId, blocks]);
 
-  // ─── Auto-fit canvas al area disponible ─────────────────────────────────
+  // ─── Auto-fit canvas al area disponible + reflit al resize ──────────────
+  // Usamos ResizeObserver para que cuando el wrapper cambie de tamaño (ej.
+  // al entrar/salir de modo edit donde canvas crece de 40vh a 58vh) el canvas
+  // Fabric se ajuste automaticamente.
   useEffect(() => {
     const fc = fabricRef.current;
-    if (!fc || !loaded || !wrapperRef.current) return;
-    const wrapperRect = wrapperRef.current.getBoundingClientRect();
-    const zoomW = wrapperRect.width / canvasSize.w;
-    const zoomH = wrapperRect.height / canvasSize.h;
-    const fit = Math.min(zoomW, zoomH);
-    fc.setDimensions({ width: wrapperRect.width, height: wrapperRect.height });
-    fc.setZoom(fit);
-    const tx = (wrapperRect.width - canvasSize.w * fit) / 2;
-    const ty = (wrapperRect.height - canvasSize.h * fit) / 2;
-    fc.setViewportTransform([fit, 0, 0, fit, tx, ty]);
-    fc.requestRenderAll();
+    const wrapper = wrapperRef.current;
+    if (!fc || !loaded || !wrapper) return;
+
+    const refit = () => {
+      const r = wrapper.getBoundingClientRect();
+      if (r.width === 0 || r.height === 0) return;
+      const zoomW = r.width / canvasSize.w;
+      const zoomH = r.height / canvasSize.h;
+      const fit = Math.min(zoomW, zoomH);
+      fc.setDimensions({ width: r.width, height: r.height });
+      fc.setZoom(fit);
+      const tx = (r.width - canvasSize.w * fit) / 2;
+      const ty = (r.height - canvasSize.h * fit) / 2;
+      fc.setViewportTransform([fit, 0, 0, fit, tx, ty]);
+      fc.requestRenderAll();
+    };
+    refit();
+
+    const ro = new ResizeObserver(refit);
+    ro.observe(wrapper);
+    return () => ro.disconnect();
   }, [loaded, canvasSize.w, canvasSize.h]);
 
   // ─── Selection handlers — sync canvas → bloque expandido ─────────────────
@@ -496,37 +509,46 @@ export default function MobileEditorV2({ templateId, formatId }: Props) {
     return blocks.map(b => ({ block: b, value: blockValues[b.id] ?? "" }));
   }, [blocks, blockValues]);
 
+  // ─── MODO EDIT: si hay bloque expandido en Contenido, dejamos mas espacio
+  // al canvas y solo mostramos ese bloque. Asi el usuario VE el cambio
+  // en tiempo real en el flyer (objetivo principal del editor). ────────────
+  const isEditingMode = activeTab === "contenido" && expandedBlockId !== null;
+
   // Si la plantilla no tiene schema de bloques, mostrar empty state amigable
   const hasNoSchema = blocks.length === 0 && loaded;
 
   return (
     <div className="h-screen w-full flex flex-col overflow-hidden bg-[#0a0a14] text-white">
 
-      {/* ═══ HEADER ════════════════════════════════════════════════════════ */}
-      <header className="px-3 py-2 flex items-center gap-2 border-b border-white/[0.06] shrink-0">
+      {/* ═══ HEADER ════════════════════════════════════════════════════════
+          En modo edit el header se comprime (sin meta) para dar mas altura
+          al canvas que es lo que el usuario necesita ver. */}
+      <header className={`px-3 ${isEditingMode ? "py-1.5" : "py-2"} flex items-center gap-2 border-b border-white/[0.06] shrink-0 transition-all`}>
         <button
           onClick={() => router.back()}
           aria-label="Volver"
-          className="w-10 h-10 rounded-xl bg-white/[0.05] border border-white/[0.06] flex items-center justify-center active:scale-95 transition-transform"
+          className="w-9 h-9 rounded-xl bg-white/[0.05] border border-white/[0.06] flex items-center justify-center active:scale-95 transition-transform"
         >
-          <ArrowLeft size={18} strokeWidth={2.4} />
+          <ArrowLeft size={17} strokeWidth={2.4} />
         </button>
         <div className="flex-1 min-w-0 pl-1">
-          <h1 className="text-[15px] font-bold leading-tight truncate">
+          <h1 className="text-[14px] font-bold leading-tight truncate">
             {template?.title ?? "Cargando…"}
           </h1>
-          <p className="text-[10px] text-gray-500 flex items-center gap-1.5">
-            <span className={`w-1 h-1 rounded-full ${
-              saveState === "saved" ? "bg-emerald-400" :
-              saveState === "saving" ? "bg-amber-400 animate-pulse" :
-              "bg-gray-500"
-            }`}/>
-            {canvasSize.w}×{canvasSize.h} · {
-              saveState === "saved" ? "Guardado" :
-              saveState === "saving" ? "Guardando…" :
-              "Sin guardar"
-            }
-          </p>
+          {!isEditingMode && (
+            <p className="text-[10px] text-gray-500 flex items-center gap-1.5">
+              <span className={`w-1 h-1 rounded-full ${
+                saveState === "saved" ? "bg-emerald-400" :
+                saveState === "saving" ? "bg-amber-400 animate-pulse" :
+                "bg-gray-500"
+              }`}/>
+              {canvasSize.w}×{canvasSize.h} · {
+                saveState === "saved" ? "Guardado" :
+                saveState === "saving" ? "Guardando…" :
+                "Sin guardar"
+              }
+            </p>
+          )}
         </div>
         <button
           aria-label="Deshacer"
@@ -552,8 +574,12 @@ export default function MobileEditorV2({ templateId, formatId }: Props) {
         </button>
       </header>
 
-      {/* ═══ CANVAS AREA (altura controlada para no desbordar el sheet) ═══ */}
-      <div className="shrink-0 h-[42vh] min-h-[280px] max-h-[400px] px-4 pt-3 flex items-center justify-center">
+      {/* ═══ CANVAS AREA — crece en modo edit (lo que el usuario necesita ver) ═══ */}
+      <div className={`shrink-0 px-3 pt-2 flex items-center justify-center transition-all duration-300 ${
+        isEditingMode
+          ? "h-[58vh] min-h-[400px]"     // CANVAS GRANDE durante edicion
+          : "h-[40vh] min-h-[260px] max-h-[420px]" // canvas normal sin edicion
+      }`}>
         <div
           ref={wrapperRef}
           className="h-full aspect-[4/5] rounded-xl overflow-hidden bg-[#111] shadow-2xl shadow-black/40 relative"
@@ -609,7 +635,13 @@ export default function MobileEditorV2({ templateId, formatId }: Props) {
                   <p>Toca un elemento del flyer para seleccionarlo.</p>
                 </div>
               )}
-              {blocksWithValues.map(({ block, value }) => {
+
+              {/* MODO EDIT: solo el bloque expandido visible + boton "Listo" */}
+              {/* MODO LISTA: todos los bloques colapsados visibles */}
+              {(isEditingMode
+                ? blocksWithValues.filter(({ block }) => block.id === expandedBlockId)
+                : blocksWithValues
+              ).map(({ block, value }) => {
                 const isExpanded = expandedBlockId === block.id;
                 const isApplied = showAppliedFor === block.id;
                 const tint = BLOCK_TINTS[block.kind];
@@ -636,15 +668,24 @@ export default function MobileEditorV2({ templateId, formatId }: Props) {
                         <div className="text-[9.5px] font-bold tracking-widest text-gray-500 uppercase">
                           {block.label}
                         </div>
-                        <div className="text-[13px] font-semibold text-white truncate">
-                          {value || <span className="text-gray-500">{block.placeholder}</span>}
-                        </div>
+                        {/* En modo edit no mostramos el value debajo del label (lo ves en el flyer y en el input) */}
+                        {!isEditingMode && (
+                          <div className="text-[13px] font-semibold text-white truncate">
+                            {value || <span className="text-gray-500">{block.placeholder}</span>}
+                          </div>
+                        )}
                       </div>
-                      <ChevronDown
-                        size={16}
-                        strokeWidth={2}
-                        className={`text-gray-500 shrink-0 transition-transform ${isExpanded ? "rotate-180" : ""}`}
-                      />
+                      {isEditingMode ? (
+                        <span className="text-[11px] font-bold text-purple-300 px-2 py-1 rounded-lg bg-purple-500/10">
+                          LISTO
+                        </span>
+                      ) : (
+                        <ChevronDown
+                          size={16}
+                          strokeWidth={2}
+                          className={`text-gray-500 shrink-0 transition-transform ${isExpanded ? "rotate-180" : ""}`}
+                        />
+                      )}
                     </button>
                     {isExpanded && (
                       <div className="px-3.5 pb-3.5 pt-1 flex flex-col gap-2">
@@ -655,7 +696,8 @@ export default function MobileEditorV2({ templateId, formatId }: Props) {
                             placeholder={block.placeholder}
                             maxLength={block.maxLength}
                             rows={2}
-                            className="w-full bg-[#0a0a14] border border-purple-500/40 rounded-xl px-3.5 py-3 text-[14px] text-white font-medium outline-none resize-none focus:border-purple-500"
+                            autoFocus
+                            className="w-full bg-[#0a0a14] border border-purple-500/40 rounded-xl px-3.5 py-3 text-[15px] text-white font-medium outline-none resize-none focus:border-purple-500"
                           />
                         ) : (
                           <input
@@ -664,7 +706,8 @@ export default function MobileEditorV2({ templateId, formatId }: Props) {
                             onChange={e => onBlockChange(block, e.target.value)}
                             placeholder={block.placeholder}
                             maxLength={block.maxLength}
-                            className="w-full bg-[#0a0a14] border border-purple-500/40 rounded-xl px-3.5 py-3 text-[14px] text-white font-medium outline-none focus:border-purple-500"
+                            autoFocus
+                            className="w-full bg-[#0a0a14] border border-purple-500/40 rounded-xl px-3.5 py-3 text-[15px] text-white font-medium outline-none focus:border-purple-500"
                           />
                         )}
                         {isApplied && (
