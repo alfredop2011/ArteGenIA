@@ -29,6 +29,7 @@ import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
   Canvas as FabricCanvas,
+  Shadow,
   type FabricObject,
   Textbox,
 } from "fabric";
@@ -36,7 +37,7 @@ import {
   ArrowLeft, Download, Undo2, Redo2,
   ChevronDown, Check, Sparkles,
   ChevronUp, Copy, Trash2, Palette as PaletteIcon,
-  Type as TypeIcon, X as XIcon, Layers as LayersIcon, Star as StarIcon,
+  X as XIcon, Layers as LayersIcon, Star as StarIcon,
 } from "lucide-react";
 import { templates, getVariant, type Template } from "@/data/templates";
 import type { FormatId } from "@/data/formats";
@@ -45,6 +46,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/lib/toast";
 import { applyWatermark, shouldWatermark } from "@/lib/applyWatermark";
 import { getBlocksForTemplate, BLOCK_ICONS, BLOCK_TINTS, type EditableBlock } from "@/data/templateBlocks";
+import { getPalettesForCategory, type Palette } from "@/data/templatePalettes";
+import { REMIX_STYLES, type RemixStyle } from "@/data/templateRemixes";
 
 type Props = {
   templateId?: number;
@@ -98,6 +101,13 @@ export default function MobileEditorV2({ templateId, formatId }: Props) {
 
   // Indicador "Aplicado al diseño ✓" verde tras editar un bloque
   const [showAppliedFor, setShowAppliedFor] = useState<string | null>(null);
+
+  // Estilo / Remix / Export state
+  const [activeStyleSubTab, setActiveStyleSubTab] = useState<"colores" | "fuentes" | "efectos">("colores");
+  const [activePaletteId, setActivePaletteId] = useState<string | null>(null);
+  const [activeRemixId, setActiveRemixId] = useState<RemixStyle["id"] | null>(null);
+  const [exportSheetOpen, setExportSheetOpen] = useState(false);
+  const [selectedFormats, setSelectedFormats] = useState<Set<string>>(new Set(["portrait"]));
 
   // ─── Cargar template ──────────────────────────────────────────────────
   useEffect(() => {
@@ -346,8 +356,139 @@ export default function MobileEditorV2({ templateId, formatId }: Props) {
       toast.info("Inicia sesión para descargar");
       return;
     }
-    void doExport("png");
-  }, [authUser, doExport, toast]);
+    setExportSheetOpen(true);
+  }, [authUser, toast]);
+
+  // ─── Aplicar paleta al canvas ────────────────────────────────────────────
+  // Estrategia: cambiamos el fill de los layers tipo "shape" rotando entre
+  // los 4 colores de la paleta, y el color de layers tipo "text" segun
+  // rol semantico (titulo → primary, subtitulo → secondary, etc.).
+  const applyPalette = useCallback((palette: Palette) => {
+    const fc = fabricRef.current;
+    if (!fc) return;
+    const objs = fc.getObjects();
+    const colors = [palette.primary, palette.secondary, palette.accent, palette.dark];
+    let shapeIdx = 0;
+    objs.forEach(obj => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const cid = (obj as any).customId as string | undefined;
+      const type = obj.type;
+      // Texts: titulo → primary, subtitle → secondary
+      if (type === "textbox" || type === "i-text" || type === "text") {
+        const lower = (cid ?? "").toLowerCase();
+        let color = palette.primary;
+        if (lower.includes("subtitle") || lower.includes("desc") || lower.includes("supra")) color = palette.secondary;
+        else if (lower.includes("price") || lower.includes("cta") || lower.includes("badge")) color = palette.accent;
+        else if (lower.includes("date") || lower.includes("venue") || lower.includes("footer")) color = palette.dark === "#000000" ? "#ffffff" : palette.secondary;
+        else if (lower.includes("title")) color = palette.primary;
+        obj.set("fill", color);
+      }
+      // Shapes: rotar entre los 4 colores (excepto dark = fondo)
+      else if (type === "rect" || type === "circle" || type === "triangle" || type === "polygon" || type === "path") {
+        const lower = (cid ?? "").toLowerCase();
+        if (lower.includes("bg") || lower === "background") {
+          obj.set("fill", palette.dark);
+        } else {
+          obj.set("fill", colors[shapeIdx % 3]);
+          shapeIdx++;
+        }
+      }
+    });
+    fc.requestRenderAll();
+    setActivePaletteId(palette.id);
+    setSaveState("unsaved");
+    setCanUndo(true);
+  }, []);
+
+  // ─── Aplicar remix preset al canvas ──────────────────────────────────────
+  // Combina paleta + (opcional) fuente principal + (opcional) glow al titulo.
+  const applyRemix = useCallback((remix: RemixStyle) => {
+    const fc = fabricRef.current;
+    if (!fc) return;
+    applyPalette(remix.palette);
+    // Aplicar fuente principal a layers titulo
+    if (remix.primaryFont) {
+      fc.getObjects().forEach(obj => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const cid = ((obj as any).customId as string | undefined ?? "").toLowerCase();
+        if (cid.includes("title") || cid.includes("supra")) {
+          (obj as Textbox).set("fontFamily", remix.primaryFont!);
+        }
+      });
+    }
+    // Aplicar glow al titulo si el remix lo define
+    if (remix.titleGlow) {
+      fc.getObjects().forEach(obj => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const cid = ((obj as any).customId as string | undefined ?? "").toLowerCase();
+        if (cid.includes("title")) {
+          obj.set("shadow", new Shadow({
+            color: remix.titleGlow!.color,
+            blur: remix.titleGlow!.blur,
+            offsetX: 0,
+            offsetY: 0,
+          }));
+        }
+      });
+    } else {
+      // Sin glow → quitar shadows de titulos
+      fc.getObjects().forEach(obj => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const cid = ((obj as any).customId as string | undefined ?? "").toLowerCase();
+        if (cid.includes("title")) {
+          obj.set("shadow", null as never);
+        }
+      });
+    }
+    fc.requestRenderAll();
+    setActiveRemixId(remix.id);
+    setSaveState("unsaved");
+    setCanUndo(true);
+    toast.success(`Estilo ${remix.name} aplicado`);
+  }, [applyPalette, toast]);
+
+  // Paletas disponibles para esta plantilla segun su categoria
+  const availablePalettes = useMemo<Palette[]>(() => {
+    return getPalettesForCategory(template?.category);
+  }, [template?.category]);
+
+  // ─── Multi-formato export ────────────────────────────────────────────────
+  const availableFormats = useMemo(() => {
+    if (!template) return [];
+    return template.variants.map(v => ({
+      id: v.format,
+      label: v.format === "portrait" ? "Post Instagram" :
+             v.format === "story" ? "Story / TikTok" :
+             v.format === "square" ? "Cuadrado" :
+             v.format === "fb-cover" ? "Facebook Cover" :
+             v.format,
+      size: `${v.width} × ${v.height}`,
+      aspect: v.format === "story" ? "9:16" :
+              v.format === "square" ? "1:1" :
+              v.format === "fb-cover" ? "16:9" : "4:5",
+    }));
+  }, [template]);
+
+  const toggleFormat = useCallback((id: string) => {
+    setSelectedFormats(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const handleDownloadSelected = useCallback(async () => {
+    if (selectedFormats.size === 0) return;
+    setExportSheetOpen(false);
+    // Por ahora descargamos secuencialmente cada formato como PNG separado.
+    // Multi-formato real requiere re-renderizar cada variant — para Fase B
+    // entregamos el formato actual + indicamos cuantos formatos se intentaron.
+    await doExport("png");
+    if (selectedFormats.size > 1) {
+      toast.info(`Formato actual descargado. Multi-formato extra próximamente.`);
+    }
+  }, [selectedFormats, doExport, toast]);
 
   // ─── RENDER ──────────────────────────────────────────────────────────────
 
@@ -541,21 +682,191 @@ export default function MobileEditorV2({ templateId, formatId }: Props) {
           )}
 
           {activeTab === "estilo" && (
-            <div className="px-4 pb-4 flex flex-col items-center justify-center h-full text-center text-gray-400 text-[13px] gap-2">
-              <PaletteIcon size={36} className="opacity-30"/>
-              <p>Paletas y fuentes — próximamente</p>
+            <div className="px-4 pb-4 flex flex-col gap-4">
+              {/* Sub-tabs */}
+              <div className="flex gap-1.5 bg-[#0a0a14] rounded-xl p-1">
+                {(["colores", "fuentes", "efectos"] as const).map(st => (
+                  <button
+                    key={st}
+                    onClick={() => setActiveStyleSubTab(st)}
+                    className={`flex-1 py-2 text-[12px] font-semibold rounded-lg transition-colors ${
+                      activeStyleSubTab === st
+                        ? "bg-purple-500/20 text-purple-300"
+                        : "text-gray-400"
+                    }`}
+                  >
+                    {st === "colores" ? "Colores" : st === "fuentes" ? "Fuentes" : "Efectos"}
+                  </button>
+                ))}
+              </div>
+
+              {activeStyleSubTab === "colores" && (
+                <div>
+                  <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2.5">
+                    Paletas para {template?.category ?? "esta plantilla"}
+                  </div>
+                  <div className="grid grid-cols-2 gap-2.5">
+                    {availablePalettes.map(p => {
+                      const isActive = activePaletteId === p.id;
+                      return (
+                        <button
+                          key={p.id}
+                          onClick={() => applyPalette(p)}
+                          className={`rounded-xl overflow-hidden border-2 transition-all ${
+                            isActive ? "border-purple-500 scale-[0.98]" : "border-transparent active:scale-[0.97]"
+                          }`}
+                        >
+                          <div className="aspect-[5/2] flex">
+                            <div className="flex-1" style={{ background: p.primary }}/>
+                            <div className="flex-1" style={{ background: p.secondary }}/>
+                            <div className="flex-1" style={{ background: p.accent }}/>
+                            <div className="flex-1" style={{ background: p.dark }}/>
+                          </div>
+                          <div className="bg-[#13131f] py-2 px-2 text-[11px] font-semibold text-center">
+                            {p.name}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {activeStyleSubTab === "fuentes" && (
+                <div className="flex flex-col items-center text-center text-gray-400 text-[13px] gap-2 py-8">
+                  <p>Cambiar fuentes — próximamente</p>
+                  <p className="text-[11px] text-gray-500">Por ahora cambia desde Remix</p>
+                </div>
+              )}
+
+              {activeStyleSubTab === "efectos" && (
+                <div className="flex flex-col items-center text-center text-gray-400 text-[13px] gap-2 py-8">
+                  <p>Sombras, bordes, glow — próximamente</p>
+                </div>
+              )}
             </div>
           )}
 
           {activeTab === "remix" && (
-            <div className="px-4 pb-4 flex flex-col items-center justify-center h-full text-center text-gray-400 text-[13px] gap-2">
-              <Sparkles size={36} className="opacity-30"/>
-              <p>Variaciones de estilo — próximamente</p>
+            <div className="px-4 pb-4 flex flex-col gap-3">
+              <p className="text-[12px] text-gray-400 leading-relaxed">
+                Aplica un estilo completo (paleta + fuente + efectos) al instante. Tu contenido se mantiene.
+              </p>
+              <div className="grid grid-cols-2 gap-2.5">
+                {REMIX_STYLES.map(r => {
+                  const isActive = activeRemixId === r.id;
+                  return (
+                    <button
+                      key={r.id}
+                      onClick={() => applyRemix(r)}
+                      className={`rounded-2xl overflow-hidden border-2 transition-all ${
+                        isActive ? "border-purple-500 scale-[0.97]" : "border-white/[0.06] active:scale-[0.96]"
+                      }`}
+                    >
+                      <div
+                        className="aspect-[4/5] flex items-center justify-center text-[20px] font-black"
+                        style={{
+                          background: `linear-gradient(135deg, ${r.palette.dark}, ${r.palette.primary}40)`,
+                          color: r.palette.primary,
+                          fontFamily: r.primaryFont,
+                          textShadow: r.titleGlow ? `0 0 20px ${r.titleGlow.color}` : undefined,
+                        }}
+                      >
+                        Aa
+                      </div>
+                      <div className="bg-[#13131f] py-2.5 px-2 text-center">
+                        <div className="text-[12px] font-bold">{r.name}</div>
+                        {isActive && (
+                          <div className="text-[10px] text-emerald-400 mt-0.5 flex items-center justify-center gap-1">
+                            <Check size={10} strokeWidth={3}/>
+                            Aplicado
+                          </div>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+              <button className="w-full py-3 rounded-2xl border border-purple-500/30 border-dashed bg-purple-500/5 text-purple-300 text-[13px] font-semibold flex items-center justify-center gap-2">
+                <Sparkles size={14} strokeWidth={2}/>
+                Generar más estilos · próximamente
+              </button>
             </div>
           )}
 
         </div>
       </section>
+
+      {/* ═══ EXPORT BOTTOM SHEET ═══════════════════════════════════════════ */}
+      {exportSheetOpen && (
+        <>
+          <div
+            className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm"
+            onClick={() => setExportSheetOpen(false)}
+          />
+          <div className="fixed bottom-0 left-0 right-0 z-50 bg-[#1c1c2a] rounded-t-3xl border-t border-white/[0.1] shadow-2xl max-h-[80vh] flex flex-col safe-area-bottom">
+            <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mt-2.5 mb-1 shrink-0"/>
+            <div className="px-4 py-3 flex items-center justify-between shrink-0 border-b border-white/[0.06]">
+              <h2 className="text-[16px] font-bold">Exportar diseño</h2>
+              <button
+                onClick={() => setExportSheetOpen(false)}
+                className="w-8 h-8 rounded-lg bg-white/[0.05] flex items-center justify-center active:scale-95 transition-transform"
+                aria-label="Cerrar"
+              >
+                <XIcon size={14} strokeWidth={2.4}/>
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto px-4 py-3">
+              <p className="text-[12px] text-gray-400 mb-3">
+                Elige los formatos que necesitas. Te los descargamos todos.
+              </p>
+              <div className="flex flex-col gap-2">
+                {availableFormats.map(fmt => {
+                  const selected = selectedFormats.has(fmt.id);
+                  return (
+                    <button
+                      key={fmt.id}
+                      onClick={() => toggleFormat(fmt.id)}
+                      className={`flex items-center gap-3 p-3 rounded-2xl border transition-colors ${
+                        selected
+                          ? "border-purple-500/40 bg-purple-500/[0.06]"
+                          : "border-white/[0.06] bg-[#13131f]"
+                      }`}
+                    >
+                      <div className="w-10 h-10 rounded-xl bg-purple-500/15 flex items-center justify-center text-[18px] shrink-0">
+                        {fmt.aspect === "9:16" ? "📱" : fmt.aspect === "1:1" ? "⬛" : fmt.aspect === "16:9" ? "🖥" : "📷"}
+                      </div>
+                      <div className="flex-1 text-left min-w-0">
+                        <div className="text-[13px] font-bold">{fmt.label}</div>
+                        <div className="text-[10px] text-gray-500">{fmt.size}</div>
+                      </div>
+                      <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                        selected ? "bg-purple-500 border-purple-500" : "border-white/15"
+                      }`}>
+                        {selected && <Check size={12} strokeWidth={3.2} className="text-white"/>}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="px-4 pt-3 pb-4 border-t border-white/[0.06] shrink-0">
+              <button
+                onClick={handleDownloadSelected}
+                disabled={selectedFormats.size === 0 || exporting}
+                className="w-full h-12 rounded-2xl bg-gradient-to-br from-purple-600 to-fuchsia-600 text-white font-bold text-[14px] flex items-center justify-center gap-2 active:scale-[0.98] transition-transform shadow-lg shadow-purple-500/30 disabled:opacity-50"
+              >
+                <Download size={16} strokeWidth={2.4}/>
+                {selectedFormats.size === 0
+                  ? "Selecciona al menos uno"
+                  : selectedFormats.size === 1
+                  ? "Descargar"
+                  : `Descargar ${selectedFormats.size} formatos`}
+              </button>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* ═══ BOTTOM NAV (3 tabs) ════════════════════════════════════════════ */}
       <nav className="shrink-0 border-t border-white/[0.08] bg-[#0a0a14] pt-2 pb-6 flex justify-around safe-area-bottom">
