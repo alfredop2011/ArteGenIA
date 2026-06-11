@@ -100,6 +100,28 @@ export default function MobileEditorV3({ templateId, formatId }: Props) {
     if (t) setTemplate(t);
   }, [templateId]);
 
+  // ─── KEYBOARD AVOIDANCE (visualViewport API) ───────────────────────────
+  // Cuando el teclado virtual sube en mobile, redimensionamos el editor
+  // para que canvas + sheet queden VISIBLES sobre el teclado. Sin esto
+  // el teclado tapa el flyer y el usuario no ve lo que está editando.
+  // Mismo enfoque que Canva/Figma web.
+  const [kbHeight, setKbHeight] = useState(0);
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const onResize = () => {
+      const kh = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+      setKbHeight(kh);
+    };
+    onResize();
+    vv.addEventListener("resize", onResize);
+    vv.addEventListener("scroll", onResize);
+    return () => {
+      vv.removeEventListener("resize", onResize);
+      vv.removeEventListener("scroll", onResize);
+    };
+  }, []);
+
   // ─── Mapa layer customId → block ────────────────────────────────────────
   const layerToBlock = useMemo(() => {
     const map = new Map<string, EditableBlock>();
@@ -390,7 +412,14 @@ export default function MobileEditorV3({ templateId, formatId }: Props) {
   const activeBlockValue = activeBlockId ? blockValues[activeBlockId] ?? "" : "";
 
   return (
-    <div className="h-screen w-full flex flex-col overflow-hidden bg-[#0a0a14] text-white relative">
+    <div
+      className="w-full flex flex-col overflow-hidden bg-[#0a0a14] text-white relative"
+      style={{
+        // Si el teclado esta visible, restamos su altura para que el canvas
+        // + sheet queden completamente sobre el. Sino h-screen normal.
+        height: kbHeight > 0 ? `calc(100vh - ${kbHeight}px)` : "100vh",
+        transition: "height 0.15s ease-out",
+      }}>
 
       {/* ═══ HEADER MINIMO (50px) ════════════════════════════════════════ */}
       <header className="h-[50px] px-2 flex items-center gap-1 border-b border-white/[0.06] shrink-0">
@@ -585,7 +614,11 @@ export default function MobileEditorV3({ templateId, formatId }: Props) {
                               onChange={e => onBlockChange(block, e.target.value)}
                               placeholder={block.placeholder}
                               autoFocus
-                              className="w-full bg-[#0a0a14] border border-purple-500/40 rounded-lg px-3 py-2.5 text-[14px] text-white font-medium outline-none focus:border-purple-500"
+                              // font-size 16px+ es OBLIGATORIO para que iOS Safari
+                              // NO haga zoom automatico al enfocar el input (zoom
+                              // destructivo que rompe el layout del editor).
+                              style={{ fontSize: 16 }}
+                              className="w-full bg-[#0a0a14] border border-purple-500/40 rounded-lg px-3 py-3 text-white font-medium outline-none focus:border-purple-500"
                             />
                           </div>
                         )}

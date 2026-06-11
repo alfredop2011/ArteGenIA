@@ -86,6 +86,12 @@ export const viewport: Viewport = {
   maximumScale: 5,
   userScalable: true,
   themeColor: "#0a0010",
+  // interactiveWidget=resizes-content: cuando el teclado virtual sube en
+  // mobile, el viewport REDUCE su altura en vez de quedar superpuesto.
+  // Esto permite que CSS height:100vh se ajuste automatico al espacio
+  // disponible sobre el teclado. Critico para editores donde el flyer
+  // tiene que verse mientras se escribe (Canva/Figma usan esto).
+  interactiveWidget: "resizes-content",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

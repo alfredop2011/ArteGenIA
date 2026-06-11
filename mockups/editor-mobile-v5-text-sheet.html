@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>V3 · Sheet edición texto estilo Canva</title>
+<style>
+  :root {
+    --bg-base: #0a0a14;
+    --bg-surface: #13131f;
+    --bg-elevated: #1c1c2a;
+    --border-default: rgba(255,255,255,0.10);
+    --text-primary: #ffffff;
+    --text-secondary: #a1a1aa;
+    --text-muted: #71717a;
+    --brand-primary: #a855f7;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #050509;
+    color: var(--text-primary);
+    font-family: -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
+    min-height: 100vh;
+    padding: 32px 16px;
+    background:
+      radial-gradient(ellipse at top, rgba(168,85,247,0.06), transparent 60%),
+      #050509;
+  }
+  .hero { max-width: 1100px; margin: 0 auto 32px; text-align: center; }
+  .hero h1 {
+    font-size: 26px; font-weight: 800;
+    background: linear-gradient(135deg, #fff, #a855f7 50%, #ec4899);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 8px;
+  }
+  .hero p { color: var(--text-secondary); font-size: 14px; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(390px, 1fr));
+    gap: 28px;
+    max-width: 1400px;
+    margin: 0 auto;
+    justify-items: center;
+  }
+  .frame { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  .label {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-default);
+    border-radius: 999px;
+    padding: 6px 14px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: var(--text-secondary);
+  }
+  .iphone {
+    width: 390px; height: 844px;
+    background: var(--bg-base);
+    border-radius: 56px;
+    border: 12px solid #111;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.05), 0 30px 80px rgba(168,85,247,0.12);
+    overflow: hidden;
+    position: relative;
+  }
+  .iphone::before {
+    content: "";
+    position: absolute;
+    top: 12px; left: 50%; transform: translateX(-50%);
+    width: 120px; height: 32px;
+    background: #050509; border-radius: 20px; z-index: 100;
+  }
+  .screen { width: 100%; height: 100%; background: var(--bg-base); display: flex; flex-direction: column; overflow: hidden; }
+  .status-bar { padding: 50px 24px 6px; display: flex; justify-content: space-between; font-size: 12px; font-weight: 600; }
+  .status-bar .right { display: flex; gap: 4px; opacity: 0.9; }
+
+  /* Header MINI 50px */
+  .header {
+    height: 50px;
+    padding: 0 8px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    border-bottom: 1px solid var(--border-default);
+  }
+  .header .icon-btn {
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    background: transparent;
+    color: var(--text-primary);
+    border: none;
+  }
+  .header .title {
+    flex: 1; min-width: 0; padding-left: 4px;
+  }
+  .header .title h1 {
+    font-size: 13px; font-weight: 700; line-height: 1.1;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .header .title p {
+    font-size: 9px; color: var(--text-muted); line-height: 1.1;
+  }
+  .header .export {
+    margin-left: 4px;
+    height: 36px;
+    padding: 0 12px;
+    background: linear-gradient(135deg, #7c3aed, #a855f7);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 12px;
+    display: flex; align-items: center; gap: 4px;
+    box-shadow: 0 4px 12px rgba(168, 85, 247, 0.3);
+  }
+
+  /* Canvas area */
+  .canvas-area {
+    flex: 1;
+    padding: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    min-height: 0;
+  }
+  .canvas-wrapper {
+    width: 100%;
+    aspect-ratio: 4/5;
+    max-height: 100%;
+    background: linear-gradient(135deg, #1a0a2e, #4c1d3d);
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  }
+  .flyer-content {
+    width: 100%; height: 100%;
+    background:
+      radial-gradient(ellipse at top right, rgba(168,85,247,0.4), transparent 60%),
+      radial-gradient(ellipse at bottom left, rgba(236,72,153,0.3), transparent 60%),
+      linear-gradient(180deg, #1a0f2e 0%, #2d0a2a 100%);
+    position: relative;
+  }
+  .flyer-supra {
+    position: absolute;
+    top: 18px; left: 20px;
+    font-size: 8px;
+    color: rgba(255,255,255,0.6);
+    letter-spacing: 0.3em;
+    font-weight: 600;
+  }
+  .flyer-title {
+    position: absolute;
+    top: 36px; left: 18px; right: 18px;
+    font-family: "Georgia", serif;
+    font-size: 40px; font-weight: 900;
+    line-height: 0.95;
+    background: linear-gradient(180deg, #fff, #e0e0e8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 4px 30px rgba(255,255,255,0.2);
+  }
+  .flyer-title em {
+    display: block;
+    font-family: "Brush Script MT", cursive;
+    font-style: italic;
+    font-size: 36px;
+    background: linear-gradient(135deg, #facc15, #d4a058);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-top: -4px;
+  }
+  .flyer-desc {
+    position: absolute;
+    top: 130px; left: 20px; right: 20px;
+    font-size: 8px;
+    line-height: 1.4;
+    color: rgba(255,255,255,0.5);
+    font-style: italic;
+  }
+  .flyer-info {
+    position: absolute;
+    bottom: 50px; left: 18px;
+    font-size: 7px;
+    color: rgba(255,255,255,0.55);
+    line-height: 1.5;
+  }
+  .flyer-info .row { display: flex; gap: 6px; margin-bottom: 3px; }
+  .flyer-info .label-small { color: rgba(250,204,21,0.7); font-size: 6px; letter-spacing: 0.1em; }
+  .flyer-info .val { color: #fff; font-weight: 600; }
+  .flyer-cta {
+    position: absolute;
+    bottom: 24px; left: 50%; transform: translateX(-50%);
+    background: linear-gradient(135deg, #facc15, #f59e0b);
+    color: #1a0a1a;
+    font-size: 9px;
+    font-weight: 800;
+    padding: 4px 12px;
+    border-radius: 999px;
+  }
+
+  /* Selection bbox on title */
+  .selection-bbox {
+    position: absolute;
+    top: 30px; left: 14px; right: 14px; height: 105px;
+    border: 2px solid var(--brand-primary);
+    border-radius: 4px;
+    pointer-events: none;
+  }
+  .selection-bbox::before,
+  .selection-bbox::after,
+  .selection-bbox .h-mid {
+    content: "";
+    position: absolute;
+    width: 10px; height: 10px;
+    background: var(--brand-primary);
+    border: 2px solid white;
+    border-radius: 50%;
+  }
+  .selection-bbox::before { top: -6px; left: -6px; }
+  .selection-bbox::after  { top: -6px; right: -6px; }
+  .selection-bbox .h-mid { bottom: -6px; left: 50%; transform: translateX(-50%); }
+
+  /* SHEET TEMPORAL */
+  .sheet {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    background: var(--bg-elevated);
+    border-top-left-radius: 24px;
+    border-top-right-radius: 24px;
+    border-top: 1px solid var(--border-default);
+    display: flex;
+    flex-direction: column;
+    max-height: 50vh;
+    z-index: 30;
+  }
+  .sheet-handle {
+    width: 36px; height: 4px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 2px;
+    margin: 8px auto 4px;
+  }
+  .sheet-header {
+    padding: 8px 16px 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+  .sheet-header h2 { font-size: 14px; font-weight: 700; }
+  .check-btn {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: #10b981;
+    color: white;
+    border: none;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+  }
+
+  /* Content scroll horizontal pills */
+  .pills-row {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    scrollbar-width: none;
+  }
+  .pills-row::-webkit-scrollbar { display: none; }
+  .pill {
+    flex-shrink: 0;
+    padding: 10px 16px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.05);
+    border: 1.5px solid transparent;
+    color: var(--text-primary);
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  .pill.active {
+    background: rgba(168, 85, 247, 0.15);
+    border-color: var(--brand-primary);
+    color: var(--brand-primary);
+    font-weight: 700;
+  }
+  .pill.font-serif { font-family: "Playfair Display", Georgia, serif; }
+  .pill.font-script { font-family: "Brush Script MT", cursive; }
+  .pill.font-mono { font-family: "JetBrains Mono", monospace; }
+  .pill.font-display { font-family: "Bebas Neue", sans-serif; letter-spacing: 0.1em; }
+
+  /* Sub-tools bar */
+  .subtools-row {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px 16px;
+    gap: 4px;
+  }
+  .subtool {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 4px;
+    border-radius: 10px;
+  }
+  .subtool.active {
+    background: rgba(168, 85, 247, 0.12);
+    color: var(--brand-primary);
+  }
+  .subtool .ico {
+    width: 24px; height: 24px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    font-weight: 700;
+  }
+  .subtool .lbl {
+    font-size: 10px;
+    font-weight: 600;
+  }
+
+  /* Sliders area (cuando Tamaño está activo) */
+  .slider-row {
+    padding: 14px 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+  .slider-row .label-top {
+    display: flex; justify-content: space-between;
+    font-size: 11px; margin-bottom: 6px;
+  }
+  .slider-row .name { color: var(--text-secondary); font-weight: 500; }
+  .slider-row .val { color: var(--brand-primary); font-weight: 700; }
+  .slider-track {
+    height: 4px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 2px;
+    position: relative;
+  }
+  .slider-track .fill {
+    height: 100%;
+    background: linear-gradient(90deg, #7c3aed, #ec4899);
+    border-radius: 2px;
+  }
+  .slider-track .thumb {
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 18px; height: 18px;
+    background: white;
+    border-radius: 50%;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+  }
+
+  /* Estilos (con preview) */
+  .styles-grid {
+    padding: 12px 16px;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+  .style-card {
+    aspect-ratio: 2/1;
+    background: rgba(255,255,255,0.05);
+    border-radius: 12px;
+    border: 1.5px solid transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 800;
+    color: white;
+  }
+  .style-card.active { border-color: var(--brand-primary); }
+
+  /* Annotation */
+  .note {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-default);
+    border-radius: 14px;
+    padding: 14px 16px;
+    max-width: 380px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.55;
+  }
+  .note h3 {
+    font-size: 11px; font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--brand-primary);
+    margin-bottom: 6px;
+  }
+  .note strong { color: var(--text-primary); }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <h1>V3 · Sheet edición texto estilo Canva</h1>
+  <p>3 estados del sheet temporal: Fuente, Tamaño, Estilos. Pills scroll horizontal arriba + sub-tools línea inferior. Check verde para confirmar.</p>
+</div>
+
+<div class="grid">
+
+  <!-- ═══ ESTADO 1: SUB-TOOL "FUENTE" ACTIVO ═══ -->
+  <div class="frame">
+    <span class="label">1 · FUENTE seleccionado</span>
+    <div class="iphone">
+      <div class="screen">
+        <div class="status-bar"><span>9:41</span><span class="right">📶 📶 🔋</span></div>
+        <div class="header">
+          <button class="icon-btn">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          </button>
+          <div class="title">
+            <h1>Promo Kizomba</h1>
+            <p>1080×1080 · Guardado</p>
+          </div>
+          <button class="icon-btn"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 14L4 9l5-5M4 9h10.5a5.5 5.5 0 010 11H10"/></svg></button>
+          <button class="icon-btn" style="opacity:0.3"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 14l5-5-5-5M20 9H9.5a5.5 5.5 0 000 11H14"/></svg></button>
+          <button class="icon-btn"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button>
+          <button class="export">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+            Exportar
+          </button>
+        </div>
+
+        <div class="canvas-area">
+          <div class="canvas-wrapper">
+            <div class="flyer-content">
+              <div class="flyer-supra">MASTER WORKSHOP · KIZOMBA</div>
+              <div class="flyer-title">
+                Kizomba
+                <em>& Tarraxinha</em>
+              </div>
+              <div class="flyer-desc">Abrazo cerrado, musicalidad lenta, raíces angoleñas.</div>
+              <div class="flyer-info">
+                <div class="row"><span class="label-small">IMPARTEN</span></div>
+                <div class="row"><span class="val">João & Catarina</span></div>
+              </div>
+              <div class="flyer-cta">22 NOV · SÁBADO</div>
+              <div class="selection-bbox"><div class="h-mid"></div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="sheet">
+          <div class="sheet-handle"></div>
+          <div class="sheet-header">
+            <h2>Editar texto</h2>
+            <button class="check-btn">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+            </button>
+          </div>
+          <!-- Pills horizontales: fuentes -->
+          <div class="pills-row">
+            <button class="pill font-serif">Playfair</button>
+            <button class="pill font-script active">Brush Script</button>
+            <button class="pill font-display">Bebas Neue</button>
+            <button class="pill">Inter</button>
+            <button class="pill font-serif">Cormorant</button>
+            <button class="pill font-mono">JetBrains</button>
+          </div>
+          <!-- Sub-tools línea inferior -->
+          <div class="subtools-row">
+            <button class="subtool">
+              <div class="ico">⌨</div>
+              <div class="lbl">Editar</div>
+            </button>
+            <button class="subtool active">
+              <div class="ico" style="font-family: serif; font-style: italic;">Ff</div>
+              <div class="lbl">Fuente</div>
+            </button>
+            <button class="subtool">
+              <div class="ico">H</div>
+              <div class="lbl">Estilos</div>
+            </button>
+            <button class="subtool">
+              <div class="ico">Aa</div>
+              <div class="lbl">Tamaño</div>
+            </button>
+            <button class="subtool">
+              <div class="ico">🎨</div>
+              <div class="lbl">Color</div>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="note">
+      <h3>Fuente seleccionado</h3>
+      Pills horizontales scroll con todas las fuentes <strong>renderizadas en su tipografía real</strong>. La activa (Brush Script) tiene borde morado. Botón check verde arriba para confirmar y volver al canvas grande.
+    </div>
+  </div>
+
+  <!-- ═══ ESTADO 2: SUB-TOOL "TAMAÑO" ACTIVO ═══ -->
+  <div class="frame">
+    <span class="label">2 · TAMAÑO seleccionado</span>
+    <div class="iphone">
+      <div class="screen">
+        <div class="status-bar"><span>9:41</span><span class="right">📶 📶 🔋</span></div>
+        <div class="header">
+          <button class="icon-btn">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          </button>
+          <div class="title">
+            <h1>Promo Kizomba</h1>
+            <p>1080×1080 · Sin guardar</p>
+          </div>
+          <button class="icon-btn"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 14L4 9l5-5M4 9h10.5a5.5 5.5 0 010 11H10"/></svg></button>
+          <button class="icon-btn" style="opacity:0.3"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 14l5-5-5-5M20 9H9.5a5.5 5.5 0 000 11H14"/></svg></button>
+          <button class="icon-btn"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button>
+          <button class="export">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+            Exportar
+          </button>
+        </div>
+
+        <div class="canvas-area">
+          <div class="canvas-wrapper">
+            <div class="flyer-content">
+              <div class="flyer-supra">MASTER WORKSHOP · KIZOMBA</div>
+              <div class="flyer-title">
+                Kizomba
+                <em>& Tarraxinha</em>
+              </div>
+              <div class="flyer-desc">Abrazo cerrado, musicalidad lenta, raíces angoleñas.</div>
+              <div class="flyer-info">
+                <div class="row"><span class="label-small">IMPARTEN</span></div>
+                <div class="row"><span class="val">João & Catarina</span></div>
+              </div>
+              <div class="flyer-cta">22 NOV · SÁBADO</div>
+              <div class="selection-bbox"><div class="h-mid"></div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="sheet">
+          <div class="sheet-handle"></div>
+          <div class="sheet-header">
+            <h2>Editar texto</h2>
+            <button class="check-btn">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+            </button>
+          </div>
+          <!-- Slider de tamaño -->
+          <div class="slider-row">
+            <div class="label-top"><span class="name">Tamaño</span><span class="val">48 px</span></div>
+            <div class="slider-track">
+              <div class="fill" style="width: 60%"></div>
+              <div class="thumb" style="left: 60%"></div>
+            </div>
+          </div>
+          <div class="slider-row">
+            <div class="label-top"><span class="name">Espaciado</span><span class="val">0</span></div>
+            <div class="slider-track">
+              <div class="fill" style="width: 30%"></div>
+              <div class="thumb" style="left: 30%"></div>
+            </div>
+          </div>
+          <div class="subtools-row">
+            <button class="subtool">
+              <div class="ico">⌨</div>
+              <div class="lbl">Editar</div>
+            </button>
+            <button class="subtool">
+              <div class="ico" style="font-family: serif; font-style: italic;">Ff</div>
+              <div class="lbl">Fuente</div>
+            </button>
+            <button class="subtool">
+              <div class="ico">H</div>
+              <div class="lbl">Estilos</div>
+            </button>
+            <button class="subtool active">
+              <div class="ico">Aa</div>
+              <div class="lbl">Tamaño</div>
+            </button>
+            <button class="subtool">
+              <div class="ico">🎨</div>
+              <div class="lbl">Color</div>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="note">
+      <h3>Tamaño seleccionado</h3>
+      Dos sliders compactos: <strong>Tamaño</strong> y <strong>Espaciado</strong>. Cada uno con valor a la derecha y track con gradient morado/rosa. Mover el thumb actualiza el flyer en tiempo real.
+    </div>
+  </div>
+
+  <!-- ═══ ESTADO 3: SUB-TOOL "ESTILOS" ACTIVO ═══ -->
+  <div class="frame">
+    <span class="label">3 · ESTILOS seleccionado</span>
+    <div class="iphone">
+      <div class="screen">
+        <div class="status-bar"><span>9:41</span><span class="right">📶 📶 🔋</span></div>
+        <div class="header">
+          <button class="icon-btn">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          </button>
+          <div class="title">
+            <h1>Promo Kizomba</h1>
+            <p>1080×1080 · Guardado</p>
+          </div>
+          <button class="icon-btn"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 14L4 9l5-5M4 9h10.5a5.5 5.5 0 010 11H10"/></svg></button>
+          <button class="icon-btn" style="opacity:0.3"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 14l5-5-5-5M20 9H9.5a5.5 5.5 0 000 11H14"/></svg></button>
+          <button class="icon-btn"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button>
+          <button class="export">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+            Exportar
+          </button>
+        </div>
+
+        <div class="canvas-area">
+          <div class="canvas-wrapper">
+            <div class="flyer-content">
+              <div class="flyer-supra">MASTER WORKSHOP · KIZOMBA</div>
+              <div class="flyer-title">
+                Kizomba
+                <em>& Tarraxinha</em>
+              </div>
+              <div class="flyer-desc">Abrazo cerrado, musicalidad lenta, raíces angoleñas.</div>
+              <div class="flyer-info">
+                <div class="row"><span class="label-small">IMPARTEN</span></div>
+                <div class="row"><span class="val">João & Catarina</span></div>
+              </div>
+              <div class="flyer-cta">22 NOV · SÁBADO</div>
+              <div class="selection-bbox"><div class="h-mid"></div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="sheet">
+          <div class="sheet-handle"></div>
+          <div class="sheet-header">
+            <h2>Editar texto</h2>
+            <button class="check-btn">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+            </button>
+          </div>
+          <!-- Estilos preset cards -->
+          <div class="styles-grid">
+            <div class="style-card" style="background: linear-gradient(135deg, #facc15, #f59e0b); color: #1a0a1a;">Bold</div>
+            <div class="style-card active" style="background: linear-gradient(135deg, #1a0a2e, #4c1d3d); color: #facc15; box-shadow: 0 0 20px rgba(168, 85, 247, 0.4);">Glow</div>
+            <div class="style-card" style="background: rgba(255,255,255,0.05); color: #fff; font-style: italic;">Italic</div>
+            <div class="style-card" style="background: rgba(255,255,255,0.05); color: #fff; text-decoration: underline;">Underline</div>
+            <div class="style-card" style="background: rgba(255,255,255,0.05); color: #fff; -webkit-text-stroke: 1px white; -webkit-text-fill-color: transparent;">Outline</div>
+            <div class="style-card" style="background: rgba(0,0,0,0.5); color: #fff; text-shadow: 2px 2px 0 #ec4899;">Shadow</div>
+          </div>
+          <div class="subtools-row">
+            <button class="subtool">
+              <div class="ico">⌨</div>
+              <div class="lbl">Editar</div>
+            </button>
+            <button class="subtool">
+              <div class="ico" style="font-family: serif; font-style: italic;">Ff</div>
+              <div class="lbl">Fuente</div>
+            </button>
+            <button class="subtool active">
+              <div class="ico">H</div>
+              <div class="lbl">Estilos</div>
+            </button>
+            <button class="subtool">
+              <div class="ico">Aa</div>
+              <div class="lbl">Tamaño</div>
+            </button>
+            <button class="subtool">
+              <div class="ico">🎨</div>
+              <div class="lbl">Color</div>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="note">
+      <h3>Estilos seleccionado</h3>
+      Grid 2x3 con presets de texto. <strong>Glow activo</strong> (borde morado). Cada card muestra cómo se ve aplicado. Tap → aplica al flyer.
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>
