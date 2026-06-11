@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { templates } from "@/data/templates";
 
 /**
  * sitemap.xml generado por Next 16 file convention.
@@ -64,5 +65,14 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "yearly",
       priority: 0.3,
     },
+    // Plantillas individuales — cada una es una landing potencial via long-tail SEO
+    // ("flyer salsa cubana", "flyer concierto urban", etc.). Apuntan al editor con
+    // la plantilla cargada — el visitante puede previsualizar sin login.
+    ...templates.map(t => ({
+      url: `${SITE_URL}/editor/${t.id}?format=portrait`,
+      lastModified: LAST_MODIFIED,
+      changeFrequency: "monthly" as const,
+      priority: 0.6,
+    })),
   ];
 }

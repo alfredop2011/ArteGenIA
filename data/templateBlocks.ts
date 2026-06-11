@@ -161,13 +161,130 @@ export const TEMPLATE_BLOCKS: Record<number, EditableBlock[]> = {
   ],
 };
 
-/** Helper: devuelve los bloques editables para una plantilla. Si no hay
- *  schema definido, devuelve [] (el editor cae al modo legacy). */
+/** Helper: devuelve los bloques editables para una plantilla. Si hay
+ *  schema definido manualmente, lo usa. Sino, auto-genera bloques desde
+ *  los layer IDs de la primera variante (heuristicas semanticas). */
 export function getBlocksForTemplate(templateId: number): EditableBlock[] {
-  return TEMPLATE_BLOCKS[templateId] ?? [];
+  const manual = TEMPLATE_BLOCKS[templateId];
+  if (manual) return manual;
+  // Auto-generate desde la plantilla
+  return autoGenerateBlocks(templateId);
 }
 
-/** Helper: tiene esta plantilla un schema definido? */
+/** Helper: tiene esta plantilla un schema definido manualmente? */
 export function hasBlocksSchema(templateId: number): boolean {
   return templateId in TEMPLATE_BLOCKS;
+}
+
+// ─── AUTO-GENERATE BLOCKS ────────────────────────────────────────────────
+// Inferir EditableBlocks desde los layers de la plantilla cuando no hay
+// schema manual. Reglas semanticas basadas en el id del layer.
+//
+// Esto desbloquea las 47 plantillas del catalogo sin tener que escribir
+// schemas a mano. Las 3 plantillas con schema manual quedan con UX premium
+// (placeholders correctos, agrupacion de layers). El resto recibe un schema
+// "best effort" basado en heuristicas — lo suficientemente bueno para el
+// 90% de los casos.
+
+/** Mapa palabra-clave → BlockKind. La primera coincidencia gana. */
+const KIND_HEURISTICS: Array<[RegExp, BlockKind]> = [
+  // Profesores / artistas / DJs
+  [/profe-name|professor|teacher|profe$|^profe-/i, "teacher"],
+  [/\bdj\b|dj-name|^dj-/i, "dj"],
+  [/artist|lineup|cartel|band-name/i, "artist"],
+  // Titulos
+  [/title-1$|title-main|^title$|^main-title/i, "title"],
+  [/title-2|title-script|title-sub/i, "title"],
+  [/supra|kicker|tagline|claim|epigraph/i, "subtitle"],
+  [/subtitle|sub-title|desc|description/i, "subtitle"],
+  // Fechas / horas
+  [/datetime|date-time/i, "datetime"],
+  [/^date$|fecha|day$|month/i, "date"],
+  [/time$|hour|horario|schedule-time/i, "time"],
+  [/doors|apertura/i, "doors"],
+  [/schedule|days|dias/i, "schedule"],
+  // Precio
+  [/price|precio|cost|ticket|inversion|bono/i, "price"],
+  // Lugar
+  [/venue|local|sala|club|studio|recinto/i, "venue"],
+  [/footer-where|footer$|address|direccion|location|ciudad/i, "location"],
+  // Otros
+  [/age|edad|restriction/i, "ageRestriction"],
+  [/dress-code|dresscode|attire/i, "dressCode"],
+  [/rsvp|confirm|contact|email/i, "rsvp"],
+  [/company|empresa/i, "company"],
+  [/web|url|website/i, "web"],
+  [/social|instagram|@/i, "social"],
+];
+
+/** Labels human-readable por kind (auto-gen). */
+const KIND_LABELS: Record<BlockKind, string> = {
+  artist: "Artista", title: "Título", subtitle: "Subtítulo",
+  date: "Fecha", time: "Hora", datetime: "Fecha · Hora",
+  doors: "Apertura puertas", price: "Precio",
+  venue: "Venue", location: "Ubicación",
+  teacher: "Profesor", dj: "DJ", lineup: "Lineup",
+  schedule: "Días", ageRestriction: "Edad mínima",
+  dressCode: "Dress code", rsvp: "Confirmación",
+  company: "Empresa", web: "Web", social: "Redes",
+  footer: "Pie",
+};
+
+/** Layer IDs que NUNCA queremos exponer como editables (decorativos). */
+const IGNORE_LAYER_IDS = new Set([
+  "bg", "bg-photo", "overlay-bottom", "overlay-top", "line-gold",
+  "halo-1", "halo-2", "halo-3", "header-line",
+  "couple", "couple-main", "couple-sec", "frame-sec",
+  "label", "marco", "div", "title-line",
+  "box-1-bg", "box-2-bg", "box-3-bg", "info-bg", "info-top-line",
+  "plate-line-t", "plate-line-b",
+  "chip-bg", "bar-1", "bar-2", "bar-3", "bar-4",
+]);
+
+/** Adivinar el kind de un layer ID. Si no matchea, undefined (skipear). */
+function guessKind(layerId: string): BlockKind | undefined {
+  for (const [pattern, kind] of KIND_HEURISTICS) {
+    if (pattern.test(layerId)) return kind;
+  }
+  return undefined;
+}
+
+/** Auto-genera bloques editables desde la plantilla. Async-safe — solo
+ *  lee data en memoria, no llama APIs. */
+function autoGenerateBlocks(templateId: number): EditableBlock[] {
+  // Import lazy para evitar circular dep
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { templates } = require("@/data/templates") as { templates: Array<{ id: number; variants: Array<{ layers?: Array<{ id?: string; type?: string }> }> }> };
+  const tpl = templates.find(t => t.id === templateId);
+  if (!tpl) return [];
+  const layers = tpl.variants?.[0]?.layers ?? [];
+
+  const blocks: EditableBlock[] = [];
+  const seen = new Set<string>();
+
+  for (const layer of layers) {
+    if (!layer.id || layer.type !== "text") continue;
+    if (IGNORE_LAYER_IDS.has(layer.id)) continue;
+    const kind = guessKind(layer.id);
+    if (!kind) continue;
+    // Agrupar layers consecutivos del mismo kind (ej. title-1 + title-2)
+    const groupKey = `${kind}-${layer.id.replace(/-\d+$/, "")}`;
+    if (seen.has(groupKey)) {
+      // Anadir a bloque existente del mismo grupo
+      const existing = blocks.find(b => b.id === groupKey);
+      if (existing && !existing.layerIds.includes(layer.id)) {
+        existing.layerIds.push(layer.id);
+      }
+      continue;
+    }
+    seen.add(groupKey);
+    blocks.push({
+      id: groupKey,
+      kind,
+      label: KIND_LABELS[kind],
+      layerIds: [layer.id],
+    });
+  }
+
+  return blocks;
 }
