@@ -187,30 +187,84 @@ export default function MobileEditorV3({ templateId, formatId }: Props) {
     };
   }, [template, formatId, blocks]);
 
-  // ─── Auto-fit + ResizeObserver ──────────────────────────────────────────
+  // ─── Auto-fit + ResizeObserver + zoom-to-element ───────────────────────
+  //
+  // Logica de zoom:
+  //   - Por defecto: fit-to-view (todo el flyer visible en el wrapper)
+  //   - Si hay un bloque ACTIVO en el sheet de texto: zoom + pan al bbox
+  //     del layer asociado, asi el usuario ve grande lo que esta editando
+  //     (igual que Canva cuando seleccionas un texto chico).
+  //   - Al cerrar el sheet o desactivar bloque: vuelve al fit-to-view.
+
+  // Calcular y aplicar zoom contextual a un objeto Fabric.
+  const focusOnObject = useCallback((fc: FabricCanvas, obj: FabricObject) => {
+    const wrapper = wrapperRef.current;
+    if (!wrapper) return;
+    const r = wrapper.getBoundingClientRect();
+    if (r.width === 0 || r.height === 0) return;
+    const bounds = obj.getBoundingRect();
+    // Margenes para que el bbox NO ocupe el 100% del wrapper. Asi se ve
+    // contexto alrededor y la transicion es menos abrupta.
+    const PAD_RATIO = 0.45; // bbox ocupa ~55% del wrapper
+    const zoomW = (r.width * PAD_RATIO) / bounds.width;
+    const zoomH = (r.height * PAD_RATIO) / bounds.height;
+    // Tope superior — no hacer zoom infinito en textos minusculos
+    const zoom = Math.min(zoomW, zoomH, 4);
+    // Centrar el bbox en el wrapper
+    const cx = bounds.left + bounds.width / 2;
+    const cy = bounds.top + bounds.height / 2;
+    const tx = r.width / 2 - cx * zoom;
+    const ty = r.height / 2 - cy * zoom;
+    fc.setDimensions({ width: r.width, height: r.height });
+    fc.setZoom(zoom);
+    fc.setViewportTransform([zoom, 0, 0, zoom, tx, ty]);
+    fc.requestRenderAll();
+  }, []);
+
+  // Fit-to-view (todo el flyer visible).
+  const fitToView = useCallback((fc: FabricCanvas) => {
+    const wrapper = wrapperRef.current;
+    if (!wrapper) return;
+    const r = wrapper.getBoundingClientRect();
+    if (r.width === 0 || r.height === 0) return;
+    const zoomW = r.width / canvasSize.w;
+    const zoomH = r.height / canvasSize.h;
+    const fit = Math.min(zoomW, zoomH);
+    fc.setDimensions({ width: r.width, height: r.height });
+    fc.setZoom(fit);
+    const tx = (r.width - canvasSize.w * fit) / 2;
+    const ty = (r.height - canvasSize.h * fit) / 2;
+    fc.setViewportTransform([fit, 0, 0, fit, tx, ty]);
+    fc.requestRenderAll();
+  }, [canvasSize.w, canvasSize.h]);
+
   useEffect(() => {
     const fc = fabricRef.current;
     const wrapper = wrapperRef.current;
     if (!fc || !loaded || !wrapper) return;
-
-    const refit = () => {
-      const r = wrapper.getBoundingClientRect();
-      if (r.width === 0 || r.height === 0) return;
-      const zoomW = r.width / canvasSize.w;
-      const zoomH = r.height / canvasSize.h;
-      const fit = Math.min(zoomW, zoomH);
-      fc.setDimensions({ width: r.width, height: r.height });
-      fc.setZoom(fit);
-      const tx = (r.width - canvasSize.w * fit) / 2;
-      const ty = (r.height - canvasSize.h * fit) / 2;
-      fc.setViewportTransform([fit, 0, 0, fit, tx, ty]);
-      fc.requestRenderAll();
-    };
-    refit();
-    const ro = new ResizeObserver(refit);
+    // Encontrar el objeto del bloque activo (si lo hay y el sheet de texto esta abierto)
+    let target: FabricObject | undefined;
+    if (openSheet === "texto" && activeBlockId) {
+      const block = blocks.find(b => b.id === activeBlockId);
+      if (block) {
+        target = fc.getObjects().find(o => {
+          const cid = (o as FabricObject & { customId?: string }).customId;
+          return cid && block.layerIds.includes(cid);
+        });
+      }
+    }
+    if (target) {
+      focusOnObject(fc, target);
+    } else {
+      fitToView(fc);
+    }
+    const ro = new ResizeObserver(() => {
+      if (target) focusOnObject(fc, target);
+      else fitToView(fc);
+    });
     ro.observe(wrapper);
     return () => ro.disconnect();
-  }, [loaded, canvasSize.w, canvasSize.h]);
+  }, [loaded, openSheet, activeBlockId, blocks, focusOnObject, fitToView]);
 
   // ─── Selection handlers ─────────────────────────────────────────────────
   useEffect(() => {
