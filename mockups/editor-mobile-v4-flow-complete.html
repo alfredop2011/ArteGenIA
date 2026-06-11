@@ -1,0 +1,1169 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ArteGenIA · Flow completo del editor mobile</title>
+<style>
+  :root {
+    --bg-base: #0a0a14;
+    --bg-surface: #13131f;
+    --bg-elevated: #1c1c2a;
+    --bg-hover: #1f1f2e;
+    --border-subtle: rgba(255,255,255,0.06);
+    --border-default: rgba(255,255,255,0.10);
+    --border-strong: rgba(255,255,255,0.20);
+    --text-primary: #ffffff;
+    --text-secondary: #a1a1aa;
+    --text-muted: #71717a;
+    --brand-primary: #a855f7;
+    --brand-secondary: #ec4899;
+    --brand-accent: #22d3ee;
+    --brand-energy: #facc15;
+    --success: #10b981;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #050509;
+    color: var(--text-primary);
+    font-family: -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+    padding: 40px 16px;
+    background:
+      radial-gradient(ellipse at top, rgba(168,85,247,0.06), transparent 60%),
+      #050509;
+  }
+  .hero {
+    max-width: 980px;
+    margin: 0 auto 32px;
+    text-align: center;
+  }
+  .hero .label {
+    display: inline-block;
+    padding: 4px 12px;
+    background: rgba(168,85,247,0.15);
+    border: 1px solid rgba(168,85,247,0.35);
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #c4b5fd;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+  .hero h1 {
+    font-size: 32px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #fff, #a855f7 50%, #ec4899);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 12px;
+    line-height: 1.15;
+  }
+  .hero p {
+    color: var(--text-secondary);
+    font-size: 16px;
+    max-width: 640px;
+    margin: 0 auto;
+    line-height: 1.55;
+  }
+
+  /* FLOW GRID */
+  .flow-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+    gap: 32px;
+    max-width: 1500px;
+    margin: 32px auto;
+    justify-items: center;
+  }
+
+  .device-frame {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    max-width: 420px;
+  }
+
+  .step-label {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-default);
+    border-radius: 14px;
+    padding: 8px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .step-label .num {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #7c3aed, #a855f7);
+    color: white;
+    font-size: 13px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .step-label .text {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+  .step-label .text span {
+    color: var(--text-muted);
+    font-weight: 500;
+    margin-left: 4px;
+  }
+
+  .iphone {
+    width: 390px;
+    height: 844px;
+    background: var(--bg-base);
+    border-radius: 56px;
+    border: 12px solid #111;
+    box-shadow:
+      0 0 0 1px rgba(255,255,255,0.05),
+      0 30px 80px rgba(168,85,247,0.12);
+    overflow: hidden;
+    position: relative;
+  }
+  .iphone::before {
+    content: "";
+    position: absolute;
+    top: 12px; left: 50%;
+    transform: translateX(-50%);
+    width: 120px;
+    height: 32px;
+    background: #050509;
+    border-radius: 20px;
+    z-index: 100;
+  }
+
+  .screen {
+    width: 100%;
+    height: 100%;
+    background: var(--bg-base);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .status-bar {
+    padding: 50px 24px 6px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .status-bar .right { display: flex; gap: 4px; opacity: 0.9; }
+
+  .editor-header {
+    padding: 8px 12px 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .back-btn {
+    width: 36px; height: 36px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 10px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-primary);
+  }
+  .header-title { flex: 1; min-width: 0; padding-left: 6px; }
+  .header-title h1 {
+    font-size: 15px; font-weight: 700;
+    line-height: 1.1; margin-bottom: 2px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .header-title .meta {
+    font-size: 10px;
+    color: var(--text-muted);
+    display: flex; align-items: center; gap: 4px;
+  }
+  .header-title .meta .dot {
+    width: 4px; height: 4px;
+    background: var(--success);
+    border-radius: 50%;
+  }
+  .header-actions { display: flex; gap: 4px; }
+  .icon-btn {
+    width: 36px; height: 36px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 10px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-secondary);
+  }
+  .icon-btn.disabled { opacity: 0.3; }
+  .export-btn {
+    background: linear-gradient(135deg, #7c3aed, #a855f7);
+    color: white;
+    padding: 0 14px;
+    height: 36px;
+    border-radius: 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 700;
+    box-shadow: 0 4px 14px rgba(168,85,247,0.35);
+    border: none;
+  }
+
+  .canvas-area {
+    flex-shrink: 0;
+    height: 354px;
+    padding: 12px 16px 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    position: relative;
+  }
+  .canvas-wrapper {
+    height: 100%;
+    aspect-ratio: 4/5;
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    background: #111;
+  }
+  .canvas-wrapper img {
+    width: 100%; height: 100%;
+    object-fit: contain;
+    display: block;
+  }
+  /* Selection bbox */
+  .selection-bbox {
+    position: absolute;
+    border: 2.5px solid var(--brand-primary);
+    border-radius: 3px;
+    pointer-events: none;
+  }
+  .selection-bbox::before,
+  .selection-bbox::after,
+  .selection-bbox .h-mid {
+    content: "";
+    position: absolute;
+    width: 11px; height: 11px;
+    background: var(--brand-primary);
+    border: 2.5px solid white;
+    border-radius: 50%;
+  }
+  .selection-bbox::before { top: -7px; left: -7px; }
+  .selection-bbox::after  { top: -7px; right: -7px; }
+  .selection-bbox .h-mid {
+    bottom: -7px; left: 50%; transform: translateX(-50%);
+  }
+  /* Ghost para mostrar movimiento */
+  .ghost-element {
+    position: absolute;
+    border: 2px dashed rgba(168,85,247,0.5);
+    border-radius: 3px;
+    background: rgba(168,85,247,0.05);
+    pointer-events: none;
+  }
+  .move-arrow {
+    position: absolute;
+    z-index: 5;
+    color: var(--brand-primary);
+    opacity: 0.8;
+  }
+  .move-arrow svg { width: 32px; height: 32px; }
+
+  /* Toolbar contextual */
+  .contextual-toolbar {
+    margin: 12px 16px 8px;
+    background: rgba(28, 28, 42, 0.95);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(168, 85, 247, 0.25);
+    border-radius: 14px;
+    padding: 6px;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  }
+  .contextual-toolbar button {
+    flex: 1;
+    min-width: 44px;
+    height: 44px;
+    background: transparent;
+    border: none;
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    color: var(--text-secondary);
+    font-size: 9px;
+    font-weight: 500;
+  }
+  .contextual-toolbar button svg { width: 18px; height: 18px; stroke-width: 2; }
+  .contextual-toolbar .color-swatch {
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    background: white;
+    border: 2px solid white;
+  }
+  .contextual-toolbar .divider {
+    width: 1px; height: 24px;
+    background: var(--border-default);
+  }
+
+  /* Bottom sheet */
+  .bottom-sheet {
+    background: var(--bg-elevated);
+    border-top-left-radius: 24px;
+    border-top-right-radius: 24px;
+    border-top: 1px solid var(--border-default);
+    overflow: hidden;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  .sheet-handle {
+    width: 36px; height: 4px;
+    background: var(--border-strong);
+    border-radius: 2px;
+    margin: 8px auto 4px;
+    flex-shrink: 0;
+  }
+  .sheet-header {
+    padding: 6px 16px 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+  }
+  .sheet-header h2 { font-size: 15px; font-weight: 700; }
+  .sheet-header .remix-link {
+    display: flex; align-items: center; gap: 4px;
+    font-size: 11px;
+    color: var(--brand-primary);
+    font-weight: 600;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: rgba(168, 85, 247, 0.12);
+    border: 1px solid rgba(168, 85, 247, 0.25);
+  }
+  .blocks {
+    padding: 0 14px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow-y: auto;
+  }
+  .block {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+  .block.expanded {
+    border-color: rgba(168, 85, 247, 0.35);
+    background: linear-gradient(180deg, rgba(168,85,247,0.06), var(--bg-surface));
+  }
+  .block-header {
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .block-icon {
+    width: 32px; height: 32px;
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 16px;
+  }
+  .block-content { flex: 1; min-width: 0; }
+  .block-content .label {
+    font-size: 9px;
+    font-weight: 700;
+    color: var(--text-muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 1px;
+  }
+  .block-content .value {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .block-chevron { color: var(--text-muted); }
+  .block.expanded .block-chevron { transform: rotate(180deg); }
+  .block-edit {
+    padding: 0 14px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .block-edit input {
+    background: var(--bg-base);
+    border: 1px solid var(--brand-primary);
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 14px;
+    color: var(--text-primary);
+    width: 100%;
+    font-family: inherit;
+    outline: none;
+  }
+  .block-edit .cursor {
+    display: inline-block;
+    width: 1.5px;
+    height: 16px;
+    background: var(--brand-primary);
+    animation: blink 1s infinite;
+    vertical-align: middle;
+    margin-left: 1px;
+  }
+  @keyframes blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0; }
+  }
+  .block-applied {
+    display: flex; align-items: center; gap: 4px;
+    font-size: 10px;
+    color: var(--success);
+    font-weight: 600;
+  }
+
+  /* Estilo tab content */
+  .estilo-content {
+    padding: 0 16px 16px;
+    overflow-y: auto;
+    flex: 1;
+  }
+  .estilo-subtabs {
+    display: flex;
+    gap: 6px;
+    background: var(--bg-base);
+    border-radius: 10px;
+    padding: 4px;
+    margin-bottom: 14px;
+  }
+  .estilo-subtabs button {
+    flex: 1;
+    padding: 8px;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: 7px;
+  }
+  .estilo-subtabs button.active {
+    background: rgba(168,85,247,0.2);
+    color: var(--brand-primary);
+  }
+  .palette-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 10px;
+  }
+  .palette-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 18px;
+  }
+  .palette-item {
+    aspect-ratio: 1;
+    border-radius: 12px;
+    border: 2px solid transparent;
+    overflow: hidden;
+    display: flex;
+  }
+  .palette-item.active { border-color: var(--brand-primary); }
+  .palette-item div { flex: 1; }
+  .slider-row {
+    margin-bottom: 14px;
+  }
+  .slider-row .row-label {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 6px;
+    font-size: 12px;
+  }
+  .slider-row .name { color: var(--text-secondary); font-weight: 500; }
+  .slider-row .val { color: var(--brand-primary); font-weight: 700; }
+  .slider-track {
+    height: 4px;
+    background: var(--bg-base);
+    border-radius: 2px;
+    position: relative;
+  }
+  .slider-track .fill {
+    height: 100%;
+    background: linear-gradient(90deg, #7c3aed, #ec4899);
+    border-radius: 2px;
+  }
+  .slider-track .thumb {
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 18px;
+    height: 18px;
+    background: white;
+    border-radius: 50%;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+  }
+
+  /* Remix tab */
+  .remix-grid {
+    padding: 0 14px 14px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .remix-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 14px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .remix-card.active {
+    border-color: rgba(168, 85, 247, 0.5);
+    box-shadow: 0 0 0 1px rgba(168, 85, 247, 0.5);
+  }
+  .remix-thumb {
+    aspect-ratio: 4/5;
+    background-size: cover;
+    background-position: center;
+  }
+  .remix-thumb.tumb1 { background-image: linear-gradient(135deg, #4c1d95, #831843); }
+  .remix-thumb.tumb2 { background-image: linear-gradient(135deg, #fff, #e5e7eb); }
+  .remix-thumb.tumb3 { background-image: linear-gradient(135deg, #6366f1, #06b6d4); }
+  .remix-thumb.tumb4 { background-image: linear-gradient(135deg, #f59e0b, #ef4444); }
+  .remix-card .label {
+    padding: 8px 10px;
+    font-size: 11px;
+    font-weight: 700;
+    text-align: center;
+    letter-spacing: 0.05em;
+  }
+  .remix-card.active .label { color: var(--brand-primary); }
+  .remix-card .check {
+    font-size: 9px;
+    color: var(--success);
+    margin-top: 2px;
+  }
+  .remix-generate-more {
+    margin: 0 14px 14px;
+    background: rgba(168, 85, 247, 0.1);
+    border: 1px dashed rgba(168, 85, 247, 0.3);
+    border-radius: 12px;
+    padding: 14px;
+    text-align: center;
+    color: var(--brand-primary);
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  /* Export sheet */
+  .export-sheet {
+    padding: 6px 16px 16px;
+    overflow-y: auto;
+  }
+  .export-preview {
+    background: var(--bg-base);
+    border: 1px solid var(--border-default);
+    border-radius: 14px;
+    padding: 12px;
+    margin-bottom: 16px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+  .export-preview .thumb {
+    width: 60px;
+    aspect-ratio: 4/5;
+    border-radius: 8px;
+    background-size: cover;
+    background-position: center;
+  }
+  .export-preview .info { flex: 1; min-width: 0; }
+  .export-preview .info h3 {
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 2px;
+  }
+  .export-preview .info p {
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+  .formats-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 10px;
+  }
+  .format-options {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .format-row {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .format-row.selected {
+    border-color: var(--brand-primary);
+    background: linear-gradient(180deg, rgba(168,85,247,0.06), var(--bg-surface));
+  }
+  .format-icon {
+    width: 36px; height: 36px;
+    border-radius: 9px;
+    background: rgba(168,85,247,0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+  }
+  .format-info { flex: 1; }
+  .format-info .name { font-size: 13px; font-weight: 600; }
+  .format-info .size { font-size: 10px; color: var(--text-muted); }
+  .format-row .check {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    border: 2px solid var(--border-default);
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .format-row.selected .check {
+    background: var(--brand-primary);
+    border-color: var(--brand-primary);
+    color: white;
+  }
+  .download-cta {
+    background: linear-gradient(135deg, #7c3aed, #a855f7);
+    color: white;
+    padding: 14px;
+    border-radius: 14px;
+    text-align: center;
+    font-weight: 700;
+    font-size: 15px;
+    box-shadow: 0 8px 24px rgba(168,85,247,0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  /* Bottom nav */
+  .bottom-nav {
+    border-top: 1px solid var(--border-default);
+    background: var(--bg-base);
+    padding: 8px 0 24px;
+    display: flex;
+    justify-content: space-around;
+    flex-shrink: 0;
+  }
+  .bottom-nav button {
+    flex: 1;
+    background: transparent;
+    border: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    padding: 6px 0;
+    color: var(--text-muted);
+    font-size: 10px;
+    font-weight: 600;
+  }
+  .bottom-nav button.active { color: var(--brand-primary); }
+  .bottom-nav button.active .nav-icon {
+    background: rgba(168, 85, 247, 0.15);
+    border-color: rgba(168, 85, 247, 0.35);
+  }
+  .nav-icon {
+    width: 44px; height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid transparent;
+  }
+  .nav-icon svg { width: 20px; height: 20px; stroke-width: 2; }
+
+  .step-note {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-default);
+    border-radius: 14px;
+    padding: 14px 16px;
+    max-width: 380px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.55;
+  }
+  .step-note strong { color: var(--text-primary); font-weight: 600; }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <span class="label">Editor mobile · Flow completo</span>
+  <h1>Cómo se usa el editor paso a paso</h1>
+  <p>6 estados clave del editor mobile. Desde abrir una plantilla hasta exportar el flyer en múltiples formatos. Cada iPhone muestra una interacción real.</p>
+</div>
+
+<div class="flow-grid">
+
+  <!-- ═══ 1. ESTADO INICIAL ═══ -->
+  <div class="device-frame">
+    <div class="step-label">
+      <div class="num">1</div>
+      <div class="text">Recién abierto<span>desde galería</span></div>
+    </div>
+    <div class="iphone">
+      <div class="screen">
+        <div class="status-bar"><span>9:41</span><span class="right">📶 📶 🔋</span></div>
+        <div class="editor-header">
+          <button class="back-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          </button>
+          <div class="header-title">
+            <h1>Concierto Urban</h1>
+            <div class="meta"><span class="dot"></span>1080×1350 · Guardado</div>
+          </div>
+          <div class="header-actions">
+            <button class="icon-btn disabled"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M9 14L4 9l5-5M4 9h10.5a5.5 5.5 0 0 1 0 11H10"/></svg></button>
+            <button class="icon-btn disabled"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M15 14l5-5-5-5M20 9H9.5a5.5 5.5 0 0 0 0 11H14"/></svg></button>
+            <button class="export-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" width="15" height="15"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+              Exportar
+            </button>
+          </div>
+        </div>
+        <div class="canvas-area"><div class="canvas-wrapper"><img src="tmpl-concierto.png"/></div></div>
+        <div class="bottom-sheet">
+          <div class="sheet-handle"></div>
+          <div class="sheet-header">
+            <h2>Contenido</h2>
+            <button class="remix-link">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M12 2l3 6 6 1-4 5 1 7-6-3-6 3 1-7-4-5 6-1z"/></svg>
+              Probar otros estilos
+            </button>
+          </div>
+          <div class="blocks">
+            <div class="block">
+              <div class="block-header">
+                <div class="block-icon" style="background:rgba(168,85,247,0.15)">🎤</div>
+                <div class="block-content"><div class="label">ARTISTA</div><div class="value">Don Filosofín</div></div>
+                <div class="block-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M6 9l6 6 6-6"/></svg></div>
+              </div>
+            </div>
+            <div class="block">
+              <div class="block-header">
+                <div class="block-icon" style="background:rgba(34,211,238,0.15)">📅</div>
+                <div class="block-content"><div class="label">FECHA</div><div class="value">15 Nov · 21:00</div></div>
+                <div class="block-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M6 9l6 6 6-6"/></svg></div>
+              </div>
+            </div>
+            <div class="block">
+              <div class="block-header">
+                <div class="block-icon" style="background:rgba(16,185,129,0.15)">🎫</div>
+                <div class="block-content"><div class="label">PRECIO</div><div class="value">Anticipada 25€ · Puerta 35€</div></div>
+                <div class="block-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M6 9l6 6 6-6"/></svg></div>
+              </div>
+            </div>
+            <div class="block">
+              <div class="block-header">
+                <div class="block-icon" style="background:rgba(236,72,153,0.15)">📍</div>
+                <div class="block-content"><div class="label">VENUE</div><div class="value">Sala Apolo · Barcelona</div></div>
+                <div class="block-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M6 9l6 6 6-6"/></svg></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="bottom-nav">
+          <button class="active"><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></div><span>Contenido</span></button>
+          <button><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg></div><span>Estilo</span></button>
+          <button><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3 6 6 1-4 5 1 7-6-3-6 3 1-7-4-5 6-1z"/></svg></div><span>Remix</span></button>
+        </div>
+      </div>
+    </div>
+    <div class="step-note"><strong>Llegas aquí desde la galería de plantillas.</strong> El editor cargó la plantilla "Concierto Urban" con datos de ejemplo. Nada modificado todavía (undo/redo deshabilitados). El sheet muestra los 4 primeros bloques editables.</div>
+  </div>
+
+  <!-- ═══ 2. TAP EN TEXTO → SELECCION + TOOLBAR + BLOQUE EXPANDIDO ═══ -->
+  <div class="device-frame">
+    <div class="step-label">
+      <div class="num">2</div>
+      <div class="text">Tap sobre "Don Filosofín"<span>aparece toolbar + bloque expandido</span></div>
+    </div>
+    <div class="iphone">
+      <div class="screen">
+        <div class="status-bar"><span>9:41</span><span class="right">📶 📶 🔋</span></div>
+        <div class="editor-header">
+          <button class="back-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>
+          <div class="header-title">
+            <h1>Concierto Urban</h1>
+            <div class="meta"><span class="dot"></span>1080×1350 · Guardado</div>
+          </div>
+          <div class="header-actions">
+            <button class="icon-btn disabled"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M9 14L4 9l5-5M4 9h10.5a5.5 5.5 0 0 1 0 11H10"/></svg></button>
+            <button class="icon-btn disabled"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M15 14l5-5-5-5M20 9H9.5a5.5 5.5 0 0 0 0 11H14"/></svg></button>
+            <button class="export-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" width="15" height="15"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+              Exportar
+            </button>
+          </div>
+        </div>
+        <div class="canvas-area">
+          <div class="canvas-wrapper">
+            <img src="tmpl-concierto.png"/>
+            <div class="selection-bbox" style="top: 35%; left: 18%; right: 18%; height: 17%;"><div class="h-mid"></div></div>
+          </div>
+        </div>
+        <div class="contextual-toolbar">
+          <button><div class="color-swatch"></div><span>Color</span></button>
+          <div class="divider"></div>
+          <button><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"/></svg><span>Subir</span></button>
+          <button><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg><span>Bajar</span></button>
+          <button><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span>Duplicar</span></button>
+          <button style="color: #fca5a5"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg><span>Borrar</span></button>
+        </div>
+        <div class="bottom-sheet">
+          <div class="sheet-handle"></div>
+          <div class="sheet-header"><h2>Contenido</h2></div>
+          <div class="blocks">
+            <div class="block expanded">
+              <div class="block-header">
+                <div class="block-icon" style="background:rgba(168,85,247,0.15)">🎤</div>
+                <div class="block-content"><div class="label">ARTISTA</div><div class="value">Don Filosofín</div></div>
+                <div class="block-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M6 9l6 6 6-6"/></svg></div>
+              </div>
+              <div class="block-edit">
+                <input type="text" value="Don Filosofín"/>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="bottom-nav">
+          <button class="active"><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></div><span>Contenido</span></button>
+          <button><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg></div><span>Estilo</span></button>
+          <button><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3 6 6 1-4 5 1 7-6-3-6 3 1-7-4-5 6-1z"/></svg></div><span>Remix</span></button>
+        </div>
+      </div>
+    </div>
+    <div class="step-note"><strong>Al tocar "Don Filosofín" del flyer:</strong> aparece bbox morado con handles (selección), toolbar contextual delgada con 5 acciones (Color · ↑↓ · Duplicar · Borrar) JUSTO encima del sheet, y el bloque ARTISTA se expande automáticamente con su input editable. <strong>Sync canvas ↔ form</strong>.</div>
+  </div>
+
+  <!-- ═══ 3. ESCRIBIENDO EN EL INPUT ═══ -->
+  <div class="device-frame">
+    <div class="step-label">
+      <div class="num">3</div>
+      <div class="text">Escribiendo el nuevo nombre<span>cambio aplicado en tiempo real</span></div>
+    </div>
+    <div class="iphone">
+      <div class="screen">
+        <div class="status-bar"><span>9:41</span><span class="right">📶 📶 🔋</span></div>
+        <div class="editor-header">
+          <button class="back-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>
+          <div class="header-title">
+            <h1>Concierto Urban</h1>
+            <div class="meta"><span class="dot"></span>Guardando…</div>
+          </div>
+          <div class="header-actions">
+            <button class="icon-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M9 14L4 9l5-5M4 9h10.5a5.5 5.5 0 0 1 0 11H10"/></svg></button>
+            <button class="icon-btn disabled"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M15 14l5-5-5-5M20 9H9.5a5.5 5.5 0 0 0 0 11H14"/></svg></button>
+            <button class="export-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" width="15" height="15"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+              Exportar
+            </button>
+          </div>
+        </div>
+        <div class="canvas-area"><div class="canvas-wrapper"><img src="tmpl-concierto.png"/></div></div>
+        <div class="bottom-sheet">
+          <div class="sheet-handle"></div>
+          <div class="sheet-header"><h2>Contenido</h2></div>
+          <div class="blocks">
+            <div class="block expanded">
+              <div class="block-header">
+                <div class="block-icon" style="background:rgba(168,85,247,0.15)">🎤</div>
+                <div class="block-content"><div class="label">ARTISTA</div><div class="value">Bad Bunny</div></div>
+                <div class="block-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M6 9l6 6 6-6"/></svg></div>
+              </div>
+              <div class="block-edit">
+                <input type="text" value="Bad Bunny"/>
+                <div class="block-applied">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12"><polyline points="20 6 9 17 4 12"/></svg>
+                  Aplicado al diseño · Cmd+Z para deshacer
+                </div>
+              </div>
+            </div>
+            <div class="block">
+              <div class="block-header">
+                <div class="block-icon" style="background:rgba(34,211,238,0.15)">📅</div>
+                <div class="block-content"><div class="label">FECHA</div><div class="value">15 Nov · 21:00</div></div>
+                <div class="block-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M6 9l6 6 6-6"/></svg></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="bottom-nav">
+          <button class="active"><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></div><span>Contenido</span></button>
+          <button><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg></div><span>Estilo</span></button>
+          <button><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3 6 6 1-4 5 1 7-6-3-6 3 1-7-4-5 6-1z"/></svg></div><span>Remix</span></button>
+        </div>
+      </div>
+    </div>
+    <div class="step-note"><strong>Cambió "Don Filosofín" por "Bad Bunny" en el input</strong>. El flyer en el canvas se actualiza con debounce 300ms. Header dice "Guardando…" (autosave) y aparece <strong>"Aplicado ✓"</strong> verde + hint "Cmd+Z para deshacer". Undo ya está activo.</div>
+  </div>
+
+  <!-- ═══ 4. TAB ESTILO ═══ -->
+  <div class="device-frame">
+    <div class="step-label">
+      <div class="num">4</div>
+      <div class="text">Tab "Estilo"<span>paletas curadas por categoría</span></div>
+    </div>
+    <div class="iphone">
+      <div class="screen">
+        <div class="status-bar"><span>9:41</span><span class="right">📶 📶 🔋</span></div>
+        <div class="editor-header">
+          <button class="back-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>
+          <div class="header-title">
+            <h1>Concierto Urban</h1>
+            <div class="meta"><span class="dot"></span>1080×1350 · Guardado</div>
+          </div>
+          <div class="header-actions">
+            <button class="icon-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M9 14L4 9l5-5M4 9h10.5a5.5 5.5 0 0 1 0 11H10"/></svg></button>
+            <button class="icon-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M15 14l5-5-5-5M20 9H9.5a5.5 5.5 0 0 0 0 11H14"/></svg></button>
+            <button class="export-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" width="15" height="15"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+              Exportar
+            </button>
+          </div>
+        </div>
+        <div class="canvas-area"><div class="canvas-wrapper"><img src="tmpl-concierto.png"/></div></div>
+        <div class="bottom-sheet">
+          <div class="sheet-handle"></div>
+          <div class="sheet-header"><h2>Estilo</h2></div>
+          <div class="estilo-content">
+            <div class="estilo-subtabs">
+              <button class="active">Colores</button>
+              <button>Fuentes</button>
+              <button>Efectos</button>
+            </div>
+            <div class="palette-label">Paletas para CONCIERTO</div>
+            <div class="palette-grid">
+              <div class="palette-item active">
+                <div style="background:#facc15"></div><div style="background:#1a1a26"></div><div style="background:#7c3aed"></div>
+              </div>
+              <div class="palette-item">
+                <div style="background:#ef4444"></div><div style="background:#000"></div><div style="background:#fbbf24"></div>
+              </div>
+              <div class="palette-item">
+                <div style="background:#06b6d4"></div><div style="background:#ec4899"></div><div style="background:#1e293b"></div>
+              </div>
+              <div class="palette-item">
+                <div style="background:#a855f7"></div><div style="background:#fff"></div><div style="background:#000"></div>
+              </div>
+            </div>
+            <div class="slider-row">
+              <div class="row-label"><span class="name">Intensidad</span><span class="val">80%</span></div>
+              <div class="slider-track">
+                <div class="fill" style="width:80%"></div>
+                <div class="thumb" style="left:80%"></div>
+              </div>
+            </div>
+            <div class="slider-row">
+              <div class="row-label"><span class="name">Oscuridad</span><span class="val">45%</span></div>
+              <div class="slider-track">
+                <div class="fill" style="width:45%"></div>
+                <div class="thumb" style="left:45%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="bottom-nav">
+          <button><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></div><span>Contenido</span></button>
+          <button class="active"><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg></div><span>Estilo</span></button>
+          <button><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3 6 6 1-4 5 1 7-6-3-6 3 1-7-4-5 6-1z"/></svg></div><span>Remix</span></button>
+        </div>
+      </div>
+    </div>
+    <div class="step-note"><strong>Tab Estilo</strong> con 3 subtabs (Colores · Fuentes · Efectos). 4 paletas <strong>curadas específicamente para CONCIERTO</strong> (no genéricas). 2 sliders para Intensidad y Oscuridad. Cualquier cambio se aplica en tiempo real al canvas.</div>
+  </div>
+
+  <!-- ═══ 5. TAB REMIX (variaciones IA) ═══ -->
+  <div class="device-frame">
+    <div class="step-label">
+      <div class="num">5</div>
+      <div class="text">Tab "Remix"<span>4 variaciones generadas IA</span></div>
+    </div>
+    <div class="iphone">
+      <div class="screen">
+        <div class="status-bar"><span>9:41</span><span class="right">📶 📶 🔋</span></div>
+        <div class="editor-header">
+          <button class="back-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>
+          <div class="header-title">
+            <h1>Concierto Urban</h1>
+            <div class="meta"><span class="dot"></span>1080×1350 · Guardado</div>
+          </div>
+          <div class="header-actions">
+            <button class="icon-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M9 14L4 9l5-5M4 9h10.5a5.5 5.5 0 0 1 0 11H10"/></svg></button>
+            <button class="icon-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M15 14l5-5-5-5M20 9H9.5a5.5 5.5 0 0 0 0 11H14"/></svg></button>
+            <button class="export-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" width="15" height="15"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+              Exportar
+            </button>
+          </div>
+        </div>
+        <div class="canvas-area"><div class="canvas-wrapper"><img src="tmpl-concierto.png"/></div></div>
+        <div class="bottom-sheet">
+          <div class="sheet-handle"></div>
+          <div class="sheet-header">
+            <h2>Remix</h2>
+            <span style="font-size:11px; color: var(--text-muted)">4 variaciones</span>
+          </div>
+          <div class="remix-grid">
+            <div class="remix-card active">
+              <div class="remix-thumb tumb1"></div>
+              <div class="label">URBANO<div class="check">✓ Aplicado</div></div>
+            </div>
+            <div class="remix-card">
+              <div class="remix-thumb tumb2"></div>
+              <div class="label">MINIMAL</div>
+            </div>
+            <div class="remix-card">
+              <div class="remix-thumb tumb3"></div>
+              <div class="label">NEÓN</div>
+            </div>
+            <div class="remix-card">
+              <div class="remix-thumb tumb4"></div>
+              <div class="label">FESTIVAL</div>
+            </div>
+          </div>
+          <div class="remix-generate-more">
+            ✨  Generar 4 estilos más con IA
+          </div>
+        </div>
+        <div class="bottom-nav">
+          <button><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></div><span>Contenido</span></button>
+          <button><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg></div><span>Estilo</span></button>
+          <button class="active"><div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3 6 6 1-4 5 1 7-6-3-6 3 1-7-4-5 6-1z"/></svg></div><span>Remix</span></button>
+        </div>
+      </div>
+    </div>
+    <div class="step-note"><strong>Tab Remix</strong> · 4 variaciones pre-generadas al cargar la plantilla (Urbano/Minimal/Neón/Festival). Tap = aplica instantáneo al canvas, mantiene tu contenido. "Generar más" llama a IA generativa.</div>
+  </div>
+
+  <!-- ═══ 6. EXPORT BOTTOM SHEET ═══ -->
+  <div class="device-frame">
+    <div class="step-label">
+      <div class="num">6</div>
+      <div class="text">Tap "Exportar"<span>multi-formato + compartir</span></div>
+    </div>
+    <div class="iphone">
+      <div class="screen">
+        <div class="status-bar"><span>9:41</span><span class="right">📶 📶 🔋</span></div>
+        <div class="editor-header" style="opacity: 0.4">
+          <button class="back-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>
+          <div class="header-title">
+            <h1>Concierto Urban</h1>
+            <div class="meta"><span class="dot"></span>Guardado</div>
+          </div>
+          <div class="header-actions">
+            <button class="icon-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M9 14L4 9l5-5M4 9h10.5a5.5 5.5 0 0 1 0 11H10"/></svg></button>
+            <button class="icon-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M15 14l5-5-5-5M20 9H9.5a5.5 5.5 0 0 0 0 11H14"/></svg></button>
+            <button class="export-btn">Exportar</button>
+          </div>
+        </div>
+        <div class="canvas-area" style="opacity: 0.3"><div class="canvas-wrapper"><img src="tmpl-concierto.png"/></div></div>
+
+        <!-- Bottom sheet Exportar (cubre todo el espacio inferior) -->
+        <div class="bottom-sheet" style="flex: 1; max-height: 70%;">
+          <div class="sheet-handle"></div>
+          <div class="sheet-header" style="padding-bottom: 4px">
+            <h2>Exportar diseño</h2>
+            <button class="back-btn" style="width: 28px; height: 28px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+          </div>
+          <div class="export-sheet">
+            <div class="export-preview">
+              <div class="thumb" style="background-image: url('tmpl-concierto.png')"></div>
+              <div class="info">
+                <h3>Concierto Urban</h3>
+                <p>1080×1350 · ~450 KB</p>
+              </div>
+            </div>
+            <div class="formats-label">FORMATOS</div>
+            <div class="format-options">
+              <div class="format-row selected">
+                <div class="format-icon">📱</div>
+                <div class="format-info">
+                  <div class="name">Post Instagram</div>
+                  <div class="size">1080 × 1350 (4:5)</div>
+                </div>
+                <div class="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" width="12" height="12"><polyline points="20 6 9 17 4 12"/></svg></div>
+              </div>
+              <div class="format-row selected">
+                <div class="format-icon">📲</div>
+                <div class="format-info">
+                  <div class="name">Story Instagram</div>
+                  <div class="size">1080 × 1920 (9:16)</div>
+                </div>
+                <div class="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" width="12" height="12"><polyline points="20 6 9 17 4 12"/></svg></div>
+              </div>
+              <div class="format-row">
+                <div class="format-icon">🎬</div>
+                <div class="format-info">
+                  <div class="name">TikTok</div>
+                  <div class="size">1080 × 1920 (9:16)</div>
+                </div>
+                <div class="check"></div>
+              </div>
+              <div class="format-row">
+                <div class="format-icon">🖨</div>
+                <div class="format-info">
+                  <div class="name">Cartel imprenta</div>
+                  <div class="size">2480 × 3508 (A4)</div>
+                </div>
+                <div class="check"></div>
+              </div>
+            </div>
+            <div class="download-cta">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" width="18" height="18"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+              Descargar 2 formatos
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="step-note"><strong>Bottom sheet Exportar</strong> al 70% de la pantalla. Multi-formato: marca los que quieras y genera todos a la vez. CTA con conteo dinámico ("Descargar 2 formatos"). El canvas detrás se ve apagado para foco.</div>
+  </div>
+
+</div>
+
+</body>
+</html>

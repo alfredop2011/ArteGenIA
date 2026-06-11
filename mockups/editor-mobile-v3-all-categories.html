@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ArteGenIA · Editor en TODAS las categorías</title>
+<style>
+  :root {
+    --bg-base: #0a0a14;
+    --bg-surface: #13131f;
+    --bg-elevated: #1c1c2a;
+    --border-subtle: rgba(255,255,255,0.06);
+    --border-default: rgba(255,255,255,0.10);
+    --border-strong: rgba(255,255,255,0.20);
+    --text-primary: #ffffff;
+    --text-secondary: #a1a1aa;
+    --text-muted: #71717a;
+    --brand-primary: #a855f7;
+    --brand-secondary: #ec4899;
+    --brand-accent: #22d3ee;
+    --brand-energy: #facc15;
+    --success: #10b981;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #050509;
+    color: var(--text-primary);
+    font-family: -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+    padding: 40px 16px;
+    background:
+      radial-gradient(ellipse at top, rgba(168,85,247,0.06), transparent 60%),
+      #050509;
+  }
+  .hero {
+    max-width: 980px;
+    margin: 0 auto 48px;
+    text-align: center;
+  }
+  .hero h1 {
+    font-size: 32px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #fff, #a855f7 50%, #ec4899);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 12px;
+    line-height: 1.1;
+  }
+  .hero p {
+    color: var(--text-secondary);
+    font-size: 16px;
+    max-width: 640px;
+    margin: 0 auto;
+    line-height: 1.55;
+  }
+  .hero strong { color: #fff; }
+
+  .key-insight {
+    max-width: 920px;
+    margin: 32px auto;
+    background: linear-gradient(135deg, rgba(168,85,247,0.08), rgba(236,72,153,0.04));
+    border: 1px solid rgba(168, 85, 247, 0.25);
+    border-radius: 16px;
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .key-insight .badge {
+    background: linear-gradient(135deg, #7c3aed, #a855f7);
+    color: #fff;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    flex-shrink: 0;
+  }
+  .key-insight p {
+    color: var(--text-primary);
+    font-size: 14px;
+    line-height: 1.55;
+  }
+
+  /* GRID DE CATEGORÍAS */
+  .category-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+    gap: 24px;
+    max-width: 1600px;
+    margin: 0 auto;
+  }
+
+  .category-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-default);
+    border-radius: 24px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .category-header {
+    padding: 20px 22px 16px;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .category-header .kicker {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--brand-primary);
+    margin-bottom: 6px;
+  }
+  .category-header h2 {
+    font-size: 19px;
+    font-weight: 800;
+    margin-bottom: 8px;
+  }
+  .category-header .audience {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .audience-pill {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border-default);
+    color: var(--text-secondary);
+    font-size: 10px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 999px;
+    letter-spacing: 0.03em;
+  }
+
+  /* MINI IPHONE */
+  .mini-iphone {
+    width: 100%;
+    aspect-ratio: 9 / 19.5;
+    max-height: 520px;
+    background: var(--bg-base);
+    margin: 16px auto;
+    border-radius: 32px;
+    border: 8px solid #111;
+    box-shadow: 0 12px 32px rgba(0,0,0,0.4);
+    overflow: hidden;
+    position: relative;
+  }
+  .mini-iphone::before {
+    content: "";
+    position: absolute;
+    top: 6px; left: 50%;
+    transform: translateX(-50%);
+    width: 80px;
+    height: 18px;
+    background: #050509;
+    border-radius: 12px;
+    z-index: 100;
+  }
+  .mini-screen {
+    width: 100%;
+    height: 100%;
+    background: var(--bg-base);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .mini-header {
+    padding: 32px 10px 8px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    border-bottom: 1px solid var(--border-subtle);
+    font-size: 8px;
+  }
+  .mini-header .title {
+    flex: 1;
+    min-width: 0;
+  }
+  .mini-header .title h3 {
+    font-size: 9px;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .mini-header .title .meta {
+    font-size: 7px;
+    color: var(--text-muted);
+  }
+  .mini-header .export {
+    background: linear-gradient(135deg, #7c3aed, #a855f7);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 8px;
+    font-weight: 700;
+  }
+  .mini-canvas {
+    flex-shrink: 0;
+    height: 38%;
+    padding: 8px 12px 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+  }
+  .mini-canvas-wrapper {
+    height: 100%;
+    aspect-ratio: 4/5;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+  }
+  .mini-canvas-wrapper img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+  .mini-sheet {
+    flex: 1;
+    background: var(--bg-elevated);
+    border-top: 1px solid var(--border-default);
+    border-top-left-radius: 14px;
+    border-top-right-radius: 14px;
+    padding: 6px 8px 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    margin-top: 6px;
+  }
+  .mini-sheet .handle {
+    width: 24px; height: 3px;
+    background: var(--border-strong);
+    border-radius: 2px;
+    margin: 0 auto 4px;
+  }
+  .mini-sheet h4 {
+    font-size: 9px;
+    font-weight: 700;
+    padding: 0 4px 4px;
+  }
+  .mini-blocks {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    overflow: hidden;
+  }
+  .mini-block {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    padding: 4px 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 7px;
+  }
+  .mini-block.expanded {
+    border-color: rgba(168, 85, 247, 0.4);
+    background: linear-gradient(180deg, rgba(168,85,247,0.06), var(--bg-surface));
+  }
+  .mini-block .icon {
+    width: 18px; height: 18px;
+    border-radius: 5px;
+    background: rgba(168,85,247,0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    flex-shrink: 0;
+  }
+  .mini-block .label-val {
+    flex: 1;
+    min-width: 0;
+  }
+  .mini-block .label {
+    font-size: 6px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-weight: 700;
+  }
+  .mini-block .val {
+    font-size: 8px;
+    color: var(--text-primary);
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .mini-nav {
+    height: 30px;
+    background: var(--bg-base);
+    border-top: 1px solid var(--border-default);
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    padding-bottom: 6px;
+  }
+  .mini-nav button {
+    flex: 1;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 6px;
+    font-weight: 600;
+    text-align: center;
+  }
+  .mini-nav button.active { color: var(--brand-primary); }
+  .mini-nav .dot {
+    display: block;
+    width: 16px; height: 16px;
+    border-radius: 4px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    margin: 0 auto 2px;
+  }
+  .mini-nav button.active .dot {
+    background: rgba(168, 85, 247, 0.15);
+    border-color: rgba(168, 85, 247, 0.35);
+  }
+
+  /* Lista de bloques explicativa al lado */
+  .blocks-explanation {
+    padding: 12px 22px 22px;
+    background: linear-gradient(180deg, transparent, rgba(0,0,0,0.2));
+  }
+  .blocks-explanation .label {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 10px;
+  }
+  .blocks-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .block-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    background: var(--bg-base);
+    border: 1px solid var(--border-subtle);
+    border-radius: 10px;
+  }
+  .block-row .ico {
+    width: 22px; height: 22px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    flex-shrink: 0;
+  }
+  .block-row .text {
+    flex: 1;
+    min-width: 0;
+  }
+  .block-row .text .field {
+    font-size: 9px;
+    font-weight: 700;
+    color: var(--text-muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 1px;
+  }
+  .block-row .text .example {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <h1>El editor se adapta a TODA tu industria de eventos</h1>
+  <p>El mismo editor mobile sirve para <strong>conciertos, fiestas, festivales, galas, clubs, eventos corporativos y clases</strong>. Lo que cambia son los <strong>bloques editables</strong> — cada plantilla del catálogo define los suyos.</p>
+</div>
+
+<div class="key-insight">
+  <span class="badge">CLAVE</span>
+  <p><strong>El editor es genérico, las plantillas son específicas.</strong> Cuando el usuario abre una plantilla de "Concierto", verá bloques como Artista, Fecha, Precio anticipada/puerta. Cuando abre una de "Gala", verá Dress code, RSVP, Confirmación. La UI nunca cambia, solo el contenido del form.</p>
+</div>
+
+<div class="category-grid" id="categories"></div>
+
+<script>
+const CATEGORIES = [
+  {
+    kicker: "PRODUCTORAS · AGENCIAS",
+    name: "Concierto",
+    title: "Don Filosofín Live",
+    img: "tmpl-concierto.png",
+    audience: ["Productoras", "Agencias", "Artistas"],
+    blocks: [
+      { ico: "🎤", icoColor: "168,85,247", field: "Artista principal", example: "Don Filosofín" },
+      { ico: "📅", icoColor: "34,211,238", field: "Fecha", example: "15 Nov · 21:00" },
+      { ico: "🚪", icoColor: "250,204,21", field: "Apertura puertas", example: "20:00" },
+      { ico: "🎫", icoColor: "16,185,129", field: "Precio", example: "Anticipada 25€ · Puerta 35€" },
+      { ico: "📍", icoColor: "236,72,153", field: "Venue", example: "Sala Apolo · Barcelona" },
+      { ico: "🔞", icoColor: "239,68,68", field: "Edad mínima", example: "+18" },
+    ],
+    expanded: 1,
+  },
+  {
+    kicker: "INSTITUCIONES",
+    name: "Gala",
+    title: "Evento Premium",
+    img: "tmpl-gala.png",
+    audience: ["Instituciones", "Empresas", "Fundaciones"],
+    blocks: [
+      { ico: "✨", icoColor: "250,204,21", field: "Evento", example: "Gala Solidaria 2026" },
+      { ico: "📅", icoColor: "34,211,238", field: "Fecha · Hora", example: "30 Nov · 20:00" },
+      { ico: "📍", icoColor: "236,72,153", field: "Venue", example: "Hotel Ritz · Madrid" },
+      { ico: "👔", icoColor: "168,85,247", field: "Dress code", example: "Black tie" },
+      { ico: "✉", icoColor: "16,185,129", field: "Confirmación", example: "rsvp@fundacion.org" },
+    ],
+    expanded: 3,
+  },
+  {
+    kicker: "PRODUCTORAS · DJs",
+    name: "Fiesta",
+    title: "Bachata Nights",
+    img: "tmpl-fiesta.png",
+    audience: ["Productoras", "DJs", "Promoters"],
+    blocks: [
+      { ico: "🪩", icoColor: "236,72,153", field: "Nombre fiesta", example: "Bachata Nights" },
+      { ico: "🎧", icoColor: "168,85,247", field: "DJ", example: "DJ Tony Latino" },
+      { ico: "📅", icoColor: "34,211,238", field: "Fecha", example: "Sábado 22 Nov" },
+      { ico: "🌙", icoColor: "250,204,21", field: "Apertura", example: "23:30" },
+      { ico: "🎫", icoColor: "16,185,129", field: "Entrada", example: "Antes 1h gratis · Después 10€" },
+      { ico: "📍", icoColor: "239,68,68", field: "Local", example: "Sala Cuba" },
+    ],
+    expanded: 0,
+  },
+  {
+    kicker: "PRODUCTORAS · AGENCIAS",
+    name: "Festival",
+    title: "Vibra Fest",
+    img: "tmpl-festival.png",
+    audience: ["Productoras", "Agencias", "Patrocinadores"],
+    blocks: [
+      { ico: "🎤", icoColor: "168,85,247", field: "Lineup", example: "Bad Bunny · J Balvin · Karol G…" },
+      { ico: "📆", icoColor: "34,211,238", field: "Fechas", example: "12-14 Julio 2026" },
+      { ico: "🎟", icoColor: "250,204,21", field: "Tickets", example: "Early Bird 80€ · Abono 120€" },
+      { ico: "🌳", icoColor: "16,185,129", field: "Recinto", example: "Recinto Ferial Valencia" },
+      { ico: "🤝", icoColor: "236,72,153", field: "Sponsors", example: "Coca-Cola · Red Bull" },
+    ],
+    expanded: 1,
+  },
+  {
+    kicker: "DJs · CLUBS",
+    name: "Club / Discoteca",
+    title: "Neon Night",
+    img: "tmpl-club.png",
+    audience: ["DJs residentes", "Club owners", "Productoras"],
+    blocks: [
+      { ico: "🌃", icoColor: "236,72,153", field: "Noche", example: "Neon Saturdays" },
+      { ico: "🎧", icoColor: "168,85,247", field: "DJ residente", example: "DJ Pulse" },
+      { ico: "📅", icoColor: "34,211,238", field: "Día", example: "Todos los sábados" },
+      { ico: "🌙", icoColor: "250,204,21", field: "Horario", example: "00:00 - 06:00" },
+      { ico: "🎫", icoColor: "16,185,129", field: "Entrada", example: "Chicas free hasta 1h · Resto 12€" },
+      { ico: "📍", icoColor: "239,68,68", field: "Club", example: "Pacha · Ibiza" },
+    ],
+    expanded: 2,
+  },
+  {
+    kicker: "INSTITUCIONES · EMPRESAS",
+    name: "Corporativo",
+    title: "Black Tie · Aniversario empresa",
+    img: "tmpl-corporativo.png",
+    audience: ["Empresas", "Instituciones", "Ayuntamientos"],
+    blocks: [
+      { ico: "🏢", icoColor: "168,85,247", field: "Empresa", example: "Empresa Innova S.L." },
+      { ico: "🎯", icoColor: "236,72,153", field: "Tipo evento", example: "25 Aniversario" },
+      { ico: "📅", icoColor: "34,211,238", field: "Fecha · Hora", example: "5 Dic · 19:30" },
+      { ico: "📍", icoColor: "16,185,129", field: "Venue", example: "Auditorio Nacional" },
+      { ico: "👔", icoColor: "250,204,21", field: "Dress code", example: "Black tie" },
+      { ico: "✉", icoColor: "239,68,68", field: "Confirmación", example: "eventos@empresa.com" },
+    ],
+    expanded: 0,
+  },
+  {
+    kicker: "ACADEMIAS · PROFESORES",
+    name: "Clases",
+    title: "Clases de Baile · Neón",
+    img: "tmpl-clases.png",
+    audience: ["Academias", "Profesores", "Freelance"],
+    blocks: [
+      { ico: "👤", icoColor: "168,85,247", field: "Profesor", example: "Carlos & Lía" },
+      { ico: "📅", icoColor: "34,211,238", field: "Días", example: "Lun · Mié · Vie" },
+      { ico: "🕐", icoColor: "250,204,21", field: "Hora", example: "20:30 H" },
+      { ico: "💶", icoColor: "16,185,129", field: "Bono mensual", example: "55€ · 12 clases" },
+      { ico: "📍", icoColor: "236,72,153", field: "Studio", example: "Studio 12 · Madrid" },
+    ],
+    expanded: 1,
+  },
+];
+
+const NAV_HTML = `
+  <div class="mini-nav">
+    <button class="active"><span class="dot"></span>Contenido</button>
+    <button><span class="dot"></span>Estilo</button>
+    <button><span class="dot"></span>Remix</button>
+  </div>
+`;
+
+const renderBlock = (b, expanded) => `
+  <div class="mini-block${expanded ? " expanded" : ""}">
+    <div class="icon" style="background:rgba(${b.icoColor},0.15)">${b.ico}</div>
+    <div class="label-val">
+      <div class="label">${b.field}</div>
+      <div class="val">${b.example}</div>
+    </div>
+  </div>
+`;
+
+const renderBlockRow = (b) => `
+  <div class="block-row">
+    <div class="ico" style="background:rgba(${b.icoColor},0.15)">${b.ico}</div>
+    <div class="text">
+      <div class="field">${b.field}</div>
+      <div class="example">${b.example}</div>
+    </div>
+  </div>
+`;
+
+const renderCategory = (cat) => `
+  <div class="category-card">
+    <div class="category-header">
+      <div class="kicker">${cat.kicker}</div>
+      <h2>${cat.name}</h2>
+      <div class="audience">
+        ${cat.audience.map(a => `<span class="audience-pill">${a}</span>`).join("")}
+      </div>
+    </div>
+
+    <div class="mini-iphone">
+      <div class="mini-screen">
+        <div class="mini-header">
+          <div class="title">
+            <h3>${cat.title}</h3>
+            <div class="meta">1080×1350 · Guardado</div>
+          </div>
+          <span class="export">Exportar</span>
+        </div>
+        <div class="mini-canvas">
+          <div class="mini-canvas-wrapper">
+            <img src="${cat.img}" alt="${cat.title}"/>
+          </div>
+        </div>
+        <div class="mini-sheet">
+          <div class="handle"></div>
+          <h4>Contenido</h4>
+          <div class="mini-blocks">
+            ${cat.blocks.slice(0, 4).map((b, i) => renderBlock(b, i === cat.expanded)).join("")}
+          </div>
+        </div>
+        ${NAV_HTML}
+      </div>
+    </div>
+
+    <div class="blocks-explanation">
+      <div class="label">Bloques editables (${cat.blocks.length})</div>
+      <div class="blocks-list">
+        ${cat.blocks.map(renderBlockRow).join("")}
+      </div>
+    </div>
+  </div>
+`;
+
+document.getElementById("categories").innerHTML = CATEGORIES.map(renderCategory).join("");
+</script>
+
+</body>
+</html>

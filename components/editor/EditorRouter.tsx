@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import GeneratedEditor from "@/components/editor/GeneratedEditor";
-import MobileEditor from "@/components/editor/MobileEditor";
+import MobileEditorV2 from "@/components/editor/MobileEditorV2";
 import type { FormatId } from "@/data/formats";
 
 /**
@@ -40,7 +40,7 @@ export default function EditorRouter(props: Props) {
   }
 
   if (isMobile && props.templateId) {
-    return <MobileEditor {...props}/>;
+    return <MobileEditorV2 {...props}/>;
   }
 
   return <GeneratedEditor {...props}/>;
