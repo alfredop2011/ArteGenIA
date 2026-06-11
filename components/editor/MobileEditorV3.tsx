@@ -28,9 +28,14 @@ import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
   Canvas as FabricCanvas,
+  StaticCanvas as FabricStaticCanvas,
   Shadow,
   type FabricObject,
   Textbox,
+  FabricImage,
+  Circle as FabricCircle,
+  Rect as FabricRect,
+  filters as FabricFilters,
 } from "fabric";
 import {
   ArrowLeft, Download, Undo2, Redo2,
@@ -38,9 +43,11 @@ import {
   Copy, Trash2, Palette as PaletteIcon,
   X as XIcon, LayoutGrid, Type as TypeIcon, Image as ImageIcon,
   Wand2, ChevronUp, ChevronDown,
+  Replace, Crop, Eraser, Sliders, Square,
+  Pencil,
 } from "lucide-react";
 import { templates, getVariant, type Template } from "@/data/templates";
-import type { FormatId } from "@/data/formats";
+import { FORMATS, PUBLIC_FORMATS, type FormatId } from "@/data/formats";
 import { applyTemplateLayers } from "@/lib/fabricApplyTemplateLayers";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/lib/toast";
@@ -89,9 +96,30 @@ export default function MobileEditorV3({ templateId, formatId }: Props) {
   const [activePaletteId, setActivePaletteId] = useState<string | null>(null);
   const [activeRemixId, setActiveRemixId] = useState<RemixStyle["id"] | null>(null);
 
-  // Sub-tool activo (cuando hay seleccion): editar/fuente/estilos/tamano/color
-  type SubTool = null | "editar" | "fuente" | "estilos" | "tamano" | "color";
+  // Sub-tool activo (cuando hay seleccion). Lista varia segun tipo del
+  // objeto seleccionado. SubTool es un union de todas las posibles.
+  type SubTool = null
+    // Texto
+    | "editar" | "fuente" | "estilos" | "tamano" | "color"
+    // Imagen
+    | "reemplazar" | "recortar" | "quitar-fondo" | "filtros" | "opacidad-img"
+    // Forma
+    | "fill" | "borde" | "opacidad-shape" | "esquinas";
   const [activeSubTool, setActiveSubTool] = useState<SubTool>(null);
+
+  // Tipo del objeto seleccionado — define que sub-tools mostrar
+  type ObjType = null | "text" | "image" | "shape";
+  const [selectedType, setSelectedType] = useState<ObjType>(null);
+
+  /** Detectar tipo del objeto Fabric. Shape es cualquier cosa que no sea
+   *  texto ni imagen (rect, circle, triangle, polygon, path, line, etc.). */
+  const detectType = useCallback((obj: FabricObject): ObjType => {
+    const t = obj.type;
+    if (!t) return null;
+    if (t === "textbox" || t === "text" || t === "i-text") return "text";
+    if (t === "image") return "image";
+    return "shape";
+  }, []);
 
   // History + save
   const [canUndo, setCanUndo] = useState(false);
@@ -275,9 +303,12 @@ export default function MobileEditorV3({ templateId, formatId }: Props) {
       const sel = e.selected?.[0];
       if (!sel) return;
       const cid = (sel as FabricObject & { customId?: string }).customId;
-      // Activar sub-tools bar SIEMPRE que haya seleccion, aunque el objeto
-      // no tenga customId (objetos manuales o sin schema).
       setSelectedLayerId(cid ?? "__obj__");
+      const t = detectType(sel);
+      setSelectedType(t);
+      // Cambiar sub-tool a uno valido segun el tipo (resetea si cambiamos
+      // de un texto a una imagen por ejemplo)
+      setActiveSubTool(null);
       if (cid) {
         const block = layerToBlockRef.current.get(cid);
         if (block) {
@@ -287,6 +318,7 @@ export default function MobileEditorV3({ templateId, formatId }: Props) {
     };
     const onDeselect = () => {
       setSelectedLayerId(null);
+      setSelectedType(null);
       setActiveSubTool(null);
     };
     fc.on("selection:created", onSelect);
@@ -377,6 +409,147 @@ export default function MobileEditorV3({ templateId, formatId }: Props) {
     setCanUndo(true);
   }, []);
 
+  // ─── Helpers IMAGEN (filtros, opacidad, recorte, reemplazo) ─────────────
+  const getActiveImage = useCallback((): FabricImage | null => {
+    const obj = fabricRef.current?.getActiveObject();
+    if (!obj || obj.type !== "image") return null;
+    return obj as FabricImage;
+  }, []);
+
+  /** Aplica un preset de filtro: Original / B&N / Cálido / Frío / Vintage */
+  const applyImageFilter = useCallback((preset: "none" | "bw" | "warm" | "cool" | "vintage") => {
+    const fc = fabricRef.current;
+    const img = getActiveImage();
+    if (!fc || !img) return;
+    switch (preset) {
+      case "none":
+        img.filters = [];
+        break;
+      case "bw":
+        img.filters = [new FabricFilters.Grayscale()];
+        break;
+      case "warm":
+        // mas rojo + brillo
+        img.filters = [
+          new FabricFilters.HueRotation({ rotation: 0.05 }),
+          new FabricFilters.Saturation({ saturation: 0.2 }),
+        ];
+        break;
+      case "cool":
+        img.filters = [
+          new FabricFilters.HueRotation({ rotation: -0.1 }),
+          new FabricFilters.Saturation({ saturation: 0.1 }),
+        ];
+        break;
+      case "vintage":
+        img.filters = [new FabricFilters.Sepia()];
+        break;
+    }
+    img.applyFilters();
+    fc.requestRenderAll();
+    setSaveState("unsaved");
+    setCanUndo(true);
+  }, [getActiveImage]);
+
+  /** Cambia la forma de recorte: cuadrado, círculo, redondeado.
+   *  Usa clipPath de Fabric en coordenadas locales del objeto. */
+  const applyImageCrop = useCallback((shape: "square" | "circle" | "rounded") => {
+    const fc = fabricRef.current;
+    const img = getActiveImage();
+    if (!fc || !img) return;
+    const w = img.width ?? 0;
+    const h = img.height ?? 0;
+    switch (shape) {
+      case "square":
+        img.clipPath = undefined;
+        break;
+      case "circle":
+        img.clipPath = new FabricCircle({
+          radius: Math.min(w, h) / 2,
+          originX: "center",
+          originY: "center",
+        });
+        break;
+      case "rounded": {
+        const r = Math.min(w, h) * 0.12;
+        img.clipPath = new FabricRect({
+          width: w,
+          height: h,
+          rx: r,
+          ry: r,
+          originX: "center",
+          originY: "center",
+        });
+        break;
+      }
+    }
+    fc.requestRenderAll();
+    setSaveState("unsaved");
+    setCanUndo(true);
+  }, [getActiveImage]);
+
+  /** Reemplaza la imagen activa preservando posicion + escala.
+   *  Carga el archivo local via FileReader → data URL → FabricImage. */
+  const handleReplaceImage = useCallback(async (file: File) => {
+    const fc = fabricRef.current;
+    const img = getActiveImage();
+    if (!fc || !img) return;
+    try {
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      const newImg = await FabricImage.fromURL(dataUrl, { crossOrigin: "anonymous" });
+      const el = newImg.getElement();
+      img.setElement(el as HTMLImageElement);
+      img.dirty = true;
+      fc.requestRenderAll();
+      setSaveState("unsaved");
+      setCanUndo(true);
+      toast.success("Imagen reemplazada");
+    } catch (e) {
+      console.error(e);
+      toast.error("No se pudo cargar la imagen");
+    }
+  }, [getActiveImage, toast]);
+
+  // ─── Helpers FORMA (borde, opacidad, esquinas) ──────────────────────────
+  const setObjOpacity = useCallback((o: number) => {
+    const fc = fabricRef.current;
+    const obj = fc?.getActiveObject();
+    if (!fc || !obj) return;
+    obj.set("opacity", o);
+    fc.requestRenderAll();
+    setSaveState("unsaved");
+    setCanUndo(true);
+  }, []);
+
+  const setObjStroke = useCallback((color: string | null, width?: number) => {
+    const fc = fabricRef.current;
+    const obj = fc?.getActiveObject();
+    if (!fc || !obj) return;
+    if (color !== undefined) obj.set("stroke", color ?? "");
+    if (width !== undefined) obj.set("strokeWidth", width);
+    fc.requestRenderAll();
+    setSaveState("unsaved");
+    setCanUndo(true);
+  }, []);
+
+  /** Esquinas redondeadas solo aplica a Rect (rx/ry). En otros objetos no
+   *  hace nada visible. */
+  const setRectCornerRadius = useCallback((r: number) => {
+    const fc = fabricRef.current;
+    const obj = fc?.getActiveObject();
+    if (!fc || !obj || obj.type !== "rect") return;
+    obj.set("rx", r);
+    obj.set("ry", r);
+    fc.requestRenderAll();
+    setSaveState("unsaved");
+    setCanUndo(true);
+  }, []);
+
   const handleDeselect = useCallback(() => {
     const fc = fabricRef.current;
     if (!fc) return;
@@ -427,9 +600,101 @@ export default function MobileEditorV3({ templateId, formatId }: Props) {
   }, [canvasSize, authProfile?.plan, toast]);
 
   const handleExport = useCallback(() => {
+    // Cambio Fase D.2: el boton Exportar abre el sheet multi-formato.
+    // El sheet incluye opcion "Descargar este" (formato actual rapido) y
+    // "Descargar todos" (variantes disponibles del template).
+    // Auth se valida DENTRO de los botones de descarga (mejor UX — el
+    // usuario puede explorar formatos antes de loguearse).
+    setOpenSheet("export");
+  }, []);
+
+  // ─── Multi-formato exportar ─────────────────────────────────────────────
+  // Renderiza una variant del template off-screen con los blockValues
+  // actuales aplicados (texto editado) y devuelve dataUrl PNG.
+  // Las paletas/remixes NO se replican aqui — para preservarlos exactos
+  // exportamos el formato ACTUAL via doExport() y los OTROS formatos llevan
+  // el variant original con solo los textos editados. Trade-off documentado.
+  const renderVariantOffscreen = useCallback(async (variant: ReturnType<typeof getVariant>): Promise<string | null> => {
+    if (!variant) return null;
+    const sc = new FabricStaticCanvas(undefined, {
+      width: variant.width,
+      height: variant.height,
+      backgroundColor: "#000",
+    });
+    await applyTemplateLayers(sc, variant.layers);
+    // Aplicar blockValues (textos editados por el usuario) por customId
+    Object.entries(blockValues).forEach(([blockId, value]) => {
+      const block = blocks.find(b => b.id === blockId);
+      if (!block) return;
+      block.layerIds.forEach(lid => {
+        const obj = sc.getObjects().find(o => (o as FabricObject & { customId?: string }).customId === lid);
+        if (obj && (obj.type === "textbox" || obj.type === "text" || obj.type === "i-text")) {
+          (obj as Textbox).set("text", value);
+        }
+      });
+    });
+    sc.renderAll();
+    const url = sc.toDataURL({ format: "png", quality: 0.95, multiplier: 1 });
+    sc.dispose();
+    return url;
+  }, [blockValues, blocks]);
+
+  const downloadDataUrl = useCallback((url: string, filename: string) => {
+    const a = document.createElement("a");
+    a.download = filename;
+    a.href = url;
+    a.click();
+  }, []);
+
+  const exportSingleFormat = useCallback(async (fmtId: FormatId) => {
+    if (!template) return;
     if (!authUser) { toast.info("Inicia sesión para descargar"); return; }
-    void doExport("png");
-  }, [authUser, doExport, toast]);
+    setExporting(true);
+    try {
+      // Si es el formato actual, usar export directo del canvas vivo (preserva
+      // paleta/remix/imagenes subidas). Si no, render off-screen del variant.
+      if (fmtId === formatId) {
+        await doExport("png");
+        return;
+      }
+      const variant = getVariant(template, fmtId);
+      if (!variant) {
+        toast.error(`Esta plantilla no tiene variante ${FORMATS[fmtId].name}`);
+        return;
+      }
+      const url = await renderVariantOffscreen(variant);
+      if (!url) { toast.error("Error al renderizar"); return; }
+      let finalUrl = url;
+      if (shouldWatermark(authProfile?.plan)) {
+        try { finalUrl = await applyWatermark(url); } catch (e) { console.warn(e); }
+      }
+      downloadDataUrl(finalUrl, `artegenia-${template.id}-${fmtId}.png`);
+      toast.success(`Descargado ${FORMATS[fmtId].name}`);
+    } finally {
+      setExporting(false);
+    }
+  }, [template, formatId, doExport, renderVariantOffscreen, authProfile?.plan, toast, downloadDataUrl]);
+
+  const exportAllFormats = useCallback(async () => {
+    if (!template) return;
+    setExporting(true);
+    try {
+      const available = PUBLIC_FORMATS.filter(fmt => {
+        const v = template.variants.find(x => x.format === fmt);
+        return !!v;
+      });
+      let done = 0;
+      for (const fmt of available) {
+        await exportSingleFormat(fmt);
+        done++;
+        // Pequeño delay para que el navegador no bloquee las descargas multiples
+        await new Promise(r => setTimeout(r, 400));
+      }
+      toast.success(`Descargados ${done} formatos`);
+    } finally {
+      setExporting(false);
+    }
+  }, [template, exportSingleFormat, toast]);
 
   // ─── Aplicar paleta ──────────────────────────────────────────────────────
   const applyPalette = useCallback((palette: Palette) => {
@@ -463,6 +728,75 @@ export default function MobileEditorV3({ templateId, formatId }: Props) {
     setSaveState("unsaved");
     setCanUndo(true);
   }, []);
+
+  // ─── Remix IA generativa ────────────────────────────────────────────────
+  // Llama /api/remix → recibe paleta + fuente generadas por Claude Haiku
+  // basadas en categoria + titulo del template + mood opcional.
+  // Aplica al canvas usando el mismo applyPalette + cambio de fuente.
+  const [aiRemixing, setAiRemixing] = useState(false);
+  const [aiRemixResult, setAiRemixResult] = useState<{
+    name: string;
+    mood: string;
+    palette: { primary: string; secondary: string; accent: string; dark: string };
+    primaryFont: string;
+  } | null>(null);
+
+  const requestAIRemix = useCallback(async (mood?: string) => {
+    if (!template) return;
+    if (!authUser) { toast.info("Inicia sesión para usar IA"); return; }
+    setAiRemixing(true);
+    try {
+      const res = await fetch("/api/remix", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          category: template.category ?? "evento",
+          title: template.title ?? "",
+          mood: mood ?? "",
+        }),
+      });
+      if (!res.ok) {
+        if (res.status === 429) toast.error("Demasiadas peticiones, espera 1 min");
+        else toast.error("Error al generar remix");
+        return;
+      }
+      const data = await res.json() as {
+        name: string; mood: string;
+        palette: { primary: string; secondary: string; accent: string; dark: string };
+        primaryFont: string;
+      };
+      setAiRemixResult(data);
+      // Aplicar inmediatamente
+      const fc = fabricRef.current;
+      if (fc) {
+        // Reusar applyPalette tratando el resultado como Palette
+        const fakePalette = {
+          id: "ai-" + Date.now(),
+          name: data.name,
+          primary: data.palette.primary,
+          secondary: data.palette.secondary,
+          accent: data.palette.accent,
+          dark: data.palette.dark,
+        };
+        applyPalette(fakePalette);
+        // Aplicar fuente al titulo
+        fc.getObjects().forEach(obj => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const cid = ((obj as any).customId as string | undefined ?? "").toLowerCase();
+          if (cid.includes("title") || cid.includes("supra")) {
+            (obj as Textbox).set("fontFamily", data.primaryFont);
+          }
+        });
+        fc.requestRenderAll();
+      }
+      toast.success(`Estilo "${data.name}" aplicado`);
+    } catch (e) {
+      console.error(e);
+      toast.error("Error de conexión");
+    } finally {
+      setAiRemixing(false);
+    }
+  }, [template, authUser, toast, applyPalette]);
 
   const applyRemix = useCallback((remix: RemixStyle) => {
     const fc = fabricRef.current;
@@ -620,8 +954,10 @@ export default function MobileEditorV3({ templateId, formatId }: Props) {
           ──────────────────────────────────────────────────────────────── */}
       {selectedLayerId ? (
         <div className="shrink-0 border-t border-white/[0.08] bg-[#0a0a14] safe-area-bottom">
-          {/* CONTENIDO del sub-tool activo (aparece arriba) */}
-          {activeSubTool === "editar" && (
+          {/* ─── CONTENIDO del sub-tool activo (arriba de la barra) ───── */}
+
+          {/* TEXTO ──────────────────────────────────────────────────────── */}
+          {selectedType === "text" && activeSubTool === "editar" && (
             <TextEditInline
               blocks={textBlocks}
               activeBlockId={activeBlockId}
@@ -630,37 +966,109 @@ export default function MobileEditorV3({ templateId, formatId }: Props) {
               onSelectBlock={setActiveBlockId}
             />
           )}
-          {activeSubTool === "fuente" && (
+          {selectedType === "text" && activeSubTool === "fuente" && (
             <FontPills
               currentFont={getActiveText()?.fontFamily as string | undefined}
               onPick={f => setTextProp("fontFamily", f)}
             />
           )}
-          {activeSubTool === "tamano" && (
+          {selectedType === "text" && activeSubTool === "tamano" && (
             <SizeSlider
               currentSize={getActiveText()?.fontSize as number | undefined ?? 24}
               onChange={n => setTextProp("fontSize", n)}
             />
           )}
-          {activeSubTool === "color" && (
+          {selectedType === "text" && activeSubTool === "color" && (
             <ColorSwatches
               currentColor={(getActiveText()?.fill as string | undefined) ?? "#ffffff"}
               onPick={setObjFill}
             />
           )}
-          {activeSubTool === "estilos" && (
+          {selectedType === "text" && activeSubTool === "estilos" && (
             <StylePresets
               onApply={(prop, val) => setTextProp(prop as keyof Textbox, val as never)}
             />
           )}
 
-          {/* SUB-TOOLS BAR (5 botones + check verde) */}
+          {/* IMAGEN ──────────────────────────────────────────────────────── */}
+          {selectedType === "image" && activeSubTool === "reemplazar" && (
+            <ReplaceImageInline onFile={handleReplaceImage}/>
+          )}
+          {selectedType === "image" && activeSubTool === "recortar" && (
+            <CropOptionsInline onPick={applyImageCrop}/>
+          )}
+          {selectedType === "image" && activeSubTool === "filtros" && (
+            <FilterPresetsInline onPick={applyImageFilter}/>
+          )}
+          {selectedType === "image" && activeSubTool === "quitar-fondo" && (
+            <RemoveBgInline/>
+          )}
+          {selectedType === "image" && activeSubTool === "opacidad-img" && (
+            <OpacitySlider
+              current={fabricRef.current?.getActiveObject()?.opacity ?? 1}
+              onChange={setObjOpacity}
+            />
+          )}
+
+          {/* FORMA ──────────────────────────────────────────────────────── */}
+          {selectedType === "shape" && activeSubTool === "fill" && (
+            <ColorSwatches
+              currentColor={(fabricRef.current?.getActiveObject()?.fill as string | undefined) ?? "#ffffff"}
+              onPick={setObjFill}
+            />
+          )}
+          {selectedType === "shape" && activeSubTool === "borde" && (
+            <BorderInline
+              currentColor={(fabricRef.current?.getActiveObject()?.stroke as string | undefined) ?? ""}
+              currentWidth={fabricRef.current?.getActiveObject()?.strokeWidth ?? 0}
+              onColor={c => setObjStroke(c, undefined)}
+              onWidth={w => setObjStroke(undefined as unknown as string | null, w)}
+              onClear={() => setObjStroke(null, 0)}
+            />
+          )}
+          {selectedType === "shape" && activeSubTool === "opacidad-shape" && (
+            <OpacitySlider
+              current={fabricRef.current?.getActiveObject()?.opacity ?? 1}
+              onChange={setObjOpacity}
+            />
+          )}
+          {selectedType === "shape" && activeSubTool === "esquinas" && (
+            <CornerRadiusSlider
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              current={((fabricRef.current?.getActiveObject() as any)?.rx ?? 0) as number}
+              onChange={setRectCornerRadius}
+              applicable={fabricRef.current?.getActiveObject()?.type === "rect"}
+            />
+          )}
+
+          {/* ─── SUB-TOOLS BAR contextual al tipo ──────────────────────── */}
           <div className="h-[68px] flex items-center px-2 gap-1">
-            <SubToolBtn icon="⌨" label="Editar" active={activeSubTool === "editar"} onClick={() => setActiveSubTool(s => s === "editar" ? null : "editar")}/>
-            <SubToolBtn icon="Ff" label="Fuente" active={activeSubTool === "fuente"} onClick={() => setActiveSubTool(s => s === "fuente" ? null : "fuente")} fontStyle="italic"/>
-            <SubToolBtn icon="H" label="Estilos" active={activeSubTool === "estilos"} onClick={() => setActiveSubTool(s => s === "estilos" ? null : "estilos")}/>
-            <SubToolBtn icon="Aa" label="Tamaño" active={activeSubTool === "tamano"} onClick={() => setActiveSubTool(s => s === "tamano" ? null : "tamano")}/>
-            <SubToolBtn icon="🎨" label="Color" active={activeSubTool === "color"} onClick={() => setActiveSubTool(s => s === "color" ? null : "color")} emoji/>
+            {selectedType === "text" && (
+              <>
+                <SubToolBtnIcon node={<Pencil size={18} strokeWidth={2.2}/>} label="Editar" active={activeSubTool === "editar"} onClick={() => setActiveSubTool(s => s === "editar" ? null : "editar")}/>
+                <SubToolBtn icon="Ff" label="Fuente" active={activeSubTool === "fuente"} onClick={() => setActiveSubTool(s => s === "fuente" ? null : "fuente")} fontStyle="italic"/>
+                <SubToolBtn icon="H" label="Estilos" active={activeSubTool === "estilos"} onClick={() => setActiveSubTool(s => s === "estilos" ? null : "estilos")}/>
+                <SubToolBtn icon="Aa" label="Tamaño" active={activeSubTool === "tamano"} onClick={() => setActiveSubTool(s => s === "tamano" ? null : "tamano")}/>
+                <SubToolBtn icon="🎨" label="Color" active={activeSubTool === "color"} onClick={() => setActiveSubTool(s => s === "color" ? null : "color")} emoji/>
+              </>
+            )}
+            {selectedType === "image" && (
+              <>
+                <SubToolBtnIcon node={<Replace size={18} strokeWidth={2.2}/>} label="Reemplazar" active={activeSubTool === "reemplazar"} onClick={() => setActiveSubTool(s => s === "reemplazar" ? null : "reemplazar")}/>
+                <SubToolBtnIcon node={<Crop size={18} strokeWidth={2.2}/>} label="Recortar" active={activeSubTool === "recortar"} onClick={() => setActiveSubTool(s => s === "recortar" ? null : "recortar")}/>
+                <SubToolBtnIcon node={<Sliders size={18} strokeWidth={2.2}/>} label="Filtros" active={activeSubTool === "filtros"} onClick={() => setActiveSubTool(s => s === "filtros" ? null : "filtros")}/>
+                <SubToolBtnIcon node={<Eraser size={18} strokeWidth={2.2}/>} label="Quitar fondo" active={activeSubTool === "quitar-fondo"} onClick={() => setActiveSubTool(s => s === "quitar-fondo" ? null : "quitar-fondo")}/>
+                <SubToolBtn icon="◐" label="Opacidad" active={activeSubTool === "opacidad-img"} onClick={() => setActiveSubTool(s => s === "opacidad-img" ? null : "opacidad-img")} emoji/>
+              </>
+            )}
+            {selectedType === "shape" && (
+              <>
+                <SubToolBtn icon="🎨" label="Color" active={activeSubTool === "fill"} onClick={() => setActiveSubTool(s => s === "fill" ? null : "fill")} emoji/>
+                <SubToolBtnIcon node={<Square size={18} strokeWidth={2.2}/>} label="Borde" active={activeSubTool === "borde"} onClick={() => setActiveSubTool(s => s === "borde" ? null : "borde")}/>
+                <SubToolBtn icon="◐" label="Opacidad" active={activeSubTool === "opacidad-shape"} onClick={() => setActiveSubTool(s => s === "opacidad-shape" ? null : "opacidad-shape")} emoji/>
+                <SubToolBtn icon="◢" label="Esquinas" active={activeSubTool === "esquinas"} onClick={() => setActiveSubTool(s => s === "esquinas" ? null : "esquinas")} emoji/>
+              </>
+            )}
             <button
               onClick={handleDeselect}
               aria-label="Listo"
@@ -714,6 +1122,7 @@ export default function MobileEditorV3({ templateId, formatId }: Props) {
                 {openSheet === "estilo" && "Estilo"}
                 {openSheet === "ia" && "Remix · 4 estilos"}
                 {openSheet === "more" && "Más opciones"}
+                {openSheet === "export" && "Exportar"}
               </h2>
               <button
                 onClick={() => setOpenSheet(null)}
@@ -728,11 +1137,60 @@ export default function MobileEditorV3({ templateId, formatId }: Props) {
 
               {/* SHEET FOTO ──────────────────────────────────────────────── */}
               {openSheet === "foto" && (
-                <div className="flex flex-col items-center text-center text-gray-400 text-[13px] gap-2 py-8">
-                  <ImageIcon size={36} className="opacity-30"/>
-                  <p>Reemplazar foto, recortar, quitar fondo IA</p>
-                  <p className="text-[11px] text-gray-500">Próximamente</p>
-                </div>
+                <PhotoSheet
+                  fc={fabricRef.current}
+                  onSelectImage={(img) => {
+                    const fc = fabricRef.current;
+                    if (!fc) return;
+                    fc.setActiveObject(img);
+                    fc.requestRenderAll();
+                    // Sync con nuestro state — selection:created se disparara
+                    setOpenSheet(null);
+                  }}
+                  onAddPhoto={async (file) => {
+                    const fc = fabricRef.current;
+                    if (!fc) return;
+                    try {
+                      const dataUrl = await new Promise<string>((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onload = () => resolve(reader.result as string);
+                        reader.onerror = reject;
+                        reader.readAsDataURL(file);
+                      });
+                      const img = await FabricImage.fromURL(dataUrl, { crossOrigin: "anonymous" });
+                      // Centrar y escalar para que quepa al 40% del canvas
+                      const maxDim = Math.min(canvasSize.w, canvasSize.h) * 0.4;
+                      const w = img.width ?? 1;
+                      const h = img.height ?? 1;
+                      const scale = Math.min(maxDim / w, maxDim / h);
+                      img.set({
+                        left: canvasSize.w / 2 - (w * scale) / 2,
+                        top: canvasSize.h / 2 - (h * scale) / 2,
+                        scaleX: scale,
+                        scaleY: scale,
+                        cornerColor: "#a855f7",
+                        cornerStrokeColor: "#ffffff",
+                        cornerStyle: "circle",
+                        transparentCorners: false,
+                        borderColor: "#a855f7",
+                        borderScaleFactor: 1.5,
+                        cornerSize: 14,
+                        touchCornerSize: 44,
+                        padding: 4,
+                      });
+                      fc.add(img);
+                      fc.setActiveObject(img);
+                      fc.requestRenderAll();
+                      setSaveState("unsaved");
+                      setCanUndo(true);
+                      setOpenSheet(null);
+                      toast.success("Foto añadida");
+                    } catch (e) {
+                      console.error(e);
+                      toast.error("No se pudo añadir la foto");
+                    }
+                  }}
+                />
               )}
 
               {/* SHEET ESTILO ────────────────────────────────────────────── */}
@@ -772,6 +1230,63 @@ export default function MobileEditorV3({ templateId, formatId }: Props) {
                   <p className="text-[12px] text-gray-400 leading-relaxed">
                     Aplica un estilo completo (paleta + fuente + efectos) al instante. Tu contenido se mantiene.
                   </p>
+
+                  {/* BLOQUE IA — botones contextuales */}
+                  <div className="p-3 rounded-2xl bg-gradient-to-br from-purple-500/10 to-fuchsia-500/10 border border-purple-500/30 flex flex-col gap-2.5">
+                    <div className="flex items-center gap-2">
+                      <Wand2 size={14} className="text-purple-300"/>
+                      <span className="text-[12px] font-bold text-purple-200">Generar con IA</span>
+                      <span className="text-[9px] uppercase tracking-widest text-purple-400 ml-auto">Beta</span>
+                    </div>
+                    {aiRemixResult && (
+                      <div className="px-2.5 py-2 rounded-lg bg-black/30 border border-purple-500/20 flex items-center gap-2">
+                        <div className="flex gap-1 shrink-0">
+                          <div className="w-3 h-3 rounded-full" style={{ background: aiRemixResult.palette.primary }}/>
+                          <div className="w-3 h-3 rounded-full" style={{ background: aiRemixResult.palette.secondary }}/>
+                          <div className="w-3 h-3 rounded-full" style={{ background: aiRemixResult.palette.accent }}/>
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="text-[11px] font-bold truncate">{aiRemixResult.name}</div>
+                          <div className="text-[9px] text-gray-400 truncate">{aiRemixResult.mood}</div>
+                        </div>
+                      </div>
+                    )}
+                    <div className="grid grid-cols-2 gap-1.5">
+                      <button
+                        onClick={() => void requestAIRemix()}
+                        disabled={aiRemixing}
+                        className="py-2 rounded-lg bg-purple-500 text-white text-[11px] font-bold active:scale-[0.96] disabled:opacity-50 flex items-center justify-center gap-1"
+                      >
+                        <Sparkles size={12} strokeWidth={2.5}/>
+                        {aiRemixing ? "…" : "Sorpréndeme"}
+                      </button>
+                      <button
+                        onClick={() => void requestAIRemix("vibrante neón")}
+                        disabled={aiRemixing}
+                        className="py-2 rounded-lg bg-white/[0.06] text-gray-200 text-[11px] font-bold active:scale-[0.96] disabled:opacity-50"
+                      >
+                        Neón
+                      </button>
+                      <button
+                        onClick={() => void requestAIRemix("elegante sobrio")}
+                        disabled={aiRemixing}
+                        className="py-2 rounded-lg bg-white/[0.06] text-gray-200 text-[11px] font-bold active:scale-[0.96] disabled:opacity-50"
+                      >
+                        Elegante
+                      </button>
+                      <button
+                        onClick={() => void requestAIRemix("vintage retro")}
+                        disabled={aiRemixing}
+                        className="py-2 rounded-lg bg-white/[0.06] text-gray-200 text-[11px] font-bold active:scale-[0.96] disabled:opacity-50"
+                      >
+                        Vintage
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-1">
+                    Estilos curados
+                  </div>
                   <div className="grid grid-cols-2 gap-2.5">
                     {REMIX_STYLES.map(r => {
                       const isActive = activeRemixId === r.id;
@@ -815,6 +1330,17 @@ export default function MobileEditorV3({ templateId, formatId }: Props) {
                   <MoreRow icon={<LayoutGrid size={18}/>} label="Cambiar formato" subtitle="Story 9:16, Post 4:5, etc." disabled/>
                   <MoreRow icon={<XIcon size={18}/>} label="Reiniciar plantilla" subtitle="Volver al diseño original" disabled/>
                 </div>
+              )}
+
+              {/* SHEET EXPORT (multi-formato) ───────────────────────────── */}
+              {openSheet === "export" && template && (
+                <ExportMultiFormatSheet
+                  template={template}
+                  currentFormat={formatId}
+                  exporting={exporting}
+                  onExportOne={exportSingleFormat}
+                  onExportAll={exportAllFormats}
+                />
               )}
 
             </div>
@@ -1032,6 +1558,27 @@ function ColorSwatches({ currentColor, onPick }: { currentColor: string; onPick:
   );
 }
 
+/** Variante de SubToolBtn que renderiza un ReactNode (icono lucide) en
+ *  lugar de un caracter. Mantiene mismo estilo visual. */
+function SubToolBtnIcon({
+  node, label, active, onClick,
+}: {
+  node: React.ReactNode;
+  label: string;
+  active?: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`flex-1 h-full flex flex-col items-center justify-center gap-0.5 rounded-lg ${active ? "bg-purple-500/12 text-purple-300" : "text-gray-300"}`}
+    >
+      <div className="h-[18px] flex items-center justify-center">{node}</div>
+      <span className="text-[9px] font-semibold whitespace-nowrap">{label}</span>
+    </button>
+  );
+}
+
 /** Estilos preset — Bold / Italic / Underline (toggle). */
 function StylePresets({ onApply }: { onApply: (prop: string, val: string | boolean) => void }) {
   return (
@@ -1052,6 +1599,357 @@ function StylePresets({ onApply }: { onApply: (prop: string, val: string | boole
         onClick={() => onApply("fontWeight", "400")}
         className="flex-1 py-2 rounded-xl bg-white/[0.05] text-gray-400 text-[11px]"
       >Reset</button>
+    </div>
+  );
+}
+
+// ─── IMAGEN ────────────────────────────────────────────────────────────────
+
+/** Reemplazar imagen — file input que carga local desde galeria/camara. */
+function ReplaceImageInline({ onFile }: { onFile: (f: File) => void }) {
+  return (
+    <div className="border-b border-white/[0.06] px-4 py-3">
+      <label className="block">
+        <input
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={e => {
+            const f = e.target.files?.[0];
+            if (f) onFile(f);
+          }}
+        />
+        <span className="block w-full py-3 rounded-xl bg-purple-500/15 border border-purple-500/40 text-purple-200 text-[13px] font-bold text-center active:scale-[0.98] transition-transform">
+          Elegir imagen de tu galería
+        </span>
+      </label>
+      <p className="text-[10px] text-gray-500 text-center mt-2">
+        Se mantiene la posición y el tamaño actuales
+      </p>
+    </div>
+  );
+}
+
+/** Recortar — 3 opciones de máscara. */
+function CropOptionsInline({ onPick }: { onPick: (s: "square" | "circle" | "rounded") => void }) {
+  const opts: Array<{ id: "square" | "circle" | "rounded"; label: string; mask: string }> = [
+    { id: "square", label: "Cuadrado", mask: "rounded-none" },
+    { id: "rounded", label: "Redondeado", mask: "rounded-2xl" },
+    { id: "circle", label: "Círculo", mask: "rounded-full" },
+  ];
+  return (
+    <div className="border-b border-white/[0.06] flex gap-2 px-3 py-3">
+      {opts.map(o => (
+        <button
+          key={o.id}
+          onClick={() => onPick(o.id)}
+          className="flex-1 flex flex-col items-center gap-1.5 py-2"
+        >
+          <div className={`w-12 h-12 bg-gradient-to-br from-purple-500 to-fuchsia-500 ${o.mask}`}/>
+          <span className="text-[10px] text-gray-300 font-semibold">{o.label}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/** Filtros — 5 presets con thumbnails de gradient como placeholder. */
+function FilterPresetsInline({ onPick }: { onPick: (p: "none" | "bw" | "warm" | "cool" | "vintage") => void }) {
+  const presets: Array<{ id: "none" | "bw" | "warm" | "cool" | "vintage"; label: string; bg: string }> = [
+    { id: "none", label: "Original", bg: "linear-gradient(135deg,#a855f7,#ec4899)" },
+    { id: "bw", label: "B&N", bg: "linear-gradient(135deg,#333,#999)" },
+    { id: "warm", label: "Cálido", bg: "linear-gradient(135deg,#f97316,#facc15)" },
+    { id: "cool", label: "Frío", bg: "linear-gradient(135deg,#06b6d4,#3b82f6)" },
+    { id: "vintage", label: "Vintage", bg: "linear-gradient(135deg,#92400e,#fde68a)" },
+  ];
+  return (
+    <div className="border-b border-white/[0.06] flex gap-2 overflow-x-auto scrollbar-hide px-3 py-3">
+      {presets.map(p => (
+        <button
+          key={p.id}
+          onClick={() => onPick(p.id)}
+          className="shrink-0 flex flex-col items-center gap-1.5"
+        >
+          <div
+            className="w-14 h-14 rounded-xl border-2 border-white/10"
+            style={{ background: p.bg }}
+          />
+          <span className="text-[10px] text-gray-300 font-semibold">{p.label}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/** Quitar fondo — placeholder con CTA Pro hasta integrar remove.bg. */
+function RemoveBgInline() {
+  return (
+    <div className="border-b border-white/[0.06] px-4 py-4 flex flex-col items-center gap-2 text-center">
+      <Eraser size={24} className="text-purple-300"/>
+      <p className="text-[12px] text-gray-300 font-semibold">Quitar fondo con IA</p>
+      <p className="text-[10px] text-gray-500 leading-snug max-w-[260px]">
+        Detectamos automáticamente el sujeto y eliminamos el fondo en 2 segundos.
+      </p>
+      <span className="mt-1 text-[9px] font-bold tracking-widest text-amber-400 uppercase">
+        Próximamente · Pro
+      </span>
+    </div>
+  );
+}
+
+// ─── COMUNES (Opacidad / Borde / Esquinas) ────────────────────────────────
+
+/** Opacidad — slider 0-100. */
+function OpacitySlider({ current, onChange }: { current: number; onChange: (n: number) => void }) {
+  const pct = Math.round(current * 100);
+  return (
+    <div className="border-b border-white/[0.06] px-4 py-3">
+      <div className="flex justify-between mb-1.5">
+        <span className="text-[11px] text-gray-400 font-semibold">Opacidad</span>
+        <span className="text-[11px] text-purple-400 font-bold">{pct}%</span>
+      </div>
+      <input
+        type="range"
+        min={0} max={100} step={1}
+        value={pct}
+        onChange={e => onChange(Number(e.target.value) / 100)}
+        className="w-full accent-purple-500"
+      />
+    </div>
+  );
+}
+
+/** Borde — swatch color + slider grosor + boton Quitar. */
+function BorderInline({
+  currentColor, currentWidth, onColor, onWidth, onClear,
+}: {
+  currentColor: string;
+  currentWidth: number;
+  onColor: (c: string) => void;
+  onWidth: (w: number) => void;
+  onClear: () => void;
+}) {
+  return (
+    <div className="border-b border-white/[0.06] flex flex-col gap-3 px-3 py-3">
+      <div className="flex gap-2 overflow-x-auto scrollbar-hide">
+        {QUICK_COLORS.map(c => {
+          const isAct = currentColor.toLowerCase() === c.toLowerCase();
+          return (
+            <button
+              key={c}
+              onClick={() => onColor(c)}
+              aria-label={`Color borde ${c}`}
+              className={`shrink-0 w-9 h-9 rounded-full border-2 ${isAct ? "border-purple-400 scale-110" : "border-white/15"} transition-transform`}
+              style={{ background: c, boxShadow: "inset 0 0 0 1px rgba(0,0,0,0.15)" }}
+            />
+          );
+        })}
+      </div>
+      <div className="px-1">
+        <div className="flex justify-between mb-1">
+          <span className="text-[11px] text-gray-400 font-semibold">Grosor</span>
+          <span className="text-[11px] text-purple-400 font-bold">{Math.round(currentWidth)} px</span>
+        </div>
+        <input
+          type="range"
+          min={0} max={30} step={1}
+          value={currentWidth}
+          onChange={e => onWidth(Number(e.target.value))}
+          className="w-full accent-purple-500"
+        />
+      </div>
+      <button
+        onClick={onClear}
+        className="self-start text-[11px] px-3 py-1.5 rounded-full bg-white/[0.05] text-gray-300 font-semibold"
+      >
+        Quitar borde
+      </button>
+    </div>
+  );
+}
+
+/** Sheet Exportar multi-formato — grid de variants del template + descargas. */
+function ExportMultiFormatSheet({
+  template, currentFormat, exporting, onExportOne, onExportAll,
+}: {
+  template: Template;
+  currentFormat: FormatId | undefined;
+  exporting: boolean;
+  onExportOne: (f: FormatId) => void;
+  onExportAll: () => void;
+}) {
+  const available: FormatId[] = PUBLIC_FORMATS.filter(fmt =>
+    !!template.variants.find(v => v.format === fmt)
+  );
+  return (
+    <div className="flex flex-col gap-4">
+      <p className="text-[12px] text-gray-400 leading-relaxed">
+        Esta plantilla tiene <span className="text-purple-300 font-bold">{available.length}</span> formato{available.length === 1 ? "" : "s"} disponible{available.length === 1 ? "" : "s"}.
+        Los textos editados se mantienen al cambiar de formato.
+      </p>
+
+      <div className="grid grid-cols-2 gap-2.5">
+        {available.map(fmtId => {
+          const fmt = FORMATS[fmtId];
+          const isCurrent = fmtId === currentFormat;
+          const aspect = fmt.width / fmt.height;
+          // Caja preview proporcional, max 70% del ancho del card
+          const w = aspect >= 1 ? 70 : aspect * 70;
+          const h = aspect >= 1 ? 70 / aspect : 70;
+          const Icon = fmt.icon;
+          return (
+            <div
+              key={fmtId}
+              className={`rounded-2xl border-2 p-3 flex flex-col items-center gap-2 ${isCurrent ? "border-purple-500 bg-purple-500/5" : "border-white/[0.06] bg-[#13131f]"}`}
+            >
+              <div
+                className="bg-gradient-to-br from-purple-500/20 to-fuchsia-500/20 rounded-lg flex items-center justify-center text-purple-300"
+                style={{ width: w, height: h }}
+              >
+                <Icon size={20}/>
+              </div>
+              <div className="text-center">
+                <div className="text-[12px] font-bold leading-tight">{fmt.name}</div>
+                <div className="text-[10px] text-gray-500">{fmt.description}</div>
+              </div>
+              <button
+                onClick={() => onExportOne(fmtId)}
+                disabled={exporting}
+                className="w-full mt-1 py-1.5 rounded-lg bg-purple-500/15 text-purple-200 text-[11px] font-bold active:scale-[0.97] transition-transform disabled:opacity-50"
+              >
+                {isCurrent ? "Descargar" : "Descargar PNG"}
+              </button>
+              {isCurrent && (
+                <span className="text-[9px] text-emerald-400 font-bold uppercase tracking-wider">
+                  Editado
+                </span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {available.length > 1 && (
+        <button
+          onClick={onExportAll}
+          disabled={exporting}
+          className="w-full py-3 rounded-xl bg-gradient-to-br from-purple-600 to-fuchsia-600 text-white text-[14px] font-bold active:scale-[0.98] transition-transform shadow-lg shadow-purple-500/30 disabled:opacity-60 flex items-center justify-center gap-2"
+        >
+          <Download size={16} strokeWidth={2.4}/>
+          {exporting ? "Exportando…" : `Descargar los ${available.length} formatos`}
+        </button>
+      )}
+
+      <p className="text-[10px] text-gray-500 leading-snug">
+        Los formatos distintos al actual ({currentFormat ? FORMATS[currentFormat].name : "n/a"}) se renderizan con la maquetación original de la plantilla — paleta, remix e imágenes subidas solo se preservan en el formato actual.
+      </p>
+    </div>
+  );
+}
+
+/** Sheet Foto — lista thumbnails de imagenes del canvas + boton añadir. */
+function PhotoSheet({
+  fc, onSelectImage, onAddPhoto,
+}: {
+  fc: FabricCanvas | null;
+  onSelectImage: (img: FabricImage) => void;
+  onAddPhoto: (file: File) => void;
+}) {
+  // Snapshot de imagenes en render. Sin reactividad porque el sheet se
+  // monta/desmonta al abrir y siempre lee el state actual.
+  const images = (fc?.getObjects().filter(o => o.type === "image") ?? []) as FabricImage[];
+  return (
+    <div className="flex flex-col gap-4">
+      <div>
+        <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2.5">
+          Fotos del flyer ({images.length})
+        </div>
+        {images.length === 0 ? (
+          <p className="text-[12px] text-gray-500 italic">Esta plantilla no tiene fotos.</p>
+        ) : (
+          <div className="grid grid-cols-3 gap-2">
+            {images.map((img, idx) => {
+              const el = img.getElement() as HTMLImageElement;
+              const src = el?.src;
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const cid = (img as any).customId as string | undefined;
+              return (
+                <button
+                  key={cid ?? idx}
+                  onClick={() => onSelectImage(img)}
+                  className="aspect-square rounded-xl overflow-hidden bg-[#0a0a14] border-2 border-white/[0.08] active:border-purple-500 transition-colors"
+                  aria-label={`Editar foto ${idx + 1}`}
+                >
+                  {src ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={src} alt="" crossOrigin="anonymous" className="w-full h-full object-cover"/>
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-gray-500">
+                      <ImageIcon size={20}/>
+                    </div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        )}
+        <p className="text-[10px] text-gray-500 mt-2 text-center">
+          Tap en una foto para editarla (reemplazar, recortar, filtros, opacidad).
+        </p>
+      </div>
+
+      <div className="pt-2 border-t border-white/[0.06]">
+        <label className="block">
+          <input
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={e => {
+              const f = e.target.files?.[0];
+              if (f) onAddPhoto(f);
+            }}
+          />
+          <span className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-purple-500/15 border border-purple-500/40 text-purple-200 text-[13px] font-bold active:scale-[0.98] transition-transform">
+            <ImageIcon size={16}/>
+            Subir foto nueva
+          </span>
+        </label>
+        <p className="text-[10px] text-gray-500 text-center mt-2">
+          Se añade al centro del flyer y queda seleccionada para moverla.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/** Esquinas — slider 0-100. Solo aplica a Rect; deshabilitado en otros. */
+function CornerRadiusSlider({
+  current, onChange, applicable,
+}: {
+  current: number;
+  onChange: (n: number) => void;
+  applicable: boolean;
+}) {
+  if (!applicable) {
+    return (
+      <div className="border-b border-white/[0.06] px-4 py-4 text-center text-[12px] text-gray-400">
+        Las esquinas redondeadas solo aplican a rectángulos.
+      </div>
+    );
+  }
+  return (
+    <div className="border-b border-white/[0.06] px-4 py-3">
+      <div className="flex justify-between mb-1.5">
+        <span className="text-[11px] text-gray-400 font-semibold">Esquinas</span>
+        <span className="text-[11px] text-purple-400 font-bold">{Math.round(current)} px</span>
+      </div>
+      <input
+        type="range"
+        min={0} max={200} step={1}
+        value={current}
+        onChange={e => onChange(Number(e.target.value))}
+        className="w-full accent-purple-500"
+      />
     </div>
   );
 }

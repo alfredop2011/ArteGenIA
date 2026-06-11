@@ -36,6 +36,8 @@ export const RATE_LIMITS: Record<string, RateLimitConfig> = {
   // Chat wizard (parse prompt) — texto, mas barato
   "chat-wizard":        { max: 30, windowMinutes: 1 },
   "parse-prompt":       { max: 30, windowMinutes: 1 },
+  // Remix IA — Haiku, barato, generoso
+  "remix-ai":           { max: 20, windowMinutes: 1 },
 };
 
 /**
