@@ -651,6 +651,40 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
     pushHistory();
   }, [getActiveText]);
 
+  // ─── Texto avanzado (Fase K) ────────────────────────────────────────────
+  // Sombra preset, outline, glow. Reusa setTextProp para uniformidad.
+  const applyTextShadow = useCallback((mode: "none" | "soft" | "strong" | "glow") => {
+    const fc = fabricRef.current;
+    const t = getActiveText();
+    if (!fc || !t) return;
+    if (mode === "none") {
+      t.set("shadow", null as never);
+    } else if (mode === "soft") {
+      t.set("shadow", new Shadow({ color: "rgba(0,0,0,0.4)", blur: 8, offsetX: 2, offsetY: 4 }));
+    } else if (mode === "strong") {
+      t.set("shadow", new Shadow({ color: "rgba(0,0,0,0.85)", blur: 16, offsetX: 4, offsetY: 8 }));
+    } else { // glow — color del texto, brillo alrededor
+      const color = (t.fill as string) ?? "#a855f7";
+      t.set("shadow", new Shadow({ color, blur: 24, offsetX: 0, offsetY: 0 }));
+    }
+    fc.requestRenderAll();
+    setSaveState("unsaved");
+    pushHistory();
+  }, [getActiveText, pushHistory]);
+
+  const applyTextOutline = useCallback((width: number, color: string = "#000000") => {
+    const fc = fabricRef.current;
+    const t = getActiveText();
+    if (!fc || !t) return;
+    t.set("stroke", width > 0 ? color : "");
+    t.set("strokeWidth", width);
+    // Pinta el stroke ANTES del fill — así el borde no come letra
+    t.set("paintFirst", "stroke" as never);
+    fc.requestRenderAll();
+    setSaveState("unsaved");
+    pushHistory();
+  }, [getActiveText, pushHistory]);
+
   const setObjFill = useCallback((color: string) => {
     const fc = fabricRef.current;
     const obj = fc?.getActiveObject();
@@ -1740,7 +1774,14 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
           )}
           {selectedType === "text" && activeSubTool === "estilos" && (
             <StylePresets
+              currentLineHeight={(getActiveText()?.lineHeight as number | undefined) ?? 1.16}
+              currentCharSpacing={(getActiveText()?.charSpacing as number | undefined) ?? 0}
+              currentStrokeWidth={(getActiveText()?.strokeWidth as number | undefined) ?? 0}
+              currentStroke={(getActiveText()?.stroke as string | undefined) ?? ""}
+              hasShadow={!!getActiveText()?.shadow}
               onApply={(prop, val) => setTextProp(prop as keyof Textbox, val as never)}
+              onShadow={applyTextShadow}
+              onOutline={applyTextOutline}
             />
           )}
 
@@ -2421,57 +2462,144 @@ function SubToolBtnIcon({
   );
 }
 
-/** Estilos preset — Bold / Italic / Underline + Alineacion + Reset.
- *  Reset limpia todos los toggles (bold→400, italic→normal, underline→false). */
-function StylePresets({ onApply }: { onApply: (prop: string, val: string | boolean) => void }) {
+/** Estilos preset — Bold/Italic/Underline + Alineacion + Sombra/Outline +
+ *  Interlineado + Espaciado letras. Fase K — texto avanzado. */
+function StylePresets({
+  currentLineHeight, currentCharSpacing, currentStrokeWidth, currentStroke, hasShadow,
+  onApply, onShadow, onOutline,
+}: {
+  currentLineHeight: number;
+  currentCharSpacing: number;
+  currentStrokeWidth: number;
+  currentStroke: string;
+  hasShadow: boolean;
+  onApply: (prop: string, val: string | boolean | number) => void;
+  onShadow: (mode: "none" | "soft" | "strong" | "glow") => void;
+  onOutline: (width: number, color?: string) => void;
+}) {
   return (
-    <div className="border-b border-white/[0.06] flex flex-col gap-2 px-3 py-3">
-      {/* Fila 1 — Formato */}
+    <div className="border-b border-white/[0.06] flex flex-col gap-3 px-3 py-3 max-h-[55vh] overflow-y-auto">
+      {/* Fila 1 — Formato basico */}
       <div className="flex gap-2">
-        <button
-          onClick={() => onApply("fontWeight", "900")}
-          className="flex-1 py-2 rounded-xl bg-white/[0.05] text-white font-black"
-          aria-label="Negrita"
-        >B</button>
-        <button
-          onClick={() => onApply("fontStyle", "italic")}
-          className="flex-1 py-2 rounded-xl bg-white/[0.05] text-white italic font-bold"
-          aria-label="Cursiva"
-        >I</button>
-        <button
-          onClick={() => onApply("underline", true)}
-          className="flex-1 py-2 rounded-xl bg-white/[0.05] text-white underline font-bold"
-          aria-label="Subrayado"
-        >U</button>
+        <button onClick={() => onApply("fontWeight", "900")} className="flex-1 py-2 rounded-xl bg-white/[0.05] text-white font-black" aria-label="Negrita">B</button>
+        <button onClick={() => onApply("fontStyle", "italic")} className="flex-1 py-2 rounded-xl bg-white/[0.05] text-white italic font-bold" aria-label="Cursiva">I</button>
+        <button onClick={() => onApply("underline", true)} className="flex-1 py-2 rounded-xl bg-white/[0.05] text-white underline font-bold" aria-label="Subrayado">U</button>
       </div>
       {/* Fila 2 — Alineacion + Reset */}
       <div className="flex gap-2">
-        <button
-          onClick={() => onApply("textAlign", "left")}
-          className="flex-1 py-2 rounded-xl bg-white/[0.05] text-white text-[12px] font-bold flex items-center justify-center"
-          aria-label="Alinear a la izquierda"
-        >⇤</button>
-        <button
-          onClick={() => onApply("textAlign", "center")}
-          className="flex-1 py-2 rounded-xl bg-white/[0.05] text-white text-[12px] font-bold flex items-center justify-center"
-          aria-label="Centrar"
-        >⇔</button>
-        <button
-          onClick={() => onApply("textAlign", "right")}
-          className="flex-1 py-2 rounded-xl bg-white/[0.05] text-white text-[12px] font-bold flex items-center justify-center"
-          aria-label="Alinear a la derecha"
-        >⇥</button>
+        <button onClick={() => onApply("textAlign", "left")} className="flex-1 py-2 rounded-xl bg-white/[0.05] text-white text-[12px] font-bold" aria-label="Alinear a la izquierda">⇤</button>
+        <button onClick={() => onApply("textAlign", "center")} className="flex-1 py-2 rounded-xl bg-white/[0.05] text-white text-[12px] font-bold" aria-label="Centrar">⇔</button>
+        <button onClick={() => onApply("textAlign", "right")} className="flex-1 py-2 rounded-xl bg-white/[0.05] text-white text-[12px] font-bold" aria-label="Alinear a la derecha">⇥</button>
         <button
           onClick={() => {
             onApply("fontWeight", "400");
             onApply("fontStyle", "normal");
             onApply("underline", false);
+            onShadow("none");
+            onOutline(0);
           }}
           className="flex-1 py-2 rounded-xl bg-white/[0.05] text-gray-400 text-[11px]"
           aria-label="Restablecer formato"
         >Reset</button>
       </div>
+
+      {/* Sombra & glow */}
+      <div className="flex flex-col gap-1.5 pt-1">
+        <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest flex items-center justify-between">
+          <span>Sombra</span>
+          {hasShadow && <span className="text-emerald-400 normal-case tracking-normal text-[10px]">Activa</span>}
+        </div>
+        <div className="grid grid-cols-4 gap-1.5">
+          <ShadowBtn label="Ninguna" preview="—" onClick={() => onShadow("none")}/>
+          <ShadowBtn label="Suave" preview="aA" textShadow="2px 2px 4px rgba(0,0,0,0.6)" onClick={() => onShadow("soft")}/>
+          <ShadowBtn label="Fuerte" preview="aA" textShadow="4px 4px 8px rgba(0,0,0,0.9)" onClick={() => onShadow("strong")}/>
+          <ShadowBtn label="Glow" preview="aA" textShadow="0 0 12px #a855f7" textColor="#a855f7" onClick={() => onShadow("glow")}/>
+        </div>
+      </div>
+
+      {/* Outline */}
+      <div className="flex flex-col gap-1.5 pt-1">
+        <div className="flex justify-between items-center">
+          <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Borde texto</span>
+          <span className="text-[10px] text-purple-400 font-bold">{Math.round(currentStrokeWidth)} px</span>
+        </div>
+        <input
+          type="range"
+          min={0} max={10} step={0.5}
+          value={currentStrokeWidth}
+          onChange={e => onOutline(Number(e.target.value), currentStroke || "#000000")}
+          className="w-full accent-purple-500"
+        />
+        {currentStrokeWidth > 0 && (
+          <div className="flex gap-1.5 overflow-x-auto scrollbar-hide">
+            {["#000000", "#ffffff", "#a855f7", "#ec4899", "#facc15", "#22d3ee", "#22c55e", "#ef4444"].map(c => (
+              <button
+                key={c}
+                onClick={() => onOutline(currentStrokeWidth, c)}
+                className={`shrink-0 w-7 h-7 rounded-full border-2 ${currentStroke?.toLowerCase() === c ? "border-purple-400 scale-110" : "border-white/20"} transition-transform`}
+                style={{ background: c, boxShadow: "inset 0 0 0 1px rgba(0,0,0,0.15)" }}
+                aria-label={`Color borde ${c}`}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Interlineado */}
+      <div>
+        <div className="flex justify-between mb-1">
+          <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Interlineado</span>
+          <span className="text-[10px] text-purple-400 font-bold">{currentLineHeight.toFixed(2)}</span>
+        </div>
+        <input
+          type="range"
+          min={0.8} max={2.5} step={0.05}
+          value={currentLineHeight}
+          onChange={e => onApply("lineHeight", Number(e.target.value))}
+          className="w-full accent-purple-500"
+        />
+      </div>
+
+      {/* Espaciado letras */}
+      <div>
+        <div className="flex justify-between mb-1">
+          <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Espaciado letras</span>
+          <span className="text-[10px] text-purple-400 font-bold">{Math.round(currentCharSpacing)}</span>
+        </div>
+        <input
+          type="range"
+          min={-50} max={500} step={5}
+          value={currentCharSpacing}
+          onChange={e => onApply("charSpacing", Number(e.target.value))}
+          className="w-full accent-purple-500"
+        />
+      </div>
     </div>
+  );
+}
+
+function ShadowBtn({
+  label, preview, textShadow, textColor, onClick,
+}: {
+  label: string;
+  preview: string;
+  textShadow?: string;
+  textColor?: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="flex flex-col items-center gap-1 py-2 rounded-xl bg-white/[0.04] active:scale-[0.96] transition-transform"
+    >
+      <span
+        className="text-[18px] font-black"
+        style={{ textShadow, color: textColor ?? "#ffffff" }}
+      >
+        {preview}
+      </span>
+      <span className="text-[9px] text-gray-400 font-semibold">{label}</span>
+    </button>
   );
 }
 
