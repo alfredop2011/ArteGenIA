@@ -42,6 +42,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.8,
     },
     {
+      url: `${SITE_URL}/pricing`,
+      lastModified: LAST_MODIFIED,
+      changeFrequency: "monthly",
+      priority: 0.95, // pricing es página de conversión clave para SEO
+    },
+    {
       url: `${SITE_URL}/colaboradores`,
       lastModified: LAST_MODIFIED,
       changeFrequency: "monthly",

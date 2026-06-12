@@ -73,6 +73,7 @@ export type TranslationKey =
   | "nav.projects"
   | "nav.collaborators"
   | "nav.history"
+  | "nav.pricing"
   | "nav.admin"
   | "nav.flyersShort"
   | "nav.teamShort"
@@ -796,6 +797,7 @@ const es: Dict = {
   "nav.projects": "Mis flyers",
   "nav.collaborators": "Colaboradores",
   "nav.history": "Historial",
+  "nav.pricing": "Precios",
   "nav.admin": "Admin",
   "nav.flyersShort": "Flyers",
   "nav.teamShort": "Equipo",
@@ -1509,6 +1511,7 @@ const en: Dict = {
   "nav.projects": "My flyers",
   "nav.collaborators": "Collaborators",
   "nav.history": "History",
+  "nav.pricing": "Pricing",
   "nav.admin": "Admin",
   "nav.flyersShort": "Flyers",
   "nav.teamShort": "Team",
@@ -2209,6 +2212,7 @@ const fr: Dict = {
   "nav.projects": "Mes flyers",
   "nav.collaborators": "Collaborateurs",
   "nav.history": "Historique",
+  "nav.pricing": "Tarifs",
   "nav.admin": "Admin",
   "nav.flyersShort": "Flyers",
   "nav.teamShort": "Équipe",
@@ -2909,6 +2913,7 @@ const pt: Dict = {
   "nav.projects": "Meus flyers",
   "nav.collaborators": "Colaboradores",
   "nav.history": "Histórico",
+  "nav.pricing": "Preços",
   "nav.admin": "Admin",
   "nav.flyersShort": "Flyers",
   "nav.teamShort": "Equipa",
