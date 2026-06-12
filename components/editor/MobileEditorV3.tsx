@@ -1012,11 +1012,15 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
 
   // ─── Multi-formato exportar ─────────────────────────────────────────────
   // Renderiza una variant del template off-screen con los blockValues
-  // actuales aplicados (texto editado) y devuelve dataUrl PNG.
+  // actuales aplicados (texto editado) y devuelve dataUrl.
   // Las paletas/remixes NO se replican aqui — para preservarlos exactos
   // exportamos el formato ACTUAL via doExport() y los OTROS formatos llevan
   // el variant original con solo los textos editados. Trade-off documentado.
-  const renderVariantOffscreen = useCallback(async (variant: ReturnType<typeof getVariant>): Promise<string | null> => {
+  // exportFileFormat: toggle PNG (calidad lossless, archivo grande) vs JPG
+  // (lossy ~5x mas liviano, sin transparencia — ideal WhatsApp).
+  const [exportFileFormat, setExportFileFormat] = useState<"png" | "jpg">("png");
+
+  const renderVariantOffscreen = useCallback(async (variant: ReturnType<typeof getVariant>, fileFormat: "png" | "jpg" = "png"): Promise<string | null> => {
     if (!variant) return null;
     const sc = new FabricStaticCanvas(undefined, {
       width: variant.width,
@@ -1036,7 +1040,11 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
       });
     });
     sc.renderAll();
-    const url = sc.toDataURL({ format: "png", quality: 0.95, multiplier: 1 });
+    const url = sc.toDataURL({
+      format: fileFormat === "jpg" ? "jpeg" : "png",
+      quality: fileFormat === "jpg" ? 0.92 : 0.95,
+      multiplier: 1,
+    });
     sc.dispose();
     return url;
   }, [blockValues, blocks]);
@@ -1056,7 +1064,7 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
       // Si es el formato actual, usar export directo del canvas vivo (preserva
       // paleta/remix/imagenes subidas). Si no, render off-screen del variant.
       if (fmtId === formatId) {
-        await doExport("png");
+        await doExport(exportFileFormat);
         return;
       }
       const variant = getVariant(template, fmtId);
@@ -1064,18 +1072,18 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
         toast.error(`Esta plantilla no tiene variante ${FORMATS[fmtId].name}`);
         return;
       }
-      const url = await renderVariantOffscreen(variant);
+      const url = await renderVariantOffscreen(variant, exportFileFormat);
       if (!url) { toast.error("Error al renderizar"); return; }
       let finalUrl = url;
       if (shouldWatermark(authProfile?.plan)) {
         try { finalUrl = await applyWatermark(url); } catch (e) { console.warn(e); }
       }
-      downloadDataUrl(finalUrl, `artegenia-${template.id}-${fmtId}.png`);
-      toast.success(`Descargado ${FORMATS[fmtId].name}`);
+      downloadDataUrl(finalUrl, `artegenia-${template.id}-${fmtId}.${exportFileFormat}`);
+      toast.success(`Descargado ${FORMATS[fmtId].name} (${exportFileFormat.toUpperCase()})`);
     } finally {
       setExporting(false);
     }
-  }, [template, formatId, doExport, renderVariantOffscreen, authProfile?.plan, toast, downloadDataUrl]);
+  }, [template, formatId, doExport, renderVariantOffscreen, authProfile?.plan, toast, downloadDataUrl, exportFileFormat]);
 
   const exportAllFormats = useCallback(async () => {
     if (!template) return;
@@ -1781,6 +1789,8 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
                   template={template}
                   currentFormat={formatId}
                   exporting={exporting}
+                  fileFormat={exportFileFormat}
+                  onFileFormatChange={setExportFileFormat}
                   onExportOne={exportSingleFormat}
                   onExportAll={exportAllFormats}
                 />
@@ -2301,11 +2311,13 @@ function BorderInline({
 
 /** Sheet Exportar multi-formato — grid de variants del template + descargas. */
 function ExportMultiFormatSheet({
-  template, currentFormat, exporting, onExportOne, onExportAll,
+  template, currentFormat, exporting, fileFormat, onFileFormatChange, onExportOne, onExportAll,
 }: {
   template: Template;
   currentFormat: FormatId | undefined;
   exporting: boolean;
+  fileFormat: "png" | "jpg";
+  onFileFormatChange: (f: "png" | "jpg") => void;
   onExportOne: (f: FormatId) => void;
   onExportAll: () => void;
 }) {
@@ -2314,6 +2326,43 @@ function ExportMultiFormatSheet({
   );
   return (
     <div className="flex flex-col gap-4">
+      {/* Toggle PNG/JPG */}
+      <div>
+        <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">
+          Tipo de archivo
+        </div>
+        <div className="flex gap-2 p-1 rounded-xl bg-black/30 border border-white/[0.06]">
+          <button
+            onClick={() => onFileFormatChange("png")}
+            className={`flex-1 py-2 rounded-lg text-[12px] font-bold transition-colors ${
+              fileFormat === "png"
+                ? "bg-purple-500 text-white shadow-md"
+                : "text-gray-400 active:bg-white/[0.05]"
+            }`}
+          >
+            PNG
+            <span className="block text-[9px] font-normal opacity-70 mt-0.5">Calidad máxima</span>
+          </button>
+          <button
+            onClick={() => onFileFormatChange("jpg")}
+            className={`flex-1 py-2 rounded-lg text-[12px] font-bold transition-colors ${
+              fileFormat === "jpg"
+                ? "bg-purple-500 text-white shadow-md"
+                : "text-gray-400 active:bg-white/[0.05]"
+            }`}
+          >
+            JPG
+            <span className="block text-[9px] font-normal opacity-70 mt-0.5">Archivo ligero</span>
+          </button>
+        </div>
+        <p className="text-[10px] text-gray-500 mt-1.5 leading-snug">
+          {fileFormat === "png"
+            ? "PNG sin pérdida. Texto nítido y bordes perfectos. Ideal imprimir o subir a Instagram en alta."
+            : "JPG comprimido (~5× más liviano). Ideal WhatsApp y rapidez. Puede mostrar artefactos en texto fino."
+          }
+        </p>
+      </div>
+
       <p className="text-[12px] text-gray-400 leading-relaxed">
         Esta plantilla tiene <span className="text-purple-300 font-bold">{available.length}</span> formato{available.length === 1 ? "" : "s"} disponible{available.length === 1 ? "" : "s"}.
         Los textos editados se mantienen al cambiar de formato.
@@ -2348,7 +2397,7 @@ function ExportMultiFormatSheet({
                 disabled={exporting}
                 className="w-full mt-1 py-1.5 rounded-lg bg-purple-500/15 text-purple-200 text-[11px] font-bold active:scale-[0.97] transition-transform disabled:opacity-50"
               >
-                {isCurrent ? "Descargar" : "Descargar PNG"}
+                Descargar {fileFormat.toUpperCase()}
               </button>
               {isCurrent && (
                 <span className="text-[9px] text-emerald-400 font-bold uppercase tracking-wider">
