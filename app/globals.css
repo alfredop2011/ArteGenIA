@@ -172,3 +172,72 @@ body {
     -webkit-tap-highlight-color: transparent;
   }
 }
+
+/* ─── SLIDERS PERSONALIZADOS (input[type=range]) ──────────────────────────
+   En iOS Safari el slider nativo es casi invisible (thumb diminuto, sin
+   track destacado). Customizamos:
+   - Track gris fino (6px) con borde redondeado
+   - Thumb morado grande (22px) con borde blanco visible para drag tactil
+   - Progress fill morado via background gradient (computado por JS desde
+     el value/min/max y aplicado inline style)
+
+   La clase .slider-mobile se aplica a sliders del editor mobile. Sin clase,
+   los sliders generales mantienen el accent-color por defecto. */
+
+.slider-mobile {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 22px; /* alto del thumb para que el track quede centrado */
+  background: transparent;
+  cursor: pointer;
+  outline: none;
+}
+
+/* WebKit (Safari iOS, Chrome) */
+.slider-mobile::-webkit-slider-runnable-track {
+  height: 6px;
+  background: linear-gradient(
+    to right,
+    #a855f7 0%,
+    #a855f7 var(--fill-pct, 50%),
+    rgba(255, 255, 255, 0.12) var(--fill-pct, 50%),
+    rgba(255, 255, 255, 0.12) 100%
+  );
+  border-radius: 9999px;
+  border: none;
+}
+.slider-mobile::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  background: #a855f7;
+  border-radius: 50%;
+  border: 3px solid #ffffff;
+  margin-top: -8px; /* centra (22-6)/2 */
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(168, 85, 247, 0.6);
+}
+
+/* Firefox */
+.slider-mobile::-moz-range-track {
+  height: 6px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 9999px;
+  border: none;
+}
+.slider-mobile::-moz-range-progress {
+  height: 6px;
+  background: #a855f7;
+  border-radius: 9999px;
+}
+.slider-mobile::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  background: #a855f7;
+  border-radius: 50%;
+  border: 3px solid #ffffff;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(168, 85, 247, 0.6);
+}

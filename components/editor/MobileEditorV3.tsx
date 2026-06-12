@@ -2800,7 +2800,8 @@ function SizeSlider({ currentSize, onChange }: { currentSize: number; onChange: 
         min={8} max={200} step={1}
         value={currentSize}
         onChange={e => onChange(Number(e.target.value))}
-        className="w-full accent-purple-500"
+        className="slider-mobile w-full"
+        style={sliderFill(currentSize, 8, 200)}
       />
     </div>
   );
@@ -2917,7 +2918,8 @@ function StylePresets({
           min={0} max={10} step={0.5}
           value={currentStrokeWidth}
           onChange={e => onOutline(Number(e.target.value), currentStroke || "#000000")}
-          className="w-full accent-purple-500"
+          className="slider-mobile w-full"
+          style={sliderFill(currentStrokeWidth, 0, 10)}
         />
         {currentStrokeWidth > 0 && (
           <div className="flex gap-1.5 overflow-x-auto scrollbar-hide">
@@ -2945,7 +2947,8 @@ function StylePresets({
           min={0.8} max={2.5} step={0.05}
           value={currentLineHeight}
           onChange={e => onApply("lineHeight", Number(e.target.value))}
-          className="w-full accent-purple-500"
+          className="slider-mobile w-full"
+          style={sliderFill(currentLineHeight, 0.8, 2.5)}
         />
       </div>
 
@@ -2960,7 +2963,8 @@ function StylePresets({
           min={-50} max={500} step={5}
           value={currentCharSpacing}
           onChange={e => onApply("charSpacing", Number(e.target.value))}
-          className="w-full accent-purple-500"
+          className="slider-mobile w-full"
+          style={sliderFill(currentCharSpacing, -50, 500)}
         />
       </div>
     </div>
@@ -3110,7 +3114,8 @@ function FilterPresetsInline({
             onChange={e => onRotation(Number(e.target.value))}
             onMouseUp={onCommit}
             onTouchEnd={onCommit}
-            className="w-full accent-purple-500"
+            className="slider-mobile w-full"
+            style={sliderFill(angle, -180, 180)}
           />
         </div>
         <div className="flex gap-2">
@@ -3163,7 +3168,8 @@ function AdjustSlider({
         onChange={e => onChange(Number(e.target.value))}
         onMouseUp={onCommit}
         onTouchEnd={onCommit}
-        className="w-full accent-purple-500"
+        className="slider-mobile w-full"
+        style={sliderFill(value, min, max)}
       />
     </div>
   );
@@ -3223,7 +3229,8 @@ function OpacitySlider({ current, onChange }: { current: number; onChange: (n: n
         min={0} max={100} step={1}
         value={pct}
         onChange={e => onChange(Number(e.target.value) / 100)}
-        className="w-full accent-purple-500"
+        className="slider-mobile w-full"
+        style={sliderFill(pct, 0, 100)}
       />
     </div>
   );
@@ -3265,7 +3272,8 @@ function BorderInline({
           min={0} max={30} step={1}
           value={currentWidth}
           onChange={e => onWidth(Number(e.target.value))}
-          className="w-full accent-purple-500"
+          className="slider-mobile w-full"
+          style={sliderFill(currentWidth, 0, 30)}
         />
       </div>
       <button
@@ -3497,7 +3505,8 @@ function CornerRadiusSlider({
         min={0} max={200} step={1}
         value={current}
         onChange={e => onChange(Number(e.target.value))}
-        className="w-full accent-purple-500"
+        className="slider-mobile w-full"
+        style={sliderFill(current, 0, 200)}
       />
     </div>
   );
@@ -3668,6 +3677,14 @@ function ChangeFormatSheet({
       </div>
     </div>
   );
+}
+
+/** Calcula el % de fill del slider para que el track muestre la parte
+ *  rellenada en morado y la parte sin rellenar gris. Aplicado via CSS var
+ *  --fill-pct que el linear-gradient del track lee. */
+function sliderFill(value: number, min: number, max: number): React.CSSProperties {
+  const pct = Math.max(0, Math.min(100, ((value - min) / (max - min)) * 100));
+  return { ["--fill-pct" as string]: `${pct}%` } as React.CSSProperties;
 }
 
 // ─── Sheet AÑADIR ELEMENTO (Fase I.1) ────────────────────────────────────
