@@ -181,13 +181,46 @@ export default async function CategoryPage({ params }: PageProps) {
               </div>
             </div>
 
-            {/* Lado derecho: showcase de 3 plantillas en mockup */}
+            {/* Lado derecho: showcase plantillas
+                - Mobile (<md): 1 plantilla GRANDE centrada
+                - Desktop (md+): 3 plantillas con la central destacada */}
             <div className="relative">
-              <div className="relative grid grid-cols-3 gap-3 animate-fade-up-delay-2">
+              {/* MOBILE: 1 plantilla grande */}
+              {firstTemplate && (
+                <div className="md:hidden relative max-w-[280px] mx-auto animate-fade-up-delay-2">
+                  <Link
+                    href={`/editor/${firstTemplate.id}`}
+                    className="block rounded-3xl overflow-hidden border-2 border-purple-500/30 shadow-2xl shadow-purple-500/40 bg-[#13131f] animate-float"
+                  >
+                    <div className="aspect-[4/5] relative overflow-hidden">
+                      {firstTemplate.image && (
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img
+                          src={firstTemplate.image}
+                          alt={firstTemplate.title}
+                          className="absolute inset-0 w-full h-full object-cover"
+                        />
+                      )}
+                      {/* Badge "Empezar" overlay bottom */}
+                      <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 to-transparent">
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/95 text-purple-600 text-[11px] font-black">
+                          ✨ Empezar con esta →
+                        </span>
+                      </div>
+                    </div>
+                  </Link>
+                  {/* Glow detrás */}
+                  <div aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-tr from-purple-500/40 via-fuchsia-500/30 to-pink-500/40 blur-3xl scale-110"/>
+                </div>
+              )}
+
+              {/* DESKTOP: 3 plantillas con central destacada */}
+              <div className="hidden md:grid relative grid-cols-3 gap-3 animate-fade-up-delay-2">
                 {featured.map((tpl, i) => (
-                  <div
+                  <Link
                     key={tpl.id}
-                    className={`rounded-2xl overflow-hidden border-2 border-white/10 shadow-2xl shadow-purple-500/20 bg-[#13131f] ${
+                    href={`/editor/${tpl.id}`}
+                    className={`rounded-2xl overflow-hidden border-2 border-white/10 shadow-2xl shadow-purple-500/20 bg-[#13131f] hover:border-purple-500/40 transition-colors ${
                       i === 1 ? "animate-float scale-110 z-10" : "animate-float"
                     }`}
                     style={{ animationDelay: `${i * 0.3}s` }}
@@ -203,11 +236,11 @@ export default async function CategoryPage({ params }: PageProps) {
                         />
                       )}
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
-              {/* Decorative gradient blob debajo */}
-              <div aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-tr from-purple-500/20 via-fuchsia-500/10 to-pink-500/20 blur-3xl"/>
+              {/* Decorative gradient blob debajo (desktop) */}
+              <div aria-hidden className="hidden md:block absolute inset-0 -z-10 bg-gradient-to-tr from-purple-500/20 via-fuchsia-500/10 to-pink-500/20 blur-3xl"/>
             </div>
           </div>
         </div>
@@ -278,39 +311,53 @@ export default async function CategoryPage({ params }: PageProps) {
             <Link href="/templates" className="text-purple-300 underline">Ver todas</Link>.
           </p>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {matches.map((tpl) => (
+          /* Grid responsive: 1 col mobile pequeño, 2 cols mobile grande, 3 desktop, 4 wide */
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+            {matches.map((tpl, idx) => (
               <Link
                 key={tpl.id}
                 href={`/editor/${tpl.id}`}
-                className="group block rounded-2xl overflow-hidden bg-[#13131f] border border-white/[0.06] card-lift"
+                className="group relative block rounded-2xl overflow-hidden bg-gradient-to-br from-[#1c1c2a] to-[#13131f] border-2 border-white/[0.08] card-lift shadow-lg shadow-black/30"
               >
+                {/* Imagen GRANDE — sin recortar el flyer (object-cover OK porque
+                    los flyers son 4:5 que coincide con aspect-[4/5]) */}
                 <div className="aspect-[4/5] relative bg-[#0a0a14] overflow-hidden">
                   {tpl.image ? (
                     /* eslint-disable-next-line @next/next/no-img-element */
                     <img
                       src={tpl.image}
                       alt={`Plantilla flyer ${tpl.title}`}
-                      loading="lazy"
-                      className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      loading={idx < 4 ? "eager" : "lazy"}
+                      className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                     />
                   ) : (
-                    <div className="absolute inset-0 flex items-center justify-center text-gray-600 text-[40px]">
+                    <div className="absolute inset-0 flex items-center justify-center text-gray-600 text-[80px]">
                       {cat.emoji}
                     </div>
                   )}
-                  {/* Overlay hover */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-purple-900/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-3">
-                    <span className="text-[11px] font-black text-white bg-gradient-to-br from-purple-600 to-fuchsia-600 px-3 py-1.5 rounded-full">
-                      Editar →
-                    </span>
+
+                  {/* Badge categoría top-left */}
+                  <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-sm text-white text-[9px] font-black uppercase tracking-wider border border-white/20">
+                    {cat.emoji} {cat.rawNames[0]}
                   </div>
-                </div>
-                <div className="px-3 py-3">
-                  <div className="text-[12px] font-bold truncate">{tpl.title}</div>
-                  <div className="text-[10px] text-gray-500 flex items-center gap-1.5 mt-0.5">
-                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400"/>
-                    {tpl.variants.length} formato{tpl.variants.length === 1 ? "" : "s"}
+
+                  {/* Overlay gradient bottom siempre visible (para mejor lectura del nombre) */}
+                  <div aria-hidden className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/95 via-black/40 to-transparent"/>
+
+                  {/* Info overlay sobre el gradient */}
+                  <div className="absolute bottom-0 left-0 right-0 p-3.5">
+                    <h3 className="text-[13px] font-black text-white leading-tight mb-1 line-clamp-2">
+                      {tpl.title}
+                    </h3>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="inline-flex items-center gap-1 text-[10px] text-gray-300 font-bold">
+                        <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"/>
+                        {tpl.variants.length} formato{tpl.variants.length === 1 ? "" : "s"}
+                      </span>
+                      <span className="px-2.5 py-1 rounded-full bg-gradient-to-br from-purple-600 to-fuchsia-600 text-white text-[10px] font-black group-hover:scale-110 transition-transform shadow-md shadow-purple-500/40">
+                        Editar →
+                      </span>
+                    </div>
                   </div>
                 </div>
               </Link>
