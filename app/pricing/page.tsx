@@ -54,6 +54,30 @@ function PricingContent() {
     if (canceled) toast.info("Pago cancelado — sin cargo.");
   }, [success, canceled, successPlan, toast]);
 
+  const [portalLoading, setPortalLoading] = useState(false);
+
+  const openCustomerPortal = async () => {
+    if (!user) {
+      router.push("/?login=1");
+      return;
+    }
+    setPortalLoading(true);
+    try {
+      const res = await fetch("/api/stripe/portal", { method: "POST" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(data.error || "No se pudo abrir el portal");
+        return;
+      }
+      window.location.href = data.url;
+    } catch (e) {
+      console.error(e);
+      toast.error("Error de conexión");
+    } finally {
+      setPortalLoading(false);
+    }
+  };
+
   const startCheckout = async (plan: "pro" | "enterprise" = "pro") => {
     if (!user) {
       router.push("/?login=1");
@@ -120,6 +144,32 @@ function PricingContent() {
             Sin permanencia, sin trucos.
           </p>
         </div>
+
+        {/* Banner usuario paid — botón gestionar suscripción */}
+        {isPaid && !success && (
+          <div className="mb-8 max-w-2xl mx-auto p-5 rounded-2xl bg-gradient-to-br from-purple-500/[0.08] via-fuchsia-500/[0.05] to-transparent border border-purple-500/30 flex items-center gap-4 flex-wrap justify-between">
+            <div className="flex items-center gap-3 flex-1 min-w-[240px]">
+              <div className="w-10 h-10 rounded-xl bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-[18px]">
+                {isEnterprise ? "🏢" : "⭐"}
+              </div>
+              <div>
+                <div className="text-[13px] font-black">
+                  {isEnterprise ? "Eres Enterprise" : "Eres Pro"}
+                </div>
+                <div className="text-[11px] text-gray-400">
+                  Cancela, cambia de plan o actualiza tu tarjeta cuando quieras
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={openCustomerPortal}
+              disabled={portalLoading}
+              className="px-5 py-2.5 rounded-xl bg-white/[0.08] border border-white/[0.16] text-white font-bold text-[12.5px] hover:bg-white/[0.12] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {portalLoading ? "Abriendo…" : "Gestionar suscripción →"}
+            </button>
+          </div>
+        )}
 
         {/* Banner success */}
         {success && (
