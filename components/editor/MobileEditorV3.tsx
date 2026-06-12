@@ -525,6 +525,8 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
       setSelectedLayerId(null);
       setSelectedType(null);
       setActiveSubTool(null);
+      // Limpia smart guides si por alguna razon quedaron de un drag previo
+      setActiveGuides([]);
     };
     fc.on("selection:created", onSelect);
     fc.on("selection:updated", onSelect);
@@ -544,23 +546,18 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
     fc.on("object:added", debouncedPush);
     fc.on("object:removed", debouncedPush);
 
-    // ─── Smart guides al arrastrar (Fase J) ───────────────────────────
-    const onObjectMoving = (e: { target?: FabricObject }) => {
-      const obj = e.target;
-      if (!obj) return;
-      const zoom = fc.getZoom();
-      const THRESHOLD = 8 / zoom; // 8px en pantalla
-      const bounds = obj.getBoundingRect();
-      const w = bounds.width;
-      const h = bounds.height;
-      const cx = bounds.left + w / 2;
-      const cy = bounds.top + h / 2;
+    // ─── Smart guides al arrastrar (Fase J — perf optimizada Fase N) ───
+    // Cacheamos las refs (centros + bordes de los OTROS objetos) UNA VEZ al
+    // empezar el drag (mouse:down). Durante el drag (mouse:move → object:moving)
+    // reusamos la caché — antes era O(n²) iterando getObjects() en cada frame.
+    let cachedVRefs: number[] | null = null;
+    let cachedHRefs: number[] | null = null;
 
-      // Referencias verticales (eje X) y horizontales (eje Y)
+    const computeStaticRefs = (movingObj: FabricObject) => {
       const vRefs: number[] = [0, canvasSize.w / 2, canvasSize.w];
       const hRefs: number[] = [0, canvasSize.h / 2, canvasSize.h];
       fc.getObjects().forEach(other => {
-        if (other === obj) return;
+        if (other === movingObj) return;
         if (other.visible === false) return;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const cid = ((other as any).customId as string | undefined ?? "").toLowerCase();
@@ -569,6 +566,31 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
         vRefs.push(ob.left, ob.left + ob.width / 2, ob.left + ob.width);
         hRefs.push(ob.top, ob.top + ob.height / 2, ob.top + ob.height);
       });
+      cachedVRefs = vRefs;
+      cachedHRefs = hRefs;
+    };
+
+    const onMouseDown = (e: { target?: FabricObject }) => {
+      // Pre-computar refs si hay objeto activo (potencial drag).
+      // Se invalidan en mouse:up.
+      if (e.target) computeStaticRefs(e.target);
+    };
+
+    const onObjectMoving = (e: { target?: FabricObject }) => {
+      const obj = e.target;
+      if (!obj) return;
+      // Si por alguna razón no tenemos cache (drag programatico), computar
+      if (!cachedVRefs || !cachedHRefs) computeStaticRefs(obj);
+      const zoom = fc.getZoom();
+      const THRESHOLD = 8 / zoom; // 8px en pantalla
+      const bounds = obj.getBoundingRect();
+      const w = bounds.width;
+      const h = bounds.height;
+      const cx = bounds.left + w / 2;
+      const cy = bounds.top + h / 2;
+
+      const vRefs = cachedVRefs!;
+      const hRefs = cachedHRefs!;
 
       const guides: Guide[] = [];
       // Snap vertical: para cada ref vertical, probar left, center, right del objeto
@@ -600,9 +622,19 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
       if (snappedX || snappedY) obj.setCoords();
       setActiveGuides(guides);
     };
-    const onObjectMoved = () => setActiveGuides([]);
+    // Cleanup robusto: ademas de mouse:up, limpiamos en mouse:out
+    // (drag suelto fuera del canvas) y selection:cleared (deselect en medio
+    // de drag programatico). Asi NO quedan lineas cyan colgadas si el
+    // usuario suelta el dedo fuera del wrapper.
+    const onDragEnd = () => {
+      setActiveGuides([]);
+      cachedVRefs = null;
+      cachedHRefs = null;
+    };
+    fc.on("mouse:down", onMouseDown);
     fc.on("object:moving", onObjectMoving);
-    fc.on("mouse:up", onObjectMoved);
+    fc.on("mouse:up", onDragEnd);
+    fc.on("mouse:out", onDragEnd);
 
     return () => {
       fc.off("selection:created", onSelect);
@@ -611,8 +643,10 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
       fc.off("object:modified", debouncedPush);
       fc.off("object:added", debouncedPush);
       fc.off("object:removed", debouncedPush);
+      fc.off("mouse:down", onMouseDown);
       fc.off("object:moving", onObjectMoving);
-      fc.off("mouse:up", onObjectMoved);
+      fc.off("mouse:up", onDragEnd);
+      fc.off("mouse:out", onDragEnd);
       if (pushTimer) clearTimeout(pushTimer);
     };
   }, [loaded, pushHistory, canvasSize.w, canvasSize.h]);
@@ -961,7 +995,12 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
     fc.remove(...fc.getObjects());
     fc.backgroundColor = "#000";
     applyTemplateLayers(fc, variant.layers).then(() => {
-      fc.getObjects().forEach(obj => {
+      const objs = fc.getObjects();
+      if (objs.length === 0) {
+        toast.error("No se pudo restaurar la plantilla");
+        return;
+      }
+      objs.forEach(obj => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const cid = ((obj as any).customId as string | undefined ?? "").toLowerCase();
         const isBackground = cid.startsWith("bg-") || cid === "background";
@@ -998,6 +1037,9 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
       pushHistory();
       setOpenSheet(null);
       toast.success("Plantilla restaurada");
+    }).catch(err => {
+      console.error("[reset-template]", err);
+      toast.error("Error al restaurar — recarga la página");
     });
   }, [template, formatId, blocks, pushHistory, toast]);
 
@@ -1271,7 +1313,7 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
       console.error(e);
       toast.error("No se pudo cargar la imagen");
     }
-  }, [getActiveImage, toast]);
+  }, [getActiveImage, pushHistory, toast]);
 
   // ─── Helpers FORMA (borde, opacidad, esquinas) ──────────────────────────
   const setObjOpacity = useCallback((o: number) => {
@@ -1978,7 +2020,7 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
             <ChipBtn
               onClick={() => handleCenterActive("both")}
               icon={<AlignHorizontalJustifyCenter size={15} strokeWidth={2.2}/>}
-              label="Centrar"
+              label="Centrar al canvas"
             />
             <ChipBtn
               onClick={toggleLockActive}

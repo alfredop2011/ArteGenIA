@@ -7,6 +7,7 @@ async function setup(page: import("@playwright/test").Page, context: import("@pl
     try {
       window.localStorage.setItem("artegenia-desktop-editor-tour-seen", "true");
       window.localStorage.setItem("artegenia-mobile-hint-seen", "1");
+      window.localStorage.setItem("artegenia-v3-onboarding-seen", "1");
     } catch {}
   });
 }
@@ -27,7 +28,7 @@ test("J-01 chip toolbar tiene boton Centrar", async ({ page, context }) => {
   await page.waitForTimeout(1000);
   await page.screenshot({ path: ".qa-screenshots/j-01-centrar-btn.png" });
 
-  await expect(page.locator("button[aria-label='Centrar']")).toBeVisible();
+  await expect(page.locator("button[aria-label='Centrar al canvas']")).toBeVisible();
 });
 
 // J-02: Tap "Centrar" no rompe UI (mueve objeto)
@@ -38,7 +39,7 @@ test("J-02 tap Centrar mueve objeto sin error", async ({ page, context }) => {
   const box = await canvas.boundingBox();
   if (box) await page.touchscreen.tap(box.x + box.width * 0.5, box.y + box.height * 0.18);
   await page.waitForTimeout(800);
-  await page.locator("button[aria-label='Centrar']").first().tap();
+  await page.locator("button[aria-label='Centrar al canvas']").first().tap();
   await page.waitForTimeout(500);
 
   // El objeto debe seguir seleccionado y los sub-tools de texto visibles

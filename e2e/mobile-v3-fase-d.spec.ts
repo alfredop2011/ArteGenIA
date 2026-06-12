@@ -7,6 +7,7 @@ async function setup(page: import("@playwright/test").Page, context: import("@pl
     try {
       window.localStorage.setItem("artegenia-desktop-editor-tour-seen", "true");
       window.localStorage.setItem("artegenia-mobile-hint-seen", "1");
+      window.localStorage.setItem("artegenia-v3-onboarding-seen", "1");
     } catch {}
   });
 }
