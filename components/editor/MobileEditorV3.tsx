@@ -57,7 +57,7 @@ import { getPalettesForCategory, type Palette } from "@/data/templatePalettes";
 import { REMIX_STYLES, type RemixStyle } from "@/data/templateRemixes";
 import { useProjects } from "@/hooks/useProjects";
 import { supabase } from "@/lib/supabase";
-import { Save, FolderOpen, Share2, Link2, Mail, MessageCircle, Send, Plus, Layers, Lock, Unlock, Eye, EyeOff, Circle as CircleIcon, Square as SquareIcon, Triangle, Heart, Star } from "lucide-react";
+import { Save, FolderOpen, Share2, Link2, Mail, MessageCircle, Send, Plus, Layers, Lock, Unlock, Eye, EyeOff, Circle as CircleIcon, Square as SquareIcon, Triangle, Heart, Star, AlignHorizontalJustifyCenter } from "lucide-react";
 
 type Props = {
   templateId?: number;
@@ -510,6 +510,66 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
     fc.on("object:added", debouncedPush);
     fc.on("object:removed", debouncedPush);
 
+    // ─── Smart guides al arrastrar (Fase J) ───────────────────────────
+    const onObjectMoving = (e: { target?: FabricObject }) => {
+      const obj = e.target;
+      if (!obj) return;
+      const zoom = fc.getZoom();
+      const THRESHOLD = 8 / zoom; // 8px en pantalla
+      const bounds = obj.getBoundingRect();
+      const w = bounds.width;
+      const h = bounds.height;
+      const cx = bounds.left + w / 2;
+      const cy = bounds.top + h / 2;
+
+      // Referencias verticales (eje X) y horizontales (eje Y)
+      const vRefs: number[] = [0, canvasSize.w / 2, canvasSize.w];
+      const hRefs: number[] = [0, canvasSize.h / 2, canvasSize.h];
+      fc.getObjects().forEach(other => {
+        if (other === obj) return;
+        if (other.visible === false) return;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const cid = ((other as any).customId as string | undefined ?? "").toLowerCase();
+        if (cid.startsWith("bg-") || cid === "background") return;
+        const ob = other.getBoundingRect();
+        vRefs.push(ob.left, ob.left + ob.width / 2, ob.left + ob.width);
+        hRefs.push(ob.top, ob.top + ob.height / 2, ob.top + ob.height);
+      });
+
+      const guides: Guide[] = [];
+      // Snap vertical: para cada ref vertical, probar left, center, right del objeto
+      let snappedX = false;
+      for (const ref of vRefs) {
+        if (snappedX) break;
+        for (const objX of [bounds.left, cx, bounds.left + w]) {
+          if (Math.abs(objX - ref) < THRESHOLD) {
+            obj.set("left", (obj.left ?? 0) + (ref - objX));
+            guides.push({ axis: "v", pos: ref });
+            snappedX = true;
+            break;
+          }
+        }
+      }
+      // Snap horizontal
+      let snappedY = false;
+      for (const ref of hRefs) {
+        if (snappedY) break;
+        for (const objY of [bounds.top, cy, bounds.top + h]) {
+          if (Math.abs(objY - ref) < THRESHOLD) {
+            obj.set("top", (obj.top ?? 0) + (ref - objY));
+            guides.push({ axis: "h", pos: ref });
+            snappedY = true;
+            break;
+          }
+        }
+      }
+      if (snappedX || snappedY) obj.setCoords();
+      setActiveGuides(guides);
+    };
+    const onObjectMoved = () => setActiveGuides([]);
+    fc.on("object:moving", onObjectMoving);
+    fc.on("mouse:up", onObjectMoved);
+
     return () => {
       fc.off("selection:created", onSelect);
       fc.off("selection:updated", onSelect);
@@ -517,9 +577,11 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
       fc.off("object:modified", debouncedPush);
       fc.off("object:added", debouncedPush);
       fc.off("object:removed", debouncedPush);
+      fc.off("object:moving", onObjectMoving);
+      fc.off("mouse:up", onObjectMoved);
       if (pushTimer) clearTimeout(pushTimer);
     };
-  }, [loaded, pushHistory]);
+  }, [loaded, pushHistory, canvasSize.w, canvasSize.h]);
 
   // ─── Aplicar valor de bloque al canvas ──────────────────────────────────
   const applyBlockToCanvas = useCallback((block: EditableBlock, value: string) => {
@@ -747,6 +809,41 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
       setRemovingBg(false);
     }
   }, [authUser, getActiveImage, fabricImageToDataUrl, pushHistory, toast]);
+
+  // ─── Smart guides (Fase J) ─────────────────────────────────────────────
+  // Líneas guía cyan al arrastrar objetos. Snap a:
+  //   - Centro horizontal/vertical del canvas
+  //   - Bordes (left/right/top/bottom) del canvas
+  //   - Centros y bordes de otros objetos
+  //
+  // Threshold ajustado por zoom: 8px en pantalla → 8/zoom en canvas units.
+  // Guides se renderizan como divs absolute en un overlay sobre el canvas
+  // wrapper — más rápido que pintar en Fabric y no se exportan.
+  type Guide = { axis: "v" | "h"; pos: number };
+  const [activeGuides, setActiveGuides] = useState<Guide[]>([]);
+
+  const handleCenterActive = useCallback((axis: "h" | "v" | "both") => {
+    const fc = fabricRef.current;
+    const obj = fc?.getActiveObject();
+    if (!fc || !obj) return;
+    const bounds = obj.getBoundingRect();
+    if (axis === "h" || axis === "both") {
+      const dx = canvasSize.w / 2 - (bounds.left + bounds.width / 2);
+      obj.set("left", (obj.left ?? 0) + dx);
+    }
+    if (axis === "v" || axis === "both") {
+      const dy = canvasSize.h / 2 - (bounds.top + bounds.height / 2);
+      obj.set("top", (obj.top ?? 0) + dy);
+    }
+    obj.setCoords();
+    fc.requestRenderAll();
+    setSaveState("unsaved");
+    pushHistory();
+    toast.success(
+      axis === "both" ? "Centrado en el canvas" :
+      axis === "h" ? "Centrado horizontal" : "Centrado vertical"
+    );
+  }, [canvasSize.w, canvasSize.h, pushHistory, toast]);
 
   // ─── Añadir nuevo elemento (Fase I.1) ──────────────────────────────────
   // Helpers para crear texto/forma/imagen NUEVA y añadirla al canvas
@@ -1531,6 +1628,25 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
           className="h-full w-full max-w-full max-h-full rounded-xl overflow-hidden bg-[#111] shadow-2xl shadow-black/40 relative flex items-center justify-center"
         >
           <canvas ref={canvasRef} />
+          {/* SMART GUIDES overlay — divs cyan absolute. Coords canvas → pantalla
+              via zoom + viewportTransform. pointer-events none para no robar
+              taps al canvas Fabric. */}
+          {activeGuides.length > 0 && fabricRef.current && (
+            <div className="absolute inset-0 pointer-events-none z-10">
+              {activeGuides.map((g, i) => {
+                const fc = fabricRef.current!;
+                const zoom = fc.getZoom();
+                const vpt = fc.viewportTransform ?? [1, 0, 0, 1, 0, 0];
+                if (g.axis === "v") {
+                  const x = g.pos * zoom + vpt[4];
+                  return <div key={i} className="absolute top-0 bottom-0 w-px bg-cyan-400 shadow-[0_0_4px_rgba(34,211,238,0.8)]" style={{ left: x }}/>;
+                } else {
+                  const y = g.pos * zoom + vpt[5];
+                  return <div key={i} className="absolute left-0 right-0 h-px bg-cyan-400 shadow-[0_0_4px_rgba(34,211,238,0.8)]" style={{ top: y }}/>;
+                }
+              })}
+            </div>
+          )}
           {!loaded && (
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"/>
@@ -1560,6 +1676,11 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
               onClick={handleDuplicate}
               icon={<Copy size={15} strokeWidth={2.2}/>}
               label="Duplicar"
+            />
+            <ChipBtn
+              onClick={() => handleCenterActive("both")}
+              icon={<AlignHorizontalJustifyCenter size={15} strokeWidth={2.2}/>}
+              label="Centrar"
             />
             <ChipBtn
               onClick={toggleLockActive}
