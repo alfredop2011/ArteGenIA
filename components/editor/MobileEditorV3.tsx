@@ -2787,21 +2787,24 @@ function FontPills({ currentFont, onPick }: { currentFont?: string; onPick: (f: 
   );
 }
 
-/** Tamaño — slider compacto rango 8-200. */
+/** Tamaño — slider compacto rango 8-200. State local para que la barra
+ *  se actualice EN VIVO al arrastrar (sin esperar re-render del padre). */
 function SizeSlider({ currentSize, onChange }: { currentSize: number; onChange: (n: number) => void }) {
+  const [val, setVal] = useState(currentSize);
+  useEffect(() => { setVal(currentSize); }, [currentSize]);
   return (
     <div className="border-b border-white/[0.06] px-4 py-3">
       <div className="flex justify-between mb-1.5">
         <span className="text-[11px] text-gray-400 font-semibold">Tamaño</span>
-        <span className="text-[11px] text-purple-400 font-bold">{Math.round(currentSize)} px</span>
+        <span className="text-[11px] text-purple-400 font-bold">{Math.round(val)} px</span>
       </div>
       <input
         type="range"
         min={8} max={200} step={1}
-        value={currentSize}
-        onChange={e => onChange(Number(e.target.value))}
+        value={val}
+        onChange={e => { const n = Number(e.target.value); setVal(n); onChange(n); }}
         className="slider-mobile w-full"
-        style={sliderFill(currentSize, 8, 200)}
+        style={sliderFill(val, 8, 200)}
       />
     </div>
   );
@@ -2867,6 +2870,13 @@ function StylePresets({
   onShadow: (mode: "none" | "soft" | "strong" | "glow") => void;
   onOutline: (width: number, color?: string) => void;
 }) {
+  // State local para que los 3 sliders se actualicen en vivo
+  const [strokeVal, setStrokeVal] = useState(currentStrokeWidth);
+  const [lhVal, setLhVal] = useState(currentLineHeight);
+  const [csVal, setCsVal] = useState(currentCharSpacing);
+  useEffect(() => { setStrokeVal(currentStrokeWidth); }, [currentStrokeWidth]);
+  useEffect(() => { setLhVal(currentLineHeight); }, [currentLineHeight]);
+  useEffect(() => { setCsVal(currentCharSpacing); }, [currentCharSpacing]);
   return (
     <div className="border-b border-white/[0.06] flex flex-col gap-3 px-3 py-3 max-h-[55vh] overflow-y-auto">
       {/* Fila 1 — Formato basico */}
@@ -2911,15 +2921,15 @@ function StylePresets({
       <div className="flex flex-col gap-1.5 pt-1">
         <div className="flex justify-between items-center">
           <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Borde texto</span>
-          <span className="text-[10px] text-purple-400 font-bold">{Math.round(currentStrokeWidth)} px</span>
+          <span className="text-[10px] text-purple-400 font-bold">{strokeVal.toFixed(1)} px</span>
         </div>
         <input
           type="range"
           min={0} max={10} step={0.5}
-          value={currentStrokeWidth}
-          onChange={e => onOutline(Number(e.target.value), currentStroke || "#000000")}
+          value={strokeVal}
+          onChange={e => { const n = Number(e.target.value); setStrokeVal(n); onOutline(n, currentStroke || "#000000"); }}
           className="slider-mobile w-full"
-          style={sliderFill(currentStrokeWidth, 0, 10)}
+          style={sliderFill(strokeVal, 0, 10)}
         />
         {currentStrokeWidth > 0 && (
           <div className="flex gap-1.5 overflow-x-auto scrollbar-hide">
@@ -2940,15 +2950,15 @@ function StylePresets({
       <div>
         <div className="flex justify-between mb-1">
           <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Interlineado</span>
-          <span className="text-[10px] text-purple-400 font-bold">{currentLineHeight.toFixed(2)}</span>
+          <span className="text-[10px] text-purple-400 font-bold">{lhVal.toFixed(2)}</span>
         </div>
         <input
           type="range"
           min={0.8} max={2.5} step={0.05}
-          value={currentLineHeight}
-          onChange={e => onApply("lineHeight", Number(e.target.value))}
+          value={lhVal}
+          onChange={e => { const n = Number(e.target.value); setLhVal(n); onApply("lineHeight", n); }}
           className="slider-mobile w-full"
-          style={sliderFill(currentLineHeight, 0.8, 2.5)}
+          style={sliderFill(lhVal, 0.8, 2.5)}
         />
       </div>
 
@@ -2956,15 +2966,15 @@ function StylePresets({
       <div>
         <div className="flex justify-between mb-1">
           <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Espaciado letras</span>
-          <span className="text-[10px] text-purple-400 font-bold">{Math.round(currentCharSpacing)}</span>
+          <span className="text-[10px] text-purple-400 font-bold">{Math.round(csVal)}</span>
         </div>
         <input
           type="range"
           min={-50} max={500} step={5}
-          value={currentCharSpacing}
-          onChange={e => onApply("charSpacing", Number(e.target.value))}
+          value={csVal}
+          onChange={e => { const n = Number(e.target.value); setCsVal(n); onApply("charSpacing", n); }}
           className="slider-mobile w-full"
-          style={sliderFill(currentCharSpacing, -50, 500)}
+          style={sliderFill(csVal, -50, 500)}
         />
       </div>
     </div>
@@ -3102,22 +3112,7 @@ function FilterPresetsInline({
       {/* Rotacion + flip */}
       <div className="flex flex-col gap-2">
         <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Rotar / voltear</div>
-        <div>
-          <div className="flex justify-between mb-1">
-            <span className="text-[11px] text-gray-400 font-semibold">Rotación</span>
-            <span className="text-[11px] text-purple-400 font-bold">{Math.round(angle)}°</span>
-          </div>
-          <input
-            type="range"
-            min={-180} max={180} step={1}
-            value={angle}
-            onChange={e => onRotation(Number(e.target.value))}
-            onMouseUp={onCommit}
-            onTouchEnd={onCommit}
-            className="slider-mobile w-full"
-            style={sliderFill(angle, -180, 180)}
-          />
-        </div>
+        <RotationSlider angle={angle} onRotation={onRotation} onCommit={onCommit}/>
         <div className="flex gap-2">
           <button
             onClick={onFlipH}
@@ -3139,10 +3134,40 @@ function FilterPresetsInline({
   );
 }
 
+/** Rotación slider con state local. */
+function RotationSlider({
+  angle, onRotation, onCommit,
+}: {
+  angle: number;
+  onRotation: (v: number) => void;
+  onCommit: () => void;
+}) {
+  const [val, setVal] = useState(angle);
+  useEffect(() => { setVal(angle); }, [angle]);
+  return (
+    <div>
+      <div className="flex justify-between mb-1">
+        <span className="text-[11px] text-gray-400 font-semibold">Rotación</span>
+        <span className="text-[11px] text-purple-400 font-bold">{Math.round(val)}°</span>
+      </div>
+      <input
+        type="range"
+        min={-180} max={180} step={1}
+        value={val}
+        onChange={e => { const n = Number(e.target.value); setVal(n); onRotation(n); }}
+        onMouseUp={onCommit}
+        onTouchEnd={onCommit}
+        className="slider-mobile w-full"
+        style={sliderFill(val, -180, 180)}
+      />
+    </div>
+  );
+}
+
 /** Slider de ajuste con label + valor + commit al soltar.
- *  Usado para brillo/contraste/saturacion. */
+ *  Usado para brillo/contraste/saturacion. State local sincronizado. */
 function AdjustSlider({
-  label, value, min, max, step, display, onChange, onCommit,
+  label, value, min, max, step, onChange, onCommit,
 }: {
   label: string;
   value: number;
@@ -3153,23 +3178,27 @@ function AdjustSlider({
   onChange: (v: number) => void;
   onCommit: () => void;
 }) {
+  const [val, setVal] = useState(value);
+  useEffect(() => { setVal(value); }, [value]);
+  // El display visible (escala a porcentaje aproximado) se computa del val local
+  const liveDisplay = Math.round((val / (max - min)) * 200);
   return (
     <div>
       <div className="flex justify-between mb-0.5">
         <span className="text-[11px] text-gray-400 font-semibold">{label}</span>
-        <span className={`text-[11px] font-bold ${display === 0 ? "text-gray-500" : "text-purple-400"}`}>
-          {display > 0 ? "+" : ""}{display}
+        <span className={`text-[11px] font-bold ${liveDisplay === 0 ? "text-gray-500" : "text-purple-400"}`}>
+          {liveDisplay > 0 ? "+" : ""}{liveDisplay}
         </span>
       </div>
       <input
         type="range"
         min={min} max={max} step={step}
-        value={value}
-        onChange={e => onChange(Number(e.target.value))}
+        value={val}
+        onChange={e => { const n = Number(e.target.value); setVal(n); onChange(n); }}
         onMouseUp={onCommit}
         onTouchEnd={onCommit}
         className="slider-mobile w-full"
-        style={sliderFill(value, min, max)}
+        style={sliderFill(val, min, max)}
       />
     </div>
   );
@@ -3215,9 +3244,10 @@ function RemoveBgInline({
 
 // ─── COMUNES (Opacidad / Borde / Esquinas) ────────────────────────────────
 
-/** Opacidad — slider 0-100. */
+/** Opacidad — slider 0-100. State local para sincronizar visual en vivo. */
 function OpacitySlider({ current, onChange }: { current: number; onChange: (n: number) => void }) {
-  const pct = Math.round(current * 100);
+  const [pct, setPct] = useState(Math.round(current * 100));
+  useEffect(() => { setPct(Math.round(current * 100)); }, [current]);
   return (
     <div className="border-b border-white/[0.06] px-4 py-3">
       <div className="flex justify-between mb-1.5">
@@ -3228,7 +3258,7 @@ function OpacitySlider({ current, onChange }: { current: number; onChange: (n: n
         type="range"
         min={0} max={100} step={1}
         value={pct}
-        onChange={e => onChange(Number(e.target.value) / 100)}
+        onChange={e => { const n = Number(e.target.value); setPct(n); onChange(n / 100); }}
         className="slider-mobile w-full"
         style={sliderFill(pct, 0, 100)}
       />
@@ -3236,7 +3266,8 @@ function OpacitySlider({ current, onChange }: { current: number; onChange: (n: n
   );
 }
 
-/** Borde — swatch color + slider grosor + boton Quitar. */
+/** Borde — swatch color + slider grosor + boton Quitar.
+ *  State local en el slider de grosor para sync visual en vivo. */
 function BorderInline({
   currentColor, currentWidth, onColor, onWidth, onClear,
 }: {
@@ -3246,6 +3277,8 @@ function BorderInline({
   onWidth: (w: number) => void;
   onClear: () => void;
 }) {
+  const [wVal, setWVal] = useState(currentWidth);
+  useEffect(() => { setWVal(currentWidth); }, [currentWidth]);
   return (
     <div className="border-b border-white/[0.06] flex flex-col gap-3 px-3 py-3">
       <div className="flex gap-2 overflow-x-auto scrollbar-hide">
@@ -3265,15 +3298,15 @@ function BorderInline({
       <div className="px-1">
         <div className="flex justify-between mb-1">
           <span className="text-[11px] text-gray-400 font-semibold">Grosor</span>
-          <span className="text-[11px] text-purple-400 font-bold">{Math.round(currentWidth)} px</span>
+          <span className="text-[11px] text-purple-400 font-bold">{Math.round(wVal)} px</span>
         </div>
         <input
           type="range"
           min={0} max={30} step={1}
-          value={currentWidth}
-          onChange={e => onWidth(Number(e.target.value))}
+          value={wVal}
+          onChange={e => { const n = Number(e.target.value); setWVal(n); onWidth(n); }}
           className="slider-mobile w-full"
-          style={sliderFill(currentWidth, 0, 30)}
+          style={sliderFill(wVal, 0, 30)}
         />
       </div>
       <button
@@ -3479,7 +3512,8 @@ function PhotoSheet({
   );
 }
 
-/** Esquinas — slider 0-100. Solo aplica a Rect; deshabilitado en otros. */
+/** Esquinas — slider 0-100. Solo aplica a Rect; deshabilitado en otros.
+ *  State local para barra en vivo. */
 function CornerRadiusSlider({
   current, onChange, applicable,
 }: {
@@ -3487,6 +3521,8 @@ function CornerRadiusSlider({
   onChange: (n: number) => void;
   applicable: boolean;
 }) {
+  const [val, setVal] = useState(current);
+  useEffect(() => { setVal(current); }, [current]);
   if (!applicable) {
     return (
       <div className="border-b border-white/[0.06] px-4 py-4 text-center text-[12px] text-gray-400">
@@ -3498,15 +3534,15 @@ function CornerRadiusSlider({
     <div className="border-b border-white/[0.06] px-4 py-3">
       <div className="flex justify-between mb-1.5">
         <span className="text-[11px] text-gray-400 font-semibold">Esquinas</span>
-        <span className="text-[11px] text-purple-400 font-bold">{Math.round(current)} px</span>
+        <span className="text-[11px] text-purple-400 font-bold">{Math.round(val)} px</span>
       </div>
       <input
         type="range"
         min={0} max={200} step={1}
-        value={current}
-        onChange={e => onChange(Number(e.target.value))}
+        value={val}
+        onChange={e => { const n = Number(e.target.value); setVal(n); onChange(n); }}
         className="slider-mobile w-full"
-        style={sliderFill(current, 0, 200)}
+        style={sliderFill(val, 0, 200)}
       />
     </div>
   );
