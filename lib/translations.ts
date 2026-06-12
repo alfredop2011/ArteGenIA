@@ -492,7 +492,88 @@ export type TranslationKey =
   | "mobileEditor.fab.done"
   | "mobileEditor.toast.objectLocked"
   | "mobileEditor.toast.objectUnlocked"
-  | "mobileEditor.toast.centeredCanvas";
+  | "mobileEditor.toast.centeredCanvas"
+  // ── SUB-TOOLS LABELS (Fase P.2) ──
+  | "mobileEditor.subtool.edit"
+  | "mobileEditor.subtool.font"
+  | "mobileEditor.subtool.styles"
+  | "mobileEditor.subtool.size"
+  | "mobileEditor.subtool.color"
+  | "mobileEditor.subtool.replace"
+  | "mobileEditor.subtool.crop"
+  | "mobileEditor.subtool.filters"
+  | "mobileEditor.subtool.removeBg"
+  | "mobileEditor.subtool.opacity"
+  | "mobileEditor.subtool.border"
+  | "mobileEditor.subtool.corners"
+  // ── STYLE PRESETS (texto avanzado) ──
+  | "mobileEditor.text.shadow"
+  | "mobileEditor.text.shadowActive"
+  | "mobileEditor.text.shadowNone"
+  | "mobileEditor.text.shadowSoft"
+  | "mobileEditor.text.shadowStrong"
+  | "mobileEditor.text.shadowGlow"
+  | "mobileEditor.text.outline"
+  | "mobileEditor.text.lineHeight"
+  | "mobileEditor.text.charSpacing"
+  | "mobileEditor.text.bold"
+  | "mobileEditor.text.italic"
+  | "mobileEditor.text.underline"
+  | "mobileEditor.text.alignLeft"
+  | "mobileEditor.text.alignCenter"
+  | "mobileEditor.text.alignRight"
+  | "mobileEditor.text.reset"
+  | "mobileEditor.text.fontSizeLabel"
+  // ── CROP ──
+  | "mobileEditor.crop.square"
+  | "mobileEditor.crop.rounded"
+  | "mobileEditor.crop.circle"
+  // ── FILTERS ──
+  | "mobileEditor.filters.presets"
+  | "mobileEditor.filters.original"
+  | "mobileEditor.filters.bw"
+  | "mobileEditor.filters.warm"
+  | "mobileEditor.filters.cool"
+  | "mobileEditor.filters.vintage"
+  | "mobileEditor.filters.fineAdjust"
+  | "mobileEditor.filters.brightness"
+  | "mobileEditor.filters.contrast"
+  | "mobileEditor.filters.saturation"
+  | "mobileEditor.filters.rotateFlip"
+  | "mobileEditor.filters.rotation"
+  | "mobileEditor.filters.flipH"
+  | "mobileEditor.filters.flipV"
+  | "mobileEditor.toast.flippedH"
+  | "mobileEditor.toast.flippedV"
+  // ── REMOVE BG ──
+  | "mobileEditor.removeBg.title"
+  | "mobileEditor.removeBg.desc"
+  | "mobileEditor.removeBg.loadingTitle"
+  | "mobileEditor.removeBg.loadingDesc"
+  | "mobileEditor.removeBg.button"
+  | "mobileEditor.removeBg.buttonLoading"
+  | "mobileEditor.toast.bgRemoved"
+  | "mobileEditor.toast.bgFailed"
+  | "mobileEditor.toast.selectImageFirst"
+  | "mobileEditor.toast.imageError"
+  // ── REPLACE ──
+  | "mobileEditor.replace.button"
+  | "mobileEditor.replace.hint"
+  | "mobileEditor.toast.imageReplaced"
+  | "mobileEditor.toast.imageLoadError"
+  // ── BORDER (shape) ──
+  | "mobileEditor.border.thickness"
+  | "mobileEditor.border.remove"
+  // ── CORNERS ──
+  | "mobileEditor.corners.label"
+  | "mobileEditor.corners.onlyRect"
+  // ── COLOR SWATCH ARIA ──
+  | "mobileEditor.aria.colorSwatch"
+  | "mobileEditor.aria.borderColor"
+  // ── ADD ELEMENT toasts ──
+  | "mobileEditor.toast.textAdded"
+  | "mobileEditor.toast.shapeAdded"
+  | "mobileEditor.toast.imageAdded";
 
 type Dict = Record<TranslationKey, string>;
 
@@ -970,6 +1051,78 @@ const es: Dict = {
   "mobileEditor.toast.objectLocked": "Objeto bloqueado",
   "mobileEditor.toast.objectUnlocked": "Objeto desbloqueado",
   "mobileEditor.toast.centeredCanvas": "Centrado en el canvas",
+  // ── SUB-TOOLS ──
+  "mobileEditor.subtool.edit": "Editar",
+  "mobileEditor.subtool.font": "Fuente",
+  "mobileEditor.subtool.styles": "Estilos",
+  "mobileEditor.subtool.size": "Tamaño",
+  "mobileEditor.subtool.color": "Color",
+  "mobileEditor.subtool.replace": "Reemplazar",
+  "mobileEditor.subtool.crop": "Recortar",
+  "mobileEditor.subtool.filters": "Filtros",
+  "mobileEditor.subtool.removeBg": "Quitar fondo",
+  "mobileEditor.subtool.opacity": "Opacidad",
+  "mobileEditor.subtool.border": "Borde",
+  "mobileEditor.subtool.corners": "Esquinas",
+  "mobileEditor.text.shadow": "Sombra",
+  "mobileEditor.text.shadowActive": "Activa",
+  "mobileEditor.text.shadowNone": "Ninguna",
+  "mobileEditor.text.shadowSoft": "Suave",
+  "mobileEditor.text.shadowStrong": "Fuerte",
+  "mobileEditor.text.shadowGlow": "Glow",
+  "mobileEditor.text.outline": "Borde texto",
+  "mobileEditor.text.lineHeight": "Interlineado",
+  "mobileEditor.text.charSpacing": "Espaciado letras",
+  "mobileEditor.text.bold": "Negrita",
+  "mobileEditor.text.italic": "Cursiva",
+  "mobileEditor.text.underline": "Subrayado",
+  "mobileEditor.text.alignLeft": "Alinear a la izquierda",
+  "mobileEditor.text.alignCenter": "Centrar",
+  "mobileEditor.text.alignRight": "Alinear a la derecha",
+  "mobileEditor.text.reset": "Restablecer formato",
+  "mobileEditor.text.fontSizeLabel": "Tamaño",
+  "mobileEditor.crop.square": "Cuadrado",
+  "mobileEditor.crop.rounded": "Redondeado",
+  "mobileEditor.crop.circle": "Círculo",
+  "mobileEditor.filters.presets": "Presets",
+  "mobileEditor.filters.original": "Original",
+  "mobileEditor.filters.bw": "B&N",
+  "mobileEditor.filters.warm": "Cálido",
+  "mobileEditor.filters.cool": "Frío",
+  "mobileEditor.filters.vintage": "Vintage",
+  "mobileEditor.filters.fineAdjust": "Ajuste fino",
+  "mobileEditor.filters.brightness": "Brillo",
+  "mobileEditor.filters.contrast": "Contraste",
+  "mobileEditor.filters.saturation": "Saturación",
+  "mobileEditor.filters.rotateFlip": "Rotar / voltear",
+  "mobileEditor.filters.rotation": "Rotación",
+  "mobileEditor.filters.flipH": "↔ Horizontal",
+  "mobileEditor.filters.flipV": "↕ Vertical",
+  "mobileEditor.toast.flippedH": "Volteado horizontal",
+  "mobileEditor.toast.flippedV": "Volteado vertical",
+  "mobileEditor.removeBg.title": "Quitar fondo con IA",
+  "mobileEditor.removeBg.desc": "BRIA detecta el sujeto automáticamente y elimina el fondo. Funciona mejor con fotos de personas u objetos centrados.",
+  "mobileEditor.removeBg.loadingTitle": "Eliminando fondo…",
+  "mobileEditor.removeBg.loadingDesc": "Esto tarda 2-4 segundos. No cierres la app.",
+  "mobileEditor.removeBg.button": "Quitar fondo ahora",
+  "mobileEditor.removeBg.buttonLoading": "Procesando…",
+  "mobileEditor.toast.bgRemoved": "Fondo eliminado",
+  "mobileEditor.toast.bgFailed": "La IA falló — intenta de nuevo",
+  "mobileEditor.toast.selectImageFirst": "Selecciona primero una imagen",
+  "mobileEditor.toast.imageError": "Error procesando la imagen",
+  "mobileEditor.replace.button": "Elegir imagen de tu galería",
+  "mobileEditor.replace.hint": "Se mantiene la posición y el tamaño actuales",
+  "mobileEditor.toast.imageReplaced": "Imagen reemplazada",
+  "mobileEditor.toast.imageLoadError": "No se pudo cargar la imagen",
+  "mobileEditor.border.thickness": "Grosor",
+  "mobileEditor.border.remove": "Quitar borde",
+  "mobileEditor.corners.label": "Esquinas",
+  "mobileEditor.corners.onlyRect": "Las esquinas redondeadas solo aplican a rectángulos.",
+  "mobileEditor.aria.colorSwatch": "Color",
+  "mobileEditor.aria.borderColor": "Color borde",
+  "mobileEditor.toast.textAdded": "Texto añadido",
+  "mobileEditor.toast.shapeAdded": "Forma añadida",
+  "mobileEditor.toast.imageAdded": "Imagen añadida",
 };
 
 const en: Dict = {
@@ -1446,6 +1599,77 @@ const en: Dict = {
   "mobileEditor.toast.objectLocked": "Object locked",
   "mobileEditor.toast.objectUnlocked": "Object unlocked",
   "mobileEditor.toast.centeredCanvas": "Centered on canvas",
+  "mobileEditor.subtool.edit": "Edit",
+  "mobileEditor.subtool.font": "Font",
+  "mobileEditor.subtool.styles": "Styles",
+  "mobileEditor.subtool.size": "Size",
+  "mobileEditor.subtool.color": "Color",
+  "mobileEditor.subtool.replace": "Replace",
+  "mobileEditor.subtool.crop": "Crop",
+  "mobileEditor.subtool.filters": "Filters",
+  "mobileEditor.subtool.removeBg": "Remove BG",
+  "mobileEditor.subtool.opacity": "Opacity",
+  "mobileEditor.subtool.border": "Border",
+  "mobileEditor.subtool.corners": "Corners",
+  "mobileEditor.text.shadow": "Shadow",
+  "mobileEditor.text.shadowActive": "Active",
+  "mobileEditor.text.shadowNone": "None",
+  "mobileEditor.text.shadowSoft": "Soft",
+  "mobileEditor.text.shadowStrong": "Strong",
+  "mobileEditor.text.shadowGlow": "Glow",
+  "mobileEditor.text.outline": "Text border",
+  "mobileEditor.text.lineHeight": "Line height",
+  "mobileEditor.text.charSpacing": "Letter spacing",
+  "mobileEditor.text.bold": "Bold",
+  "mobileEditor.text.italic": "Italic",
+  "mobileEditor.text.underline": "Underline",
+  "mobileEditor.text.alignLeft": "Align left",
+  "mobileEditor.text.alignCenter": "Center",
+  "mobileEditor.text.alignRight": "Align right",
+  "mobileEditor.text.reset": "Reset format",
+  "mobileEditor.text.fontSizeLabel": "Size",
+  "mobileEditor.crop.square": "Square",
+  "mobileEditor.crop.rounded": "Rounded",
+  "mobileEditor.crop.circle": "Circle",
+  "mobileEditor.filters.presets": "Presets",
+  "mobileEditor.filters.original": "Original",
+  "mobileEditor.filters.bw": "B&W",
+  "mobileEditor.filters.warm": "Warm",
+  "mobileEditor.filters.cool": "Cool",
+  "mobileEditor.filters.vintage": "Vintage",
+  "mobileEditor.filters.fineAdjust": "Fine adjust",
+  "mobileEditor.filters.brightness": "Brightness",
+  "mobileEditor.filters.contrast": "Contrast",
+  "mobileEditor.filters.saturation": "Saturation",
+  "mobileEditor.filters.rotateFlip": "Rotate / flip",
+  "mobileEditor.filters.rotation": "Rotation",
+  "mobileEditor.filters.flipH": "↔ Horizontal",
+  "mobileEditor.filters.flipV": "↕ Vertical",
+  "mobileEditor.toast.flippedH": "Flipped horizontally",
+  "mobileEditor.toast.flippedV": "Flipped vertically",
+  "mobileEditor.removeBg.title": "Remove background with AI",
+  "mobileEditor.removeBg.desc": "BRIA detects the subject automatically and removes the background. Works best with photos of people or centered objects.",
+  "mobileEditor.removeBg.loadingTitle": "Removing background…",
+  "mobileEditor.removeBg.loadingDesc": "This takes 2-4 seconds. Don't close the app.",
+  "mobileEditor.removeBg.button": "Remove background now",
+  "mobileEditor.removeBg.buttonLoading": "Processing…",
+  "mobileEditor.toast.bgRemoved": "Background removed",
+  "mobileEditor.toast.bgFailed": "AI failed — try again",
+  "mobileEditor.toast.selectImageFirst": "Select an image first",
+  "mobileEditor.toast.imageError": "Error processing image",
+  "mobileEditor.replace.button": "Choose image from your gallery",
+  "mobileEditor.replace.hint": "The current position and size are preserved",
+  "mobileEditor.toast.imageReplaced": "Image replaced",
+  "mobileEditor.toast.imageLoadError": "Could not load image",
+  "mobileEditor.border.thickness": "Thickness",
+  "mobileEditor.border.remove": "Remove border",
+  "mobileEditor.corners.label": "Corners",
+  "mobileEditor.corners.onlyRect": "Rounded corners only apply to rectangles.",
+  "mobileEditor.aria.colorSwatch": "Color",
+  "mobileEditor.aria.borderColor": "Border color",
+  "mobileEditor.toast.textAdded": "Text added",
+  "mobileEditor.toast.shapeAdded": "Shape added",
+  "mobileEditor.toast.imageAdded": "Image added",
 };
 
 const fr: Dict = {
@@ -1922,6 +2146,77 @@ const fr: Dict = {
   "mobileEditor.toast.objectLocked": "Objet verrouillé",
   "mobileEditor.toast.objectUnlocked": "Objet déverrouillé",
   "mobileEditor.toast.centeredCanvas": "Centré sur le canevas",
+  "mobileEditor.subtool.edit": "Éditer",
+  "mobileEditor.subtool.font": "Police",
+  "mobileEditor.subtool.styles": "Styles",
+  "mobileEditor.subtool.size": "Taille",
+  "mobileEditor.subtool.color": "Couleur",
+  "mobileEditor.subtool.replace": "Remplacer",
+  "mobileEditor.subtool.crop": "Recadrer",
+  "mobileEditor.subtool.filters": "Filtres",
+  "mobileEditor.subtool.removeBg": "Supp. fond",
+  "mobileEditor.subtool.opacity": "Opacité",
+  "mobileEditor.subtool.border": "Bordure",
+  "mobileEditor.subtool.corners": "Coins",
+  "mobileEditor.text.shadow": "Ombre",
+  "mobileEditor.text.shadowActive": "Active",
+  "mobileEditor.text.shadowNone": "Aucune",
+  "mobileEditor.text.shadowSoft": "Douce",
+  "mobileEditor.text.shadowStrong": "Forte",
+  "mobileEditor.text.shadowGlow": "Halo",
+  "mobileEditor.text.outline": "Contour texte",
+  "mobileEditor.text.lineHeight": "Interligne",
+  "mobileEditor.text.charSpacing": "Espacement",
+  "mobileEditor.text.bold": "Gras",
+  "mobileEditor.text.italic": "Italique",
+  "mobileEditor.text.underline": "Souligné",
+  "mobileEditor.text.alignLeft": "Aligner à gauche",
+  "mobileEditor.text.alignCenter": "Centrer",
+  "mobileEditor.text.alignRight": "Aligner à droite",
+  "mobileEditor.text.reset": "Réinitialiser le format",
+  "mobileEditor.text.fontSizeLabel": "Taille",
+  "mobileEditor.crop.square": "Carré",
+  "mobileEditor.crop.rounded": "Arrondi",
+  "mobileEditor.crop.circle": "Cercle",
+  "mobileEditor.filters.presets": "Préréglages",
+  "mobileEditor.filters.original": "Original",
+  "mobileEditor.filters.bw": "N&B",
+  "mobileEditor.filters.warm": "Chaud",
+  "mobileEditor.filters.cool": "Froid",
+  "mobileEditor.filters.vintage": "Vintage",
+  "mobileEditor.filters.fineAdjust": "Ajustement fin",
+  "mobileEditor.filters.brightness": "Luminosité",
+  "mobileEditor.filters.contrast": "Contraste",
+  "mobileEditor.filters.saturation": "Saturation",
+  "mobileEditor.filters.rotateFlip": "Tourner / retourner",
+  "mobileEditor.filters.rotation": "Rotation",
+  "mobileEditor.filters.flipH": "↔ Horizontal",
+  "mobileEditor.filters.flipV": "↕ Vertical",
+  "mobileEditor.toast.flippedH": "Retournée horizontalement",
+  "mobileEditor.toast.flippedV": "Retournée verticalement",
+  "mobileEditor.removeBg.title": "Supprimer le fond avec l'IA",
+  "mobileEditor.removeBg.desc": "BRIA détecte automatiquement le sujet et supprime le fond. Fonctionne mieux avec des photos de personnes ou d'objets centrés.",
+  "mobileEditor.removeBg.loadingTitle": "Suppression du fond…",
+  "mobileEditor.removeBg.loadingDesc": "Cela prend 2-4 secondes. Ne fermez pas l'application.",
+  "mobileEditor.removeBg.button": "Supprimer le fond",
+  "mobileEditor.removeBg.buttonLoading": "Traitement…",
+  "mobileEditor.toast.bgRemoved": "Fond supprimé",
+  "mobileEditor.toast.bgFailed": "L'IA a échoué — réessayez",
+  "mobileEditor.toast.selectImageFirst": "Sélectionnez d'abord une image",
+  "mobileEditor.toast.imageError": "Erreur de traitement",
+  "mobileEditor.replace.button": "Choisir une image de votre galerie",
+  "mobileEditor.replace.hint": "La position et la taille actuelles sont conservées",
+  "mobileEditor.toast.imageReplaced": "Image remplacée",
+  "mobileEditor.toast.imageLoadError": "Impossible de charger l'image",
+  "mobileEditor.border.thickness": "Épaisseur",
+  "mobileEditor.border.remove": "Supprimer la bordure",
+  "mobileEditor.corners.label": "Coins",
+  "mobileEditor.corners.onlyRect": "Les coins arrondis ne s'appliquent qu'aux rectangles.",
+  "mobileEditor.aria.colorSwatch": "Couleur",
+  "mobileEditor.aria.borderColor": "Couleur bordure",
+  "mobileEditor.toast.textAdded": "Texte ajouté",
+  "mobileEditor.toast.shapeAdded": "Forme ajoutée",
+  "mobileEditor.toast.imageAdded": "Image ajoutée",
 };
 
 const pt: Dict = {
@@ -2398,6 +2693,77 @@ const pt: Dict = {
   "mobileEditor.toast.objectLocked": "Objeto bloqueado",
   "mobileEditor.toast.objectUnlocked": "Objeto desbloqueado",
   "mobileEditor.toast.centeredCanvas": "Centrado no canvas",
+  "mobileEditor.subtool.edit": "Editar",
+  "mobileEditor.subtool.font": "Fonte",
+  "mobileEditor.subtool.styles": "Estilos",
+  "mobileEditor.subtool.size": "Tamanho",
+  "mobileEditor.subtool.color": "Cor",
+  "mobileEditor.subtool.replace": "Substituir",
+  "mobileEditor.subtool.crop": "Recortar",
+  "mobileEditor.subtool.filters": "Filtros",
+  "mobileEditor.subtool.removeBg": "Remover fundo",
+  "mobileEditor.subtool.opacity": "Opacidade",
+  "mobileEditor.subtool.border": "Contorno",
+  "mobileEditor.subtool.corners": "Cantos",
+  "mobileEditor.text.shadow": "Sombra",
+  "mobileEditor.text.shadowActive": "Ativa",
+  "mobileEditor.text.shadowNone": "Nenhuma",
+  "mobileEditor.text.shadowSoft": "Suave",
+  "mobileEditor.text.shadowStrong": "Forte",
+  "mobileEditor.text.shadowGlow": "Brilho",
+  "mobileEditor.text.outline": "Contorno texto",
+  "mobileEditor.text.lineHeight": "Espaçamento linha",
+  "mobileEditor.text.charSpacing": "Espaçamento letras",
+  "mobileEditor.text.bold": "Negrito",
+  "mobileEditor.text.italic": "Itálico",
+  "mobileEditor.text.underline": "Sublinhado",
+  "mobileEditor.text.alignLeft": "Alinhar à esquerda",
+  "mobileEditor.text.alignCenter": "Centrar",
+  "mobileEditor.text.alignRight": "Alinhar à direita",
+  "mobileEditor.text.reset": "Repor formato",
+  "mobileEditor.text.fontSizeLabel": "Tamanho",
+  "mobileEditor.crop.square": "Quadrado",
+  "mobileEditor.crop.rounded": "Arredondado",
+  "mobileEditor.crop.circle": "Círculo",
+  "mobileEditor.filters.presets": "Predefinições",
+  "mobileEditor.filters.original": "Original",
+  "mobileEditor.filters.bw": "P&B",
+  "mobileEditor.filters.warm": "Quente",
+  "mobileEditor.filters.cool": "Frio",
+  "mobileEditor.filters.vintage": "Vintage",
+  "mobileEditor.filters.fineAdjust": "Ajuste fino",
+  "mobileEditor.filters.brightness": "Brilho",
+  "mobileEditor.filters.contrast": "Contraste",
+  "mobileEditor.filters.saturation": "Saturação",
+  "mobileEditor.filters.rotateFlip": "Rodar / virar",
+  "mobileEditor.filters.rotation": "Rotação",
+  "mobileEditor.filters.flipH": "↔ Horizontal",
+  "mobileEditor.filters.flipV": "↕ Vertical",
+  "mobileEditor.toast.flippedH": "Virado horizontalmente",
+  "mobileEditor.toast.flippedV": "Virado verticalmente",
+  "mobileEditor.removeBg.title": "Remover fundo com IA",
+  "mobileEditor.removeBg.desc": "A BRIA deteta o sujeito automaticamente e remove o fundo. Funciona melhor com fotos de pessoas ou objetos centrados.",
+  "mobileEditor.removeBg.loadingTitle": "A remover fundo…",
+  "mobileEditor.removeBg.loadingDesc": "Isto demora 2-4 segundos. Não feche a aplicação.",
+  "mobileEditor.removeBg.button": "Remover fundo agora",
+  "mobileEditor.removeBg.buttonLoading": "A processar…",
+  "mobileEditor.toast.bgRemoved": "Fundo removido",
+  "mobileEditor.toast.bgFailed": "A IA falhou — tente novamente",
+  "mobileEditor.toast.selectImageFirst": "Selecione primeiro uma imagem",
+  "mobileEditor.toast.imageError": "Erro ao processar a imagem",
+  "mobileEditor.replace.button": "Escolher imagem da galeria",
+  "mobileEditor.replace.hint": "A posição e o tamanho atuais são mantidos",
+  "mobileEditor.toast.imageReplaced": "Imagem substituída",
+  "mobileEditor.toast.imageLoadError": "Não foi possível carregar a imagem",
+  "mobileEditor.border.thickness": "Espessura",
+  "mobileEditor.border.remove": "Remover contorno",
+  "mobileEditor.corners.label": "Cantos",
+  "mobileEditor.corners.onlyRect": "Os cantos arredondados só se aplicam a retângulos.",
+  "mobileEditor.aria.colorSwatch": "Cor",
+  "mobileEditor.aria.borderColor": "Cor contorno",
+  "mobileEditor.toast.textAdded": "Texto adicionado",
+  "mobileEditor.toast.shapeAdded": "Forma adicionada",
+  "mobileEditor.toast.imageAdded": "Imagem adicionada",
 };
 
 export const TRANSLATIONS: Record<Locale, Dict> = { es, en, fr, pt };

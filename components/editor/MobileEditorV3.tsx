@@ -884,7 +884,7 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
     fc.requestRenderAll();
     setSaveState("unsaved");
     pushHistory();
-    toast.success(axis === "x" ? "Volteado horizontal" : "Volteado vertical");
+    toast.success(axis === "x" ? t("mobileEditor.toast.flippedH") : t("mobileEditor.toast.flippedV"));
   }, [getActiveImage, pushHistory, toast]);
 
   /** Cambia la forma de recorte: cuadrado, círculo, redondeado.
@@ -953,7 +953,7 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
     if (!authUser) { toast.info(t("mobileEditor.toast.loginToUseAI")); return; }
     const fc = fabricRef.current;
     const img = getActiveImage();
-    if (!fc || !img) { toast.error("Selecciona primero una imagen"); return; }
+    if (!fc || !img) { toast.error(t("mobileEditor.toast.selectImageFirst")); return; }
     setRemovingBg(true);
     try {
       const dataUrl = await fabricImageToDataUrl(img);
@@ -985,10 +985,10 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
       fc.requestRenderAll();
       setSaveState("unsaved");
       pushHistory();
-      toast.success("Fondo eliminado");
+      toast.success(t("mobileEditor.toast.bgRemoved"));
     } catch (e) {
       console.error("[remove-bg]", e);
-      toast.error("Error procesando la imagen");
+      toast.error(t("mobileEditor.toast.imageError"));
     } finally {
       setRemovingBg(false);
     }
@@ -1234,7 +1234,7 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
     setSaveState("unsaved");
     setOpenSheet(null);
     pushHistory();
-    toast.success("Texto añadido");
+    toast.success(t("mobileEditor.toast.textAdded"));
   }, [canvasSize.w, canvasSize.h, decorateNewObject, pushHistory, toast]);
 
   /** Añade una forma. Soporta rect, circle, triangle, heart, star, line. */
@@ -1305,7 +1305,7 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
     setSaveState("unsaved");
     setOpenSheet(null);
     pushHistory();
-    toast.success("Forma añadida");
+    toast.success(t("mobileEditor.toast.shapeAdded"));
   }, [canvasSize.w, canvasSize.h, decorateNewObject, pushHistory, toast]);
 
   /** Añade una imagen NUEVA desde galería al centro del canvas. */
@@ -1339,10 +1339,10 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
       setSaveState("unsaved");
       setOpenSheet(null);
       pushHistory();
-      toast.success("Imagen añadida");
+      toast.success(t("mobileEditor.toast.imageAdded"));
     } catch (e) {
       console.error(e);
-      toast.error("No se pudo cargar la imagen");
+      toast.error(t("mobileEditor.toast.imageLoadError"));
     }
   }, [canvasSize.w, canvasSize.h, decorateNewObject, pushHistory, toast]);
 
@@ -1387,10 +1387,10 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
       fc.requestRenderAll();
       setSaveState("unsaved");
       pushHistory();
-      toast.success("Imagen reemplazada");
+      toast.success(t("mobileEditor.toast.imageReplaced"));
     } catch (e) {
       console.error(e);
-      toast.error("No se pudo cargar la imagen");
+      toast.error(t("mobileEditor.toast.imageLoadError"));
     }
   }, [getActiveImage, pushHistory, toast]);
 
@@ -2265,28 +2265,28 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
           <div className="h-[68px] flex items-center px-2 gap-1">
             {selectedType === "text" && (
               <>
-                <SubToolBtnIcon node={<Pencil size={18} strokeWidth={2.2}/>} label="Editar" active={activeSubTool === "editar"} onClick={() => setActiveSubTool(s => s === "editar" ? null : "editar")}/>
-                <SubToolBtn icon="Ff" label="Fuente" active={activeSubTool === "fuente"} onClick={() => setActiveSubTool(s => s === "fuente" ? null : "fuente")} fontStyle="italic"/>
-                <SubToolBtn icon="H" label="Estilos" active={activeSubTool === "estilos"} onClick={() => setActiveSubTool(s => s === "estilos" ? null : "estilos")}/>
-                <SubToolBtn icon="Aa" label="Tamaño" active={activeSubTool === "tamano"} onClick={() => setActiveSubTool(s => s === "tamano" ? null : "tamano")}/>
-                <SubToolBtn icon="🎨" label="Color" active={activeSubTool === "color"} onClick={() => setActiveSubTool(s => s === "color" ? null : "color")} emoji/>
+                <SubToolBtnIcon node={<Pencil size={18} strokeWidth={2.2}/>} label={t("mobileEditor.subtool.edit")} active={activeSubTool === "editar"} onClick={() => setActiveSubTool(s => s === "editar" ? null : "editar")}/>
+                <SubToolBtn icon="Ff" label={t("mobileEditor.subtool.font")} active={activeSubTool === "fuente"} onClick={() => setActiveSubTool(s => s === "fuente" ? null : "fuente")} fontStyle="italic"/>
+                <SubToolBtn icon="H" label={t("mobileEditor.subtool.styles")} active={activeSubTool === "estilos"} onClick={() => setActiveSubTool(s => s === "estilos" ? null : "estilos")}/>
+                <SubToolBtn icon="Aa" label={t("mobileEditor.subtool.size")} active={activeSubTool === "tamano"} onClick={() => setActiveSubTool(s => s === "tamano" ? null : "tamano")}/>
+                <SubToolBtn icon="🎨" label={t("mobileEditor.subtool.color")} active={activeSubTool === "color"} onClick={() => setActiveSubTool(s => s === "color" ? null : "color")} emoji/>
               </>
             )}
             {selectedType === "image" && (
               <>
-                <SubToolBtnIcon node={<Replace size={18} strokeWidth={2.2}/>} label="Reemplazar" active={activeSubTool === "reemplazar"} onClick={() => setActiveSubTool(s => s === "reemplazar" ? null : "reemplazar")}/>
-                <SubToolBtnIcon node={<Crop size={18} strokeWidth={2.2}/>} label="Recortar" active={activeSubTool === "recortar"} onClick={() => setActiveSubTool(s => s === "recortar" ? null : "recortar")}/>
-                <SubToolBtnIcon node={<Sliders size={18} strokeWidth={2.2}/>} label="Filtros" active={activeSubTool === "filtros"} onClick={() => setActiveSubTool(s => s === "filtros" ? null : "filtros")}/>
-                <SubToolBtnIcon node={<Eraser size={18} strokeWidth={2.2}/>} label="Quitar fondo" active={activeSubTool === "quitar-fondo"} onClick={() => setActiveSubTool(s => s === "quitar-fondo" ? null : "quitar-fondo")}/>
-                <SubToolBtn icon="◐" label="Opacidad" active={activeSubTool === "opacidad-img"} onClick={() => setActiveSubTool(s => s === "opacidad-img" ? null : "opacidad-img")} emoji/>
+                <SubToolBtnIcon node={<Replace size={18} strokeWidth={2.2}/>} label={t("mobileEditor.subtool.replace")} active={activeSubTool === "reemplazar"} onClick={() => setActiveSubTool(s => s === "reemplazar" ? null : "reemplazar")}/>
+                <SubToolBtnIcon node={<Crop size={18} strokeWidth={2.2}/>} label={t("mobileEditor.subtool.crop")} active={activeSubTool === "recortar"} onClick={() => setActiveSubTool(s => s === "recortar" ? null : "recortar")}/>
+                <SubToolBtnIcon node={<Sliders size={18} strokeWidth={2.2}/>} label={t("mobileEditor.subtool.filters")} active={activeSubTool === "filtros"} onClick={() => setActiveSubTool(s => s === "filtros" ? null : "filtros")}/>
+                <SubToolBtnIcon node={<Eraser size={18} strokeWidth={2.2}/>} label={t("mobileEditor.subtool.removeBg")} active={activeSubTool === "quitar-fondo"} onClick={() => setActiveSubTool(s => s === "quitar-fondo" ? null : "quitar-fondo")}/>
+                <SubToolBtn icon="◐" label={t("mobileEditor.subtool.opacity")} active={activeSubTool === "opacidad-img"} onClick={() => setActiveSubTool(s => s === "opacidad-img" ? null : "opacidad-img")} emoji/>
               </>
             )}
             {selectedType === "shape" && (
               <>
-                <SubToolBtn icon="🎨" label="Color" active={activeSubTool === "fill"} onClick={() => setActiveSubTool(s => s === "fill" ? null : "fill")} emoji/>
-                <SubToolBtnIcon node={<Square size={18} strokeWidth={2.2}/>} label="Borde" active={activeSubTool === "borde"} onClick={() => setActiveSubTool(s => s === "borde" ? null : "borde")}/>
-                <SubToolBtn icon="◐" label="Opacidad" active={activeSubTool === "opacidad-shape"} onClick={() => setActiveSubTool(s => s === "opacidad-shape" ? null : "opacidad-shape")} emoji/>
-                <SubToolBtn icon="◢" label="Esquinas" active={activeSubTool === "esquinas"} onClick={() => setActiveSubTool(s => s === "esquinas" ? null : "esquinas")} emoji/>
+                <SubToolBtn icon="🎨" label={t("mobileEditor.subtool.color")} active={activeSubTool === "fill"} onClick={() => setActiveSubTool(s => s === "fill" ? null : "fill")} emoji/>
+                <SubToolBtnIcon node={<Square size={18} strokeWidth={2.2}/>} label={t("mobileEditor.subtool.border")} active={activeSubTool === "borde"} onClick={() => setActiveSubTool(s => s === "borde" ? null : "borde")}/>
+                <SubToolBtn icon="◐" label={t("mobileEditor.subtool.opacity")} active={activeSubTool === "opacidad-shape"} onClick={() => setActiveSubTool(s => s === "opacidad-shape" ? null : "opacidad-shape")} emoji/>
+                <SubToolBtn icon="◢" label={t("mobileEditor.subtool.corners")} active={activeSubTool === "esquinas"} onClick={() => setActiveSubTool(s => s === "esquinas" ? null : "esquinas")} emoji/>
               </>
             )}
             <button
@@ -2883,12 +2883,13 @@ function FontPills({ currentFont, onPick }: { currentFont?: string; onPick: (f: 
 /** Tamaño — slider compacto rango 8-200. State local para que la barra
  *  se actualice EN VIVO al arrastrar (sin esperar re-render del padre). */
 function SizeSlider({ currentSize, onChange }: { currentSize: number; onChange: (n: number) => void }) {
+  const { t } = useLocale();
   const [val, setVal] = useState(currentSize);
   useEffect(() => { setVal(currentSize); }, [currentSize]);
   return (
     <div className="border-b border-white/[0.06] px-4 py-3">
       <div className="flex justify-between mb-1.5">
-        <span className="text-[11px] text-gray-400 font-semibold">Tamaño</span>
+        <span className="text-[11px] text-gray-400 font-semibold">{t("mobileEditor.text.fontSizeLabel")}</span>
         <span className="text-[11px] text-purple-400 font-bold">{Math.round(val)} px</span>
       </div>
       <input
@@ -2909,6 +2910,7 @@ const QUICK_COLORS = [
   "#22c55e", "#ef4444", "#fb923c", "#3b82f6", "#fef3c7", "#d8b4fe",
 ];
 function ColorSwatches({ currentColor, onPick }: { currentColor: string; onPick: (c: string) => void }) {
+  const { t } = useLocale();
   return (
     <div className="border-b border-white/[0.06] flex gap-2 overflow-x-auto scrollbar-hide px-3 py-3">
       {QUICK_COLORS.map(c => {
@@ -2917,7 +2919,7 @@ function ColorSwatches({ currentColor, onPick }: { currentColor: string; onPick:
           <button
             key={c}
             onClick={() => onPick(c)}
-            aria-label={`Color ${c}`}
+            aria-label={`${t("mobileEditor.aria.colorSwatch")} ${c}`}
             className={`shrink-0 w-9 h-9 rounded-full border-2 ${isAct ? "border-purple-400 scale-110" : "border-white/15"} transition-transform`}
             style={{ background: c, boxShadow: "inset 0 0 0 1px rgba(0,0,0,0.15)" }}
           />
@@ -2963,6 +2965,7 @@ function StylePresets({
   onShadow: (mode: "none" | "soft" | "strong" | "glow") => void;
   onOutline: (width: number, color?: string) => void;
 }) {
+  const { t } = useLocale();
   // State local para que los 3 sliders se actualicen en vivo
   const [strokeVal, setStrokeVal] = useState(currentStrokeWidth);
   const [lhVal, setLhVal] = useState(currentLineHeight);
@@ -2974,15 +2977,15 @@ function StylePresets({
     <div className="border-b border-white/[0.06] flex flex-col gap-3 px-3 py-3 max-h-[55vh] overflow-y-auto">
       {/* Fila 1 — Formato basico */}
       <div className="flex gap-2">
-        <button onClick={() => onApply("fontWeight", "900")} className="flex-1 py-2 rounded-xl bg-white/[0.05] text-white font-black" aria-label="Negrita">B</button>
-        <button onClick={() => onApply("fontStyle", "italic")} className="flex-1 py-2 rounded-xl bg-white/[0.05] text-white italic font-bold" aria-label="Cursiva">I</button>
-        <button onClick={() => onApply("underline", true)} className="flex-1 py-2 rounded-xl bg-white/[0.05] text-white underline font-bold" aria-label="Subrayado">U</button>
+        <button onClick={() => onApply("fontWeight", "900")} className="flex-1 py-2 rounded-xl bg-white/[0.05] text-white font-black" aria-label={t("mobileEditor.text.bold")}>B</button>
+        <button onClick={() => onApply("fontStyle", "italic")} className="flex-1 py-2 rounded-xl bg-white/[0.05] text-white italic font-bold" aria-label={t("mobileEditor.text.italic")}>I</button>
+        <button onClick={() => onApply("underline", true)} className="flex-1 py-2 rounded-xl bg-white/[0.05] text-white underline font-bold" aria-label={t("mobileEditor.text.underline")}>U</button>
       </div>
       {/* Fila 2 — Alineacion + Reset */}
       <div className="flex gap-2">
-        <button onClick={() => onApply("textAlign", "left")} className="flex-1 py-2 rounded-xl bg-white/[0.05] text-white text-[12px] font-bold" aria-label="Alinear a la izquierda">⇤</button>
-        <button onClick={() => onApply("textAlign", "center")} className="flex-1 py-2 rounded-xl bg-white/[0.05] text-white text-[12px] font-bold" aria-label="Centrar">⇔</button>
-        <button onClick={() => onApply("textAlign", "right")} className="flex-1 py-2 rounded-xl bg-white/[0.05] text-white text-[12px] font-bold" aria-label="Alinear a la derecha">⇥</button>
+        <button onClick={() => onApply("textAlign", "left")} className="flex-1 py-2 rounded-xl bg-white/[0.05] text-white text-[12px] font-bold" aria-label={t("mobileEditor.text.alignLeft")}>⇤</button>
+        <button onClick={() => onApply("textAlign", "center")} className="flex-1 py-2 rounded-xl bg-white/[0.05] text-white text-[12px] font-bold" aria-label={t("mobileEditor.text.alignCenter")}>⇔</button>
+        <button onClick={() => onApply("textAlign", "right")} className="flex-1 py-2 rounded-xl bg-white/[0.05] text-white text-[12px] font-bold" aria-label={t("mobileEditor.text.alignRight")}>⇥</button>
         <button
           onClick={() => {
             onApply("fontWeight", "400");
@@ -2992,28 +2995,28 @@ function StylePresets({
             onOutline(0);
           }}
           className="flex-1 py-2 rounded-xl bg-white/[0.05] text-gray-400 text-[11px]"
-          aria-label="Restablecer formato"
+          aria-label={t("mobileEditor.text.reset")}
         >Reset</button>
       </div>
 
       {/* Sombra & glow */}
       <div className="flex flex-col gap-1.5 pt-1">
         <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest flex items-center justify-between">
-          <span>Sombra</span>
-          {hasShadow && <span className="text-emerald-400 normal-case tracking-normal text-[10px]">Activa</span>}
+          <span>{t("mobileEditor.text.shadow")}</span>
+          {hasShadow && <span className="text-emerald-400 normal-case tracking-normal text-[10px]">{t("mobileEditor.text.shadowActive")}</span>}
         </div>
         <div className="grid grid-cols-4 gap-1.5">
-          <ShadowBtn label="Ninguna" preview="—" onClick={() => onShadow("none")}/>
-          <ShadowBtn label="Suave" preview="aA" textShadow="2px 2px 4px rgba(0,0,0,0.6)" onClick={() => onShadow("soft")}/>
-          <ShadowBtn label="Fuerte" preview="aA" textShadow="4px 4px 8px rgba(0,0,0,0.9)" onClick={() => onShadow("strong")}/>
-          <ShadowBtn label="Glow" preview="aA" textShadow="0 0 12px #a855f7" textColor="#a855f7" onClick={() => onShadow("glow")}/>
+          <ShadowBtn label={t("mobileEditor.text.shadowNone")} preview="—" onClick={() => onShadow("none")}/>
+          <ShadowBtn label={t("mobileEditor.text.shadowSoft")} preview="aA" textShadow="2px 2px 4px rgba(0,0,0,0.6)" onClick={() => onShadow("soft")}/>
+          <ShadowBtn label={t("mobileEditor.text.shadowStrong")} preview="aA" textShadow="4px 4px 8px rgba(0,0,0,0.9)" onClick={() => onShadow("strong")}/>
+          <ShadowBtn label={t("mobileEditor.text.shadowGlow")} preview="aA" textShadow="0 0 12px #a855f7" textColor="#a855f7" onClick={() => onShadow("glow")}/>
         </div>
       </div>
 
       {/* Outline */}
       <div className="flex flex-col gap-1.5 pt-1">
         <div className="flex justify-between items-center">
-          <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Borde texto</span>
+          <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{t("mobileEditor.text.outline")}</span>
           <span className="text-[10px] text-purple-400 font-bold">{strokeVal.toFixed(1)} px</span>
         </div>
         <input
@@ -3042,7 +3045,7 @@ function StylePresets({
       {/* Interlineado */}
       <div>
         <div className="flex justify-between mb-1">
-          <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Interlineado</span>
+          <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{t("mobileEditor.text.lineHeight")}</span>
           <span className="text-[10px] text-purple-400 font-bold">{lhVal.toFixed(2)}</span>
         </div>
         <input
@@ -3058,7 +3061,7 @@ function StylePresets({
       {/* Espaciado letras */}
       <div>
         <div className="flex justify-between mb-1">
-          <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Espaciado letras</span>
+          <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{t("mobileEditor.text.charSpacing")}</span>
           <span className="text-[10px] text-purple-400 font-bold">{Math.round(csVal)}</span>
         </div>
         <input
@@ -3103,6 +3106,7 @@ function ShadowBtn({
 
 /** Reemplazar imagen — file input que carga local desde galeria/camara. */
 function ReplaceImageInline({ onFile }: { onFile: (f: File) => void }) {
+  const { t } = useLocale();
   return (
     <div className="border-b border-white/[0.06] px-4 py-3">
       <label className="block">
@@ -3116,11 +3120,11 @@ function ReplaceImageInline({ onFile }: { onFile: (f: File) => void }) {
           }}
         />
         <span className="block w-full py-3 rounded-xl bg-purple-500/15 border border-purple-500/40 text-purple-200 text-[13px] font-bold text-center active:scale-[0.98] transition-transform">
-          Elegir imagen de tu galería
+          {t("mobileEditor.replace.button")}
         </span>
       </label>
       <p className="text-[10px] text-gray-500 text-center mt-2">
-        Se mantiene la posición y el tamaño actuales
+        {t("mobileEditor.replace.hint")}
       </p>
     </div>
   );
@@ -3128,10 +3132,11 @@ function ReplaceImageInline({ onFile }: { onFile: (f: File) => void }) {
 
 /** Recortar — 3 opciones de máscara. */
 function CropOptionsInline({ onPick }: { onPick: (s: "square" | "circle" | "rounded") => void }) {
+  const { t } = useLocale();
   const opts: Array<{ id: "square" | "circle" | "rounded"; label: string; mask: string }> = [
-    { id: "square", label: "Cuadrado", mask: "rounded-none" },
-    { id: "rounded", label: "Redondeado", mask: "rounded-2xl" },
-    { id: "circle", label: "Círculo", mask: "rounded-full" },
+    { id: "square", label: t("mobileEditor.crop.square"), mask: "rounded-none" },
+    { id: "rounded", label: t("mobileEditor.crop.rounded"), mask: "rounded-2xl" },
+    { id: "circle", label: t("mobileEditor.crop.circle"), mask: "rounded-full" },
   ];
   return (
     <div className="border-b border-white/[0.06] flex gap-2 px-3 py-3">
@@ -3168,18 +3173,19 @@ function FilterPresetsInline({
   onFlipV: () => void;
   onCommit: () => void;
 }) {
+  const { t } = useLocale();
   const presets: Array<{ id: "none" | "bw" | "warm" | "cool" | "vintage"; label: string; bg: string }> = [
-    { id: "none", label: "Original", bg: "linear-gradient(135deg,#a855f7,#ec4899)" },
-    { id: "bw", label: "B&N", bg: "linear-gradient(135deg,#333,#999)" },
-    { id: "warm", label: "Cálido", bg: "linear-gradient(135deg,#f97316,#facc15)" },
-    { id: "cool", label: "Frío", bg: "linear-gradient(135deg,#06b6d4,#3b82f6)" },
-    { id: "vintage", label: "Vintage", bg: "linear-gradient(135deg,#92400e,#fde68a)" },
+    { id: "none", label: t("mobileEditor.filters.original"), bg: "linear-gradient(135deg,#a855f7,#ec4899)" },
+    { id: "bw", label: t("mobileEditor.filters.bw"), bg: "linear-gradient(135deg,#333,#999)" },
+    { id: "warm", label: t("mobileEditor.filters.warm"), bg: "linear-gradient(135deg,#f97316,#facc15)" },
+    { id: "cool", label: t("mobileEditor.filters.cool"), bg: "linear-gradient(135deg,#06b6d4,#3b82f6)" },
+    { id: "vintage", label: t("mobileEditor.filters.vintage"), bg: "linear-gradient(135deg,#92400e,#fde68a)" },
   ];
   return (
     <div className="border-b border-white/[0.06] flex flex-col gap-3 px-3 py-3 max-h-[55vh] overflow-y-auto">
       {/* Presets — fila scroll horizontal */}
       <div>
-        <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Presets</div>
+        <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">{t("mobileEditor.filters.presets")}</div>
         <div className="flex gap-2 overflow-x-auto scrollbar-hide">
           {presets.map(p => (
             <button
@@ -3196,30 +3202,30 @@ function FilterPresetsInline({
 
       {/* Ajuste fino */}
       <div className="flex flex-col gap-2">
-        <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Ajuste fino</div>
-        <AdjustSlider label="Brillo"      value={brightness} min={-0.5} max={0.5} step={0.02} display={Math.round(brightness * 100)} onChange={onBrightness} onCommit={onCommit}/>
-        <AdjustSlider label="Contraste"   value={contrast}   min={-0.5} max={0.5} step={0.02} display={Math.round(contrast * 100)}   onChange={onContrast}   onCommit={onCommit}/>
-        <AdjustSlider label="Saturación"  value={saturation} min={-1}   max={1}   step={0.05} display={Math.round(saturation * 100)} onChange={onSaturation} onCommit={onCommit}/>
+        <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{t("mobileEditor.filters.fineAdjust")}</div>
+        <AdjustSlider label={t("mobileEditor.filters.brightness")} value={brightness} min={-0.5} max={0.5} step={0.02} display={Math.round(brightness * 100)} onChange={onBrightness} onCommit={onCommit}/>
+        <AdjustSlider label={t("mobileEditor.filters.contrast")}   value={contrast}   min={-0.5} max={0.5} step={0.02} display={Math.round(contrast * 100)}   onChange={onContrast}   onCommit={onCommit}/>
+        <AdjustSlider label={t("mobileEditor.filters.saturation")} value={saturation} min={-1}   max={1}   step={0.05} display={Math.round(saturation * 100)} onChange={onSaturation} onCommit={onCommit}/>
       </div>
 
       {/* Rotacion + flip */}
       <div className="flex flex-col gap-2">
-        <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Rotar / voltear</div>
+        <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{t("mobileEditor.filters.rotateFlip")}</div>
         <RotationSlider angle={angle} onRotation={onRotation} onCommit={onCommit}/>
         <div className="flex gap-2">
           <button
             onClick={onFlipH}
             className="flex-1 py-2 rounded-xl bg-white/[0.05] text-white text-[12px] font-bold flex items-center justify-center gap-1.5"
-            aria-label="Voltear horizontal"
+            aria-label={t("mobileEditor.toast.flippedH")}
           >
-            ↔ Horizontal
+            {t("mobileEditor.filters.flipH")}
           </button>
           <button
             onClick={onFlipV}
             className="flex-1 py-2 rounded-xl bg-white/[0.05] text-white text-[12px] font-bold flex items-center justify-center gap-1.5"
-            aria-label="Voltear vertical"
+            aria-label={t("mobileEditor.toast.flippedV")}
           >
-            ↕ Vertical
+            {t("mobileEditor.filters.flipV")}
           </button>
         </div>
       </div>
@@ -3235,12 +3241,13 @@ function RotationSlider({
   onRotation: (v: number) => void;
   onCommit: () => void;
 }) {
+  const { t } = useLocale();
   const [val, setVal] = useState(angle);
   useEffect(() => { setVal(angle); }, [angle]);
   return (
     <div>
       <div className="flex justify-between mb-1">
-        <span className="text-[11px] text-gray-400 font-semibold">Rotación</span>
+        <span className="text-[11px] text-gray-400 font-semibold">{t("mobileEditor.filters.rotation")}</span>
         <span className="text-[11px] text-purple-400 font-bold">{Math.round(val)}°</span>
       </div>
       <input
@@ -3305,6 +3312,7 @@ function RemoveBgInline({
   loading: boolean;
   onConfirm: () => void;
 }) {
+  const { t } = useLocale();
   return (
     <div className="border-b border-white/[0.06] px-4 py-4 flex flex-col items-center gap-2.5 text-center">
       <div className="w-11 h-11 rounded-full bg-purple-500/15 flex items-center justify-center text-purple-300">
@@ -3315,12 +3323,12 @@ function RemoveBgInline({
         )}
       </div>
       <p className="text-[12px] text-gray-200 font-semibold">
-        {loading ? "Eliminando fondo…" : "Quitar fondo con IA"}
+        {loading ? t("mobileEditor.removeBg.loadingTitle") : t("mobileEditor.removeBg.title")}
       </p>
       <p className="text-[10px] text-gray-500 leading-snug max-w-[280px]">
         {loading
-          ? "Esto tarda 2-4 segundos. No cierres la app."
-          : "BRIA detecta el sujeto automáticamente y elimina el fondo. Funciona mejor con fotos de personas u objetos centrados."
+          ? t("mobileEditor.removeBg.loadingDesc")
+          : t("mobileEditor.removeBg.desc")
         }
       </p>
       <button
@@ -3329,7 +3337,7 @@ function RemoveBgInline({
         className="mt-1 px-5 py-2 rounded-xl bg-purple-500 text-white text-[12px] font-bold active:scale-[0.97] transition-transform disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
       >
         <Sparkles size={13} strokeWidth={2.5}/>
-        {loading ? "Procesando…" : "Quitar fondo ahora"}
+        {loading ? t("mobileEditor.removeBg.buttonLoading") : t("mobileEditor.removeBg.button")}
       </button>
     </div>
   );
@@ -3339,12 +3347,13 @@ function RemoveBgInline({
 
 /** Opacidad — slider 0-100. State local para sincronizar visual en vivo. */
 function OpacitySlider({ current, onChange }: { current: number; onChange: (n: number) => void }) {
+  const { t } = useLocale();
   const [pct, setPct] = useState(Math.round(current * 100));
   useEffect(() => { setPct(Math.round(current * 100)); }, [current]);
   return (
     <div className="border-b border-white/[0.06] px-4 py-3">
       <div className="flex justify-between mb-1.5">
-        <span className="text-[11px] text-gray-400 font-semibold">Opacidad</span>
+        <span className="text-[11px] text-gray-400 font-semibold">{t("mobileEditor.subtool.opacity")}</span>
         <span className="text-[11px] text-purple-400 font-bold">{pct}%</span>
       </div>
       <input
@@ -3370,6 +3379,7 @@ function BorderInline({
   onWidth: (w: number) => void;
   onClear: () => void;
 }) {
+  const { t } = useLocale();
   const [wVal, setWVal] = useState(currentWidth);
   useEffect(() => { setWVal(currentWidth); }, [currentWidth]);
   return (
@@ -3381,7 +3391,7 @@ function BorderInline({
             <button
               key={c}
               onClick={() => onColor(c)}
-              aria-label={`Color borde ${c}`}
+              aria-label={`${t("mobileEditor.aria.borderColor")} ${c}`}
               className={`shrink-0 w-9 h-9 rounded-full border-2 ${isAct ? "border-purple-400 scale-110" : "border-white/15"} transition-transform`}
               style={{ background: c, boxShadow: "inset 0 0 0 1px rgba(0,0,0,0.15)" }}
             />
@@ -3390,7 +3400,7 @@ function BorderInline({
       </div>
       <div className="px-1">
         <div className="flex justify-between mb-1">
-          <span className="text-[11px] text-gray-400 font-semibold">Grosor</span>
+          <span className="text-[11px] text-gray-400 font-semibold">{t("mobileEditor.border.thickness")}</span>
           <span className="text-[11px] text-purple-400 font-bold">{Math.round(wVal)} px</span>
         </div>
         <input
@@ -3406,7 +3416,7 @@ function BorderInline({
         onClick={onClear}
         className="self-start text-[11px] px-3 py-1.5 rounded-full bg-white/[0.05] text-gray-300 font-semibold"
       >
-        Quitar borde
+        {t("mobileEditor.border.remove")}
       </button>
     </div>
   );
@@ -3614,19 +3624,20 @@ function CornerRadiusSlider({
   onChange: (n: number) => void;
   applicable: boolean;
 }) {
+  const { t } = useLocale();
   const [val, setVal] = useState(current);
   useEffect(() => { setVal(current); }, [current]);
   if (!applicable) {
     return (
       <div className="border-b border-white/[0.06] px-4 py-4 text-center text-[12px] text-gray-400">
-        Las esquinas redondeadas solo aplican a rectángulos.
+        {t("mobileEditor.corners.onlyRect")}
       </div>
     );
   }
   return (
     <div className="border-b border-white/[0.06] px-4 py-3">
       <div className="flex justify-between mb-1.5">
-        <span className="text-[11px] text-gray-400 font-semibold">Esquinas</span>
+        <span className="text-[11px] text-gray-400 font-semibold">{t("mobileEditor.corners.label")}</span>
         <span className="text-[11px] text-purple-400 font-bold">{Math.round(val)} px</span>
       </div>
       <input
