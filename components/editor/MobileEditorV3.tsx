@@ -68,7 +68,7 @@ type Props = {
 /** Sheet temporal que puede estar abierto. null = canvas limpio (caso comun).
  *  "texto" desaparecio: se reemplazo por sub-tools bar inline cuando hay
  *  objeto seleccionado (patron Canva). */
-type SheetId = null | "foto" | "estilo" | "ia" | "plantillas" | "export" | "more" | "add" | "layers";
+type SheetId = null | "foto" | "estilo" | "ia" | "plantillas" | "export" | "more" | "add" | "layers" | "format";
 
 export default function MobileEditorV3({ templateId, projectId, formatId }: Props) {
   const router = useRouter();
@@ -913,6 +913,88 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
     }
   }, [authUser, getActiveImage, fabricImageToDataUrl, pushHistory, toast]);
 
+  // ─── Reiniciar plantilla (Fase M.1) ────────────────────────────────────
+  // Vuelve al diseño original limpio. Limpia canvas, re-aplica template
+  // layers, resetea blockValues/paleta/remix. Push history para poder
+  // deshacer si fue por error.
+  const handleResetTemplate = useCallback(() => {
+    const fc = fabricRef.current;
+    if (!fc || !template) return;
+    if (!window.confirm("¿Volver al diseño original?\n\nPerderás todos los cambios no guardados.")) return;
+    const variant = getVariant(template, formatId);
+    if (!variant) return;
+    fc.discardActiveObject();
+    fc.remove(...fc.getObjects());
+    fc.backgroundColor = "#000";
+    applyTemplateLayers(fc, variant.layers).then(() => {
+      fc.getObjects().forEach(obj => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const cid = ((obj as any).customId as string | undefined ?? "").toLowerCase();
+        const isBackground = cid.startsWith("bg-") || cid === "background";
+        if (isBackground) {
+          obj.set({ selectable: false, evented: false, hoverCursor: "default" });
+          return;
+        }
+        obj.set({
+          cornerColor: "#a855f7", cornerStrokeColor: "#ffffff",
+          cornerStyle: "circle", transparentCorners: false,
+          borderColor: "#a855f7", borderScaleFactor: 1.5,
+          cornerSize: 14, touchCornerSize: 44, padding: 4,
+        });
+      });
+      // Reset blockValues a los textos originales del template
+      const initial: Record<string, string> = {};
+      blocks.forEach(b => {
+        const obj = fc.getObjects().find(o => {
+          const cid = (o as FabricObject & { customId?: string }).customId;
+          return cid && b.layerIds.includes(cid);
+        });
+        if (obj && (obj.type === "textbox" || obj.type === "text" || obj.type === "i-text")) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          initial[b.id] = String((obj as any).text ?? "");
+        } else {
+          initial[b.id] = "";
+        }
+      });
+      setBlockValues(initial);
+      setActivePaletteId(null);
+      setActiveRemixId(null);
+      fc.requestRenderAll();
+      setSaveState("unsaved");
+      pushHistory();
+      setOpenSheet(null);
+      toast.success("Plantilla restaurada");
+    });
+  }, [template, formatId, blocks, pushHistory, toast]);
+
+  // Ref a doSave para usar desde callbacks declaradas ANTES de doSave
+  const doSaveRef = useRef<((silent?: boolean) => Promise<void>) | null>(null);
+
+  // ─── Cambiar formato en vivo (Fase M.1) ────────────────────────────────
+  // Si el proyecto esta guardado, lo guardamos primero (con cambios actuales)
+  // y luego navegamos a la nueva URL con el formato nuevo. Si NO esta
+  // guardado y el user no tiene cambios, navegamos directo. Si tiene
+  // cambios pero no esta autenticado, advertimos.
+  const handleChangeFormat = useCallback(async (newFormatId: FormatId) => {
+    if (!template) return;
+    const variant = getVariant(template, newFormatId);
+    if (!variant) {
+      toast.error(`Esta plantilla no tiene formato ${FORMATS[newFormatId].name}`);
+      return;
+    }
+    if (saveState === "unsaved" && !authUser) {
+      const ok = window.confirm("Tienes cambios sin guardar. ¿Cambiar de formato igualmente? Se perderán.");
+      if (!ok) return;
+    } else if (saveState === "unsaved" && authUser) {
+      // Guardar antes de cambiar — preserva trabajo. Usamos ref para evitar
+      // problema de declaracion-antes-de-uso (doSave esta mas abajo).
+      await doSaveRef.current?.(true);
+    }
+    // Navegar al mismo proyecto (o template) con el formato nuevo
+    const idForUrl = currentProjectId ?? template.id;
+    router.push(`/editor/${idForUrl}?format=${newFormatId}`);
+  }, [template, saveState, authUser, currentProjectId, router, toast]);
+
   // ─── Smart guides (Fase J) ─────────────────────────────────────────────
   // Líneas guía cyan al arrastrar objetos. Snap a:
   //   - Centro horizontal/vertical del canvas
@@ -1272,6 +1354,10 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
     if (!authUser) { toast.info("Inicia sesión para guardar"); return; }
     void doSave(false);
   }, [authUser, doSave, toast]);
+
+  // Sync ref para que callbacks declaradas antes de doSave (handleChangeFormat)
+  // puedan invocar la version mas reciente sin closure stale.
+  useEffect(() => { doSaveRef.current = doSave; }, [doSave]);
 
   // ─── Warning al salir sin guardar ───────────────────────────────────────
   // beforeunload alerta al cerrar pestaña/tab. Para back navigation in-app
@@ -2011,6 +2097,7 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
                 {openSheet === "export" && "Exportar"}
                 {openSheet === "add" && "Añadir elemento"}
                 {openSheet === "layers" && "Capas"}
+                {openSheet === "format" && "Cambiar formato"}
               </h2>
               <button
                 onClick={() => setOpenSheet(null)}
@@ -2227,8 +2314,18 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
                     onClick={() => { setOpenSheet(null); router.push("/projects"); }}
                   />
                   <MoreRow icon={<Wand2 size={18}/>} label="Asistente IA" subtitle="Genera variaciones desde texto" disabled/>
-                  <MoreRow icon={<LayoutGrid size={18}/>} label="Cambiar formato" subtitle="Story 9:16, Post 4:5, etc." disabled/>
-                  <MoreRow icon={<XIcon size={18}/>} label="Reiniciar plantilla" subtitle="Volver al diseño original" disabled/>
+                  <MoreRowLink
+                    icon={<LayoutGrid size={18}/>}
+                    label="Cambiar formato"
+                    subtitle="Story 9:16, Post 4:5, etc."
+                    onClick={() => setOpenSheet("format")}
+                  />
+                  <MoreRowLink
+                    icon={<XIcon size={18}/>}
+                    label="Reiniciar plantilla"
+                    subtitle="Volver al diseño original"
+                    onClick={handleResetTemplate}
+                  />
                 </div>
               )}
 
@@ -2251,6 +2348,15 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
                   onAddText={addText}
                   onAddShape={addShape}
                   onAddImage={addImageFromFile}
+                />
+              )}
+
+              {/* SHEET CAMBIAR FORMATO ──────────────────────────────────── */}
+              {openSheet === "format" && template && (
+                <ChangeFormatSheet
+                  template={template}
+                  currentFormat={formatId}
+                  onSelect={(fmt) => { setOpenSheet(null); void handleChangeFormat(fmt); }}
                 />
               )}
 
@@ -3192,6 +3298,70 @@ function CornerRadiusSlider({
         onChange={e => onChange(Number(e.target.value))}
         className="w-full accent-purple-500"
       />
+    </div>
+  );
+}
+
+// ─── Sheet CAMBIAR FORMATO (Fase M.1) ────────────────────────────────────
+
+/** Sheet con grid de formatos disponibles del template. Tap navega al
+ *  mismo proyecto con el formato nuevo. Marca el actual con border. */
+function ChangeFormatSheet({
+  template, currentFormat, onSelect,
+}: {
+  template: Template;
+  currentFormat: FormatId | undefined;
+  onSelect: (f: FormatId) => void;
+}) {
+  const available: FormatId[] = PUBLIC_FORMATS.filter(fmt =>
+    !!template.variants.find(v => v.format === fmt)
+  );
+  return (
+    <div className="flex flex-col gap-3">
+      <p className="text-[12px] text-gray-400 leading-relaxed">
+        Cambia el tamaño y proporción del flyer manteniendo el contenido.
+        Si tienes cambios sin guardar se guardan antes de cambiar.
+      </p>
+      <div className="grid grid-cols-2 gap-2.5">
+        {available.map(fmtId => {
+          const fmt = FORMATS[fmtId];
+          const isCurrent = fmtId === currentFormat;
+          const aspect = fmt.width / fmt.height;
+          const w = aspect >= 1 ? 80 : aspect * 80;
+          const h = aspect >= 1 ? 80 / aspect : 80;
+          const Icon = fmt.icon;
+          return (
+            <button
+              key={fmtId}
+              onClick={() => !isCurrent && onSelect(fmtId)}
+              disabled={isCurrent}
+              className={`rounded-2xl border-2 p-3 flex flex-col items-center gap-2 transition-all ${
+                isCurrent
+                  ? "border-emerald-500 bg-emerald-500/5 cursor-default"
+                  : "border-white/[0.06] bg-[#13131f] active:scale-[0.97]"
+              }`}
+            >
+              <div
+                className={`rounded-lg flex items-center justify-center ${
+                  isCurrent ? "bg-emerald-500/15 text-emerald-300" : "bg-purple-500/15 text-purple-300"
+                }`}
+                style={{ width: w, height: h }}
+              >
+                <Icon size={22}/>
+              </div>
+              <div className="text-center">
+                <div className="text-[12px] font-bold leading-tight">{fmt.name}</div>
+                <div className="text-[10px] text-gray-500">{fmt.description}</div>
+              </div>
+              {isCurrent && (
+                <span className="text-[9px] font-bold tracking-widest text-emerald-400 uppercase">
+                  Actual
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
