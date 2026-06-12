@@ -45,6 +45,13 @@ export async function POST(req: NextRequest) {
 
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || new URL(req.url).origin;
 
+    // Trial gratuito en días para nuevos suscriptores. Stripe requiere
+    // que el método de pago se valide al crear la suscripción (autorización
+    // sin cargo) — así nos aseguramos que al final del trial sí podemos
+    // cobrar sin perder al usuario. STRIPE_TRIAL_DAYS=0 desactiva el trial.
+    const trialDays = Number.parseInt(process.env.STRIPE_TRIAL_DAYS ?? "30", 10);
+    const useTrial = !Number.isNaN(trialDays) && trialDays > 0;
+
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       payment_method_types: ["card"],
@@ -57,6 +64,7 @@ export async function POST(req: NextRequest) {
       metadata: { supabase_user_id: user.id, requested_plan: plan },
       subscription_data: {
         metadata: { supabase_user_id: user.id, requested_plan: plan },
+        ...(useTrial ? { trial_period_days: trialDays } : {}),
       },
       success_url: `${baseUrl}/pricing?success=1&plan=${plan}&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${baseUrl}/pricing?canceled=1`,

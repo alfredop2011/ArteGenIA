@@ -304,8 +304,8 @@ function PricingContent() {
                 <span className="text-[42px] font-black tracking-tight shimmer-text">9,99€</span>
                 <span className="text-[13px] text-gray-400">/mes</span>
               </div>
-              <p className="text-[11px] text-gray-500 mt-1">
-                Cancela cuando quieras
+              <p className="text-[11px] text-emerald-300 font-semibold mt-1">
+                🎁 30 días gratis · Cancela cuando quieras
               </p>
             </div>
 
@@ -324,11 +324,17 @@ function PricingContent() {
               disabled={loading || isPaid}
               className="w-full text-center py-3 rounded-xl bg-gradient-to-br from-purple-600 to-fuchsia-600 text-white font-black text-[13px] active:scale-[0.97] transition-transform shadow-lg shadow-purple-500/40 disabled:opacity-50 disabled:cursor-not-allowed animate-pulse-glow"
             >
-              {isPro ? "Ya eres Pro ✓" : isEnterprise ? "Ya tienes Enterprise" : loadingPlan === "pro" ? "Cargando…" : "Subir a Pro →"}
+              {isPro
+                ? "Ya eres Pro ✓"
+                : isEnterprise
+                  ? "Ya tienes Enterprise"
+                  : loadingPlan === "pro"
+                    ? "Cargando…"
+                    : "Probar 30 días gratis →"}
             </button>
-            {!user && !isPaid && (
+            {!isPaid && (
               <p className="text-[10px] text-gray-400 text-center mt-2">
-                Te pediremos email para crear tu cuenta antes del pago
+                Sin cargo hoy · Te avisamos antes del primer cobro
               </p>
             )}
           </div>
@@ -352,8 +358,8 @@ function PricingContent() {
                 </span>
                 <span className="text-[13px] text-gray-400">/mes</span>
               </div>
-              <p className="text-[11px] text-gray-500 mt-1">
-                Acceso anticipado limitado
+              <p className="text-[11px] text-emerald-300 font-semibold mt-1">
+                🎁 30 días gratis · Acceso anticipado limitado
               </p>
             </div>
 
