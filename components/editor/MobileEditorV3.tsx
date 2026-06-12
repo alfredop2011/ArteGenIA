@@ -2344,15 +2344,15 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
             <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mt-2.5 mb-1 shrink-0"/>
             <div className="px-4 py-3 flex items-center justify-between shrink-0 border-b border-white/[0.06]">
               <h2 className="text-[15px] font-bold">
-                {openSheet === "foto" && "Foto"}
-                {openSheet === "estilo" && "Estilo"}
-                {openSheet === "ia" && "Remix · 4 estilos"}
-                {openSheet === "more" && "Más opciones"}
-                {openSheet === "export" && "Exportar"}
-                {openSheet === "add" && "Añadir elemento"}
-                {openSheet === "layers" && "Capas"}
-                {openSheet === "format" && "Cambiar formato"}
-                {openSheet === "assistant" && "Asistente IA"}
+                {openSheet === "foto" && t("mobileEditor.sheet.photo")}
+                {openSheet === "estilo" && t("mobileEditor.sheet.style")}
+                {openSheet === "ia" && t("mobileEditor.sheet.remix")}
+                {openSheet === "more" && t("mobileEditor.sheet.more")}
+                {openSheet === "export" && t("mobileEditor.sheet.export")}
+                {openSheet === "add" && t("mobileEditor.sheet.add")}
+                {openSheet === "layers" && t("mobileEditor.sheet.layers")}
+                {openSheet === "format" && t("mobileEditor.sheet.format")}
+                {openSheet === "assistant" && t("mobileEditor.sheet.assistant")}
               </h2>
               <button
                 onClick={() => setOpenSheet(null)}
@@ -2427,7 +2427,7 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
               {openSheet === "estilo" && (
                 <div>
                   <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2.5">
-                    Paletas para {template?.category ?? "esta plantilla"}
+                    {t("mobileEditor.style.palettesFor")} {template?.category ?? "—"}
                   </div>
                   <div className="grid grid-cols-2 gap-2.5">
                     {availablePalettes.map(p => {
@@ -2458,15 +2458,15 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
               {openSheet === "ia" && (
                 <div className="flex flex-col gap-3">
                   <p className="text-[12px] text-gray-400 leading-relaxed">
-                    Aplica un estilo completo (paleta + fuente + efectos) al instante. Tu contenido se mantiene.
+                    {t("mobileEditor.remix.intro")}
                   </p>
 
                   {/* BLOQUE IA — botones contextuales */}
                   <div className="p-3 rounded-2xl bg-gradient-to-br from-purple-500/10 to-fuchsia-500/10 border border-purple-500/30 flex flex-col gap-2.5">
                     <div className="flex items-center gap-2">
                       <Wand2 size={14} className="text-purple-300"/>
-                      <span className="text-[12px] font-bold text-purple-200">Generar con IA</span>
-                      <span className="text-[9px] uppercase tracking-widest text-purple-400 ml-auto">Beta</span>
+                      <span className="text-[12px] font-bold text-purple-200">{t("mobileEditor.remix.generateAI")}</span>
+                      <span className="text-[9px] uppercase tracking-widest text-purple-400 ml-auto">{t("mobileEditor.remix.beta")}</span>
                     </div>
                     {aiRemixResult && (
                       <div className="px-2.5 py-2 rounded-lg bg-black/30 border border-purple-500/20 flex items-center gap-2">
@@ -2488,34 +2488,34 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
                         className="py-2 rounded-lg bg-purple-500 text-white text-[11px] font-bold active:scale-[0.96] disabled:opacity-50 flex items-center justify-center gap-1"
                       >
                         <Sparkles size={12} strokeWidth={2.5}/>
-                        {aiRemixing ? "…" : "Sorpréndeme"}
+                        {aiRemixing ? "…" : t("mobileEditor.remix.surprise")}
                       </button>
                       <button
                         onClick={() => void requestAIRemix("vibrante neón")}
                         disabled={aiRemixing}
                         className="py-2 rounded-lg bg-white/[0.06] text-gray-200 text-[11px] font-bold active:scale-[0.96] disabled:opacity-50"
                       >
-                        Neón
+                        {t("mobileEditor.remix.neon")}
                       </button>
                       <button
                         onClick={() => void requestAIRemix("elegante sobrio")}
                         disabled={aiRemixing}
                         className="py-2 rounded-lg bg-white/[0.06] text-gray-200 text-[11px] font-bold active:scale-[0.96] disabled:opacity-50"
                       >
-                        Elegante
+                        {t("mobileEditor.remix.elegant")}
                       </button>
                       <button
                         onClick={() => void requestAIRemix("vintage retro")}
                         disabled={aiRemixing}
                         className="py-2 rounded-lg bg-white/[0.06] text-gray-200 text-[11px] font-bold active:scale-[0.96] disabled:opacity-50"
                       >
-                        Vintage
+                        {t("mobileEditor.remix.vintage")}
                       </button>
                     </div>
                   </div>
 
                   <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-1">
-                    Estilos curados
+                    {t("mobileEditor.remix.curatedStyles")}
                   </div>
                   <div className="grid grid-cols-2 gap-2.5">
                     {REMIX_STYLES.map(r => {
@@ -2558,20 +2558,20 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
                 <div className="flex flex-col gap-2">
                   <MoreRowLink
                     icon={<Layers size={18}/>}
-                    label="Capas"
-                    subtitle="Ver y organizar elementos del flyer"
+                    label={t("mobileEditor.more.layers")}
+                    subtitle={t("mobileEditor.more.layersSub")}
                     onClick={() => setOpenSheet("layers")}
                   />
                   <MoreRowLink
                     icon={<FolderOpen size={18}/>}
-                    label="Mis flyers"
-                    subtitle="Volver a tus diseños guardados"
+                    label={t("mobileEditor.more.myFlyers")}
+                    subtitle={t("mobileEditor.more.myFlyersSub")}
                     onClick={() => { setOpenSheet(null); router.push("/projects"); }}
                   />
                   <MoreRowLink
                     icon={<Sparkles size={18}/>}
-                    label="Ver tutorial"
-                    subtitle="Repetir la guía rápida del editor"
+                    label={t("mobileEditor.more.viewTutorial")}
+                    subtitle={t("mobileEditor.more.viewTutorialSub")}
                     onClick={() => {
                       try { window.localStorage.removeItem(ONBOARDING_KEY); } catch {}
                       setOpenSheet(null);
@@ -2580,20 +2580,20 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
                   />
                   <MoreRowLink
                     icon={<Wand2 size={18}/>}
-                    label="Asistente IA"
-                    subtitle="Describe tu evento y rellena el flyer"
+                    label={t("mobileEditor.more.aiAssistant")}
+                    subtitle={t("mobileEditor.more.aiAssistantSub")}
                     onClick={() => setOpenSheet("assistant")}
                   />
                   <MoreRowLink
                     icon={<LayoutGrid size={18}/>}
-                    label="Cambiar formato"
-                    subtitle="Story 9:16, Post 4:5, etc."
+                    label={t("mobileEditor.more.changeFormat")}
+                    subtitle={t("mobileEditor.more.changeFormatSub")}
                     onClick={() => setOpenSheet("format")}
                   />
                   <MoreRowLink
                     icon={<XIcon size={18}/>}
-                    label="Reiniciar plantilla"
-                    subtitle="Volver al diseño original"
+                    label={t("mobileEditor.more.resetTemplate")}
+                    subtitle={t("mobileEditor.more.resetTemplateSub")}
                     onClick={handleResetTemplate}
                   />
                 </div>
@@ -3654,36 +3654,13 @@ function CornerRadiusSlider({
 
 // ─── ONBOARDING OVERLAY (Fase M.3) ───────────────────────────────────────
 
+/** Steps shape (titulos/bodies se traducen en runtime). */
 const ONBOARDING_STEPS = [
-  {
-    title: "Toca el texto para editarlo",
-    body: "Cualquier texto del flyer es editable. Cambia el nombre del evento, fecha, precio... Solo toca y escribe.",
-    emoji: "👆",
-    arrowDir: "down" as const,
-    anchor: "canvas-top" as const,
-  },
-  {
-    title: "Añade elementos con el +",
-    body: "Pulsa el botón Añadir abajo para insertar texto nuevo, formas, estrellas, corazones o tus propias fotos.",
-    emoji: "➕",
-    arrowDir: "down" as const,
-    anchor: "bottom-add" as const,
-  },
-  {
-    title: "Cambia el estilo con 1 tap",
-    body: "Estilo aplica paletas curadas. Remix genera variantes con IA. Comparte tu flyer en WhatsApp, Instagram y más.",
-    emoji: "🎨",
-    arrowDir: "down" as const,
-    anchor: "bottom-style" as const,
-  },
-  {
-    title: "Exporta y comparte",
-    body: "Cuando esté listo, pulsa Exportar arriba. Elige PNG, JPG, PDF imprenta o SVG vectorial. Luego compártelo en redes sociales con 1 tap.",
-    emoji: "🚀",
-    arrowDir: "up" as const,
-    anchor: "header-export" as const,
-  },
-];
+  { titleKey: "mobileEditor.onb.step1Title", bodyKey: "mobileEditor.onb.step1Body", emoji: "👆", anchor: "canvas-top" as const },
+  { titleKey: "mobileEditor.onb.step2Title", bodyKey: "mobileEditor.onb.step2Body", emoji: "➕", anchor: "bottom-add" as const },
+  { titleKey: "mobileEditor.onb.step3Title", bodyKey: "mobileEditor.onb.step3Body", emoji: "🎨", anchor: "bottom-style" as const },
+  { titleKey: "mobileEditor.onb.step4Title", bodyKey: "mobileEditor.onb.step4Body", emoji: "🚀", anchor: "header-export" as const },
+] as const;
 
 function OnboardingOverlay({
   step, onNext, onSkip,
@@ -3692,6 +3669,7 @@ function OnboardingOverlay({
   onNext: () => void;
   onSkip: () => void;
 }) {
+  const { t } = useLocale();
   const data = ONBOARDING_STEPS[step] ?? ONBOARDING_STEPS[0];
   const isLast = step >= ONBOARDING_STEPS.length - 1;
   // Posicion de la card de mensaje según anchor
@@ -3719,10 +3697,10 @@ function OnboardingOverlay({
           <div className="text-[32px] leading-none shrink-0">{data.emoji}</div>
           <div className="flex-1 min-w-0">
             <h3 className="text-[15px] font-bold text-white leading-tight mb-1">
-              {data.title}
+              {t(data.titleKey as Parameters<typeof t>[0])}
             </h3>
             <p className="text-[12px] text-gray-300 leading-relaxed">
-              {data.body}
+              {t(data.bodyKey as Parameters<typeof t>[0])}
             </p>
           </div>
         </div>
@@ -3731,7 +3709,7 @@ function OnboardingOverlay({
             onClick={onSkip}
             className="text-[11px] text-gray-500 font-semibold active:text-gray-300"
           >
-            Saltar
+            {t("mobileEditor.onb.skip")}
           </button>
           <div className="flex items-center gap-1.5">
             {ONBOARDING_STEPS.map((_, i) => (
@@ -3747,7 +3725,7 @@ function OnboardingOverlay({
             onClick={onNext}
             className="px-4 py-1.5 rounded-full bg-purple-500 text-white text-[12px] font-bold active:scale-95 transition-transform"
           >
-            {isLast ? "Empezar" : "Siguiente"}
+            {isLast ? t("mobileEditor.onb.start") : t("mobileEditor.onb.next")}
           </button>
         </div>
       </div>

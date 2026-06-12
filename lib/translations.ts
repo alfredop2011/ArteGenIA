@@ -573,7 +573,172 @@ export type TranslationKey =
   // ── ADD ELEMENT toasts ──
   | "mobileEditor.toast.textAdded"
   | "mobileEditor.toast.shapeAdded"
-  | "mobileEditor.toast.imageAdded";
+  | "mobileEditor.toast.imageAdded"
+  // ── SHEET TITLES (Fase P.3) ──
+  | "mobileEditor.sheet.photo"
+  | "mobileEditor.sheet.style"
+  | "mobileEditor.sheet.remix"
+  | "mobileEditor.sheet.more"
+  | "mobileEditor.sheet.export"
+  | "mobileEditor.sheet.add"
+  | "mobileEditor.sheet.layers"
+  | "mobileEditor.sheet.format"
+  | "mobileEditor.sheet.assistant"
+  // ── SHEET PHOTO ──
+  | "mobileEditor.photo.flyerPhotos"
+  | "mobileEditor.photo.noPhotos"
+  | "mobileEditor.photo.tapToEdit"
+  | "mobileEditor.photo.uploadNew"
+  | "mobileEditor.photo.uploadHint"
+  | "mobileEditor.toast.photoAddedFailed"
+  // ── SHEET STYLE (paletas) ──
+  | "mobileEditor.style.palettesFor"
+  | "mobileEditor.toast.paletteApplied"
+  // ── SHEET REMIX ──
+  | "mobileEditor.remix.intro"
+  | "mobileEditor.remix.generateAI"
+  | "mobileEditor.remix.beta"
+  | "mobileEditor.remix.surprise"
+  | "mobileEditor.remix.neon"
+  | "mobileEditor.remix.elegant"
+  | "mobileEditor.remix.vintage"
+  | "mobileEditor.remix.curatedStyles"
+  | "mobileEditor.remix.applied"
+  | "mobileEditor.toast.styleApplied"
+  | "mobileEditor.toast.remixError"
+  | "mobileEditor.toast.rateLimitWait"
+  // ── SHEET MORE ──
+  | "mobileEditor.more.myFlyers"
+  | "mobileEditor.more.myFlyersSub"
+  | "mobileEditor.more.viewTutorial"
+  | "mobileEditor.more.viewTutorialSub"
+  | "mobileEditor.more.layers"
+  | "mobileEditor.more.layersSub"
+  | "mobileEditor.more.aiAssistant"
+  | "mobileEditor.more.aiAssistantSub"
+  | "mobileEditor.more.changeFormat"
+  | "mobileEditor.more.changeFormatSub"
+  | "mobileEditor.more.resetTemplate"
+  | "mobileEditor.more.resetTemplateSub"
+  | "mobileEditor.more.comingSoon"
+  // ── SHEET EXPORT ──
+  | "mobileEditor.export.fileType"
+  | "mobileEditor.export.png"
+  | "mobileEditor.export.jpg"
+  | "mobileEditor.export.pdf"
+  | "mobileEditor.export.svg"
+  | "mobileEditor.export.pngSubtitle"
+  | "mobileEditor.export.jpgSubtitle"
+  | "mobileEditor.export.pdfSubtitle"
+  | "mobileEditor.export.svgSubtitle"
+  | "mobileEditor.export.pngHelp"
+  | "mobileEditor.export.jpgHelp"
+  | "mobileEditor.export.pdfHelp"
+  | "mobileEditor.export.svgHelp"
+  | "mobileEditor.export.templateHas"
+  | "mobileEditor.export.textsMaintained"
+  | "mobileEditor.export.edited"
+  | "mobileEditor.export.download"
+  | "mobileEditor.export.downloadAll"
+  | "mobileEditor.export.exporting"
+  | "mobileEditor.export.notice"
+  | "mobileEditor.toast.downloaded"
+  | "mobileEditor.toast.downloadedSvg"
+  | "mobileEditor.toast.downloadedPdf"
+  | "mobileEditor.toast.exportError"
+  | "mobileEditor.toast.allDownloaded"
+  // ── SHARE MODAL ──
+  | "mobileEditor.share.title"
+  | "mobileEditor.share.downloadedOk"
+  | "mobileEditor.share.systemShare"
+  | "mobileEditor.share.orChoose"
+  | "mobileEditor.share.whatsapp"
+  | "mobileEditor.share.instagram"
+  | "mobileEditor.share.facebook"
+  | "mobileEditor.share.twitter"
+  | "mobileEditor.share.telegram"
+  | "mobileEditor.share.email"
+  | "mobileEditor.share.copyLink"
+  | "mobileEditor.share.copied"
+  | "mobileEditor.share.redownload"
+  | "mobileEditor.share.privateUrl"
+  | "mobileEditor.share.message"
+  | "mobileEditor.share.credit"
+  | "mobileEditor.share.igTitle"
+  | "mobileEditor.share.igIntro"
+  | "mobileEditor.share.igStep1"
+  | "mobileEditor.share.igStep2"
+  | "mobileEditor.share.igStep3"
+  | "mobileEditor.share.igOpen"
+  | "mobileEditor.share.close"
+  | "mobileEditor.toast.shareUploadFailed"
+  | "mobileEditor.toast.loginToShare"
+  // ── SHEET LAYERS ──
+  | "mobileEditor.layers.intro"
+  | "mobileEditor.layers.empty"
+  | "mobileEditor.layers.emptyHint"
+  | "mobileEditor.layers.aria.up"
+  | "mobileEditor.layers.aria.down"
+  | "mobileEditor.layers.aria.show"
+  | "mobileEditor.layers.aria.hide"
+  | "mobileEditor.layers.fallback.text"
+  | "mobileEditor.layers.fallback.image"
+  | "mobileEditor.layers.fallback.rect"
+  | "mobileEditor.layers.fallback.circle"
+  | "mobileEditor.layers.fallback.triangle"
+  | "mobileEditor.layers.fallback.shape"
+  // ── SHEET CHANGE FORMAT ──
+  | "mobileEditor.changeFormat.intro"
+  | "mobileEditor.changeFormat.current"
+  | "mobileEditor.changeFormat.noVariant"
+  // ── SHEET ADD ELEMENT ──
+  | "mobileEditor.add.textSection"
+  | "mobileEditor.add.shapesSection"
+  | "mobileEditor.add.imageSection"
+  | "mobileEditor.add.title"
+  | "mobileEditor.add.subtitle"
+  | "mobileEditor.add.body"
+  | "mobileEditor.add.rect"
+  | "mobileEditor.add.circle"
+  | "mobileEditor.add.triangle"
+  | "mobileEditor.add.heart"
+  | "mobileEditor.add.star"
+  | "mobileEditor.add.line"
+  | "mobileEditor.add.uploadPhoto"
+  | "mobileEditor.add.hint"
+  // ── ASSISTANT SHEET ──
+  | "mobileEditor.assistant.loginTitle"
+  | "mobileEditor.assistant.loginDesc"
+  | "mobileEditor.assistant.loginBtn"
+  | "mobileEditor.assistant.loginFooter"
+  | "mobileEditor.assistant.headerTitle"
+  | "mobileEditor.assistant.headerDesc"
+  | "mobileEditor.assistant.placeholder"
+  | "mobileEditor.assistant.examples"
+  | "mobileEditor.assistant.generating"
+  | "mobileEditor.assistant.generate"
+  | "mobileEditor.assistant.poweredBy"
+  | "mobileEditor.assistant.previewTitle"
+  | "mobileEditor.assistant.previewDesc"
+  | "mobileEditor.assistant.retry"
+  | "mobileEditor.assistant.apply"
+  | "mobileEditor.assistant.emptyValue"
+  | "mobileEditor.toast.assistantApplied"
+  | "mobileEditor.toast.assistantError"
+  | "mobileEditor.toast.assistantEmpty"
+  | "mobileEditor.toast.assistantNeedPrompt"
+  // ── ONBOARDING ──
+  | "mobileEditor.onb.step1Title"
+  | "mobileEditor.onb.step1Body"
+  | "mobileEditor.onb.step2Title"
+  | "mobileEditor.onb.step2Body"
+  | "mobileEditor.onb.step3Title"
+  | "mobileEditor.onb.step3Body"
+  | "mobileEditor.onb.step4Title"
+  | "mobileEditor.onb.step4Body"
+  | "mobileEditor.onb.skip"
+  | "mobileEditor.onb.next"
+  | "mobileEditor.onb.start";
 
 type Dict = Record<TranslationKey, string>;
 
@@ -1123,6 +1288,171 @@ const es: Dict = {
   "mobileEditor.toast.textAdded": "Texto añadido",
   "mobileEditor.toast.shapeAdded": "Forma añadida",
   "mobileEditor.toast.imageAdded": "Imagen añadida",
+  // SHEETS titles
+  "mobileEditor.sheet.photo": "Foto",
+  "mobileEditor.sheet.style": "Estilo",
+  "mobileEditor.sheet.remix": "Remix · 4 estilos",
+  "mobileEditor.sheet.more": "Más opciones",
+  "mobileEditor.sheet.export": "Exportar",
+  "mobileEditor.sheet.add": "Añadir elemento",
+  "mobileEditor.sheet.layers": "Capas",
+  "mobileEditor.sheet.format": "Cambiar formato",
+  "mobileEditor.sheet.assistant": "Asistente IA",
+  // PHOTO
+  "mobileEditor.photo.flyerPhotos": "Fotos del flyer",
+  "mobileEditor.photo.noPhotos": "Esta plantilla no tiene fotos.",
+  "mobileEditor.photo.tapToEdit": "Tap en una foto para editarla (reemplazar, recortar, filtros, opacidad).",
+  "mobileEditor.photo.uploadNew": "Subir foto nueva",
+  "mobileEditor.photo.uploadHint": "Se añade al centro del flyer y queda seleccionada para moverla.",
+  "mobileEditor.toast.photoAddedFailed": "No se pudo añadir la foto",
+  // STYLE
+  "mobileEditor.style.palettesFor": "Paletas para",
+  "mobileEditor.toast.paletteApplied": "Paleta aplicada",
+  // REMIX
+  "mobileEditor.remix.intro": "Aplica un estilo completo (paleta + fuente + efectos) al instante. Tu contenido se mantiene.",
+  "mobileEditor.remix.generateAI": "Generar con IA",
+  "mobileEditor.remix.beta": "Beta",
+  "mobileEditor.remix.surprise": "Sorpréndeme",
+  "mobileEditor.remix.neon": "Neón",
+  "mobileEditor.remix.elegant": "Elegante",
+  "mobileEditor.remix.vintage": "Vintage",
+  "mobileEditor.remix.curatedStyles": "Estilos curados",
+  "mobileEditor.remix.applied": "Aplicado",
+  "mobileEditor.toast.styleApplied": "Estilo aplicado",
+  "mobileEditor.toast.remixError": "Error al generar remix",
+  "mobileEditor.toast.rateLimitWait": "Demasiadas peticiones, espera 1 min",
+  // MORE
+  "mobileEditor.more.myFlyers": "Mis flyers",
+  "mobileEditor.more.myFlyersSub": "Volver a tus diseños guardados",
+  "mobileEditor.more.viewTutorial": "Ver tutorial",
+  "mobileEditor.more.viewTutorialSub": "Repetir la guía rápida del editor",
+  "mobileEditor.more.layers": "Capas",
+  "mobileEditor.more.layersSub": "Ver y organizar elementos del flyer",
+  "mobileEditor.more.aiAssistant": "Asistente IA",
+  "mobileEditor.more.aiAssistantSub": "Describe tu evento y rellena el flyer",
+  "mobileEditor.more.changeFormat": "Cambiar formato",
+  "mobileEditor.more.changeFormatSub": "Story 9:16, Post 4:5, etc.",
+  "mobileEditor.more.resetTemplate": "Reiniciar plantilla",
+  "mobileEditor.more.resetTemplateSub": "Volver al diseño original",
+  "mobileEditor.more.comingSoon": "Próximo",
+  // EXPORT
+  "mobileEditor.export.fileType": "Tipo de archivo",
+  "mobileEditor.export.png": "PNG",
+  "mobileEditor.export.jpg": "JPG",
+  "mobileEditor.export.pdf": "PDF",
+  "mobileEditor.export.svg": "SVG",
+  "mobileEditor.export.pngSubtitle": "Calidad máxima",
+  "mobileEditor.export.jpgSubtitle": "Archivo ligero",
+  "mobileEditor.export.pdfSubtitle": "Imprenta",
+  "mobileEditor.export.svgSubtitle": "Vector",
+  "mobileEditor.export.pngHelp": "PNG sin pérdida. Texto nítido y bordes perfectos. Ideal imprimir o subir a Instagram en alta.",
+  "mobileEditor.export.jpgHelp": "JPG comprimido (~5× más liviano). Ideal WhatsApp y rapidez. Puede mostrar artefactos en texto fino.",
+  "mobileEditor.export.pdfHelp": "PDF para imprenta profesional. Tamaño real en mm, calidad de impresión.",
+  "mobileEditor.export.svgHelp": "SVG vectorial. Editable en Illustrator/Figma/Inkscape sin perder calidad. Las redes sociales pueden no aceptarlo.",
+  "mobileEditor.export.templateHas": "Esta plantilla tiene",
+  "mobileEditor.export.textsMaintained": "Los textos editados se mantienen al cambiar de formato.",
+  "mobileEditor.export.edited": "Editado",
+  "mobileEditor.export.download": "Descargar",
+  "mobileEditor.export.downloadAll": "Descargar todos",
+  "mobileEditor.export.exporting": "Exportando…",
+  "mobileEditor.export.notice": "Los formatos distintos al actual se renderizan con la maquetación original — paleta, remix e imágenes subidas solo se preservan en el formato actual.",
+  "mobileEditor.toast.downloaded": "Descargado",
+  "mobileEditor.toast.downloadedSvg": "Descargado SVG vectorial",
+  "mobileEditor.toast.downloadedPdf": "Descargado PDF para imprenta",
+  "mobileEditor.toast.exportError": "Error al renderizar",
+  "mobileEditor.toast.allDownloaded": "Descargados todos los formatos",
+  // SHARE
+  "mobileEditor.share.title": "Compartir flyer",
+  "mobileEditor.share.downloadedOk": "Descargado correctamente",
+  "mobileEditor.share.systemShare": "Compartir con la app del sistema",
+  "mobileEditor.share.orChoose": "O elige una red",
+  "mobileEditor.share.whatsapp": "WhatsApp",
+  "mobileEditor.share.instagram": "Instagram",
+  "mobileEditor.share.facebook": "Facebook",
+  "mobileEditor.share.twitter": "Twitter",
+  "mobileEditor.share.telegram": "Telegram",
+  "mobileEditor.share.email": "Email",
+  "mobileEditor.share.copyLink": "Copiar link",
+  "mobileEditor.share.copied": "Copiado ✓",
+  "mobileEditor.share.redownload": "Re-descargar",
+  "mobileEditor.share.privateUrl": "Tu flyer se publica en una URL privada. Solo quien recibe el link puede verlo.",
+  "mobileEditor.share.message": "Mira el flyer que hice con ArteGenIA 🎨",
+  "mobileEditor.share.credit": "Creado con ArteGenIA — artegenia.vercel.app",
+  "mobileEditor.share.igTitle": "Compartir en Instagram",
+  "mobileEditor.share.igIntro": "Instagram no permite compartir desde la web automáticamente. Sigue estos 3 pasos:",
+  "mobileEditor.share.igStep1": "Ya tienes el flyer descargado en tu galería.",
+  "mobileEditor.share.igStep2": "Abre Instagram → toca el + arriba.",
+  "mobileEditor.share.igStep3": "Elige Historia o Publicación y selecciona el flyer.",
+  "mobileEditor.share.igOpen": "Abrir Instagram",
+  "mobileEditor.share.close": "Cerrar",
+  "mobileEditor.toast.shareUploadFailed": "No se pudo preparar el enlace",
+  "mobileEditor.toast.loginToShare": "Inicia sesión para compartir",
+  // LAYERS
+  "mobileEditor.layers.intro": "Las capas se muestran en orden — la superior se ve encima del resto.",
+  "mobileEditor.layers.empty": "Este flyer no tiene capas editables aún.",
+  "mobileEditor.layers.emptyHint": "Usa el botón \"Añadir\" abajo para crear elementos.",
+  "mobileEditor.layers.aria.up": "Subir capa",
+  "mobileEditor.layers.aria.down": "Bajar capa",
+  "mobileEditor.layers.aria.show": "Mostrar",
+  "mobileEditor.layers.aria.hide": "Ocultar",
+  "mobileEditor.layers.fallback.text": "Texto",
+  "mobileEditor.layers.fallback.image": "Imagen",
+  "mobileEditor.layers.fallback.rect": "Rectángulo",
+  "mobileEditor.layers.fallback.circle": "Círculo",
+  "mobileEditor.layers.fallback.triangle": "Triángulo",
+  "mobileEditor.layers.fallback.shape": "Forma",
+  // CHANGE FORMAT
+  "mobileEditor.changeFormat.intro": "Cambia el tamaño y proporción del flyer manteniendo el contenido. Si tienes cambios sin guardar se guardan antes de cambiar.",
+  "mobileEditor.changeFormat.current": "Actual",
+  "mobileEditor.changeFormat.noVariant": "Esta plantilla no tiene formato",
+  // ADD ELEMENT
+  "mobileEditor.add.textSection": "Texto",
+  "mobileEditor.add.shapesSection": "Formas",
+  "mobileEditor.add.imageSection": "Imagen",
+  "mobileEditor.add.title": "Título",
+  "mobileEditor.add.subtitle": "Subtítulo",
+  "mobileEditor.add.body": "Cuerpo",
+  "mobileEditor.add.rect": "Rect",
+  "mobileEditor.add.circle": "Círculo",
+  "mobileEditor.add.triangle": "Triáng.",
+  "mobileEditor.add.heart": "Corazón",
+  "mobileEditor.add.star": "Estrella",
+  "mobileEditor.add.line": "Línea",
+  "mobileEditor.add.uploadPhoto": "Subir foto de tu galería",
+  "mobileEditor.add.hint": "El elemento se añade centrado y queda seleccionado para editarlo.",
+  // ASSISTANT
+  "mobileEditor.assistant.loginTitle": "Inicia sesión para usar la IA",
+  "mobileEditor.assistant.loginDesc": "El Asistente IA rellena tu flyer automáticamente a partir de una descripción. Necesitamos identificarte para protegerlo del abuso. Es gratis.",
+  "mobileEditor.assistant.loginBtn": "Iniciar sesión",
+  "mobileEditor.assistant.loginFooter": "Tus diseños no se pierden — esperan en este editor mientras te logueas.",
+  "mobileEditor.assistant.headerTitle": "Describe tu evento en 1 frase",
+  "mobileEditor.assistant.headerDesc": "La IA rellena automáticamente todos los campos del flyer.",
+  "mobileEditor.assistant.placeholder": "Ej: Clase de bachata sábado 22 noviembre 16-20h en Studio Kiz Madrid, 70€ early bird 60€",
+  "mobileEditor.assistant.examples": "Ejemplos rápidos",
+  "mobileEditor.assistant.generating": "Generando…",
+  "mobileEditor.assistant.generate": "Generar con IA",
+  "mobileEditor.assistant.poweredBy": "Powered by Claude Haiku · 10 generaciones por minuto",
+  "mobileEditor.assistant.previewTitle": "Vista previa generada por IA",
+  "mobileEditor.assistant.previewDesc": "Revisa que los datos sean correctos. Cuando estés conforme, pulsa \"Aplicar al flyer\".",
+  "mobileEditor.assistant.retry": "Reintentar",
+  "mobileEditor.assistant.apply": "Aplicar al flyer",
+  "mobileEditor.assistant.emptyValue": "(vacío)",
+  "mobileEditor.toast.assistantApplied": "Campos rellenados con IA",
+  "mobileEditor.toast.assistantError": "La IA no pudo generar el flyer",
+  "mobileEditor.toast.assistantEmpty": "La IA no devolvió valores — intenta con otra descripción",
+  "mobileEditor.toast.assistantNeedPrompt": "Escribe primero qué evento es",
+  // ONBOARDING
+  "mobileEditor.onb.step1Title": "Toca el texto para editarlo",
+  "mobileEditor.onb.step1Body": "Cualquier texto del flyer es editable. Cambia el nombre del evento, fecha, precio... Solo toca y escribe.",
+  "mobileEditor.onb.step2Title": "Añade elementos con el +",
+  "mobileEditor.onb.step2Body": "Pulsa el botón Añadir abajo para insertar texto nuevo, formas, estrellas, corazones o tus propias fotos.",
+  "mobileEditor.onb.step3Title": "Cambia el estilo con 1 tap",
+  "mobileEditor.onb.step3Body": "Estilo aplica paletas curadas. Remix genera variantes con IA. Comparte tu flyer en WhatsApp, Instagram y más.",
+  "mobileEditor.onb.step4Title": "Exporta y comparte",
+  "mobileEditor.onb.step4Body": "Cuando esté listo, pulsa Exportar arriba. Elige PNG, JPG, PDF imprenta o SVG vectorial. Luego compártelo en redes sociales con 1 tap.",
+  "mobileEditor.onb.skip": "Saltar",
+  "mobileEditor.onb.next": "Siguiente",
+  "mobileEditor.onb.start": "Empezar",
 };
 
 const en: Dict = {
@@ -1670,6 +2000,159 @@ const en: Dict = {
   "mobileEditor.toast.textAdded": "Text added",
   "mobileEditor.toast.shapeAdded": "Shape added",
   "mobileEditor.toast.imageAdded": "Image added",
+  "mobileEditor.sheet.photo": "Photo",
+  "mobileEditor.sheet.style": "Style",
+  "mobileEditor.sheet.remix": "Remix · 4 styles",
+  "mobileEditor.sheet.more": "More options",
+  "mobileEditor.sheet.export": "Export",
+  "mobileEditor.sheet.add": "Add element",
+  "mobileEditor.sheet.layers": "Layers",
+  "mobileEditor.sheet.format": "Change format",
+  "mobileEditor.sheet.assistant": "AI Assistant",
+  "mobileEditor.photo.flyerPhotos": "Flyer photos",
+  "mobileEditor.photo.noPhotos": "This template has no photos.",
+  "mobileEditor.photo.tapToEdit": "Tap a photo to edit it (replace, crop, filters, opacity).",
+  "mobileEditor.photo.uploadNew": "Upload new photo",
+  "mobileEditor.photo.uploadHint": "Added centered on the flyer and selected for you to move.",
+  "mobileEditor.toast.photoAddedFailed": "Could not add photo",
+  "mobileEditor.style.palettesFor": "Palettes for",
+  "mobileEditor.toast.paletteApplied": "Palette applied",
+  "mobileEditor.remix.intro": "Apply a complete style (palette + font + effects) instantly. Your content stays.",
+  "mobileEditor.remix.generateAI": "Generate with AI",
+  "mobileEditor.remix.beta": "Beta",
+  "mobileEditor.remix.surprise": "Surprise me",
+  "mobileEditor.remix.neon": "Neon",
+  "mobileEditor.remix.elegant": "Elegant",
+  "mobileEditor.remix.vintage": "Vintage",
+  "mobileEditor.remix.curatedStyles": "Curated styles",
+  "mobileEditor.remix.applied": "Applied",
+  "mobileEditor.toast.styleApplied": "Style applied",
+  "mobileEditor.toast.remixError": "Error generating remix",
+  "mobileEditor.toast.rateLimitWait": "Too many requests, wait 1 min",
+  "mobileEditor.more.myFlyers": "My flyers",
+  "mobileEditor.more.myFlyersSub": "Go back to your saved designs",
+  "mobileEditor.more.viewTutorial": "View tutorial",
+  "mobileEditor.more.viewTutorialSub": "Replay the editor quick guide",
+  "mobileEditor.more.layers": "Layers",
+  "mobileEditor.more.layersSub": "View and organize flyer elements",
+  "mobileEditor.more.aiAssistant": "AI Assistant",
+  "mobileEditor.more.aiAssistantSub": "Describe your event and fill the flyer",
+  "mobileEditor.more.changeFormat": "Change format",
+  "mobileEditor.more.changeFormatSub": "Story 9:16, Post 4:5, etc.",
+  "mobileEditor.more.resetTemplate": "Reset template",
+  "mobileEditor.more.resetTemplateSub": "Restore the original design",
+  "mobileEditor.more.comingSoon": "Soon",
+  "mobileEditor.export.fileType": "File type",
+  "mobileEditor.export.png": "PNG",
+  "mobileEditor.export.jpg": "JPG",
+  "mobileEditor.export.pdf": "PDF",
+  "mobileEditor.export.svg": "SVG",
+  "mobileEditor.export.pngSubtitle": "Best quality",
+  "mobileEditor.export.jpgSubtitle": "Lightweight",
+  "mobileEditor.export.pdfSubtitle": "Print",
+  "mobileEditor.export.svgSubtitle": "Vector",
+  "mobileEditor.export.pngHelp": "Lossless PNG. Crisp text and perfect edges. Ideal for printing or Instagram in high quality.",
+  "mobileEditor.export.jpgHelp": "Compressed JPG (~5× lighter). Ideal for WhatsApp and speed. May show artifacts in thin text.",
+  "mobileEditor.export.pdfHelp": "PDF for professional printing. Real size in mm, print quality.",
+  "mobileEditor.export.svgHelp": "Vector SVG. Editable in Illustrator/Figma/Inkscape without quality loss. Social networks may not accept it.",
+  "mobileEditor.export.templateHas": "This template has",
+  "mobileEditor.export.textsMaintained": "Edited texts are kept when changing format.",
+  "mobileEditor.export.edited": "Edited",
+  "mobileEditor.export.download": "Download",
+  "mobileEditor.export.downloadAll": "Download all",
+  "mobileEditor.export.exporting": "Exporting…",
+  "mobileEditor.export.notice": "Formats other than the current one are rendered with the original layout — palette, remix and uploaded images are only preserved in the current format.",
+  "mobileEditor.toast.downloaded": "Downloaded",
+  "mobileEditor.toast.downloadedSvg": "Vector SVG downloaded",
+  "mobileEditor.toast.downloadedPdf": "PDF for print downloaded",
+  "mobileEditor.toast.exportError": "Render error",
+  "mobileEditor.toast.allDownloaded": "All formats downloaded",
+  "mobileEditor.share.title": "Share flyer",
+  "mobileEditor.share.downloadedOk": "Downloaded successfully",
+  "mobileEditor.share.systemShare": "Share with system app",
+  "mobileEditor.share.orChoose": "Or choose a network",
+  "mobileEditor.share.whatsapp": "WhatsApp",
+  "mobileEditor.share.instagram": "Instagram",
+  "mobileEditor.share.facebook": "Facebook",
+  "mobileEditor.share.twitter": "Twitter",
+  "mobileEditor.share.telegram": "Telegram",
+  "mobileEditor.share.email": "Email",
+  "mobileEditor.share.copyLink": "Copy link",
+  "mobileEditor.share.copied": "Copied ✓",
+  "mobileEditor.share.redownload": "Re-download",
+  "mobileEditor.share.privateUrl": "Your flyer is published at a private URL. Only those who receive the link can see it.",
+  "mobileEditor.share.message": "Check the flyer I made with ArteGenIA 🎨",
+  "mobileEditor.share.credit": "Made with ArteGenIA — artegenia.vercel.app",
+  "mobileEditor.share.igTitle": "Share on Instagram",
+  "mobileEditor.share.igIntro": "Instagram doesn't allow sharing from the web automatically. Follow these 3 steps:",
+  "mobileEditor.share.igStep1": "You already have the flyer downloaded to your gallery.",
+  "mobileEditor.share.igStep2": "Open Instagram → tap the + at the top.",
+  "mobileEditor.share.igStep3": "Choose Story or Post and select the flyer.",
+  "mobileEditor.share.igOpen": "Open Instagram",
+  "mobileEditor.share.close": "Close",
+  "mobileEditor.toast.shareUploadFailed": "Could not prepare link",
+  "mobileEditor.toast.loginToShare": "Sign in to share",
+  "mobileEditor.layers.intro": "Layers are shown in order — the top one appears above the rest.",
+  "mobileEditor.layers.empty": "This flyer has no editable layers yet.",
+  "mobileEditor.layers.emptyHint": "Use the \"Add\" button below to create elements.",
+  "mobileEditor.layers.aria.up": "Move layer up",
+  "mobileEditor.layers.aria.down": "Move layer down",
+  "mobileEditor.layers.aria.show": "Show",
+  "mobileEditor.layers.aria.hide": "Hide",
+  "mobileEditor.layers.fallback.text": "Text",
+  "mobileEditor.layers.fallback.image": "Image",
+  "mobileEditor.layers.fallback.rect": "Rectangle",
+  "mobileEditor.layers.fallback.circle": "Circle",
+  "mobileEditor.layers.fallback.triangle": "Triangle",
+  "mobileEditor.layers.fallback.shape": "Shape",
+  "mobileEditor.changeFormat.intro": "Change the size and proportion of the flyer keeping the content. If you have unsaved changes they are saved first.",
+  "mobileEditor.changeFormat.current": "Current",
+  "mobileEditor.changeFormat.noVariant": "This template doesn't have format",
+  "mobileEditor.add.textSection": "Text",
+  "mobileEditor.add.shapesSection": "Shapes",
+  "mobileEditor.add.imageSection": "Image",
+  "mobileEditor.add.title": "Title",
+  "mobileEditor.add.subtitle": "Subtitle",
+  "mobileEditor.add.body": "Body",
+  "mobileEditor.add.rect": "Rect",
+  "mobileEditor.add.circle": "Circle",
+  "mobileEditor.add.triangle": "Triangle",
+  "mobileEditor.add.heart": "Heart",
+  "mobileEditor.add.star": "Star",
+  "mobileEditor.add.line": "Line",
+  "mobileEditor.add.uploadPhoto": "Upload photo from gallery",
+  "mobileEditor.add.hint": "The element is added centered and selected for you to edit.",
+  "mobileEditor.assistant.loginTitle": "Sign in to use AI",
+  "mobileEditor.assistant.loginDesc": "The AI Assistant fills your flyer automatically from a description. We need to identify you to protect against abuse. It's free.",
+  "mobileEditor.assistant.loginBtn": "Sign in",
+  "mobileEditor.assistant.loginFooter": "Your designs are not lost — they wait in this editor while you sign in.",
+  "mobileEditor.assistant.headerTitle": "Describe your event in 1 sentence",
+  "mobileEditor.assistant.headerDesc": "The AI automatically fills all flyer fields.",
+  "mobileEditor.assistant.placeholder": "Ex: Bachata class Saturday Nov 22 4-8pm at Studio Kiz Madrid, €70 early bird €60",
+  "mobileEditor.assistant.examples": "Quick examples",
+  "mobileEditor.assistant.generating": "Generating…",
+  "mobileEditor.assistant.generate": "Generate with AI",
+  "mobileEditor.assistant.poweredBy": "Powered by Claude Haiku · 10 generations per minute",
+  "mobileEditor.assistant.previewTitle": "AI-generated preview",
+  "mobileEditor.assistant.previewDesc": "Review the data is correct. When ready, press \"Apply to flyer\".",
+  "mobileEditor.assistant.retry": "Retry",
+  "mobileEditor.assistant.apply": "Apply to flyer",
+  "mobileEditor.assistant.emptyValue": "(empty)",
+  "mobileEditor.toast.assistantApplied": "Fields filled with AI",
+  "mobileEditor.toast.assistantError": "AI could not generate the flyer",
+  "mobileEditor.toast.assistantEmpty": "AI returned no values — try another description",
+  "mobileEditor.toast.assistantNeedPrompt": "Write the event first",
+  "mobileEditor.onb.step1Title": "Tap the text to edit it",
+  "mobileEditor.onb.step1Body": "Any flyer text is editable. Change the event name, date, price... Just tap and type.",
+  "mobileEditor.onb.step2Title": "Add elements with +",
+  "mobileEditor.onb.step2Body": "Press the Add button below to insert new text, shapes, stars, hearts or your own photos.",
+  "mobileEditor.onb.step3Title": "Change style in 1 tap",
+  "mobileEditor.onb.step3Body": "Style applies curated palettes. Remix generates variants with AI. Share your flyer on WhatsApp, Instagram and more.",
+  "mobileEditor.onb.step4Title": "Export and share",
+  "mobileEditor.onb.step4Body": "When ready, press Export at the top. Choose PNG, JPG, print PDF or vector SVG. Then share it on social media in 1 tap.",
+  "mobileEditor.onb.skip": "Skip",
+  "mobileEditor.onb.next": "Next",
+  "mobileEditor.onb.start": "Start",
 };
 
 const fr: Dict = {
@@ -2217,6 +2700,159 @@ const fr: Dict = {
   "mobileEditor.toast.textAdded": "Texte ajouté",
   "mobileEditor.toast.shapeAdded": "Forme ajoutée",
   "mobileEditor.toast.imageAdded": "Image ajoutée",
+  "mobileEditor.sheet.photo": "Photo",
+  "mobileEditor.sheet.style": "Style",
+  "mobileEditor.sheet.remix": "Remix · 4 styles",
+  "mobileEditor.sheet.more": "Plus d'options",
+  "mobileEditor.sheet.export": "Exporter",
+  "mobileEditor.sheet.add": "Ajouter un élément",
+  "mobileEditor.sheet.layers": "Calques",
+  "mobileEditor.sheet.format": "Changer de format",
+  "mobileEditor.sheet.assistant": "Assistant IA",
+  "mobileEditor.photo.flyerPhotos": "Photos du flyer",
+  "mobileEditor.photo.noPhotos": "Ce modèle n'a pas de photos.",
+  "mobileEditor.photo.tapToEdit": "Touchez une photo pour l'éditer (remplacer, recadrer, filtres, opacité).",
+  "mobileEditor.photo.uploadNew": "Importer une nouvelle photo",
+  "mobileEditor.photo.uploadHint": "Ajoutée au centre du flyer et sélectionnée pour la déplacer.",
+  "mobileEditor.toast.photoAddedFailed": "Impossible d'ajouter la photo",
+  "mobileEditor.style.palettesFor": "Palettes pour",
+  "mobileEditor.toast.paletteApplied": "Palette appliquée",
+  "mobileEditor.remix.intro": "Appliquez un style complet (palette + police + effets) instantanément. Votre contenu est conservé.",
+  "mobileEditor.remix.generateAI": "Générer avec l'IA",
+  "mobileEditor.remix.beta": "Bêta",
+  "mobileEditor.remix.surprise": "Surprenez-moi",
+  "mobileEditor.remix.neon": "Néon",
+  "mobileEditor.remix.elegant": "Élégant",
+  "mobileEditor.remix.vintage": "Vintage",
+  "mobileEditor.remix.curatedStyles": "Styles sélectionnés",
+  "mobileEditor.remix.applied": "Appliqué",
+  "mobileEditor.toast.styleApplied": "Style appliqué",
+  "mobileEditor.toast.remixError": "Erreur de génération du remix",
+  "mobileEditor.toast.rateLimitWait": "Trop de requêtes, attendez 1 min",
+  "mobileEditor.more.myFlyers": "Mes flyers",
+  "mobileEditor.more.myFlyersSub": "Retour à vos designs enregistrés",
+  "mobileEditor.more.viewTutorial": "Voir le tutoriel",
+  "mobileEditor.more.viewTutorialSub": "Revoir le guide rapide de l'éditeur",
+  "mobileEditor.more.layers": "Calques",
+  "mobileEditor.more.layersSub": "Voir et organiser les éléments",
+  "mobileEditor.more.aiAssistant": "Assistant IA",
+  "mobileEditor.more.aiAssistantSub": "Décrivez votre événement et remplissez le flyer",
+  "mobileEditor.more.changeFormat": "Changer de format",
+  "mobileEditor.more.changeFormatSub": "Story 9:16, Post 4:5, etc.",
+  "mobileEditor.more.resetTemplate": "Réinitialiser le modèle",
+  "mobileEditor.more.resetTemplateSub": "Revenir au design original",
+  "mobileEditor.more.comingSoon": "Bientôt",
+  "mobileEditor.export.fileType": "Type de fichier",
+  "mobileEditor.export.png": "PNG",
+  "mobileEditor.export.jpg": "JPG",
+  "mobileEditor.export.pdf": "PDF",
+  "mobileEditor.export.svg": "SVG",
+  "mobileEditor.export.pngSubtitle": "Qualité max",
+  "mobileEditor.export.jpgSubtitle": "Léger",
+  "mobileEditor.export.pdfSubtitle": "Impression",
+  "mobileEditor.export.svgSubtitle": "Vectoriel",
+  "mobileEditor.export.pngHelp": "PNG sans perte. Texte net et bordures parfaites. Idéal pour imprimer ou Instagram en HD.",
+  "mobileEditor.export.jpgHelp": "JPG compressé (~5× plus léger). Idéal WhatsApp et rapidité. Peut montrer des artéfacts sur le texte fin.",
+  "mobileEditor.export.pdfHelp": "PDF pour impression professionnelle. Taille réelle en mm, qualité d'impression.",
+  "mobileEditor.export.svgHelp": "SVG vectoriel. Éditable dans Illustrator/Figma/Inkscape sans perte. Les réseaux sociaux peuvent ne pas l'accepter.",
+  "mobileEditor.export.templateHas": "Ce modèle a",
+  "mobileEditor.export.textsMaintained": "Les textes édités sont conservés lors du changement de format.",
+  "mobileEditor.export.edited": "Édité",
+  "mobileEditor.export.download": "Télécharger",
+  "mobileEditor.export.downloadAll": "Tout télécharger",
+  "mobileEditor.export.exporting": "Exportation…",
+  "mobileEditor.export.notice": "Les autres formats sont rendus avec la mise en page d'origine — palette, remix et images uploadées sont préservés uniquement dans le format actuel.",
+  "mobileEditor.toast.downloaded": "Téléchargé",
+  "mobileEditor.toast.downloadedSvg": "SVG vectoriel téléchargé",
+  "mobileEditor.toast.downloadedPdf": "PDF d'impression téléchargé",
+  "mobileEditor.toast.exportError": "Erreur de rendu",
+  "mobileEditor.toast.allDownloaded": "Tous les formats téléchargés",
+  "mobileEditor.share.title": "Partager le flyer",
+  "mobileEditor.share.downloadedOk": "Téléchargé avec succès",
+  "mobileEditor.share.systemShare": "Partager avec l'application système",
+  "mobileEditor.share.orChoose": "Ou choisissez un réseau",
+  "mobileEditor.share.whatsapp": "WhatsApp",
+  "mobileEditor.share.instagram": "Instagram",
+  "mobileEditor.share.facebook": "Facebook",
+  "mobileEditor.share.twitter": "Twitter",
+  "mobileEditor.share.telegram": "Telegram",
+  "mobileEditor.share.email": "Email",
+  "mobileEditor.share.copyLink": "Copier le lien",
+  "mobileEditor.share.copied": "Copié ✓",
+  "mobileEditor.share.redownload": "Re-télécharger",
+  "mobileEditor.share.privateUrl": "Votre flyer est publié à une URL privée. Seuls ceux qui reçoivent le lien peuvent le voir.",
+  "mobileEditor.share.message": "Regarde le flyer que j'ai fait avec ArteGenIA 🎨",
+  "mobileEditor.share.credit": "Créé avec ArteGenIA — artegenia.vercel.app",
+  "mobileEditor.share.igTitle": "Partager sur Instagram",
+  "mobileEditor.share.igIntro": "Instagram n'autorise pas le partage depuis le web automatiquement. Suivez ces 3 étapes :",
+  "mobileEditor.share.igStep1": "Le flyer est déjà téléchargé dans votre galerie.",
+  "mobileEditor.share.igStep2": "Ouvrez Instagram → touchez le + en haut.",
+  "mobileEditor.share.igStep3": "Choisissez Story ou Publication et sélectionnez le flyer.",
+  "mobileEditor.share.igOpen": "Ouvrir Instagram",
+  "mobileEditor.share.close": "Fermer",
+  "mobileEditor.toast.shareUploadFailed": "Impossible de préparer le lien",
+  "mobileEditor.toast.loginToShare": "Connectez-vous pour partager",
+  "mobileEditor.layers.intro": "Les calques sont affichés dans l'ordre — le supérieur apparaît au-dessus des autres.",
+  "mobileEditor.layers.empty": "Ce flyer n'a pas encore de calques modifiables.",
+  "mobileEditor.layers.emptyHint": "Utilisez le bouton \"Ajouter\" ci-dessous pour créer des éléments.",
+  "mobileEditor.layers.aria.up": "Avancer le calque",
+  "mobileEditor.layers.aria.down": "Reculer le calque",
+  "mobileEditor.layers.aria.show": "Afficher",
+  "mobileEditor.layers.aria.hide": "Masquer",
+  "mobileEditor.layers.fallback.text": "Texte",
+  "mobileEditor.layers.fallback.image": "Image",
+  "mobileEditor.layers.fallback.rect": "Rectangle",
+  "mobileEditor.layers.fallback.circle": "Cercle",
+  "mobileEditor.layers.fallback.triangle": "Triangle",
+  "mobileEditor.layers.fallback.shape": "Forme",
+  "mobileEditor.changeFormat.intro": "Changez la taille et la proportion du flyer en gardant le contenu. Si vous avez des modifications non enregistrées, elles sont enregistrées avant.",
+  "mobileEditor.changeFormat.current": "Actuel",
+  "mobileEditor.changeFormat.noVariant": "Ce modèle n'a pas le format",
+  "mobileEditor.add.textSection": "Texte",
+  "mobileEditor.add.shapesSection": "Formes",
+  "mobileEditor.add.imageSection": "Image",
+  "mobileEditor.add.title": "Titre",
+  "mobileEditor.add.subtitle": "Sous-titre",
+  "mobileEditor.add.body": "Corps",
+  "mobileEditor.add.rect": "Rect",
+  "mobileEditor.add.circle": "Cercle",
+  "mobileEditor.add.triangle": "Triang.",
+  "mobileEditor.add.heart": "Cœur",
+  "mobileEditor.add.star": "Étoile",
+  "mobileEditor.add.line": "Ligne",
+  "mobileEditor.add.uploadPhoto": "Importer une photo de votre galerie",
+  "mobileEditor.add.hint": "L'élément est ajouté centré et sélectionné pour l'éditer.",
+  "mobileEditor.assistant.loginTitle": "Connectez-vous pour utiliser l'IA",
+  "mobileEditor.assistant.loginDesc": "L'Assistant IA remplit votre flyer automatiquement à partir d'une description. Nous devons vous identifier pour le protéger. C'est gratuit.",
+  "mobileEditor.assistant.loginBtn": "Se connecter",
+  "mobileEditor.assistant.loginFooter": "Vos designs ne sont pas perdus — ils attendent dans cet éditeur pendant que vous vous connectez.",
+  "mobileEditor.assistant.headerTitle": "Décrivez votre événement en 1 phrase",
+  "mobileEditor.assistant.headerDesc": "L'IA remplit automatiquement tous les champs du flyer.",
+  "mobileEditor.assistant.placeholder": "Ex : Cours de bachata samedi 22 novembre 16-20h au Studio Kiz Madrid, 70€ early bird 60€",
+  "mobileEditor.assistant.examples": "Exemples rapides",
+  "mobileEditor.assistant.generating": "Génération…",
+  "mobileEditor.assistant.generate": "Générer avec l'IA",
+  "mobileEditor.assistant.poweredBy": "Propulsé par Claude Haiku · 10 générations par minute",
+  "mobileEditor.assistant.previewTitle": "Aperçu généré par l'IA",
+  "mobileEditor.assistant.previewDesc": "Vérifiez que les données sont correctes. Quand vous êtes prêt, appuyez sur \"Appliquer au flyer\".",
+  "mobileEditor.assistant.retry": "Réessayer",
+  "mobileEditor.assistant.apply": "Appliquer au flyer",
+  "mobileEditor.assistant.emptyValue": "(vide)",
+  "mobileEditor.toast.assistantApplied": "Champs remplis par l'IA",
+  "mobileEditor.toast.assistantError": "L'IA n'a pas pu générer le flyer",
+  "mobileEditor.toast.assistantEmpty": "L'IA n'a renvoyé aucune valeur — essayez une autre description",
+  "mobileEditor.toast.assistantNeedPrompt": "Écrivez d'abord l'événement",
+  "mobileEditor.onb.step1Title": "Touchez le texte pour l'éditer",
+  "mobileEditor.onb.step1Body": "N'importe quel texte du flyer est modifiable. Changez le nom de l'événement, la date, le prix... Touchez et tapez.",
+  "mobileEditor.onb.step2Title": "Ajoutez des éléments avec +",
+  "mobileEditor.onb.step2Body": "Appuyez sur le bouton Ajouter pour insérer du texte, des formes, étoiles, cœurs ou vos propres photos.",
+  "mobileEditor.onb.step3Title": "Changez de style en 1 tap",
+  "mobileEditor.onb.step3Body": "Style applique des palettes sélectionnées. Remix génère des variantes avec l'IA. Partagez sur WhatsApp, Instagram et plus.",
+  "mobileEditor.onb.step4Title": "Exporter et partager",
+  "mobileEditor.onb.step4Body": "Quand c'est prêt, appuyez sur Exporter en haut. Choisissez PNG, JPG, PDF impression ou SVG vectoriel. Puis partagez en 1 tap.",
+  "mobileEditor.onb.skip": "Passer",
+  "mobileEditor.onb.next": "Suivant",
+  "mobileEditor.onb.start": "Commencer",
 };
 
 const pt: Dict = {
@@ -2764,6 +3400,159 @@ const pt: Dict = {
   "mobileEditor.toast.textAdded": "Texto adicionado",
   "mobileEditor.toast.shapeAdded": "Forma adicionada",
   "mobileEditor.toast.imageAdded": "Imagem adicionada",
+  "mobileEditor.sheet.photo": "Foto",
+  "mobileEditor.sheet.style": "Estilo",
+  "mobileEditor.sheet.remix": "Remix · 4 estilos",
+  "mobileEditor.sheet.more": "Mais opções",
+  "mobileEditor.sheet.export": "Exportar",
+  "mobileEditor.sheet.add": "Adicionar elemento",
+  "mobileEditor.sheet.layers": "Camadas",
+  "mobileEditor.sheet.format": "Mudar formato",
+  "mobileEditor.sheet.assistant": "Assistente IA",
+  "mobileEditor.photo.flyerPhotos": "Fotos do flyer",
+  "mobileEditor.photo.noPhotos": "Este modelo não tem fotos.",
+  "mobileEditor.photo.tapToEdit": "Toque numa foto para editar (substituir, recortar, filtros, opacidade).",
+  "mobileEditor.photo.uploadNew": "Carregar nova foto",
+  "mobileEditor.photo.uploadHint": "Adicionada no centro do flyer e selecionada para mover.",
+  "mobileEditor.toast.photoAddedFailed": "Não foi possível adicionar a foto",
+  "mobileEditor.style.palettesFor": "Paletas para",
+  "mobileEditor.toast.paletteApplied": "Paleta aplicada",
+  "mobileEditor.remix.intro": "Aplique um estilo completo (paleta + fonte + efeitos) num instante. O conteúdo é mantido.",
+  "mobileEditor.remix.generateAI": "Gerar com IA",
+  "mobileEditor.remix.beta": "Beta",
+  "mobileEditor.remix.surprise": "Surpreenda-me",
+  "mobileEditor.remix.neon": "Néon",
+  "mobileEditor.remix.elegant": "Elegante",
+  "mobileEditor.remix.vintage": "Vintage",
+  "mobileEditor.remix.curatedStyles": "Estilos curados",
+  "mobileEditor.remix.applied": "Aplicado",
+  "mobileEditor.toast.styleApplied": "Estilo aplicado",
+  "mobileEditor.toast.remixError": "Erro ao gerar remix",
+  "mobileEditor.toast.rateLimitWait": "Muitos pedidos, aguarde 1 min",
+  "mobileEditor.more.myFlyers": "Meus flyers",
+  "mobileEditor.more.myFlyersSub": "Voltar aos designs guardados",
+  "mobileEditor.more.viewTutorial": "Ver tutorial",
+  "mobileEditor.more.viewTutorialSub": "Rever o guia rápido do editor",
+  "mobileEditor.more.layers": "Camadas",
+  "mobileEditor.more.layersSub": "Ver e organizar elementos",
+  "mobileEditor.more.aiAssistant": "Assistente IA",
+  "mobileEditor.more.aiAssistantSub": "Descreva o seu evento e preencha o flyer",
+  "mobileEditor.more.changeFormat": "Mudar formato",
+  "mobileEditor.more.changeFormatSub": "Story 9:16, Post 4:5, etc.",
+  "mobileEditor.more.resetTemplate": "Reiniciar modelo",
+  "mobileEditor.more.resetTemplateSub": "Voltar ao design original",
+  "mobileEditor.more.comingSoon": "Em breve",
+  "mobileEditor.export.fileType": "Tipo de ficheiro",
+  "mobileEditor.export.png": "PNG",
+  "mobileEditor.export.jpg": "JPG",
+  "mobileEditor.export.pdf": "PDF",
+  "mobileEditor.export.svg": "SVG",
+  "mobileEditor.export.pngSubtitle": "Qualidade máx",
+  "mobileEditor.export.jpgSubtitle": "Leve",
+  "mobileEditor.export.pdfSubtitle": "Impressão",
+  "mobileEditor.export.svgSubtitle": "Vetorial",
+  "mobileEditor.export.pngHelp": "PNG sem perda. Texto nítido e bordas perfeitas. Ideal imprimir ou Instagram em alta.",
+  "mobileEditor.export.jpgHelp": "JPG comprimido (~5× mais leve). Ideal WhatsApp e rapidez. Pode mostrar artefactos em texto fino.",
+  "mobileEditor.export.pdfHelp": "PDF para impressão profissional. Tamanho real em mm, qualidade de impressão.",
+  "mobileEditor.export.svgHelp": "SVG vetorial. Editável em Illustrator/Figma/Inkscape sem perda. Redes sociais podem não aceitar.",
+  "mobileEditor.export.templateHas": "Este modelo tem",
+  "mobileEditor.export.textsMaintained": "Os textos editados são mantidos ao mudar de formato.",
+  "mobileEditor.export.edited": "Editado",
+  "mobileEditor.export.download": "Descarregar",
+  "mobileEditor.export.downloadAll": "Descarregar tudo",
+  "mobileEditor.export.exporting": "A exportar…",
+  "mobileEditor.export.notice": "Os outros formatos são renderizados com o layout original — paleta, remix e imagens carregadas só são preservados no formato atual.",
+  "mobileEditor.toast.downloaded": "Descarregado",
+  "mobileEditor.toast.downloadedSvg": "SVG vetorial descarregado",
+  "mobileEditor.toast.downloadedPdf": "PDF de impressão descarregado",
+  "mobileEditor.toast.exportError": "Erro de renderização",
+  "mobileEditor.toast.allDownloaded": "Todos os formatos descarregados",
+  "mobileEditor.share.title": "Partilhar flyer",
+  "mobileEditor.share.downloadedOk": "Descarregado com sucesso",
+  "mobileEditor.share.systemShare": "Partilhar com aplicação do sistema",
+  "mobileEditor.share.orChoose": "Ou escolha uma rede",
+  "mobileEditor.share.whatsapp": "WhatsApp",
+  "mobileEditor.share.instagram": "Instagram",
+  "mobileEditor.share.facebook": "Facebook",
+  "mobileEditor.share.twitter": "Twitter",
+  "mobileEditor.share.telegram": "Telegram",
+  "mobileEditor.share.email": "Email",
+  "mobileEditor.share.copyLink": "Copiar link",
+  "mobileEditor.share.copied": "Copiado ✓",
+  "mobileEditor.share.redownload": "Re-descarregar",
+  "mobileEditor.share.privateUrl": "O seu flyer é publicado num URL privado. Só quem recebe o link pode vê-lo.",
+  "mobileEditor.share.message": "Vê o flyer que fiz com ArteGenIA 🎨",
+  "mobileEditor.share.credit": "Criado com ArteGenIA — artegenia.vercel.app",
+  "mobileEditor.share.igTitle": "Partilhar no Instagram",
+  "mobileEditor.share.igIntro": "O Instagram não permite partilhar pela web automaticamente. Siga estes 3 passos:",
+  "mobileEditor.share.igStep1": "Já tem o flyer descarregado na galeria.",
+  "mobileEditor.share.igStep2": "Abra Instagram → toque no + em cima.",
+  "mobileEditor.share.igStep3": "Escolha Story ou Publicação e selecione o flyer.",
+  "mobileEditor.share.igOpen": "Abrir Instagram",
+  "mobileEditor.share.close": "Fechar",
+  "mobileEditor.toast.shareUploadFailed": "Não foi possível preparar o link",
+  "mobileEditor.toast.loginToShare": "Inicie sessão para partilhar",
+  "mobileEditor.layers.intro": "As camadas são mostradas em ordem — a superior aparece sobre as restantes.",
+  "mobileEditor.layers.empty": "Este flyer ainda não tem camadas editáveis.",
+  "mobileEditor.layers.emptyHint": "Use o botão \"Adicionar\" abaixo para criar elementos.",
+  "mobileEditor.layers.aria.up": "Subir camada",
+  "mobileEditor.layers.aria.down": "Descer camada",
+  "mobileEditor.layers.aria.show": "Mostrar",
+  "mobileEditor.layers.aria.hide": "Ocultar",
+  "mobileEditor.layers.fallback.text": "Texto",
+  "mobileEditor.layers.fallback.image": "Imagem",
+  "mobileEditor.layers.fallback.rect": "Retângulo",
+  "mobileEditor.layers.fallback.circle": "Círculo",
+  "mobileEditor.layers.fallback.triangle": "Triângulo",
+  "mobileEditor.layers.fallback.shape": "Forma",
+  "mobileEditor.changeFormat.intro": "Mude o tamanho e proporção do flyer mantendo o conteúdo. Se tiver alterações não guardadas, são guardadas antes.",
+  "mobileEditor.changeFormat.current": "Atual",
+  "mobileEditor.changeFormat.noVariant": "Este modelo não tem formato",
+  "mobileEditor.add.textSection": "Texto",
+  "mobileEditor.add.shapesSection": "Formas",
+  "mobileEditor.add.imageSection": "Imagem",
+  "mobileEditor.add.title": "Título",
+  "mobileEditor.add.subtitle": "Subtítulo",
+  "mobileEditor.add.body": "Corpo",
+  "mobileEditor.add.rect": "Rect",
+  "mobileEditor.add.circle": "Círculo",
+  "mobileEditor.add.triangle": "Triâng.",
+  "mobileEditor.add.heart": "Coração",
+  "mobileEditor.add.star": "Estrela",
+  "mobileEditor.add.line": "Linha",
+  "mobileEditor.add.uploadPhoto": "Carregar foto da galeria",
+  "mobileEditor.add.hint": "O elemento é adicionado centrado e selecionado para editar.",
+  "mobileEditor.assistant.loginTitle": "Inicie sessão para usar a IA",
+  "mobileEditor.assistant.loginDesc": "O Assistente IA preenche o flyer automaticamente a partir de uma descrição. Precisamos identificá-lo para proteger contra abuso. É grátis.",
+  "mobileEditor.assistant.loginBtn": "Iniciar sessão",
+  "mobileEditor.assistant.loginFooter": "Os designs não se perdem — aguardam neste editor enquanto inicia sessão.",
+  "mobileEditor.assistant.headerTitle": "Descreva o seu evento em 1 frase",
+  "mobileEditor.assistant.headerDesc": "A IA preenche automaticamente todos os campos do flyer.",
+  "mobileEditor.assistant.placeholder": "Ex: Aula de bachata sábado 22 novembro 16-20h em Studio Kiz Madrid, 70€ early bird 60€",
+  "mobileEditor.assistant.examples": "Exemplos rápidos",
+  "mobileEditor.assistant.generating": "A gerar…",
+  "mobileEditor.assistant.generate": "Gerar com IA",
+  "mobileEditor.assistant.poweredBy": "Powered by Claude Haiku · 10 gerações por minuto",
+  "mobileEditor.assistant.previewTitle": "Pré-visualização gerada pela IA",
+  "mobileEditor.assistant.previewDesc": "Verifique se os dados estão corretos. Quando estiver pronto, toque em \"Aplicar ao flyer\".",
+  "mobileEditor.assistant.retry": "Tentar novamente",
+  "mobileEditor.assistant.apply": "Aplicar ao flyer",
+  "mobileEditor.assistant.emptyValue": "(vazio)",
+  "mobileEditor.toast.assistantApplied": "Campos preenchidos pela IA",
+  "mobileEditor.toast.assistantError": "A IA não conseguiu gerar o flyer",
+  "mobileEditor.toast.assistantEmpty": "A IA não devolveu valores — tente outra descrição",
+  "mobileEditor.toast.assistantNeedPrompt": "Escreva primeiro o evento",
+  "mobileEditor.onb.step1Title": "Toque no texto para editar",
+  "mobileEditor.onb.step1Body": "Qualquer texto do flyer é editável. Mude o nome do evento, data, preço... Basta tocar e escrever.",
+  "mobileEditor.onb.step2Title": "Adicione elementos com +",
+  "mobileEditor.onb.step2Body": "Toque no botão Adicionar abaixo para inserir novo texto, formas, estrelas, corações ou as suas próprias fotos.",
+  "mobileEditor.onb.step3Title": "Mude o estilo em 1 toque",
+  "mobileEditor.onb.step3Body": "Estilo aplica paletas curadas. Remix gera variantes com IA. Partilhe no WhatsApp, Instagram e mais.",
+  "mobileEditor.onb.step4Title": "Exportar e partilhar",
+  "mobileEditor.onb.step4Body": "Quando pronto, toque em Exportar em cima. Escolha PNG, JPG, PDF impressão ou SVG vetorial. Depois partilhe num toque.",
+  "mobileEditor.onb.skip": "Saltar",
+  "mobileEditor.onb.next": "Seguinte",
+  "mobileEditor.onb.start": "Começar",
 };
 
 export const TRANSLATIONS: Record<Locale, Dict> = { es, en, fr, pt };
