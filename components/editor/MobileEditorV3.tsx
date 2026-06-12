@@ -1560,32 +1560,40 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [lastExportedDataUrl, setLastExportedDataUrl] = useState<string | null>(null);
 
-  /** Sube el ultimo PNG exportado a R2. Cacheado en shareUrl para no
-   *  re-subir si el usuario abre el modal varias veces. */
+  /** Sube el ultimo PNG exportado a R2 y crea entry shared_flyers para
+   *  obtener URL publica /flyer/<id> con OG tags. Cacheado en shareUrl
+   *  para no re-subir si el usuario abre el modal varias veces.
+   *  Fallback: si shared_flyers no esta listo en prod, usa R2 URL directo. */
   const ensureSharedUrl = useCallback(async (): Promise<string | null> => {
     if (shareUrl) return shareUrl;
     if (!lastExportedDataUrl) return null;
-    if (!authUser) { toast.info("Inicia sesión para compartir"); return null; }
+    if (!authUser) { toast.info(t("mobileEditor.toast.loginToShare")); return null; }
     setShareUploading(true);
     try {
       const res = await fetch("/api/share-upload", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ imageDataUrl: lastExportedDataUrl }),
+        body: JSON.stringify({
+          imageDataUrl: lastExportedDataUrl,
+          title: docTitle || template?.title || "Mi flyer",
+        }),
       });
       if (!res.ok) {
-        if (res.status === 429) toast.error("Demasiadas peticiones, espera 1 min");
-        else toast.error("No se pudo preparar el enlace");
+        if (res.status === 429) toast.error(t("mobileEditor.toast.rateLimitWait"));
+        else toast.error(t("mobileEditor.toast.shareUploadFailed"));
         return null;
       }
-      const data = await res.json() as { url?: string };
-      if (!data.url) return null;
-      setShareUrl(data.url);
-      return data.url;
+      const data = await res.json() as { url?: string; publicUrl?: string };
+      // Preferimos publicUrl (con OG tags). Si endpoint cae al fallback
+      // sin shareId, usamos url R2 directo.
+      const finalUrl = data.publicUrl || data.url;
+      if (!finalUrl) return null;
+      setShareUrl(finalUrl);
+      return finalUrl;
     } finally {
       setShareUploading(false);
     }
-  }, [shareUrl, lastExportedDataUrl, authUser, toast]);
+  }, [shareUrl, lastExportedDataUrl, authUser, docTitle, template?.title, toast, t]);
 
   // ─── Export ─────────────────────────────────────────────────────────────
   const doExport = useCallback(async (format: "png" | "jpg" | "pdf" | "svg" = "png") => {

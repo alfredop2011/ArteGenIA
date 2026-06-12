@@ -20,6 +20,8 @@ export const maxDuration = 30;
 type Body = {
   /** Data URL PNG/JPEG generado por toDataURL del canvas */
   imageDataUrl: string;
+  /** Título del flyer (para OG title) */
+  title?: string;
 };
 
 const MAX_BYTES = 8 * 1024 * 1024; // 8 MB max — flyers grandes pero no abusar
@@ -34,11 +36,10 @@ export async function POST(req: NextRequest) {
     const limitRes = await checkRateLimit(supabase, user.id, "share-upload");
     if (limitRes) return limitRes;
 
-    const { imageDataUrl } = (await req.json()) as Body;
+    const { imageDataUrl, title } = (await req.json()) as Body;
     if (!imageDataUrl?.startsWith("data:")) {
       return NextResponse.json({ error: "imageDataUrl invalido" }, { status: 400 });
     }
-    // Parse data URL: "data:image/png;base64,...."
     const match = imageDataUrl.match(/^data:image\/(png|jpeg|jpg);base64,(.+)$/);
     if (!match) {
       return NextResponse.json({ error: "Formato no soportado (PNG/JPG)" }, { status: 400 });
@@ -51,8 +52,39 @@ export async function POST(req: NextRequest) {
     }
     const contentType = ext === "jpg" ? "image/jpeg" : "image/png";
     const key = makeKey("share", ext);
-    const { url } = await uploadToR2(buffer, key, contentType);
-    return NextResponse.json({ url, key });
+    const { url: r2Url } = await uploadToR2(buffer, key, contentType);
+
+    // Crear entrada en shared_flyers para tener URL publica /flyer/<uuid>
+    // con OG tags (mejor preview en FB/Twitter/WhatsApp).
+    const cleanTitle = (title ?? "").trim().slice(0, 80) || "Mi flyer";
+    const { data: shared, error: shareErr } = await supabase
+      .from("shared_flyers")
+      .insert({
+        user_id: user.id,
+        r2_url: r2Url,
+        r2_key: key,
+        title: cleanTitle,
+      })
+      .select("id")
+      .single();
+
+    // Si la tabla no existe aun (migracion pendiente en prod), devolvemos
+    // solo la URL R2 sin shareId. El frontend cae al comportamiento anterior.
+    if (shareErr) {
+      console.warn("[share-upload] shared_flyers insert failed:", shareErr.message);
+      return NextResponse.json({ url: r2Url, key });
+    }
+
+    // URL publica que pondremos en redes sociales
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://artegenia.vercel.app";
+    const publicUrl = `${baseUrl}/flyer/${shared.id}`;
+
+    return NextResponse.json({
+      url: r2Url,
+      key,
+      shareId: shared.id,
+      publicUrl,
+    });
   } catch (err) {
     console.error("[share-upload]", err);
     const msg = err instanceof Error ? err.message : "Error desconocido";
