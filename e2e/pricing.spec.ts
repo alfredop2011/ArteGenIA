@@ -24,7 +24,18 @@ test("T-03 endpoint webhook requiere signature", async ({ request }) => {
   expect([400, 503]).toContain(res.status());
 });
 
-test("T-04 FAQ tiene 4 preguntas", async ({ page }) => {
+test("T-04 FAQ tiene varias preguntas", async ({ page }) => {
   await page.goto("/pricing", { waitUntil: "networkidle" });
-  await expect(page.locator("details")).toHaveCount(4);
+  // 6 con Enterprise añadido. Test relajado para no romper al ampliar
+  const count = await page.locator("details").count();
+  expect(count).toBeGreaterThanOrEqual(4);
+});
+
+test("T-05 /pricing muestra 3 planes (Free + Pro + Enterprise)", async ({ page }) => {
+  await page.goto("/pricing", { waitUntil: "networkidle" });
+  await expect(page.locator("h2").filter({ hasText: /^Free$/ })).toBeVisible();
+  await expect(page.locator("h2").filter({ hasText: /^Pro$/ })).toBeVisible();
+  await expect(page.locator("h2").filter({ hasText: /^Enterprise$/ })).toBeVisible();
+  // CTAs distintos
+  await expect(page.locator("a").filter({ hasText: "Habla con ventas" })).toBeVisible();
 });

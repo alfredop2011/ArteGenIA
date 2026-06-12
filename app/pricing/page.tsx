@@ -24,7 +24,8 @@ function PricingContent() {
   const sp = useSearchParams();
   const [loading, setLoading] = useState(false);
 
-  const isPro = profile?.plan === "pro" || profile?.plan === "enterprise";
+  const isPro = profile?.plan === "pro";
+  const isEnterprise = profile?.plan === "enterprise";
   const success = sp.get("success") === "1";
   const canceled = sp.get("canceled") === "1";
 
@@ -104,23 +105,25 @@ function PricingContent() {
         )}
 
         {/* Cards de planes */}
-        <div className="grid md:grid-cols-2 gap-5 max-w-3xl mx-auto">
+        <div className="grid md:grid-cols-3 gap-5 max-w-6xl mx-auto items-stretch">
           {/* FREE */}
-          <div className="relative p-6 rounded-3xl bg-[#13131f] border-2 border-white/[0.08] shadow-lg">
+          <div className="relative p-6 rounded-3xl bg-[#13131f] border-2 border-white/[0.08] shadow-lg flex flex-col">
             <h2 className="text-[18px] font-black mb-1">Free</h2>
             <p className="text-[12px] text-gray-400 mb-4">Para empezar y probar</p>
             <div className="mb-5">
-              <span className="text-[40px] font-black">0€</span>
+              <span className="text-[36px] font-black">0€</span>
               <span className="text-[12px] text-gray-400">/siempre</span>
             </div>
-            <Feature ok text="Editor completo (texto + imagen + forma)"/>
-            <Feature ok text="50+ plantillas profesionales"/>
-            <Feature ok text="Exportar PNG y JPG"/>
-            <Feature ok text="Multi-formato (Story, Post, Square)"/>
-            <Feature ok text="4 idiomas (ES/EN/FR/PT)"/>
-            <Feature ok text="Mis flyers (guardar proyectos)"/>
-            <Feature limit text="1 generación IA/día"/>
-            <Feature limit text='Watermark "Hecho con ArteGenIA"'/>
+            <div className="flex-1">
+              <Feature ok text="Editor completo (texto + imagen + forma)"/>
+              <Feature ok text="50+ plantillas profesionales"/>
+              <Feature ok text="Exportar PNG y JPG"/>
+              <Feature ok text="Multi-formato (Story, Post, Square)"/>
+              <Feature ok text="4 idiomas (ES/EN/FR/PT)"/>
+              <Feature ok text="Mis flyers (guardar proyectos)"/>
+              <Feature limit text="1 generación IA/día"/>
+              <Feature limit text='Watermark "Hecho con ArteGenIA"'/>
+            </div>
             <Link
               href="/templates"
               className="block mt-5 text-center py-3 rounded-xl bg-white/[0.06] border border-white/[0.12] text-gray-200 font-bold text-[13px] hover:bg-white/[0.10] transition-colors"
@@ -129,8 +132,8 @@ function PricingContent() {
             </Link>
           </div>
 
-          {/* PRO */}
-          <div className="relative p-6 rounded-3xl bg-gradient-to-br from-purple-600/20 via-fuchsia-600/15 to-pink-600/10 border-2 border-purple-500/40 shadow-2xl shadow-purple-500/30 overflow-hidden">
+          {/* PRO — destacado central, escalado en desktop */}
+          <div className="relative p-6 rounded-3xl bg-gradient-to-br from-purple-600/20 via-fuchsia-600/15 to-pink-600/10 border-2 border-purple-500/40 shadow-2xl shadow-purple-500/30 overflow-hidden md:scale-105 md:z-10 flex flex-col">
             {/* Badge */}
             <div className="absolute top-0 right-0 px-3 py-1 bg-gradient-to-br from-purple-600 to-fuchsia-600 text-white text-[10px] font-black uppercase tracking-widest rounded-bl-2xl">
               ⭐ Recomendado
@@ -138,24 +141,26 @@ function PricingContent() {
             <h2 className="text-[18px] font-black mb-1">Pro</h2>
             <p className="text-[12px] text-purple-200 mb-4">Para profesionales</p>
             <div className="mb-5">
-              <span className="text-[40px] font-black shimmer-text">9,99€</span>
+              <span className="text-[36px] font-black shimmer-text">9,99€</span>
               <span className="text-[12px] text-gray-400">/mes</span>
               <p className="text-[10px] text-gray-500 mt-1">Cancela cuando quieras</p>
             </div>
-            <Feature ok strong text="Todo lo de Free"/>
-            <Feature ok strong text="SIN watermark"/>
-            <Feature ok strong text="IA ilimitada (asistente + remix + quitar fondo)"/>
-            <Feature ok strong text="Exportar PDF imprenta + SVG vectorial"/>
-            <Feature ok strong text="Subir tus propias fuentes"/>
-            <Feature ok strong text="Plantillas Pro exclusivas (próximamente)"/>
-            <Feature ok strong text="Soporte prioritario por email"/>
-            <Feature ok strong text="Marca registrada (uso comercial)"/>
+            <div className="flex-1">
+              <Feature ok strong text="Todo lo de Free"/>
+              <Feature ok strong text="SIN watermark"/>
+              <Feature ok strong text="IA ilimitada (asistente + remix + quitar fondo)"/>
+              <Feature ok strong text="Exportar PDF imprenta + SVG vectorial"/>
+              <Feature ok strong text="Subir tus propias fuentes"/>
+              <Feature ok strong text="Plantillas Pro exclusivas (próximamente)"/>
+              <Feature ok strong text="Soporte prioritario por email"/>
+              <Feature ok strong text="Marca registrada (uso comercial)"/>
+            </div>
             <button
               onClick={startCheckout}
-              disabled={loading || isPro}
+              disabled={loading || isPro || isEnterprise}
               className="block mt-5 w-full text-center py-3 rounded-xl bg-gradient-to-br from-purple-600 to-fuchsia-600 text-white font-black text-[13px] active:scale-[0.97] transition-transform shadow-lg shadow-purple-500/40 disabled:opacity-50 disabled:cursor-not-allowed animate-pulse-glow"
             >
-              {isPro ? "Ya eres Pro ✓" : loading ? "Cargando…" : "Subir a Pro →"}
+              {isPro ? "Ya eres Pro ✓" : isEnterprise ? "Ya tienes Enterprise" : loading ? "Cargando…" : "Subir a Pro →"}
             </button>
             {!user && (
               <p className="text-[10px] text-gray-400 text-center mt-2">
@@ -163,7 +168,55 @@ function PricingContent() {
               </p>
             )}
           </div>
+
+          {/* ENTERPRISE */}
+          <div className="relative p-6 rounded-3xl bg-gradient-to-br from-[#1c1c2a] to-[#13131f] border-2 border-amber-500/40 shadow-2xl shadow-amber-500/10 overflow-hidden flex flex-col">
+            {/* Badge */}
+            <div className="absolute top-0 right-0 px-3 py-1 bg-gradient-to-br from-amber-500 to-orange-600 text-white text-[10px] font-black uppercase tracking-widest rounded-bl-2xl">
+              🏢 Equipos
+            </div>
+            <h2 className="text-[18px] font-black mb-1">Enterprise</h2>
+            <p className="text-[12px] text-amber-200 mb-4">Para agencias y empresas</p>
+            <div className="mb-5">
+              <span className="text-[28px] font-black bg-gradient-to-br from-amber-400 to-orange-400 bg-clip-text text-transparent">
+                Personalizado
+              </span>
+              <p className="text-[10px] text-gray-500 mt-1">Desde 49€/mes según volumen</p>
+            </div>
+            <div className="flex-1">
+              <Feature ok strong text="Todo lo de Pro"/>
+              <Feature ok strong text="Múltiples usuarios en un equipo"/>
+              <Feature ok strong text="Brand Kit (logo + paleta empresa)"/>
+              <Feature ok strong text="Plantillas exclusivas por industria"/>
+              <Feature ok strong text="API access para integraciones"/>
+              <Feature ok strong text="Account manager dedicado"/>
+              <Feature ok strong text="Onboarding 1-a-1 con tu equipo"/>
+              <Feature ok strong text="SLA 99,9% + soporte WhatsApp"/>
+              <Feature ok strong text="Facturación a empresa con IVA"/>
+            </div>
+            <a
+              href={`mailto:ventas@artegenia.app?subject=${encodeURIComponent("Plan Enterprise — ArteGenIA")}&body=${encodeURIComponent(
+                "Hola,\n\nMe interesa el plan Enterprise para mi equipo/empresa.\n\n" +
+                "Datos básicos:\n" +
+                "- Empresa: \n" +
+                "- Número de usuarios estimados: \n" +
+                "- Necesidades especiales: \n\n" +
+                "Gracias."
+              )}`}
+              className="block mt-5 w-full text-center py-3 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 text-white font-black text-[13px] active:scale-[0.97] transition-transform shadow-lg shadow-amber-500/30"
+            >
+              {isEnterprise ? "Ya eres Enterprise ✓" : "Habla con ventas →"}
+            </a>
+            <p className="text-[10px] text-gray-500 text-center mt-2">
+              Respuesta en menos de 24h laborables
+            </p>
+          </div>
         </div>
+
+        {/* Tabla comparativa de features pequeña */}
+        <p className="text-center text-[11px] text-gray-500 mt-8 max-w-xl mx-auto leading-relaxed">
+          Todos los planes incluyen el editor completo. La diferencia está en límites de IA, watermark, exportación profesional y soporte. ¿Dudas? <a href="mailto:ventas@artegenia.app" className="text-purple-300 underline">Contáctanos</a>.
+        </p>
 
         {/* FAQ corto */}
         <div className="mt-16 max-w-2xl mx-auto">
@@ -178,12 +231,20 @@ function PricingContent() {
               a: "Tus flyers se quedan guardados en tu cuenta. Pero perderás IA ilimitada y volverá el watermark en nuevas descargas.",
             },
             {
-              q: "¿Aceptáis empresas / facturas?",
-              a: "Sí. Pro genera facturas automáticas con IVA. Para empresas con varios usuarios contacta para plan Enterprise.",
+              q: "¿Cuándo me conviene Enterprise vs Pro?",
+              a: "Pro es para 1 profesional autónomo. Enterprise es para equipos (2+ personas), agencias o empresas que necesitan varios usuarios bajo una misma cuenta, brand kit personalizado, plantillas exclusivas o integraciones API.",
+            },
+            {
+              q: "¿Cuánto cuesta Enterprise exactamente?",
+              a: "Depende del número de usuarios y necesidades. El precio base es desde 49€/mes para equipos pequeños y escala con el volumen. Escríbenos a ventas@artegenia.app para un presupuesto personalizado en menos de 24h.",
+            },
+            {
+              q: "¿Aceptáis facturas con IVA?",
+              a: "Sí. Pro genera facturas automáticas con IVA al pagar. Enterprise se factura por contrato anual o mensual según prefieras, con condiciones de pago a empresa.",
             },
             {
               q: "¿Hay prueba gratis?",
-              a: "El plan Free no caduca — pruébalo todo lo que quieras. Pro empieza el cobro al suscribirte.",
+              a: "El plan Free no caduca — pruébalo todo lo que quieras. Pro empieza el cobro al suscribirte. Para Enterprise organizamos demo personalizada antes de firmar.",
             },
           ].map((f, i) => (
             <details
