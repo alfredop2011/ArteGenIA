@@ -142,10 +142,79 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
   }, []);
 
   // History + save
+  // History stack: array de fabric JSON snapshots. Pivot index apunta al
+  // estado actual. Undo decrementa, Redo incrementa. Cambios al canvas
+  // trunca la rama futura (igual que Canva/Figma).
+  const historyRef = useRef<{ stack: object[]; index: number }>({ stack: [], index: -1 });
+  const restoringRef = useRef(false); // evita registrar cambios de undo/redo
   const [canUndo, setCanUndo] = useState(false);
-  const [canRedo] = useState(false);
+  const [canRedo, setCanRedo] = useState(false);
   const [saveState, setSaveState] = useState<"saved" | "saving" | "unsaved">("saved");
   const [exporting, setExporting] = useState(false);
+
+  const recomputeCanUndoRedo = useCallback(() => {
+    const h = historyRef.current;
+    setCanUndo(h.index > 0);
+    setCanRedo(h.index < h.stack.length - 1);
+  }, []);
+
+  const pushHistory = useCallback(() => {
+    if (restoringRef.current) return;
+    const fc = fabricRef.current;
+    if (!fc) return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const snap = (fc.toJSON as any)(["customId"]) as object;
+    const h = historyRef.current;
+    // trunca futuro si estabamos en medio del stack
+    h.stack = h.stack.slice(0, h.index + 1);
+    h.stack.push(snap);
+    h.index = h.stack.length - 1;
+    // limita stack a 30 snapshots para no comerse memoria
+    if (h.stack.length > 30) {
+      h.stack = h.stack.slice(-30);
+      h.index = h.stack.length - 1;
+    }
+    recomputeCanUndoRedo();
+  }, [recomputeCanUndoRedo]);
+
+  const restoreSnapshot = useCallback(async (snap: object) => {
+    const fc = fabricRef.current;
+    if (!fc) return;
+    restoringRef.current = true;
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (fc.loadFromJSON as any)(snap);
+      fc.getObjects().forEach(obj => {
+        obj.set({
+          cornerColor: "#a855f7", cornerStrokeColor: "#ffffff",
+          cornerStyle: "circle", transparentCorners: false,
+          borderColor: "#a855f7", borderScaleFactor: 1.5,
+          cornerSize: 14, touchCornerSize: 44, padding: 4,
+        });
+      });
+      fc.requestRenderAll();
+    } finally {
+      restoringRef.current = false;
+    }
+  }, []);
+
+  const handleUndo = useCallback(async () => {
+    const h = historyRef.current;
+    if (h.index <= 0) return;
+    h.index--;
+    await restoreSnapshot(h.stack[h.index]);
+    setSaveState("unsaved");
+    recomputeCanUndoRedo();
+  }, [restoreSnapshot, recomputeCanUndoRedo]);
+
+  const handleRedo = useCallback(async () => {
+    const h = historyRef.current;
+    if (h.index >= h.stack.length - 1) return;
+    h.index++;
+    await restoreSnapshot(h.stack[h.index]);
+    setSaveState("unsaved");
+    recomputeCanUndoRedo();
+  }, [restoreSnapshot, recomputeCanUndoRedo]);
 
   // ─── Cargar template (modo plantilla nueva) ────────────────────────────
   useEffect(() => {
@@ -251,6 +320,20 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
 
     const setupAfterLoad = () => {
       fc.getObjects().forEach(obj => {
+        // Fondos (customId "bg-*" o "background") quedan NO interactivos —
+        // si los seleccionas sin querer al tap fuera de objetos arruina la
+        // edicion. Quien quiera cambiarlos usa el sheet "Estilo" o Remix.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const cid = ((obj as any).customId as string | undefined ?? "").toLowerCase();
+        const isBackground = cid.startsWith("bg-") || cid === "background";
+        if (isBackground) {
+          obj.set({
+            selectable: false,
+            evented: false,
+            hoverCursor: "default",
+          });
+          return;
+        }
         obj.set({
           cornerColor: "#a855f7",
           cornerStrokeColor: "#ffffff",
@@ -280,6 +363,12 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
       setLoaded(true);
       setSaveState("saved");
       fc.renderAll();
+      // Push estado inicial al history (index 0). Asi el primer cambio
+      // permite undo de vuelta al inicio.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const snap = (fc.toJSON as any)(["customId"]) as object;
+      historyRef.current = { stack: [snap], index: 0 };
+      recomputeCanUndoRedo();
     };
 
     if (isLoadMode) {
@@ -406,12 +495,31 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
     fc.on("selection:created", onSelect);
     fc.on("selection:updated", onSelect);
     fc.on("selection:cleared", onDeselect);
+
+    // ─── History tracking (Fase F) ─────────────────────────────────────
+    // Push snapshot tras cualquier modificacion del usuario. Usamos un
+    // debounce simple: agrupamos cambios consecutivos en 350ms para no
+    // crear un snapshot por cada delta del drag.
+    let pushTimer: ReturnType<typeof setTimeout> | null = null;
+    const debouncedPush = () => {
+      if (restoringRef.current) return;
+      if (pushTimer) clearTimeout(pushTimer);
+      pushTimer = setTimeout(() => { pushHistory(); }, 350);
+    };
+    fc.on("object:modified", debouncedPush);
+    fc.on("object:added", debouncedPush);
+    fc.on("object:removed", debouncedPush);
+
     return () => {
       fc.off("selection:created", onSelect);
       fc.off("selection:updated", onSelect);
       fc.off("selection:cleared", onDeselect);
+      fc.off("object:modified", debouncedPush);
+      fc.off("object:added", debouncedPush);
+      fc.off("object:removed", debouncedPush);
+      if (pushTimer) clearTimeout(pushTimer);
     };
-  }, [loaded]);
+  }, [loaded, pushHistory]);
 
   // ─── Aplicar valor de bloque al canvas ──────────────────────────────────
   const applyBlockToCanvas = useCallback((block: EditableBlock, value: string) => {
@@ -425,7 +533,7 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
     });
     fc.requestRenderAll();
     setSaveState("unsaved");
-    setCanUndo(true);
+    pushHistory();
   }, []);
 
   const onBlockChange = useCallback((block: EditableBlock, value: string) => {
@@ -478,7 +586,7 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
     t.set(key, value as never);
     fc.requestRenderAll();
     setSaveState("unsaved");
-    setCanUndo(true);
+    pushHistory();
   }, [getActiveText]);
 
   const setObjFill = useCallback((color: string) => {
@@ -488,7 +596,7 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
     obj.set("fill", color);
     fc.requestRenderAll();
     setSaveState("unsaved");
-    setCanUndo(true);
+    pushHistory();
   }, []);
 
   // ─── Helpers IMAGEN (filtros, opacidad, recorte, reemplazo) ─────────────
@@ -530,7 +638,7 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
     img.applyFilters();
     fc.requestRenderAll();
     setSaveState("unsaved");
-    setCanUndo(true);
+    pushHistory();
   }, [getActiveImage]);
 
   /** Cambia la forma de recorte: cuadrado, círculo, redondeado.
@@ -567,7 +675,7 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
     }
     fc.requestRenderAll();
     setSaveState("unsaved");
-    setCanUndo(true);
+    pushHistory();
   }, [getActiveImage]);
 
   /** Reemplaza la imagen activa preservando posicion + escala.
@@ -589,7 +697,7 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
       img.dirty = true;
       fc.requestRenderAll();
       setSaveState("unsaved");
-      setCanUndo(true);
+      pushHistory();
       toast.success("Imagen reemplazada");
     } catch (e) {
       console.error(e);
@@ -605,7 +713,7 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
     obj.set("opacity", o);
     fc.requestRenderAll();
     setSaveState("unsaved");
-    setCanUndo(true);
+    pushHistory();
   }, []);
 
   const setObjStroke = useCallback((color: string | null, width?: number) => {
@@ -616,7 +724,7 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
     if (width !== undefined) obj.set("strokeWidth", width);
     fc.requestRenderAll();
     setSaveState("unsaved");
-    setCanUndo(true);
+    pushHistory();
   }, []);
 
   /** Esquinas redondeadas solo aplica a Rect (rx/ry). En otros objetos no
@@ -629,7 +737,7 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
     obj.set("ry", r);
     fc.requestRenderAll();
     setSaveState("unsaved");
-    setCanUndo(true);
+    pushHistory();
   }, []);
 
   const handleDeselect = useCallback(() => {
@@ -712,6 +820,30 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
     if (!authUser) { toast.info("Inicia sesión para guardar"); return; }
     void doSave(false);
   }, [authUser, doSave, toast]);
+
+  // ─── Warning al salir sin guardar ───────────────────────────────────────
+  // beforeunload alerta al cerrar pestaña/tab. Para back navigation in-app
+  // usamos confirmExit() que se invoca desde el boton ArrowLeft + del bottom
+  // bar "Plantillas".
+  useEffect(() => {
+    if (saveState !== "unsaved") return;
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      // Chrome requiere returnValue para mostrar el dialogo nativo
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [saveState]);
+
+  const confirmExit = useCallback((to: string | null) => {
+    if (saveState === "unsaved") {
+      const ok = window.confirm("Tienes cambios sin guardar. ¿Seguro que quieres salir?");
+      if (!ok) return;
+    }
+    if (to) router.push(to);
+    else router.back();
+  }, [saveState, router]);
 
   // ─── Auto-save (cada 12s si hay cambios sin guardar y user autenticado) ─
   // Si dispara mientras una guardada esta en curso, se ignora porque saveState
@@ -879,8 +1011,13 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
     fc.requestRenderAll();
     setActivePaletteId(palette.id);
     setSaveState("unsaved");
-    setCanUndo(true);
-  }, []);
+    pushHistory();
+    // No mostrar toast si viene de applyRemix (paletas "ai-*" o internas de
+    // REMIX_STYLES) — applyRemix lo hace con texto mas descriptivo.
+    if (!palette.id.startsWith("ai-") && !palette.id.startsWith("remix-")) {
+      toast.success(`Paleta "${palette.name}" aplicada`);
+    }
+  }, [pushHistory, toast]);
 
   // ─── Remix IA generativa ────────────────────────────────────────────────
   // Llama /api/remix → recibe paleta + fuente generadas por Claude Haiku
@@ -984,7 +1121,7 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
     fc.requestRenderAll();
     setActiveRemixId(remix.id);
     setSaveState("unsaved");
-    setCanUndo(true);
+    pushHistory();
     toast.success(`Estilo ${remix.name} aplicado`);
   }, [applyPalette, toast]);
 
@@ -1008,22 +1145,35 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
       {/* ═══ HEADER MINIMO (50px) ════════════════════════════════════════ */}
       <header className="h-[50px] px-2 flex items-center gap-1 border-b border-white/[0.06] shrink-0">
         <button
-          onClick={() => router.back()}
+          onClick={() => confirmExit(null)}
           aria-label="Volver"
           className="w-9 h-9 rounded-lg flex items-center justify-center active:bg-white/10 transition-colors"
         >
           <ArrowLeft size={20} strokeWidth={2.2}/>
         </button>
-        <div className="flex-1 min-w-0 px-1">
+        <button
+          className="flex-1 min-w-0 px-1 text-left active:bg-white/[0.04] rounded-md py-0.5"
+          onClick={() => {
+            const next = window.prompt("Nombre del flyer", docTitle || template?.title || "");
+            if (next === null) return;
+            const trimmed = next.trim();
+            if (!trimmed) return;
+            setDocTitle(trimmed);
+            setSaveState("unsaved");
+          }}
+          aria-label="Renombrar flyer"
+          title="Tap para renombrar"
+        >
           <h1 className="text-[13px] font-bold leading-tight truncate">
-            {template?.title ?? "Cargando…"}
+            {docTitle || template?.title || "Cargando…"}
           </h1>
           <p className="text-[9px] text-gray-500 leading-tight">
             {canvasSize.w}×{canvasSize.h} · {saveState === "saved" ? "Guardado" : saveState === "saving" ? "Guardando…" : "Sin guardar"}
           </p>
-        </div>
+        </button>
         <button
           aria-label="Deshacer"
+          onClick={() => void handleUndo()}
           disabled={!canUndo}
           className="w-9 h-9 rounded-lg flex items-center justify-center text-gray-300 active:bg-white/10 disabled:opacity-25"
         >
@@ -1031,6 +1181,7 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
         </button>
         <button
           aria-label="Rehacer"
+          onClick={() => void handleRedo()}
           disabled={!canRedo}
           className="w-9 h-9 rounded-lg flex items-center justify-center text-gray-300 active:bg-white/10 disabled:opacity-25"
         >
@@ -1249,7 +1400,7 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
           <BarBtn
             icon={<LayoutGrid size={20} strokeWidth={2}/>}
             label="Plantillas"
-            onClick={() => router.push("/templates")}
+            onClick={() => confirmExit("/templates")}
           />
           <BarBtn
             icon={<ImageIcon size={20} strokeWidth={2}/>}
@@ -1348,7 +1499,7 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
                       fc.setActiveObject(img);
                       fc.requestRenderAll();
                       setSaveState("unsaved");
-                      setCanUndo(true);
+                      pushHistory();
                       setOpenSheet(null);
                       toast.success("Foto añadida");
                     } catch (e) {
@@ -1775,26 +1926,56 @@ function SubToolBtnIcon({
   );
 }
 
-/** Estilos preset — Bold / Italic / Underline (toggle). */
+/** Estilos preset — Bold / Italic / Underline + Alineacion + Reset.
+ *  Reset limpia todos los toggles (bold→400, italic→normal, underline→false). */
 function StylePresets({ onApply }: { onApply: (prop: string, val: string | boolean) => void }) {
   return (
-    <div className="border-b border-white/[0.06] flex gap-2 px-3 py-3">
-      <button
-        onClick={() => onApply("fontWeight", "900")}
-        className="flex-1 py-2 rounded-xl bg-white/[0.05] text-white font-black"
-      >B</button>
-      <button
-        onClick={() => onApply("fontStyle", "italic")}
-        className="flex-1 py-2 rounded-xl bg-white/[0.05] text-white italic font-bold"
-      >I</button>
-      <button
-        onClick={() => onApply("underline", true)}
-        className="flex-1 py-2 rounded-xl bg-white/[0.05] text-white underline font-bold"
-      >U</button>
-      <button
-        onClick={() => onApply("fontWeight", "400")}
-        className="flex-1 py-2 rounded-xl bg-white/[0.05] text-gray-400 text-[11px]"
-      >Reset</button>
+    <div className="border-b border-white/[0.06] flex flex-col gap-2 px-3 py-3">
+      {/* Fila 1 — Formato */}
+      <div className="flex gap-2">
+        <button
+          onClick={() => onApply("fontWeight", "900")}
+          className="flex-1 py-2 rounded-xl bg-white/[0.05] text-white font-black"
+          aria-label="Negrita"
+        >B</button>
+        <button
+          onClick={() => onApply("fontStyle", "italic")}
+          className="flex-1 py-2 rounded-xl bg-white/[0.05] text-white italic font-bold"
+          aria-label="Cursiva"
+        >I</button>
+        <button
+          onClick={() => onApply("underline", true)}
+          className="flex-1 py-2 rounded-xl bg-white/[0.05] text-white underline font-bold"
+          aria-label="Subrayado"
+        >U</button>
+      </div>
+      {/* Fila 2 — Alineacion + Reset */}
+      <div className="flex gap-2">
+        <button
+          onClick={() => onApply("textAlign", "left")}
+          className="flex-1 py-2 rounded-xl bg-white/[0.05] text-white text-[12px] font-bold flex items-center justify-center"
+          aria-label="Alinear a la izquierda"
+        >⇤</button>
+        <button
+          onClick={() => onApply("textAlign", "center")}
+          className="flex-1 py-2 rounded-xl bg-white/[0.05] text-white text-[12px] font-bold flex items-center justify-center"
+          aria-label="Centrar"
+        >⇔</button>
+        <button
+          onClick={() => onApply("textAlign", "right")}
+          className="flex-1 py-2 rounded-xl bg-white/[0.05] text-white text-[12px] font-bold flex items-center justify-center"
+          aria-label="Alinear a la derecha"
+        >⇥</button>
+        <button
+          onClick={() => {
+            onApply("fontWeight", "400");
+            onApply("fontStyle", "normal");
+            onApply("underline", false);
+          }}
+          className="flex-1 py-2 rounded-xl bg-white/[0.05] text-gray-400 text-[11px]"
+          aria-label="Restablecer formato"
+        >Reset</button>
+      </div>
     </div>
   );
 }
