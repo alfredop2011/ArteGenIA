@@ -68,7 +68,7 @@ type Props = {
 /** Sheet temporal que puede estar abierto. null = canvas limpio (caso comun).
  *  "texto" desaparecio: se reemplazo por sub-tools bar inline cuando hay
  *  objeto seleccionado (patron Canva). */
-type SheetId = null | "foto" | "estilo" | "ia" | "plantillas" | "export" | "more" | "add" | "layers" | "format";
+type SheetId = null | "foto" | "estilo" | "ia" | "plantillas" | "export" | "more" | "add" | "layers" | "format" | "assistant";
 
 export default function MobileEditorV3({ templateId, projectId, formatId }: Props) {
   const router = useRouter();
@@ -991,6 +991,69 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
       setRemovingBg(false);
     }
   }, [authUser, getActiveImage, fabricImageToDataUrl, pushHistory, toast]);
+
+  // ─── Asistente IA chat → flyer (Fase O) ────────────────────────────────
+  // Llama /api/assistant con prompt + bloques editables → recibe valores
+  // sugeridos por Claude Haiku → aplica a blockValues y al canvas.
+  const [assistantLoading, setAssistantLoading] = useState(false);
+  const [assistantResult, setAssistantResult] = useState<Record<string, string> | null>(null);
+
+  const runAssistant = useCallback(async (prompt: string) => {
+    if (!template) return;
+    if (!authUser) { toast.info("Inicia sesión para usar IA"); return; }
+    if (!prompt.trim()) { toast.error("Escribe primero qué evento es"); return; }
+    setAssistantLoading(true);
+    setAssistantResult(null);
+    try {
+      // Construir hint de cada bloque: id + label + placeholder/texto actual
+      const blockHints = blocks.map(b => ({
+        id: b.id,
+        label: b.label,
+        current: blockValues[b.id] || b.placeholder || "",
+      }));
+      const res = await fetch("/api/assistant", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prompt,
+          blocks: blockHints,
+          category: template.category ?? "evento",
+        }),
+      });
+      if (!res.ok) {
+        if (res.status === 429) toast.error("Demasiadas peticiones, espera 1 min");
+        else toast.error("La IA no pudo generar el flyer");
+        return;
+      }
+      const data = await res.json() as { values?: Record<string, string> };
+      const values = data.values ?? {};
+      if (Object.keys(values).length === 0) {
+        toast.error("La IA no devolvió valores");
+        return;
+      }
+      setAssistantResult(values);
+    } catch (e) {
+      console.error(e);
+      toast.error("Error de conexión con la IA");
+    } finally {
+      setAssistantLoading(false);
+    }
+  }, [template, authUser, blocks, blockValues, toast]);
+
+  const applyAssistantResult = useCallback(() => {
+    if (!assistantResult) return;
+    let applied = 0;
+    Object.entries(assistantResult).forEach(([blockId, value]) => {
+      const block = blocks.find(b => b.id === blockId);
+      if (!block) return;
+      applyBlockToCanvas(block, value);
+      setBlockValues(prev => ({ ...prev, [blockId]: value }));
+      applied++;
+    });
+    setAssistantResult(null);
+    setOpenSheet(null);
+    toast.success(`${applied} campos rellenados con IA`);
+  }, [assistantResult, blocks, applyBlockToCanvas, toast]);
 
   // ─── Reiniciar plantilla (Fase M.1) ────────────────────────────────────
   // Vuelve al diseño original limpio. Limpia canvas, re-aplica template
@@ -2280,6 +2343,7 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
                 {openSheet === "add" && "Añadir elemento"}
                 {openSheet === "layers" && "Capas"}
                 {openSheet === "format" && "Cambiar formato"}
+                {openSheet === "assistant" && "Asistente IA"}
               </h2>
               <button
                 onClick={() => setOpenSheet(null)}
@@ -2505,7 +2569,12 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
                       setOnboardingStep(0);
                     }}
                   />
-                  <MoreRow icon={<Wand2 size={18}/>} label="Asistente IA" subtitle="Genera variaciones desde texto" disabled/>
+                  <MoreRowLink
+                    icon={<Wand2 size={18}/>}
+                    label="Asistente IA"
+                    subtitle="Describe tu evento y rellena el flyer"
+                    onClick={() => setOpenSheet("assistant")}
+                  />
                   <MoreRowLink
                     icon={<LayoutGrid size={18}/>}
                     label="Cambiar formato"
@@ -2540,6 +2609,19 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
                   onAddText={addText}
                   onAddShape={addShape}
                   onAddImage={addImageFromFile}
+                />
+              )}
+
+              {/* SHEET ASISTENTE IA ────────────────────────────────────── */}
+              {openSheet === "assistant" && template && (
+                <AssistantSheet
+                  category={template.category}
+                  loading={assistantLoading}
+                  result={assistantResult}
+                  onRun={runAssistant}
+                  onApply={applyAssistantResult}
+                  onCancel={() => setAssistantResult(null)}
+                  blocks={blocks}
                 />
               )}
 
@@ -3648,6 +3730,157 @@ function OnboardingOverlay({
         </div>
       </div>
     </>
+  );
+}
+
+// ─── Sheet ASISTENTE IA (Fase O) ────────────────────────────────────────
+
+/** Sheet del Asistente IA. Usuario escribe en lenguaje natural lo que
+ *  quiere comunicar y la IA rellena los bloques editables del flyer. */
+function AssistantSheet({
+  category, loading, result, onRun, onApply, onCancel, blocks,
+}: {
+  category?: string;
+  loading: boolean;
+  result: Record<string, string> | null;
+  onRun: (prompt: string) => void;
+  onApply: () => void;
+  onCancel: () => void;
+  blocks: EditableBlock[];
+}) {
+  const [prompt, setPrompt] = useState("");
+
+  const examples: Record<string, string[]> = {
+    "Clases de baile": [
+      "Clase de bachata sábado 22 nov 16-20h, Studio Kiz, 70€ early bird 60€",
+      "Workshop kizomba con João & Catarina, todo el día domingo, Madrid 90€",
+    ],
+    "Conciertos": [
+      "Concierto Don Filosofín viernes 20 jun 21h, Sala Apolo Barcelona, entrada libre",
+      "Festival reggaeton sábado 12 julio 20h, Wizink Center Madrid, desde 45€",
+    ],
+    "Fiestas": [
+      "Fiesta latina sábado 25 nov 23h hasta cierre, Sala Razzmatazz, 15€ con consumición",
+      "Halloween party 31 oct 22h, mejor disfraz premio 500€, Sala Florida 135",
+    ],
+    "_default": [
+      "Mi evento sábado 20 diciembre a las 20:00, Madrid centro, entrada 25€",
+      "Workshop de fotografía digital fin de semana 14-15 enero, online o presencial",
+    ],
+  };
+  const cat = category && examples[category] ? category : "_default";
+  const tips = examples[cat];
+
+  // Si hay resultado, mostrar preview de los valores aplicados
+  if (result) {
+    return (
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center gap-2 px-2 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/30">
+          <Check size={16} className="text-emerald-400 shrink-0"/>
+          <span className="text-[12px] text-emerald-200 font-semibold">
+            Vista previa generada por IA
+          </span>
+        </div>
+        <p className="text-[11px] text-gray-400 leading-snug">
+          Revisa que los datos sean correctos. Cuando estés conforme, pulsa "Aplicar al flyer".
+        </p>
+        <div className="flex flex-col gap-1.5 max-h-[280px] overflow-y-auto">
+          {Object.entries(result).map(([blockId, value]) => {
+            const block = blocks.find(b => b.id === blockId);
+            return (
+              <div key={blockId} className="px-3 py-2 rounded-xl bg-[#13131f] border border-white/[0.06]">
+                <div className="text-[9px] text-purple-400 font-bold uppercase tracking-wider mb-0.5">
+                  {block?.label ?? blockId}
+                </div>
+                <div className="text-[12px] text-white font-medium leading-snug">
+                  {value || <span className="text-gray-500 italic">(vacío)</span>}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <div className="flex gap-2 pt-1">
+          <button
+            onClick={onCancel}
+            className="flex-1 py-2.5 rounded-xl bg-white/[0.06] text-gray-300 text-[12px] font-bold active:scale-[0.97]"
+          >
+            Reintentar
+          </button>
+          <button
+            onClick={onApply}
+            className="flex-1 py-2.5 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 text-white text-[12px] font-bold active:scale-[0.97] shadow-lg shadow-emerald-500/30"
+          >
+            Aplicar al flyer
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex items-start gap-2 p-3 rounded-xl bg-gradient-to-br from-purple-500/10 to-fuchsia-500/10 border border-purple-500/30">
+        <Wand2 size={16} className="text-purple-300 shrink-0 mt-0.5"/>
+        <div>
+          <div className="text-[12px] font-bold text-purple-200">
+            Describe tu evento en 1 frase
+          </div>
+          <p className="text-[10px] text-gray-400 leading-relaxed mt-0.5">
+            La IA rellena automáticamente todos los campos del flyer ({blocks.length} bloques).
+          </p>
+        </div>
+      </div>
+
+      <textarea
+        value={prompt}
+        onChange={e => setPrompt(e.target.value)}
+        placeholder="Ej: Clase de bachata sábado 22 noviembre 16-20h en Studio Kiz Madrid, 70€ early bird 60€"
+        rows={4}
+        style={{ fontSize: 16 }}
+        disabled={loading}
+        className="w-full bg-[#0a0a14] border border-purple-500/30 rounded-xl px-3 py-2.5 text-white placeholder-gray-600 text-[13px] outline-none focus:border-purple-500 resize-none disabled:opacity-50"
+      />
+
+      <div>
+        <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">
+          Ejemplos rápidos
+        </div>
+        <div className="flex flex-col gap-1.5">
+          {tips.map((tip, i) => (
+            <button
+              key={i}
+              onClick={() => setPrompt(tip)}
+              disabled={loading}
+              className="text-left px-3 py-2 rounded-xl bg-[#13131f] border border-white/[0.06] text-[11px] text-gray-300 leading-snug active:bg-white/[0.04] disabled:opacity-50"
+            >
+              💡 {tip}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <button
+        onClick={() => onRun(prompt)}
+        disabled={loading || !prompt.trim()}
+        className="w-full py-3 rounded-xl bg-gradient-to-br from-purple-600 to-fuchsia-600 text-white font-bold text-[14px] flex items-center justify-center gap-2 active:scale-[0.98] transition-transform shadow-lg shadow-purple-500/30 disabled:opacity-50"
+      >
+        {loading ? (
+          <>
+            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"/>
+            Generando…
+          </>
+        ) : (
+          <>
+            <Sparkles size={14} strokeWidth={2.4}/>
+            Generar con IA
+          </>
+        )}
+      </button>
+
+      <p className="text-[9px] text-gray-500 text-center leading-snug">
+        Powered by Claude Haiku · 10 generaciones por minuto
+      </p>
+    </div>
   );
 }
 

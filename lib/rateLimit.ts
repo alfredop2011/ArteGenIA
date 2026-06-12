@@ -40,6 +40,8 @@ export const RATE_LIMITS: Record<string, RateLimitConfig> = {
   "remix-ai":           { max: 20, windowMinutes: 1 },
   // Compartir: sube PNG a R2 — protege storage
   "share-upload":       { max: 15, windowMinutes: 1 },
+  // Asistente IA — Claude Haiku, barato
+  "assistant-ai":       { max: 10, windowMinutes: 1 },
 };
 
 /**
