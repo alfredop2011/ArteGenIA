@@ -3548,6 +3548,7 @@ function PhotoSheet({
   onSelectImage: (img: FabricImage) => void;
   onAddPhoto: (file: File) => void;
 }) {
+  const { t } = useLocale();
   // Snapshot de imagenes en render. Sin reactividad porque el sheet se
   // monta/desmonta al abrir y siempre lee el state actual.
   const images = (fc?.getObjects().filter(o => o.type === "image") ?? []) as FabricImage[];
@@ -3555,10 +3556,10 @@ function PhotoSheet({
     <div className="flex flex-col gap-4">
       <div>
         <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2.5">
-          Fotos del flyer ({images.length})
+          {t("mobileEditor.photo.flyerPhotos")} ({images.length})
         </div>
         {images.length === 0 ? (
-          <p className="text-[12px] text-gray-500 italic">Esta plantilla no tiene fotos.</p>
+          <p className="text-[12px] text-gray-500 italic">{t("mobileEditor.photo.noPhotos")}</p>
         ) : (
           <div className="grid grid-cols-3 gap-2">
             {images.map((img, idx) => {
@@ -3587,7 +3588,7 @@ function PhotoSheet({
           </div>
         )}
         <p className="text-[10px] text-gray-500 mt-2 text-center">
-          Tap en una foto para editarla (reemplazar, recortar, filtros, opacidad).
+          {t("mobileEditor.photo.tapToEdit")}
         </p>
       </div>
 
@@ -3604,11 +3605,11 @@ function PhotoSheet({
           />
           <span className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-purple-500/15 border border-purple-500/40 text-purple-200 text-[13px] font-bold active:scale-[0.98] transition-transform">
             <ImageIcon size={16}/>
-            Subir foto nueva
+            {t("mobileEditor.photo.uploadNew")}
           </span>
         </label>
         <p className="text-[10px] text-gray-500 text-center mt-2">
-          Se añade al centro del flyer y queda seleccionada para moverla.
+          {t("mobileEditor.photo.uploadHint")}
         </p>
       </div>
     </div>
@@ -3750,10 +3751,10 @@ function AssistantSheet({
   onLogin: () => void;
   blocks: EditableBlock[];
 }) {
+  const { t } = useLocale();
   const [prompt, setPrompt] = useState("");
 
   // Si no esta logueado, mostrar CTA grande de login en lugar del flujo IA.
-  // La IA cuesta tokens y necesitamos identificar al usuario para rate-limit.
   if (!isAuthed) {
     return (
       <div className="flex flex-col items-center text-center gap-3 py-6">
@@ -3761,11 +3762,9 @@ function AssistantSheet({
           <Wand2 size={26}/>
         </div>
         <div>
-          <h3 className="text-[15px] font-bold">Inicia sesión para usar la IA</h3>
+          <h3 className="text-[15px] font-bold">{t("mobileEditor.assistant.loginTitle")}</h3>
           <p className="text-[12px] text-gray-400 leading-relaxed max-w-[280px] mt-1">
-            El Asistente IA rellena tu flyer automáticamente a partir de una
-            descripción. Necesitamos identificarte para protegerlo del abuso.
-            Es gratis.
+            {t("mobileEditor.assistant.loginDesc")}
           </p>
         </div>
         <button
@@ -3773,10 +3772,10 @@ function AssistantSheet({
           className="mt-2 px-6 py-2.5 rounded-xl bg-gradient-to-br from-purple-600 to-fuchsia-600 text-white font-bold text-[13px] active:scale-[0.97] shadow-lg shadow-purple-500/30 flex items-center gap-2"
         >
           <Sparkles size={14} strokeWidth={2.4}/>
-          Iniciar sesión
+          {t("mobileEditor.assistant.loginBtn")}
         </button>
         <p className="text-[10px] text-gray-500">
-          Tus diseños no se pierden — esperan en este editor mientras te logueas.
+          {t("mobileEditor.assistant.loginFooter")}
         </p>
       </div>
     );
@@ -3810,11 +3809,11 @@ function AssistantSheet({
         <div className="flex items-center gap-2 px-2 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/30">
           <Check size={16} className="text-emerald-400 shrink-0"/>
           <span className="text-[12px] text-emerald-200 font-semibold">
-            Vista previa generada por IA
+            {t("mobileEditor.assistant.previewTitle")}
           </span>
         </div>
         <p className="text-[11px] text-gray-400 leading-snug">
-          Revisa que los datos sean correctos. Cuando estés conforme, pulsa "Aplicar al flyer".
+          {t("mobileEditor.assistant.previewDesc")}
         </p>
         <div className="flex flex-col gap-1.5 max-h-[280px] overflow-y-auto">
           {Object.entries(result).map(([blockId, value]) => {
@@ -3825,7 +3824,7 @@ function AssistantSheet({
                   {block?.label ?? blockId}
                 </div>
                 <div className="text-[12px] text-white font-medium leading-snug">
-                  {value || <span className="text-gray-500 italic">(vacío)</span>}
+                  {value || <span className="text-gray-500 italic">{t("mobileEditor.assistant.emptyValue")}</span>}
                 </div>
               </div>
             );
@@ -3836,13 +3835,13 @@ function AssistantSheet({
             onClick={onCancel}
             className="flex-1 py-2.5 rounded-xl bg-white/[0.06] text-gray-300 text-[12px] font-bold active:scale-[0.97]"
           >
-            Reintentar
+            {t("mobileEditor.assistant.retry")}
           </button>
           <button
             onClick={onApply}
             className="flex-1 py-2.5 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 text-white text-[12px] font-bold active:scale-[0.97] shadow-lg shadow-emerald-500/30"
           >
-            Aplicar al flyer
+            {t("mobileEditor.assistant.apply")}
           </button>
         </div>
       </div>
@@ -3855,10 +3854,10 @@ function AssistantSheet({
         <Wand2 size={16} className="text-purple-300 shrink-0 mt-0.5"/>
         <div>
           <div className="text-[12px] font-bold text-purple-200">
-            Describe tu evento en 1 frase
+            {t("mobileEditor.assistant.headerTitle")}
           </div>
           <p className="text-[10px] text-gray-400 leading-relaxed mt-0.5">
-            La IA rellena automáticamente todos los campos del flyer ({blocks.length} bloques).
+            {t("mobileEditor.assistant.headerDesc")} ({blocks.length})
           </p>
         </div>
       </div>
@@ -3866,7 +3865,7 @@ function AssistantSheet({
       <textarea
         value={prompt}
         onChange={e => setPrompt(e.target.value)}
-        placeholder="Ej: Clase de bachata sábado 22 noviembre 16-20h en Studio Kiz Madrid, 70€ early bird 60€"
+        placeholder={t("mobileEditor.assistant.placeholder")}
         rows={4}
         style={{ fontSize: 16 }}
         disabled={loading}
@@ -3875,7 +3874,7 @@ function AssistantSheet({
 
       <div>
         <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">
-          Ejemplos rápidos
+          {t("mobileEditor.assistant.examples")}
         </div>
         <div className="flex flex-col gap-1.5">
           {tips.map((tip, i) => (
@@ -3899,18 +3898,18 @@ function AssistantSheet({
         {loading ? (
           <>
             <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"/>
-            Generando…
+            {t("mobileEditor.assistant.generating")}
           </>
         ) : (
           <>
             <Sparkles size={14} strokeWidth={2.4}/>
-            Generar con IA
+            {t("mobileEditor.assistant.generate")}
           </>
         )}
       </button>
 
       <p className="text-[9px] text-gray-500 text-center leading-snug">
-        Powered by Claude Haiku · 10 generaciones por minuto
+        {t("mobileEditor.assistant.poweredBy")}
       </p>
     </div>
   );
@@ -3998,12 +3997,13 @@ function AddElementSheet({
   onAddShape: (kind: "rect" | "circle" | "triangle" | "heart" | "star" | "line") => void;
   onAddImage: (file: File) => void;
 }) {
+  const { t } = useLocale();
   return (
     <div className="flex flex-col gap-5">
       {/* Texto */}
       <div>
         <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">
-          Texto
+          {t("mobileEditor.add.textSection")}
         </div>
         <div className="grid grid-cols-3 gap-2">
           <button
@@ -4011,21 +4011,21 @@ function AddElementSheet({
             className="flex flex-col items-center justify-center gap-1 py-3 rounded-xl bg-[#13131f] border border-white/[0.06] active:scale-[0.97] transition-transform"
           >
             <span className="text-[20px] font-black text-white" style={{ fontFamily: "Anton" }}>T</span>
-            <span className="text-[10px] text-gray-400 font-semibold">Título</span>
+            <span className="text-[10px] text-gray-400 font-semibold">{t("mobileEditor.add.title")}</span>
           </button>
           <button
             onClick={() => onAddText("subtitle")}
             className="flex flex-col items-center justify-center gap-1 py-3 rounded-xl bg-[#13131f] border border-white/[0.06] active:scale-[0.97] transition-transform"
           >
             <span className="text-[16px] font-bold text-white" style={{ fontFamily: "Bebas Neue" }}>S</span>
-            <span className="text-[10px] text-gray-400 font-semibold">Subtítulo</span>
+            <span className="text-[10px] text-gray-400 font-semibold">{t("mobileEditor.add.subtitle")}</span>
           </button>
           <button
             onClick={() => onAddText("body")}
             className="flex flex-col items-center justify-center gap-1 py-3 rounded-xl bg-[#13131f] border border-white/[0.06] active:scale-[0.97] transition-transform"
           >
             <span className="text-[14px] text-white">Aa</span>
-            <span className="text-[10px] text-gray-400 font-semibold">Cuerpo</span>
+            <span className="text-[10px] text-gray-400 font-semibold">{t("mobileEditor.add.body")}</span>
           </button>
         </div>
       </div>
@@ -4033,22 +4033,22 @@ function AddElementSheet({
       {/* Formas */}
       <div>
         <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">
-          Formas
+          {t("mobileEditor.add.shapesSection")}
         </div>
         <div className="grid grid-cols-6 gap-2">
-          <ShapeBtn icon={<SquareIcon size={18} fill="currentColor"/>} label="Rect" onClick={() => onAddShape("rect")}/>
-          <ShapeBtn icon={<CircleIcon size={18} fill="currentColor"/>} label="Círculo" onClick={() => onAddShape("circle")}/>
-          <ShapeBtn icon={<Triangle size={18} fill="currentColor"/>} label="Triáng." onClick={() => onAddShape("triangle")}/>
-          <ShapeBtn icon={<Heart size={18} fill="currentColor"/>} label="Corazón" onClick={() => onAddShape("heart")}/>
-          <ShapeBtn icon={<Star size={18} fill="currentColor"/>} label="Estrella" onClick={() => onAddShape("star")}/>
-          <ShapeBtn icon={<div className="w-4 h-0.5 bg-current"/>} label="Línea" onClick={() => onAddShape("line")}/>
+          <ShapeBtn icon={<SquareIcon size={18} fill="currentColor"/>} label={t("mobileEditor.add.rect")} onClick={() => onAddShape("rect")}/>
+          <ShapeBtn icon={<CircleIcon size={18} fill="currentColor"/>} label={t("mobileEditor.add.circle")} onClick={() => onAddShape("circle")}/>
+          <ShapeBtn icon={<Triangle size={18} fill="currentColor"/>} label={t("mobileEditor.add.triangle")} onClick={() => onAddShape("triangle")}/>
+          <ShapeBtn icon={<Heart size={18} fill="currentColor"/>} label={t("mobileEditor.add.heart")} onClick={() => onAddShape("heart")}/>
+          <ShapeBtn icon={<Star size={18} fill="currentColor"/>} label={t("mobileEditor.add.star")} onClick={() => onAddShape("star")}/>
+          <ShapeBtn icon={<div className="w-4 h-0.5 bg-current"/>} label={t("mobileEditor.add.line")} onClick={() => onAddShape("line")}/>
         </div>
       </div>
 
       {/* Imagen nueva */}
       <div>
         <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">
-          Imagen
+          {t("mobileEditor.add.imageSection")}
         </div>
         <label className="block">
           <input
@@ -4062,13 +4062,13 @@ function AddElementSheet({
           />
           <span className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-purple-500/15 border border-purple-500/40 text-purple-200 text-[13px] font-bold active:scale-[0.98] transition-transform">
             <ImageIcon size={16}/>
-            Subir foto de tu galería
+            {t("mobileEditor.add.uploadPhoto")}
           </span>
         </label>
       </div>
 
       <p className="text-[10px] text-gray-500 leading-snug text-center pt-1">
-        El elemento se añade centrado y queda seleccionado para editarlo.
+        {t("mobileEditor.add.hint")}
       </p>
     </div>
   );
@@ -4097,6 +4097,7 @@ function LayersSheet({
   onSelect: (obj: FabricObject) => void;
   onMutate: () => void;
 }) {
+  const { t } = useLocale();
   // Forzar re-render cuando el usuario hace cambios en la sheet
   const [tick, setTick] = useState(0);
   const refresh = useCallback(() => setTick(t => t + 1), []);
@@ -4119,9 +4120,9 @@ function LayersSheet({
   if (visibleObjects.length === 0) {
     return (
       <div className="py-10 text-center text-[13px] text-gray-400">
-        Este flyer no tiene capas editables aún.
+        {t("mobileEditor.layers.empty")}
         <br/>
-        <span className="text-[11px] text-gray-500">Usa el botón "Añadir" abajo para crear elementos.</span>
+        <span className="text-[11px] text-gray-500">{t("mobileEditor.layers.emptyHint")}</span>
       </div>
     );
   }
@@ -4129,7 +4130,7 @@ function LayersSheet({
   return (
     <div className="flex flex-col gap-2">
       <p className="text-[11px] text-gray-400 leading-snug">
-        Las capas se muestran en orden — la superior se ve encima del resto.
+        {t("mobileEditor.layers.intro")}
       </p>
       <div className="flex flex-col gap-1.5">
         {visibleObjects.map((obj, idx) => {
@@ -4141,13 +4142,13 @@ function LayersSheet({
             if (type === "textbox" || type === "text" || type === "i-text") {
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               const txt = ((obj as any).text as string | undefined) ?? "";
-              return txt.length > 24 ? `${txt.slice(0, 24)}…` : (txt || "Texto");
+              return txt.length > 24 ? `${txt.slice(0, 24)}…` : (txt || t("mobileEditor.layers.fallback.text"));
             }
-            if (type === "image") return "Imagen";
-            if (type === "rect") return "Rectángulo";
-            if (type === "circle") return "Círculo";
-            if (type === "triangle") return "Triángulo";
-            return `Forma (${type})`;
+            if (type === "image") return t("mobileEditor.layers.fallback.image");
+            if (type === "rect") return t("mobileEditor.layers.fallback.rect");
+            if (type === "circle") return t("mobileEditor.layers.fallback.circle");
+            if (type === "triangle") return t("mobileEditor.layers.fallback.triangle");
+            return `${t("mobileEditor.layers.fallback.shape")} (${type})`;
           })();
           const isLocked = obj.lockMovementX === true;
           const isHidden = obj.visible === false;
@@ -4180,7 +4181,7 @@ function LayersSheet({
                   refresh();
                 }}
                 className="w-7 h-7 rounded-md active:bg-white/10 flex items-center justify-center text-gray-400"
-                aria-label="Subir capa"
+                aria-label={t("mobileEditor.layers.aria.up")}
               >
                 <ChevronUp size={14} strokeWidth={2.2}/>
               </button>
@@ -4194,7 +4195,7 @@ function LayersSheet({
                   refresh();
                 }}
                 className="w-7 h-7 rounded-md active:bg-white/10 flex items-center justify-center text-gray-400"
-                aria-label="Bajar capa"
+                aria-label={t("mobileEditor.layers.aria.down")}
               >
                 <ChevronDown size={14} strokeWidth={2.2}/>
               </button>
@@ -4210,7 +4211,7 @@ function LayersSheet({
                 className={`w-7 h-7 rounded-md active:bg-white/10 flex items-center justify-center ${
                   isHidden ? "text-gray-600" : "text-gray-300"
                 }`}
-                aria-label={isHidden ? "Mostrar" : "Ocultar"}
+                aria-label={isHidden ? t("mobileEditor.layers.aria.show") : t("mobileEditor.layers.aria.hide")}
               >
                 {isHidden ? <EyeOff size={13} strokeWidth={2.2}/> : <Eye size={13} strokeWidth={2.2}/>}
               </button>
