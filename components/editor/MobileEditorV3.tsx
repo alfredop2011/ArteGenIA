@@ -1005,12 +1005,12 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
     setAssistantLoading(true);
     setAssistantResult(null);
     try {
-      // Construir hint de cada bloque: id + label + placeholder/texto actual
       const blockHints = blocks.map(b => ({
         id: b.id,
         label: b.label,
         current: blockValues[b.id] || b.placeholder || "",
       }));
+      console.log("[assistant] POST /api/assistant", { prompt, blocksCount: blockHints.length });
       const res = await fetch("/api/assistant", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -1020,21 +1020,27 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
           category: template.category ?? "evento",
         }),
       });
+      console.log("[assistant] response status:", res.status);
       if (!res.ok) {
-        if (res.status === 429) toast.error("Demasiadas peticiones, espera 1 min");
-        else toast.error("La IA no pudo generar el flyer");
+        const errText = await res.text().catch(() => "");
+        console.warn("[assistant] error body:", errText);
+        if (res.status === 401) toast.error("Sesión expirada — vuelve a iniciar sesión");
+        else if (res.status === 429) toast.error("Demasiadas peticiones, espera 1 min");
+        else if (res.status >= 500) toast.error(`Servidor no disponible (${res.status})`);
+        else toast.error(`La IA respondió ${res.status} — intenta de nuevo`);
         return;
       }
       const data = await res.json() as { values?: Record<string, string> };
+      console.log("[assistant] received values:", data.values);
       const values = data.values ?? {};
       if (Object.keys(values).length === 0) {
-        toast.error("La IA no devolvió valores");
+        toast.error("La IA no devolvió valores — intenta con otra descripción");
         return;
       }
       setAssistantResult(values);
     } catch (e) {
-      console.error(e);
-      toast.error("Error de conexión con la IA");
+      console.error("[assistant] fetch error:", e);
+      toast.error(`Error de conexión: ${(e as Error).message}`);
     } finally {
       setAssistantLoading(false);
     }
@@ -2618,9 +2624,11 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
                   category={template.category}
                   loading={assistantLoading}
                   result={assistantResult}
+                  isAuthed={!!authUser}
                   onRun={runAssistant}
                   onApply={applyAssistantResult}
                   onCancel={() => setAssistantResult(null)}
+                  onLogin={() => { setOpenSheet(null); router.push("/?login=1"); }}
                   blocks={blocks}
                 />
               )}
@@ -3738,17 +3746,49 @@ function OnboardingOverlay({
 /** Sheet del Asistente IA. Usuario escribe en lenguaje natural lo que
  *  quiere comunicar y la IA rellena los bloques editables del flyer. */
 function AssistantSheet({
-  category, loading, result, onRun, onApply, onCancel, blocks,
+  category, loading, result, isAuthed, onRun, onApply, onCancel, onLogin, blocks,
 }: {
   category?: string;
   loading: boolean;
   result: Record<string, string> | null;
+  isAuthed: boolean;
   onRun: (prompt: string) => void;
   onApply: () => void;
   onCancel: () => void;
+  onLogin: () => void;
   blocks: EditableBlock[];
 }) {
   const [prompt, setPrompt] = useState("");
+
+  // Si no esta logueado, mostrar CTA grande de login en lugar del flujo IA.
+  // La IA cuesta tokens y necesitamos identificar al usuario para rate-limit.
+  if (!isAuthed) {
+    return (
+      <div className="flex flex-col items-center text-center gap-3 py-6">
+        <div className="w-14 h-14 rounded-full bg-gradient-to-br from-purple-500/20 to-fuchsia-500/20 border border-purple-500/40 flex items-center justify-center text-purple-300">
+          <Wand2 size={26}/>
+        </div>
+        <div>
+          <h3 className="text-[15px] font-bold">Inicia sesión para usar la IA</h3>
+          <p className="text-[12px] text-gray-400 leading-relaxed max-w-[280px] mt-1">
+            El Asistente IA rellena tu flyer automáticamente a partir de una
+            descripción. Necesitamos identificarte para protegerlo del abuso.
+            Es gratis.
+          </p>
+        </div>
+        <button
+          onClick={onLogin}
+          className="mt-2 px-6 py-2.5 rounded-xl bg-gradient-to-br from-purple-600 to-fuchsia-600 text-white font-bold text-[13px] active:scale-[0.97] shadow-lg shadow-purple-500/30 flex items-center gap-2"
+        >
+          <Sparkles size={14} strokeWidth={2.4}/>
+          Iniciar sesión
+        </button>
+        <p className="text-[10px] text-gray-500">
+          Tus diseños no se pierden — esperan en este editor mientras te logueas.
+        </p>
+      </div>
+    );
+  }
 
   const examples: Record<string, string[]> = {
     "Clases de baile": [
