@@ -131,6 +131,12 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
   type ObjType = null | "text" | "image" | "shape";
   const [selectedType, setSelectedType] = useState<ObjType>(null);
 
+  // Flag para distinguir selecciones programaticas (tap en pill de "Editar")
+  // de selecciones por interaccion del usuario en el canvas. La primera NO
+  // debe cerrar el sub-tool activo (el usuario sigue editando, solo cambio
+  // de bloque). La segunda SI lo cierra (era el comportamiento original).
+  const programmaticSelectionRef = useRef(false);
+
   /** Detectar tipo del objeto Fabric. Shape es cualquier cosa que no sea
    *  texto ni imagen (rect, circle, triangle, polygon, path, line, etc.). */
   const detectType = useCallback((obj: FabricObject): ObjType => {
@@ -511,9 +517,14 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
       setSelectedLayerId(cid ?? "__obj__");
       const t = detectType(sel);
       setSelectedType(t);
-      // Cambiar sub-tool a uno valido segun el tipo (resetea si cambiamos
-      // de un texto a una imagen por ejemplo)
-      setActiveSubTool(null);
+      // Si la seleccion viene de un cambio programatico (ej: tap en pill
+      // de Editar), NO reseteamos el sub-tool — el usuario sigue editando
+      // texto, solo cambio de bloque. Sin este check el panel se cerraba.
+      if (!programmaticSelectionRef.current) {
+        setActiveSubTool(null);
+      } else {
+        programmaticSelectionRef.current = false;
+      }
       if (cid) {
         const block = layerToBlockRef.current.get(cid);
         if (block) {
@@ -2057,7 +2068,27 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
               activeBlockId={activeBlockId}
               blockValues={blockValues}
               onChange={onBlockChange}
-              onSelectBlock={setActiveBlockId}
+              onSelectBlock={(id) => {
+                setActiveBlockId(id);
+                if (!id) return;
+                // Sincroniza con el canvas: selecciona el primer layer del
+                // bloque para que el usuario vea con bbox morado QUÉ esta
+                // editando. Marca la seleccion como programatica para que
+                // el listener onSelect NO cierre el sub-tool "Editar".
+                const fc = fabricRef.current;
+                if (!fc) return;
+                const block = blocks.find(b => b.id === id);
+                if (!block) return;
+                const obj = fc.getObjects().find(o => {
+                  const cid = (o as FabricObject & { customId?: string }).customId;
+                  return cid && block.layerIds.includes(cid);
+                });
+                if (obj) {
+                  programmaticSelectionRef.current = true;
+                  fc.setActiveObject(obj);
+                  fc.requestRenderAll();
+                }
+              }}
             />
           )}
           {selectedType === "text" && activeSubTool === "fuente" && (
