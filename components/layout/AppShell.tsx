@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
-import { Zap, Bell, Crown, Image as ImageIcon, History, LogOut, Plus, LayoutGrid, FolderOpen, Menu, Users } from "lucide-react";
+import { Zap, Bell, Crown, Image as ImageIcon, History, LogOut, Plus, LayoutGrid, FolderOpen, Menu, Users, CreditCard } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import AuthModal from "@/components/auth/AuthModal";
 import { isAdmin } from "@/lib/admin";
@@ -263,6 +263,11 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                          style={{ background: "var(--home-bg-soft)", borderColor: "var(--home-card-border)" }}>
                         <div className="w-12 h-1 bg-white/20 rounded-full mx-auto mt-3 mb-4" />
                         <div className="px-4 space-y-1">
+                            <Link href="/pricing" onClick={() => setShowMobileMenu(false)}
+                                className="flex items-center gap-3 px-4 py-3 rounded-xl text-base text-gray-300 active:bg-white/10">
+                                <CreditCard size={20} strokeWidth={1.8} />
+                                {t("nav.pricing")}
+                            </Link>
                             <Link href="/history" onClick={() => setShowMobileMenu(false)}
                                 className="flex items-center gap-3 px-4 py-3 rounded-xl text-base text-gray-300 active:bg-white/10">
                                 <History size={20} strokeWidth={1.8} />

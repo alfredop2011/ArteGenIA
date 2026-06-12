@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/lib/toast";
+import AuthModal from "@/components/auth/AuthModal";
 
 /**
  * /pricing — 3 planes (Free, Pro, Enterprise) estilo shadcn limpio.
@@ -78,11 +79,31 @@ function PricingContent() {
     }
   };
 
-  const startCheckout = async (plan: "pro" | "enterprise" = "pro") => {
-    if (!user) {
-      router.push("/?login=1");
-      return;
-    }
+  // Auth modal local — se abre cuando un guest user clica "Subir a Pro/Enterprise"
+  // sin estar logueado. Recordamos qué plan quería para disparar el checkout
+  // automático tras el login (en cualquiera de los 2 flows).
+  const [showAuth, setShowAuth] = useState(false);
+  const [pendingPlan, setPendingPlan] = useState<"pro" | "enterprise" | null>(null);
+
+  // Plan que viene en la URL después del callback OAuth (?autostart=pro).
+  // Lo metimos en `nextUrl` cuando se inició el OAuth, y al volver lanzamos
+  // el checkout automáticamente — pero solo una vez (limpiamos la query).
+  const autostart = sp.get("autostart"); // "pro" | "enterprise" | null
+  useEffect(() => {
+    if (!autostart) return;
+    if (!user) return; // todavía no se hidrató la sesión
+    if (isPaid) return; // por si ya estaba pago — no relanzamos
+    if (autostart !== "pro" && autostart !== "enterprise") return;
+    // Lanzar checkout + limpiar query para no relanzar en refresh.
+    const plan = autostart as "pro" | "enterprise";
+    router.replace("/pricing");
+    void startCheckoutInternal(plan);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autostart, user, isPaid]);
+
+  /** Internal: ejecuta el POST a /api/stripe/checkout asumiendo que ya hay
+   *  user logueado. NO se ocupa de auth. */
+  const startCheckoutInternal = async (plan: "pro" | "enterprise") => {
     setLoading(true);
     setLoadingPlan(plan);
     try {
@@ -102,7 +123,7 @@ function PricingContent() {
         } else toast.error(data.error || "No se pudo iniciar el pago");
         return;
       }
-      const { url } = await res.json() as { url: string };
+      const { url } = (await res.json()) as { url: string };
       window.location.href = url;
     } catch (e) {
       console.error(e);
@@ -113,8 +134,49 @@ function PricingContent() {
     }
   };
 
+  const startCheckout = async (plan: "pro" | "enterprise" = "pro") => {
+    if (!user) {
+      // Guest user: abrir AuthModal aquí mismo. Tras el login disparamos
+      // checkout sin perder qué plan querían comprar.
+      setPendingPlan(plan);
+      setShowAuth(true);
+      return;
+    }
+    return startCheckoutInternal(plan);
+  };
+
   return (
     <main className="min-h-screen bg-[#0a0a14] text-white overflow-x-hidden">
+      {/* AuthModal: aparece cuando guest user clica "Subir a Pro/Enterprise".
+          - email/password: onAuthSuccess dispara checkout antes de cerrar.
+          - Google OAuth: pasa nextUrl con ?autostart=<plan> para que tras el
+            callback vuelva aquí y el useEffect arranque el checkout. */}
+      {showAuth && (
+        <AuthModal
+          onClose={() => {
+            setShowAuth(false);
+            setPendingPlan(null);
+          }}
+          title={
+            pendingPlan === "enterprise"
+              ? "Crea tu cuenta para Enterprise"
+              : "Crea tu cuenta para Pro"
+          }
+          subtitle="Solo necesitas un email. Después seguimos con el pago."
+          nextUrl={pendingPlan ? `/pricing?autostart=${pendingPlan}` : "/pricing"}
+          onAuthSuccess={() => {
+            // Login email/password OK → disparamos checkout enseguida.
+            // OAuth Google no llega aquí (la modal se desmonta con el redirect).
+            if (pendingPlan) {
+              const plan = pendingPlan;
+              setPendingPlan(null);
+              // Pequeño delay para que el modal cierre primero (mejor feedback).
+              setTimeout(() => void startCheckoutInternal(plan), 100);
+            }
+          }}
+        />
+      )}
+
       {/* Blobs decorativos */}
       <div aria-hidden className="absolute top-0 left-0 w-[500px] h-[500px] rounded-full bg-purple-600/15 blur-3xl animate-blob pointer-events-none"/>
       <div aria-hidden className="absolute top-40 right-0 w-[400px] h-[400px] rounded-full bg-fuchsia-600/15 blur-3xl animate-blob animate-blob-delay-2 pointer-events-none"/>

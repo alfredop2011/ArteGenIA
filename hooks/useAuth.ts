@@ -32,11 +32,18 @@ export function useAuth() {
         setLoading(false);
     };
 
-    const signInWithGoogle = () =>
-        supabase.auth.signInWithOAuth({
+    /** Inicia OAuth Google.
+     *  @param nextUrl opcional — ruta absoluta o relativa a la que volver
+     *    tras el callback. Se pasa como `?next=` al endpoint /auth/callback,
+     *    que ya lo respeta. Útil para devolver al usuario a la página que
+     *    estaba (ej. /pricing?autostart=enterprise) en vez de a la home. */
+    const signInWithGoogle = (nextUrl?: string) => {
+        const nextParam = nextUrl ? `?next=${encodeURIComponent(nextUrl)}` : "";
+        return supabase.auth.signInWithOAuth({
             provider: "google",
-            options: { redirectTo: `${window.location.origin}/auth/callback` },
+            options: { redirectTo: `${window.location.origin}/auth/callback${nextParam}` },
         });
+    };
 
     const signInWithEmail = (email: string, password: string) =>
         supabase.auth.signInWithPassword({ email, password });
