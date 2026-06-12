@@ -326,9 +326,9 @@ function PricingContent() {
             >
               {isPro ? "Ya eres Pro ✓" : isEnterprise ? "Ya tienes Enterprise" : loadingPlan === "pro" ? "Cargando…" : "Subir a Pro →"}
             </button>
-            {!user && (
+            {!user && !isPaid && (
               <p className="text-[10px] text-gray-400 text-center mt-2">
-                Necesitas iniciar sesión
+                Te pediremos email para crear tu cuenta antes del pago
               </p>
             )}
           </div>
@@ -381,13 +381,10 @@ function PricingContent() {
                     ? "Subir a Enterprise →"
                     : "Reservar early access →"}
             </button>
-            {!user && (
-              <p className="text-[10px] text-gray-400 text-center mt-2">
-                Necesitas iniciar sesión
-              </p>
-            )}
             <p className="text-[10px] text-gray-500 text-center mt-2">
-              Plazas limitadas · Cancela cuando quieras
+              {!user
+                ? "Crearás tu cuenta antes del pago · Cancela cuando quieras"
+                : "Plazas limitadas · Cancela cuando quieras"}
             </p>
           </div>
         </div>
