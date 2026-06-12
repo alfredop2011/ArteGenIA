@@ -38,6 +38,8 @@ export const RATE_LIMITS: Record<string, RateLimitConfig> = {
   "parse-prompt":       { max: 30, windowMinutes: 1 },
   // Remix IA — Haiku, barato, generoso
   "remix-ai":           { max: 20, windowMinutes: 1 },
+  // Compartir: sube PNG a R2 — protege storage
+  "share-upload":       { max: 15, windowMinutes: 1 },
 };
 
 /**

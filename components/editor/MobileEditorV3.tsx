@@ -57,7 +57,7 @@ import { getPalettesForCategory, type Palette } from "@/data/templatePalettes";
 import { REMIX_STYLES, type RemixStyle } from "@/data/templateRemixes";
 import { useProjects } from "@/hooks/useProjects";
 import { supabase } from "@/lib/supabase";
-import { Save, FolderOpen } from "lucide-react";
+import { Save, FolderOpen, Share2, Link2, Mail, MessageCircle, Send } from "lucide-react";
 
 type Props = {
   templateId?: number;
@@ -927,6 +927,43 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
     return () => window.clearTimeout(t);
   }, [authUser, loaded, currentProjectId, saveState, doSave]);
 
+  // ─── Compartir tras descargar (Fase H) ──────────────────────────────────
+  // Tras descargar el flyer, abrimos un modal con opciones de compartir.
+  // Subimos el PNG a R2 para tener URL publica que WhatsApp/Facebook/etc.
+  // puedan crawlear con preview. Web Share API nativo se ofrece primero en
+  // mobile — abre el picker iOS/Android con todas las apps instaladas.
+  const [shareOpen, setShareOpen] = useState(false);
+  const [shareUploading, setShareUploading] = useState(false);
+  const [shareUrl, setShareUrl] = useState<string | null>(null);
+  const [lastExportedDataUrl, setLastExportedDataUrl] = useState<string | null>(null);
+
+  /** Sube el ultimo PNG exportado a R2. Cacheado en shareUrl para no
+   *  re-subir si el usuario abre el modal varias veces. */
+  const ensureSharedUrl = useCallback(async (): Promise<string | null> => {
+    if (shareUrl) return shareUrl;
+    if (!lastExportedDataUrl) return null;
+    if (!authUser) { toast.info("Inicia sesión para compartir"); return null; }
+    setShareUploading(true);
+    try {
+      const res = await fetch("/api/share-upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imageDataUrl: lastExportedDataUrl }),
+      });
+      if (!res.ok) {
+        if (res.status === 429) toast.error("Demasiadas peticiones, espera 1 min");
+        else toast.error("No se pudo preparar el enlace");
+        return null;
+      }
+      const data = await res.json() as { url?: string };
+      if (!data.url) return null;
+      setShareUrl(data.url);
+      return data.url;
+    } finally {
+      setShareUploading(false);
+    }
+  }, [shareUrl, lastExportedDataUrl, authUser, toast]);
+
   // ─── Export ─────────────────────────────────────────────────────────────
   const doExport = useCallback(async (format: "png" | "jpg" = "png") => {
     const fc = fabricRef.current;
@@ -950,9 +987,19 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
       link.download = `artegenia-flyer.${format}`;
       link.href = finalUrl;
       link.click();
+      // Guardar dataURL para que el modal Compartir pueda re-subir a R2
+      // sin re-renderizar el canvas.
+      setLastExportedDataUrl(finalUrl);
+      setShareUrl(null); // invalida cache (es un nuevo render)
       toast.success(`Descargado ${format.toUpperCase()}`);
+      // Auto-abrir modal compartir tras descarga exitosa (si user logueado).
+      // El sheet export se cierra para no saturar visual.
+      if (authUser) {
+        setOpenSheet(null);
+        setShareOpen(true);
+      }
     } finally { setExporting(false); }
-  }, [canvasSize, authProfile?.plan, toast]);
+  }, [canvasSize, authProfile?.plan, toast, authUser]);
 
   const handleExport = useCallback(() => {
     // Cambio Fase D.2: el boton Exportar abre el sheet multi-formato.
@@ -1744,6 +1791,18 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
         </>
       )}
 
+      {/* ═══ SHARE MODAL — Compartir tras descargar (Fase H) ═══════════ */}
+      {shareOpen && (
+        <ShareModal
+          flyerTitle={docTitle || template?.title || "Mi flyer"}
+          uploading={shareUploading}
+          shareUrl={shareUrl}
+          ensureSharedUrl={ensureSharedUrl}
+          lastExportedDataUrl={lastExportedDataUrl}
+          onClose={() => setShareOpen(false)}
+        />
+      )}
+
     </div>
   );
 }
@@ -2423,5 +2482,330 @@ function CornerRadiusSlider({
         className="w-full accent-purple-500"
       />
     </div>
+  );
+}
+
+// ─── SHARE MODAL — Compartir tras descargar (Fase H) ─────────────────────
+
+/** Modal de compartir. Aparece tras descargar el flyer. Ofrece:
+ *  - Web Share API nativa (en mobile abre picker iOS/Android)
+ *  - WhatsApp / Facebook / Twitter / Telegram / Email / Copiar link
+ *  - Instagram (instrucciones — no tiene URL share publica) */
+function ShareModal({
+  flyerTitle, uploading, shareUrl, ensureSharedUrl, lastExportedDataUrl, onClose,
+}: {
+  flyerTitle: string;
+  uploading: boolean;
+  shareUrl: string | null;
+  ensureSharedUrl: () => Promise<string | null>;
+  lastExportedDataUrl: string | null;
+  onClose: () => void;
+}) {
+  const [copied, setCopied] = useState(false);
+  const [igInstrOpen, setIgInstrOpen] = useState(false);
+
+  // Texto base que acompaña al link en cada red social
+  const message = `Mira el flyer que hice para "${flyerTitle}" con ArteGenIA 🎨`;
+  const credit = "Creado con ArteGenIA — artegenia.vercel.app";
+
+  // ─── Handlers ──────────────────────────────────────────────────────────
+  // Web Share API (nativo iOS/Android). Si esta disponible, ofrece compartir
+  // CON LA IMAGEN adjunta (no solo link). Funciona en Safari iOS 15+ y
+  // Chrome Android. En desktop solo Edge lo soporta.
+  const webShareWithImage = useCallback(async () => {
+    if (!lastExportedDataUrl) return;
+    try {
+      const res = await fetch(lastExportedDataUrl);
+      const blob = await res.blob();
+      const file = new File([blob], "artegenia-flyer.png", { type: blob.type });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const nav = navigator as any;
+      if (nav.canShare && nav.canShare({ files: [file] })) {
+        await nav.share({
+          files: [file],
+          title: flyerTitle,
+          text: message,
+        });
+        return;
+      }
+      // Fallback: share solo texto+url
+      const url = await ensureSharedUrl();
+      if (!url) return;
+      await nav.share({ title: flyerTitle, text: message, url });
+    } catch (e) {
+      // Usuario canceló — silencio
+      if ((e as Error).name !== "AbortError") console.error(e);
+    }
+  }, [lastExportedDataUrl, flyerTitle, message, ensureSharedUrl]);
+
+  const shareTo = useCallback(async (target: "whatsapp" | "facebook" | "twitter" | "telegram" | "email") => {
+    const url = await ensureSharedUrl();
+    if (!url) return;
+    const text = `${message}\n\n${credit}`;
+    let href = "";
+    switch (target) {
+      case "whatsapp":
+        href = `https://wa.me/?text=${encodeURIComponent(`${text}\n${url}`)}`;
+        break;
+      case "facebook":
+        // Facebook sharer ignora "text" — solo crawler-fetches OG del URL.
+        // Por eso es importante que la URL tenga OG image (R2 + meta).
+        href = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}&quote=${encodeURIComponent(message)}`;
+        break;
+      case "twitter":
+        href = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
+        break;
+      case "telegram":
+        href = `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`;
+        break;
+      case "email":
+        href = `mailto:?subject=${encodeURIComponent(flyerTitle)}&body=${encodeURIComponent(`${text}\n\n${url}`)}`;
+        break;
+    }
+    window.open(href, "_blank", "noopener,noreferrer");
+  }, [ensureSharedUrl, message, credit, flyerTitle]);
+
+  const copyLink = useCallback(async () => {
+    const url = await ensureSharedUrl();
+    if (!url) return;
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Fallback
+      const ta = document.createElement("textarea");
+      ta.value = url;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  }, [ensureSharedUrl]);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const hasWebShare = typeof navigator !== "undefined" && !!(navigator as any).share;
+
+  return (
+    <>
+      <div
+        className="fixed inset-0 z-[50] bg-black/60 backdrop-blur-sm"
+        onClick={onClose}
+      />
+      <div className="fixed bottom-0 left-0 right-0 z-[60] bg-[#13131f] rounded-t-3xl border-t border-white/[0.12] shadow-2xl max-h-[80vh] flex flex-col safe-area-bottom animate-in slide-in-from-bottom duration-200">
+        <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mt-2.5 mb-1 shrink-0"/>
+        <div className="px-4 py-3 flex items-center justify-between shrink-0 border-b border-white/[0.06]">
+          <h2 className="text-[15px] font-bold flex items-center gap-2">
+            <Share2 size={16} className="text-purple-300"/>
+            Compartir flyer
+          </h2>
+          <button
+            onClick={onClose}
+            className="w-9 h-9 rounded-full bg-white/[0.06] text-gray-300 flex items-center justify-center active:scale-95 transition-transform"
+            aria-label="Cerrar"
+          >
+            <XIcon size={16} strokeWidth={2.4}/>
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-4">
+          {/* Preview thumbnail */}
+          {lastExportedDataUrl && (
+            <div className="flex items-center gap-3 p-2 rounded-xl bg-black/30">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={lastExportedDataUrl} alt="Tu flyer" className="w-14 h-14 rounded-lg object-cover border border-white/10"/>
+              <div className="min-w-0 flex-1">
+                <div className="text-[13px] font-bold truncate">{flyerTitle}</div>
+                <div className="text-[10px] text-gray-500">Descargado correctamente</div>
+              </div>
+            </div>
+          )}
+
+          {/* Web Share nativo — botón principal en mobile */}
+          {hasWebShare && (
+            <button
+              onClick={webShareWithImage}
+              disabled={uploading}
+              className="w-full py-3 rounded-xl bg-gradient-to-br from-purple-600 to-fuchsia-600 text-white font-bold text-[14px] flex items-center justify-center gap-2 active:scale-[0.98] transition-transform shadow-lg shadow-purple-500/30 disabled:opacity-60"
+            >
+              <Share2 size={16} strokeWidth={2.4}/>
+              Compartir con la app del sistema
+            </button>
+          )}
+
+          {/* Grid de redes sociales */}
+          <div>
+            <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2.5">
+              O elige una red
+            </div>
+            <div className="grid grid-cols-4 gap-2.5">
+              <ShareBtn
+                bg="bg-emerald-500"
+                icon={<MessageCircle size={20} strokeWidth={2.2}/>}
+                label="WhatsApp"
+                onClick={() => void shareTo("whatsapp")}
+                loading={uploading}
+              />
+              <ShareBtn
+                bg="bg-pink-500"
+                icon={<InstagramIcon/>}
+                label="Instagram"
+                onClick={() => setIgInstrOpen(true)}
+                loading={uploading}
+              />
+              <ShareBtn
+                bg="bg-blue-600"
+                icon={<FacebookIcon/>}
+                label="Facebook"
+                onClick={() => void shareTo("facebook")}
+                loading={uploading}
+              />
+              <ShareBtn
+                bg="bg-black"
+                icon={<XLogoIcon/>}
+                label="Twitter"
+                onClick={() => void shareTo("twitter")}
+                loading={uploading}
+              />
+              <ShareBtn
+                bg="bg-sky-500"
+                icon={<Send size={18} strokeWidth={2.2}/>}
+                label="Telegram"
+                onClick={() => void shareTo("telegram")}
+                loading={uploading}
+              />
+              <ShareBtn
+                bg="bg-gray-600"
+                icon={<Mail size={18} strokeWidth={2.2}/>}
+                label="Email"
+                onClick={() => void shareTo("email")}
+                loading={uploading}
+              />
+              <ShareBtn
+                bg="bg-purple-500"
+                icon={<Link2 size={18} strokeWidth={2.2}/>}
+                label={copied ? "Copiado ✓" : "Copiar link"}
+                onClick={() => void copyLink()}
+                loading={uploading}
+              />
+              <ShareBtn
+                bg="bg-orange-500"
+                icon={<Download size={18} strokeWidth={2.2}/>}
+                label="Re-descargar"
+                onClick={() => {
+                  if (!lastExportedDataUrl) return;
+                  const a = document.createElement("a");
+                  a.download = "artegenia-flyer.png";
+                  a.href = lastExportedDataUrl;
+                  a.click();
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Link preview (cuando ya está subido) */}
+          {shareUrl && (
+            <div className="p-2.5 rounded-xl bg-black/30 border border-white/[0.06] flex items-center gap-2">
+              <Link2 size={12} className="text-purple-300 shrink-0"/>
+              <code className="text-[10px] text-gray-300 truncate flex-1">{shareUrl}</code>
+            </div>
+          )}
+
+          <p className="text-[10px] text-gray-500 leading-snug text-center pt-1">
+            Tu flyer se publica en una URL privada. Solo quien recibe el link puede verlo.
+          </p>
+        </div>
+
+        {/* Instrucciones Instagram (no tiene URL share publica desde web) */}
+        {igInstrOpen && (
+          <div className="fixed inset-0 z-[70] bg-black/70 backdrop-blur-sm flex items-end" onClick={() => setIgInstrOpen(false)}>
+            <div className="w-full bg-[#1c1c2a] rounded-t-3xl p-5 flex flex-col gap-3 safe-area-bottom animate-in slide-in-from-bottom" onClick={e => e.stopPropagation()}>
+              <h3 className="text-[15px] font-bold flex items-center gap-2">
+                <InstagramIcon/>
+                Compartir en Instagram
+              </h3>
+              <p className="text-[12px] text-gray-300 leading-relaxed">
+                Instagram no permite compartir desde la web automáticamente. Sigue estos 3 pasos:
+              </p>
+              <ol className="text-[12px] text-gray-300 leading-relaxed space-y-2 pl-4 list-decimal">
+                <li>Ya tienes el flyer descargado en tu galería.</li>
+                <li>Abre Instagram → toca el <strong>+</strong> arriba.</li>
+                <li>Elige <strong>Historia</strong> o <strong>Publicación</strong> y selecciona el flyer.</li>
+              </ol>
+              <button
+                onClick={() => {
+                  // Intentamos abrir la app via deep link. Si no esta instalada,
+                  // el dispositivo abrira la web de Instagram.
+                  window.location.href = "instagram://camera";
+                  setTimeout(() => window.open("https://instagram.com", "_blank"), 800);
+                }}
+                className="mt-2 py-3 rounded-xl bg-gradient-to-br from-pink-500 to-orange-500 text-white font-bold text-[13px] active:scale-[0.98] flex items-center justify-center gap-2"
+              >
+                <InstagramIcon/>
+                Abrir Instagram
+              </button>
+              <button
+                onClick={() => setIgInstrOpen(false)}
+                className="py-2 rounded-xl bg-white/[0.06] text-gray-300 text-[12px] font-semibold"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
+
+function ShareBtn({
+  bg, icon, label, onClick, loading,
+}: {
+  bg: string;
+  icon: React.ReactNode;
+  label: string;
+  onClick: () => void;
+  loading?: boolean;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={loading}
+      className="flex flex-col items-center gap-1.5 active:scale-95 transition-transform disabled:opacity-50"
+    >
+      <div className={`w-13 h-13 ${bg} rounded-2xl flex items-center justify-center text-white shadow-md`} style={{ width: 52, height: 52 }}>
+        {loading ? (
+          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"/>
+        ) : icon}
+      </div>
+      <span className="text-[10px] font-semibold text-gray-300 leading-tight text-center">{label}</span>
+    </button>
+  );
+}
+
+// ─── Iconos SVG inline de redes sociales (lucide no tiene FB/IG/X) ─────────
+function InstagramIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
+      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
+      <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
+    </svg>
+  );
+}
+function FacebookIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z"/>
+    </svg>
+  );
+}
+function XLogoIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+    </svg>
   );
 }
