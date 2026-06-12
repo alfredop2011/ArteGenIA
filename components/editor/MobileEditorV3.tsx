@@ -678,6 +678,76 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
     pushHistory();
   }, [getActiveImage]);
 
+  // ─── Quitar fondo con IA (Fase G) ───────────────────────────────────────
+  // POST a /api/refine-hd con dataURL de la imagen seleccionada. Sustituye
+  // el src del FabricImage por la version sin fondo (PNG transparente).
+  // Auth + rate limit aplicados en el endpoint.
+  const [removingBg, setRemovingBg] = useState(false);
+
+  /** Genera dataURL de una imagen Fabric. Si el src ya es data:/blob: lo
+   *  retorna directo. Si es http, lo descargamos via fetch para evitar
+   *  tainted canvas (R2 tiene CORS configurado). */
+  const fabricImageToDataUrl = useCallback(async (img: FabricImage): Promise<string> => {
+    const el = img.getElement() as HTMLImageElement;
+    const src = el?.src ?? "";
+    if (src.startsWith("data:") || src.startsWith("blob:")) return src;
+    // Para URLs http: descargar y convertir a dataURL
+    const res = await fetch(src, { mode: "cors" });
+    if (!res.ok) throw new Error("No se pudo leer la imagen");
+    const blob = await res.blob();
+    return await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  }, []);
+
+  const handleRemoveBackground = useCallback(async () => {
+    if (!authUser) { toast.info("Inicia sesión para usar IA"); return; }
+    const fc = fabricRef.current;
+    const img = getActiveImage();
+    if (!fc || !img) { toast.error("Selecciona primero una imagen"); return; }
+    setRemovingBg(true);
+    try {
+      const dataUrl = await fabricImageToDataUrl(img);
+      const res = await fetch("/api/refine-hd", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imageUrl: dataUrl }),
+      });
+      if (!res.ok) {
+        if (res.status === 401) toast.error("Inicia sesión");
+        else if (res.status === 429) toast.error("Demasiadas peticiones, espera 1 min");
+        else toast.error("La IA falló — intenta de nuevo");
+        return;
+      }
+      const data = await res.json() as { refinedUrl?: string };
+      if (!data.refinedUrl) {
+        toast.error("La IA no devolvió imagen");
+        return;
+      }
+      // Cargar la imagen nueva. Reemplazamos el HTMLImageElement del Fabric
+      // preservando posicion + escala originales.
+      const newImg = await FabricImage.fromURL(data.refinedUrl, { crossOrigin: "anonymous" });
+      img.setElement(newImg.getElement() as HTMLImageElement);
+      img.dirty = true;
+      // Limpiar filtros previos y clipPath — el PNG transparente ya viene
+      // recortado por la IA; filtros antiguos podrian re-corromper alpha.
+      img.filters = [];
+      img.applyFilters();
+      fc.requestRenderAll();
+      setSaveState("unsaved");
+      pushHistory();
+      toast.success("Fondo eliminado");
+    } catch (e) {
+      console.error("[remove-bg]", e);
+      toast.error("Error procesando la imagen");
+    } finally {
+      setRemovingBg(false);
+    }
+  }, [authUser, getActiveImage, fabricImageToDataUrl, pushHistory, toast]);
+
   /** Reemplaza la imagen activa preservando posicion + escala.
    *  Carga el archivo local via FileReader → data URL → FabricImage. */
   const handleReplaceImage = useCallback(async (file: File) => {
@@ -1318,7 +1388,10 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
             <FilterPresetsInline onPick={applyImageFilter}/>
           )}
           {selectedType === "image" && activeSubTool === "quitar-fondo" && (
-            <RemoveBgInline/>
+            <RemoveBgInline
+              loading={removingBg}
+              onConfirm={handleRemoveBackground}
+            />
           )}
           {selectedType === "image" && activeSubTool === "opacidad-img" && (
             <OpacitySlider
@@ -2058,18 +2131,40 @@ function FilterPresetsInline({ onPick }: { onPick: (p: "none" | "bw" | "warm" | 
   );
 }
 
-/** Quitar fondo — placeholder con CTA Pro hasta integrar remove.bg. */
-function RemoveBgInline() {
+/** Quitar fondo — CTA real al endpoint /api/refine-hd. Muestra loading
+ *  spinner mientras la IA procesa (~2-4s). */
+function RemoveBgInline({
+  loading, onConfirm,
+}: {
+  loading: boolean;
+  onConfirm: () => void;
+}) {
   return (
-    <div className="border-b border-white/[0.06] px-4 py-4 flex flex-col items-center gap-2 text-center">
-      <Eraser size={24} className="text-purple-300"/>
-      <p className="text-[12px] text-gray-300 font-semibold">Quitar fondo con IA</p>
-      <p className="text-[10px] text-gray-500 leading-snug max-w-[260px]">
-        Detectamos automáticamente el sujeto y eliminamos el fondo en 2 segundos.
+    <div className="border-b border-white/[0.06] px-4 py-4 flex flex-col items-center gap-2.5 text-center">
+      <div className="w-11 h-11 rounded-full bg-purple-500/15 flex items-center justify-center text-purple-300">
+        {loading ? (
+          <div className="w-5 h-5 border-2 border-purple-300 border-t-transparent rounded-full animate-spin"/>
+        ) : (
+          <Eraser size={22}/>
+        )}
+      </div>
+      <p className="text-[12px] text-gray-200 font-semibold">
+        {loading ? "Eliminando fondo…" : "Quitar fondo con IA"}
       </p>
-      <span className="mt-1 text-[9px] font-bold tracking-widest text-amber-400 uppercase">
-        Próximamente · Pro
-      </span>
+      <p className="text-[10px] text-gray-500 leading-snug max-w-[280px]">
+        {loading
+          ? "Esto tarda 2-4 segundos. No cierres la app."
+          : "BRIA detecta el sujeto automáticamente y elimina el fondo. Funciona mejor con fotos de personas u objetos centrados."
+        }
+      </p>
+      <button
+        onClick={onConfirm}
+        disabled={loading}
+        className="mt-1 px-5 py-2 rounded-xl bg-purple-500 text-white text-[12px] font-bold active:scale-[0.97] transition-transform disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+      >
+        <Sparkles size={13} strokeWidth={2.5}/>
+        {loading ? "Procesando…" : "Quitar fondo ahora"}
+      </button>
     </div>
   );
 }

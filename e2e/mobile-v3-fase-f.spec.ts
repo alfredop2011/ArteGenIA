@@ -66,11 +66,11 @@ test("F-03 tap en titulo header abre renombrar", async ({ page, context }) => {
   await page.evaluate(() => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (window as any).__lastPrompt = null;
-    window.prompt = (msg: string) => {
+    window.prompt = ((msg?: string) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (window as any).__lastPrompt = msg;
+      (window as any).__lastPrompt = msg ?? "";
       return "Mi flyer custom";
-    };
+    }) as typeof window.prompt;
   });
   await page.locator("button[aria-label='Renombrar flyer']").tap();
   await page.waitForTimeout(500);
