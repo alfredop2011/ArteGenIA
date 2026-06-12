@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { templates } from "@/data/templates";
+import { getAllCategorySlugs } from "@/data/categorySEO";
 
 /**
  * sitemap.xml generado por Next 16 file convention.
@@ -18,7 +19,7 @@ const SITE_URL =
 
 // Fecha de ultima actualizacion estructural del sitemap. Actualizar cuando
 // se añadan rutas publicas nuevas (no cuando cambie contenido dentro).
-const LAST_MODIFIED = new Date("2026-06-08");
+const LAST_MODIFIED = new Date("2026-06-12");
 
 export default function sitemap(): MetadataRoute.Sitemap {
   return [
@@ -65,6 +66,20 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "yearly",
       priority: 0.3,
     },
+    // Indice de categorias SEO
+    {
+      url: `${SITE_URL}/flyers`,
+      lastModified: LAST_MODIFIED,
+      changeFrequency: "weekly",
+      priority: 0.85,
+    },
+    // Landings por categoria — long-tail SEO ("flyer conciertos", "flyer clases baile")
+    ...getAllCategorySlugs().map(slug => ({
+      url: `${SITE_URL}/flyers/${slug}`,
+      lastModified: LAST_MODIFIED,
+      changeFrequency: "weekly" as const,
+      priority: 0.8,
+    })),
     // Plantillas individuales — cada una es una landing potencial via long-tail SEO
     // ("flyer salsa cubana", "flyer concierto urban", etc.). Apuntan al editor con
     // la plantilla cargada — el visitante puede previsualizar sin login.
