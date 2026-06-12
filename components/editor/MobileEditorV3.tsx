@@ -737,6 +737,75 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
     pushHistory();
   }, [getActiveImage]);
 
+  // ─── Imagen avanzada (Fase L) ───────────────────────────────────────────
+  // Sliders brillo/contraste/saturacion: cada slider escribe un filtro
+  // Brightness/Contrast/Saturation que sustituye al de su tipo si ya
+  // existe. Asi los presets (Grayscale, Sepia) se mantienen intactos.
+  //
+  // El push de history se hace al soltar (onMouseUp del slider) — si
+  // pushearamos en cada delta tendriamos 200 snapshots por drag.
+
+  /** Reemplaza o anade un filtro a la imagen activa. */
+  const setImageFilter = useCallback((
+    name: "Brightness" | "Contrast" | "Saturation",
+    options: Record<string, number>
+  ) => {
+    const fc = fabricRef.current;
+    const img = getActiveImage();
+    if (!fc || !img) return;
+    // Filtros existentes excluyendo el tipo que vamos a actualizar.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const others = (img.filters ?? []).filter((f: any) => {
+      // Fabric guarda type como string capitalizado
+      return f?.type !== name;
+    });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let newF: any;
+    if (name === "Brightness") newF = new FabricFilters.Brightness(options);
+    else if (name === "Contrast") newF = new FabricFilters.Contrast(options);
+    else newF = new FabricFilters.Saturation(options);
+    img.filters = [...others, newF];
+    img.applyFilters();
+    fc.requestRenderAll();
+    setSaveState("unsaved");
+  }, [getActiveImage]);
+
+  /** Lee el valor actual de un filtro por tipo. -1 si no existe. */
+  const getImageFilterValue = useCallback((name: "Brightness" | "Contrast" | "Saturation"): number => {
+    const img = getActiveImage();
+    if (!img) return 0;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const f = (img.filters ?? []).find((f: any) => f?.type === name);
+    if (!f) return 0;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const anyF = f as any;
+    if (name === "Brightness") return anyF.brightness ?? 0;
+    if (name === "Contrast") return anyF.contrast ?? 0;
+    return anyF.saturation ?? 0;
+  }, [getActiveImage]);
+
+  const setImageRotation = useCallback((angle: number) => {
+    const fc = fabricRef.current;
+    const img = getActiveImage();
+    if (!fc || !img) return;
+    img.set("angle", angle);
+    img.setCoords();
+    fc.requestRenderAll();
+    setSaveState("unsaved");
+  }, [getActiveImage]);
+
+  const flipImage = useCallback((axis: "x" | "y") => {
+    const fc = fabricRef.current;
+    const img = getActiveImage();
+    if (!fc || !img) return;
+    if (axis === "x") img.set("flipX", !img.flipX);
+    else img.set("flipY", !img.flipY);
+    fc.requestRenderAll();
+    setSaveState("unsaved");
+    pushHistory();
+    toast.success(axis === "x" ? "Volteado horizontal" : "Volteado vertical");
+  }, [getActiveImage, pushHistory, toast]);
+
   /** Cambia la forma de recorte: cuadrado, círculo, redondeado.
    *  Usa clipPath de Fabric en coordenadas locales del objeto. */
   const applyImageCrop = useCallback((shape: "square" | "circle" | "rounded") => {
@@ -1793,7 +1862,20 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
             <CropOptionsInline onPick={applyImageCrop}/>
           )}
           {selectedType === "image" && activeSubTool === "filtros" && (
-            <FilterPresetsInline onPick={applyImageFilter}/>
+            <FilterPresetsInline
+              onPick={applyImageFilter}
+              brightness={getImageFilterValue("Brightness")}
+              contrast={getImageFilterValue("Contrast")}
+              saturation={getImageFilterValue("Saturation")}
+              angle={fabricRef.current?.getActiveObject()?.angle ?? 0}
+              onBrightness={(v) => setImageFilter("Brightness", { brightness: v })}
+              onContrast={(v) => setImageFilter("Contrast", { contrast: v })}
+              onSaturation={(v) => setImageFilter("Saturation", { saturation: v })}
+              onRotation={setImageRotation}
+              onFlipH={() => flipImage("x")}
+              onFlipV={() => flipImage("y")}
+              onCommit={pushHistory}
+            />
           )}
           {selectedType === "image" && activeSubTool === "quitar-fondo" && (
             <RemoveBgInline
@@ -2653,8 +2735,25 @@ function CropOptionsInline({ onPick }: { onPick: (s: "square" | "circle" | "roun
   );
 }
 
-/** Filtros — 5 presets con thumbnails de gradient como placeholder. */
-function FilterPresetsInline({ onPick }: { onPick: (p: "none" | "bw" | "warm" | "cool" | "vintage") => void }) {
+/** Filtros — 5 presets + sliders ajuste fino + rotacion + flip. */
+function FilterPresetsInline({
+  onPick, brightness, contrast, saturation, angle,
+  onBrightness, onContrast, onSaturation, onRotation,
+  onFlipH, onFlipV, onCommit,
+}: {
+  onPick: (p: "none" | "bw" | "warm" | "cool" | "vintage") => void;
+  brightness: number;
+  contrast: number;
+  saturation: number;
+  angle: number;
+  onBrightness: (v: number) => void;
+  onContrast: (v: number) => void;
+  onSaturation: (v: number) => void;
+  onRotation: (v: number) => void;
+  onFlipH: () => void;
+  onFlipV: () => void;
+  onCommit: () => void;
+}) {
   const presets: Array<{ id: "none" | "bw" | "warm" | "cool" | "vintage"; label: string; bg: string }> = [
     { id: "none", label: "Original", bg: "linear-gradient(135deg,#a855f7,#ec4899)" },
     { id: "bw", label: "B&N", bg: "linear-gradient(135deg,#333,#999)" },
@@ -2663,20 +2762,102 @@ function FilterPresetsInline({ onPick }: { onPick: (p: "none" | "bw" | "warm" | 
     { id: "vintage", label: "Vintage", bg: "linear-gradient(135deg,#92400e,#fde68a)" },
   ];
   return (
-    <div className="border-b border-white/[0.06] flex gap-2 overflow-x-auto scrollbar-hide px-3 py-3">
-      {presets.map(p => (
-        <button
-          key={p.id}
-          onClick={() => onPick(p.id)}
-          className="shrink-0 flex flex-col items-center gap-1.5"
-        >
-          <div
-            className="w-14 h-14 rounded-xl border-2 border-white/10"
-            style={{ background: p.bg }}
+    <div className="border-b border-white/[0.06] flex flex-col gap-3 px-3 py-3 max-h-[55vh] overflow-y-auto">
+      {/* Presets — fila scroll horizontal */}
+      <div>
+        <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Presets</div>
+        <div className="flex gap-2 overflow-x-auto scrollbar-hide">
+          {presets.map(p => (
+            <button
+              key={p.id}
+              onClick={() => onPick(p.id)}
+              className="shrink-0 flex flex-col items-center gap-1.5"
+            >
+              <div className="w-12 h-12 rounded-xl border-2 border-white/10" style={{ background: p.bg }}/>
+              <span className="text-[9px] text-gray-300 font-semibold">{p.label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Ajuste fino */}
+      <div className="flex flex-col gap-2">
+        <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Ajuste fino</div>
+        <AdjustSlider label="Brillo"      value={brightness} min={-0.5} max={0.5} step={0.02} display={Math.round(brightness * 100)} onChange={onBrightness} onCommit={onCommit}/>
+        <AdjustSlider label="Contraste"   value={contrast}   min={-0.5} max={0.5} step={0.02} display={Math.round(contrast * 100)}   onChange={onContrast}   onCommit={onCommit}/>
+        <AdjustSlider label="Saturación"  value={saturation} min={-1}   max={1}   step={0.05} display={Math.round(saturation * 100)} onChange={onSaturation} onCommit={onCommit}/>
+      </div>
+
+      {/* Rotacion + flip */}
+      <div className="flex flex-col gap-2">
+        <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Rotar / voltear</div>
+        <div>
+          <div className="flex justify-between mb-1">
+            <span className="text-[11px] text-gray-400 font-semibold">Rotación</span>
+            <span className="text-[11px] text-purple-400 font-bold">{Math.round(angle)}°</span>
+          </div>
+          <input
+            type="range"
+            min={-180} max={180} step={1}
+            value={angle}
+            onChange={e => onRotation(Number(e.target.value))}
+            onMouseUp={onCommit}
+            onTouchEnd={onCommit}
+            className="w-full accent-purple-500"
           />
-          <span className="text-[10px] text-gray-300 font-semibold">{p.label}</span>
-        </button>
-      ))}
+        </div>
+        <div className="flex gap-2">
+          <button
+            onClick={onFlipH}
+            className="flex-1 py-2 rounded-xl bg-white/[0.05] text-white text-[12px] font-bold flex items-center justify-center gap-1.5"
+            aria-label="Voltear horizontal"
+          >
+            ↔ Horizontal
+          </button>
+          <button
+            onClick={onFlipV}
+            className="flex-1 py-2 rounded-xl bg-white/[0.05] text-white text-[12px] font-bold flex items-center justify-center gap-1.5"
+            aria-label="Voltear vertical"
+          >
+            ↕ Vertical
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Slider de ajuste con label + valor + commit al soltar.
+ *  Usado para brillo/contraste/saturacion. */
+function AdjustSlider({
+  label, value, min, max, step, display, onChange, onCommit,
+}: {
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  step: number;
+  display: number;
+  onChange: (v: number) => void;
+  onCommit: () => void;
+}) {
+  return (
+    <div>
+      <div className="flex justify-between mb-0.5">
+        <span className="text-[11px] text-gray-400 font-semibold">{label}</span>
+        <span className={`text-[11px] font-bold ${display === 0 ? "text-gray-500" : "text-purple-400"}`}>
+          {display > 0 ? "+" : ""}{display}
+        </span>
+      </div>
+      <input
+        type="range"
+        min={min} max={max} step={step}
+        value={value}
+        onChange={e => onChange(Number(e.target.value))}
+        onMouseUp={onCommit}
+        onTouchEnd={onCommit}
+        className="w-full accent-purple-500"
+      />
     </div>
   );
 }
