@@ -58,6 +58,7 @@ import { REMIX_STYLES, type RemixStyle } from "@/data/templateRemixes";
 import { useProjects } from "@/hooks/useProjects";
 import { supabase } from "@/lib/supabase";
 import { useLocale } from "@/hooks/useLocale";
+import { UpgradeModal, type UpgradeFeature } from "@/components/upgrade/UpgradeModal";
 import { Save, FolderOpen, Share2, Link2, Mail, MessageCircle, Send, Plus, Layers, Lock, Unlock, Eye, EyeOff, Circle as CircleIcon, Square as SquareIcon, Triangle, Heart, Star, AlignHorizontalJustifyCenter } from "lucide-react";
 
 type Props = {
@@ -97,6 +98,15 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
   const { user: authUser, profile: authProfile } = useAuth();
   const { toast } = useToast();
   const { t } = useLocale();
+
+  // Upgrade gating — Free users tocan limitaciones → modal "Sube a Pro"
+  const [upgradeFeature, setUpgradeFeature] = useState<UpgradeFeature | null>(null);
+  const isPaid = authProfile?.plan === "pro" || authProfile?.plan === "enterprise";
+  const requirePro = (feature: UpgradeFeature): boolean => {
+    if (isPaid) return true; // tiene acceso
+    setUpgradeFeature(feature);
+    return false; // bloquea la acción
+  };
 
   // ─── Template & canvas ───────────────────────────────────────────────────
   const [template, setTemplate] = useState<Template | null>(null);
@@ -964,6 +974,7 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
       });
       if (!res.ok) {
         if (res.status === 401) toast.error("Inicia sesión");
+        else if (res.status === 429 && !isPaid) setUpgradeFeature("remove-bg");
         else if (res.status === 429) toast.error("Demasiadas peticiones, espera 1 min");
         else toast.error("La IA falló — intenta de nuevo");
         return;
@@ -1027,6 +1038,7 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
         const errText = await res.text().catch(() => "");
         console.warn("[assistant] error body:", errText);
         if (res.status === 401) toast.error("Sesión expirada — vuelve a iniciar sesión");
+        else if (res.status === 429 && !isPaid) setUpgradeFeature("assistant");
         else if (res.status === 429) toast.error("Demasiadas peticiones, espera 1 min");
         else if (res.status >= 500) toast.error(`Servidor no disponible (${res.status})`);
         else toast.error(`La IA respondió ${res.status} — intenta de nuevo`);
@@ -1599,6 +1611,9 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
   const doExport = useCallback(async (format: "png" | "jpg" | "pdf" | "svg" = "png") => {
     const fc = fabricRef.current;
     if (!fc) return;
+    // Gate PDF + SVG para Free users — abre modal upgrade
+    if (format === "pdf" && !requirePro("pdf")) return;
+    if (format === "svg" && !requirePro("svg")) return;
     setExporting(true);
     try {
       const currentZoom = fc.getZoom();
@@ -1742,6 +1757,9 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
 
   const exportSingleFormat = useCallback(async (fmtId: FormatId) => {
     if (!template) return;
+    // Gate PDF/SVG para Free users
+    if (exportFileFormat === "pdf" && !requirePro("pdf")) return;
+    if (exportFileFormat === "svg" && !requirePro("svg")) return;
     if (!authUser) { toast.info(t("mobileEditor.toast.loginToDownload")); return; }
     setExporting(true);
     try {
@@ -1877,7 +1895,8 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
         }),
       });
       if (!res.ok) {
-        if (res.status === 429) toast.error("Demasiadas peticiones, espera 1 min");
+        if (res.status === 429 && !isPaid) setUpgradeFeature("remix");
+        else if (res.status === 429) toast.error("Demasiadas peticiones, espera 1 min");
         else toast.error("Error al generar remix");
         return;
       }
@@ -2686,6 +2705,14 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
       )}
 
       {/* ═══ SHARE MODAL — Compartir tras descargar (Fase H) ═══════════ */}
+      {/* UPGRADE MODAL — Free user toca limitaciones Pro (Fase U) */}
+      {upgradeFeature && (
+        <UpgradeModal
+          feature={upgradeFeature}
+          onClose={() => setUpgradeFeature(null)}
+        />
+      )}
+
       {shareOpen && (
         <ShareModal
           flyerTitle={docTitle || template?.title || "Mi flyer"}
