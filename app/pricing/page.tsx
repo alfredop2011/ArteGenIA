@@ -31,24 +31,51 @@ function PricingContent() {
   const isPaid = isPro || isEnterprise;
   const success = sp.get("success") === "1";
   const canceled = sp.get("canceled") === "1";
+  const successPlan = sp.get("plan"); // "pro" | "enterprise" | null
+  // Distinguimos qué botón está cargando para mostrar spinner solo en el suyo.
+  const [loadingPlan, setLoadingPlan] = useState<"pro" | "enterprise" | null>(null);
+  // Calculadora: cuántos flyers/mes — decide la recomendación Pro vs Enterprise.
+  // 1 flyer hecho con freelance ~= 30€; con ArteGenIA ~= coste plan / N.
+  const [flyersPerMonth, setFlyersPerMonth] = useState(20);
+  const [teamSize, setTeamSize] = useState(1);
+  // Recomendación simple: 2+ personas o 80+ flyers/mes → Enterprise.
+  const recommended: "pro" | "enterprise" =
+    teamSize >= 2 || flyersPerMonth >= 80 ? "enterprise" : "pro";
+  // ROI vs contratar diseñador (estimación conservadora: 30€/flyer freelance).
+  const freelanceCost = flyersPerMonth * 30;
+  const planCost = recommended === "enterprise" ? 34.99 : 9.99;
+  const savings = Math.max(0, freelanceCost - planCost);
 
   useEffect(() => {
-    if (success) toast.success("¡Bienvenido a Pro! 🎉");
+    if (success) {
+      if (successPlan === "enterprise") toast.success("🚀 ¡Bienvenido a Enterprise!");
+      else toast.success("¡Bienvenido a Pro! 🎉");
+    }
     if (canceled) toast.info("Pago cancelado — sin cargo.");
-  }, [success, canceled, toast]);
+  }, [success, canceled, successPlan, toast]);
 
-  const startCheckout = async () => {
+  const startCheckout = async (plan: "pro" | "enterprise" = "pro") => {
     if (!user) {
       router.push("/?login=1");
       return;
     }
     setLoading(true);
+    setLoadingPlan(plan);
     try {
-      const res = await fetch("/api/stripe/checkout", { method: "POST" });
+      const res = await fetch("/api/stripe/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan }),
+      });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        if (res.status === 503) toast.error("Plan Pro no disponible aún — vuelve pronto.");
-        else toast.error(data.error || "No se pudo iniciar el pago");
+        if (res.status === 503) {
+          toast.error(
+            plan === "enterprise"
+              ? "Plan Enterprise no disponible aún — vuelve pronto."
+              : "Plan Pro no disponible aún — vuelve pronto.",
+          );
+        } else toast.error(data.error || "No se pudo iniciar el pago");
         return;
       }
       const { url } = await res.json() as { url: string };
@@ -58,6 +85,7 @@ function PricingContent() {
       toast.error("Error de conexión");
     } finally {
       setLoading(false);
+      setLoadingPlan(null);
     }
   };
 
@@ -180,11 +208,11 @@ function PricingContent() {
             </ul>
 
             <button
-              onClick={startCheckout}
+              onClick={() => startCheckout("pro")}
               disabled={loading || isPaid}
               className="w-full text-center py-3 rounded-xl bg-gradient-to-br from-purple-600 to-fuchsia-600 text-white font-black text-[13px] active:scale-[0.97] transition-transform shadow-lg shadow-purple-500/40 disabled:opacity-50 disabled:cursor-not-allowed animate-pulse-glow"
             >
-              {isPro ? "Ya eres Pro ✓" : isEnterprise ? "Ya tienes Enterprise" : loading ? "Cargando…" : "Subir a Pro →"}
+              {isPro ? "Ya eres Pro ✓" : isEnterprise ? "Ya tienes Enterprise" : loadingPlan === "pro" ? "Cargando…" : "Subir a Pro →"}
             </button>
             {!user && (
               <p className="text-[10px] text-gray-400 text-center mt-2">
@@ -228,21 +256,26 @@ function PricingContent() {
               <Check strong text="Más herramientas próximamente"/>
             </ul>
 
-            <a
-              href={`mailto:alfredop2011@gmail.com?subject=${encodeURIComponent("Early access Enterprise — ArteGenIA")}&body=${encodeURIComponent(
-                "Hola,\n\nQuiero reservar mi plaza en el early access del plan Enterprise (34,99€/mes).\n\n" +
-                "Mis datos:\n" +
-                "- Nombre / Empresa: \n" +
-                "- Número estimado de usuarios: \n" +
-                "- Para qué tipo de eventos / proyectos: \n\n" +
-                "Gracias."
-              )}`}
-              className="w-full text-center py-3 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 text-white font-black text-[13px] active:scale-[0.97] transition-transform shadow-lg shadow-amber-500/30"
+            <button
+              onClick={() => startCheckout("enterprise")}
+              disabled={loading || isEnterprise}
+              className="w-full text-center py-3 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 text-white font-black text-[13px] active:scale-[0.97] transition-transform shadow-lg shadow-amber-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isEnterprise ? "Ya tienes Enterprise ✓" : "Reservar early access →"}
-            </a>
+              {isEnterprise
+                ? "Ya tienes Enterprise ✓"
+                : loadingPlan === "enterprise"
+                  ? "Cargando…"
+                  : isPro
+                    ? "Subir a Enterprise →"
+                    : "Reservar early access →"}
+            </button>
+            {!user && (
+              <p className="text-[10px] text-gray-400 text-center mt-2">
+                Necesitas iniciar sesión
+              </p>
+            )}
             <p className="text-[10px] text-gray-500 text-center mt-2">
-              Plazas limitadas · Respuesta en 24h
+              Plazas limitadas · Cancela cuando quieras
             </p>
           </div>
         </div>
@@ -288,6 +321,203 @@ function PricingContent() {
                 <div className="text-[12px] text-amber-200 text-center font-bold">{row.ent}</div>
               </div>
             ))}
+          </div>
+        </div>
+
+        {/* ¿Pro o Enterprise? — Bloque de decisión con perfiles + calculadora ROI */}
+        <div className="mt-20 max-w-5xl mx-auto">
+          <div className="text-center mb-8">
+            <p className="text-[11px] uppercase tracking-widest text-purple-300 font-bold mb-2">
+              ¿Cuál elijo?
+            </p>
+            <h2 className="text-[22px] md:text-[28px] font-black mb-2">
+              Pro o Enterprise — depende de cómo trabajas
+            </h2>
+            <p className="text-[13px] text-gray-400 max-w-xl mx-auto">
+              No hay plan malo. Solo el que encaja contigo.
+            </p>
+          </div>
+
+          {/* Perfiles lado a lado */}
+          <div className="grid md:grid-cols-2 gap-4 mb-10">
+            {/* Perfil Pro */}
+            <div className="p-6 rounded-2xl bg-gradient-to-br from-purple-500/[0.08] via-fuchsia-500/[0.04] to-transparent border border-purple-500/30">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 rounded-2xl bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-[24px]">
+                  👤
+                </div>
+                <div>
+                  <div className="text-[11px] text-purple-300 font-bold uppercase tracking-wider">
+                    Para ti
+                  </div>
+                  <div className="text-[16px] font-black">Autónomo / Creator</div>
+                </div>
+              </div>
+              <p className="text-[13px] text-gray-300 leading-relaxed mb-4">
+                Trabajas <strong className="text-white">solo</strong>. Haces flyers para tus eventos, tu marca personal, tus redes. Necesitas IA ilimitada y export profesional, pero no manejas equipo.
+              </p>
+              <div className="space-y-2 mb-5">
+                <ProfileReason text="Eres el único que diseña" />
+                <ProfileReason text="Hasta ~80 flyers/mes" />
+                <ProfileReason text="No necesitas brand kit corporativo" />
+              </div>
+              <div className="pt-5 border-t border-white/[0.06] flex items-baseline justify-between">
+                <span className="text-[12px] text-gray-400">Recomendado:</span>
+                <span className="text-[18px] font-black shimmer-text">Pro · 9,99€/mes</span>
+              </div>
+            </div>
+
+            {/* Perfil Enterprise */}
+            <div className="p-6 rounded-2xl bg-gradient-to-br from-amber-500/[0.08] via-orange-500/[0.04] to-transparent border border-amber-500/30">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-[24px]">
+                  🏢
+                </div>
+                <div>
+                  <div className="text-[11px] text-amber-300 font-bold uppercase tracking-wider">
+                    Para tu equipo
+                  </div>
+                  <div className="text-[16px] font-black">Agencia / Empresa</div>
+                </div>
+              </div>
+              <p className="text-[13px] text-gray-300 leading-relaxed mb-4">
+                Trabajáis <strong className="text-white">varios</strong>. Diseñas para tus clientes, organizas eventos a escala, o tu empresa necesita coherencia de marca. Cada uno con su cuenta, mismo brand kit.
+              </p>
+              <div className="space-y-2 mb-5">
+                <ProfileReason text="2+ personas diseñando" />
+                <ProfileReason text="Plantillas con tu logo + paleta fija" />
+                <ProfileReason text="Factura con IVA + WhatsApp directo" />
+              </div>
+              <div className="pt-5 border-t border-white/[0.06] flex items-baseline justify-between">
+                <span className="text-[12px] text-gray-400">Recomendado:</span>
+                <span className="text-[18px] font-black bg-gradient-to-br from-amber-400 to-orange-400 bg-clip-text text-transparent">
+                  Enterprise · 34,99€/mes
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Calculadora ROI */}
+          <div className="rounded-2xl bg-[#13131f] border border-white/[0.06] p-6 md:p-8">
+            <div className="text-center mb-6">
+              <p className="text-[11px] uppercase tracking-widest text-purple-300 font-bold mb-2">
+                Calculadora rápida
+              </p>
+              <h3 className="text-[18px] md:text-[22px] font-black">
+                ¿Cuánto ahorras vs contratar diseñador?
+              </h3>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-6 mb-7">
+              {/* Slider flyers */}
+              <div>
+                <label className="flex items-baseline justify-between mb-3">
+                  <span className="text-[12px] text-gray-300 font-semibold">Flyers al mes</span>
+                  <span className="text-[18px] font-black text-purple-300">{flyersPerMonth}</span>
+                </label>
+                <input
+                  type="range"
+                  min="1"
+                  max="200"
+                  step="1"
+                  value={flyersPerMonth}
+                  onChange={(e) => setFlyersPerMonth(Number(e.target.value))}
+                  className="w-full accent-purple-500"
+                />
+                <div className="flex justify-between text-[10px] text-gray-500 mt-1">
+                  <span>1</span>
+                  <span>50</span>
+                  <span>100</span>
+                  <span>200+</span>
+                </div>
+              </div>
+
+              {/* Slider equipo */}
+              <div>
+                <label className="flex items-baseline justify-between mb-3">
+                  <span className="text-[12px] text-gray-300 font-semibold">Personas en tu equipo</span>
+                  <span className="text-[18px] font-black text-amber-300">{teamSize}</span>
+                </label>
+                <input
+                  type="range"
+                  min="1"
+                  max="10"
+                  step="1"
+                  value={teamSize}
+                  onChange={(e) => setTeamSize(Number(e.target.value))}
+                  className="w-full accent-amber-500"
+                />
+                <div className="flex justify-between text-[10px] text-gray-500 mt-1">
+                  <span>1</span>
+                  <span>3</span>
+                  <span>5</span>
+                  <span>10+</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Resultado */}
+            <div className="grid grid-cols-3 gap-3 mb-6">
+              <div className="text-center p-4 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+                <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Coste freelance</div>
+                <div className="text-[20px] md:text-[24px] font-black text-gray-400 line-through">
+                  {freelanceCost.toFixed(0)}€
+                </div>
+                <div className="text-[10px] text-gray-500 mt-1">/mes</div>
+              </div>
+              <div className="text-center p-4 rounded-xl bg-purple-500/[0.08] border border-purple-500/30">
+                <div className="text-[10px] text-purple-300 uppercase tracking-wider mb-1">Con ArteGenIA</div>
+                <div className="text-[20px] md:text-[24px] font-black shimmer-text">
+                  {planCost.toFixed(2)}€
+                </div>
+                <div className="text-[10px] text-gray-500 mt-1">/mes</div>
+              </div>
+              <div className="text-center p-4 rounded-xl bg-emerald-500/[0.08] border border-emerald-500/30">
+                <div className="text-[10px] text-emerald-300 uppercase tracking-wider mb-1">Ahorras</div>
+                <div className="text-[20px] md:text-[24px] font-black text-emerald-400">
+                  {savings.toFixed(0)}€
+                </div>
+                <div className="text-[10px] text-emerald-300/70 mt-1">/mes</div>
+              </div>
+            </div>
+
+            {/* CTA recomendado */}
+            <div className={`p-4 rounded-xl border ${
+              recommended === "enterprise"
+                ? "bg-amber-500/[0.05] border-amber-500/30"
+                : "bg-purple-500/[0.05] border-purple-500/30"
+            }`}>
+              <div className="flex items-center justify-between gap-4 flex-wrap">
+                <div className="flex-1 min-w-[200px]">
+                  <div className="text-[11px] uppercase tracking-wider font-bold mb-1 text-gray-400">
+                    Te recomendamos
+                  </div>
+                  <div className="text-[16px] font-black">
+                    {recommended === "enterprise" ? (
+                      <>Plan <span className="text-amber-300">Enterprise</span> — equipo + volumen alto</>
+                    ) : (
+                      <>Plan <span className="text-purple-300">Pro</span> — perfecto para ti</>
+                    )}
+                  </div>
+                </div>
+                <button
+                  onClick={() => startCheckout(recommended)}
+                  disabled={loading || (recommended === "pro" ? isPaid : isEnterprise)}
+                  className={`px-5 py-2.5 rounded-xl text-white font-black text-[13px] active:scale-[0.97] transition-transform disabled:opacity-50 disabled:cursor-not-allowed ${
+                    recommended === "enterprise"
+                      ? "bg-gradient-to-br from-amber-500 to-orange-600 shadow-lg shadow-amber-500/30"
+                      : "bg-gradient-to-br from-purple-600 to-fuchsia-600 shadow-lg shadow-purple-500/40"
+                  }`}
+                >
+                  {loadingPlan === recommended ? "Cargando…" : `Empezar con ${recommended === "enterprise" ? "Enterprise" : "Pro"} →`}
+                </button>
+              </div>
+            </div>
+
+            <p className="text-[10px] text-gray-500 text-center mt-4 leading-relaxed">
+              * Estimación basada en ~30€/flyer freelance. Cálculo orientativo —
+              tu coste real depende de la complejidad y del diseñador.
+            </p>
           </div>
         </div>
 
@@ -366,6 +596,27 @@ function Check({ text, strong }: { text: string; strong?: boolean }) {
       </svg>
       <span className={strong ? "text-white font-semibold" : "text-gray-300"}>{text}</span>
     </li>
+  );
+}
+
+function ProfileReason({ text }: { text: string }) {
+  return (
+    <div className="flex items-start gap-2 text-[12.5px] text-gray-200">
+      <svg
+        className="shrink-0 mt-0.5 text-purple-300"
+        width="14"
+        height="14"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="3"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <polyline points="20 6 9 17 4 12" />
+      </svg>
+      <span>{text}</span>
+    </div>
   );
 }
 

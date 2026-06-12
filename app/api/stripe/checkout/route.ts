@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
-import { stripe, PRO_PRICE_ID } from "@/lib/stripe";
+import { stripe, priceIdFor, type PlanKey } from "@/lib/stripe";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -27,8 +27,20 @@ export async function POST(req: NextRequest) {
     if (!user) {
       return NextResponse.json({ error: "Inicia sesion" }, { status: 401 });
     }
-    if (!PRO_PRICE_ID) {
-      return NextResponse.json({ error: "Plan Pro no configurado" }, { status: 503 });
+
+    // Acepta body { plan: "pro" | "enterprise" }. Default: "pro" (back-compat).
+    let plan: PlanKey = "pro";
+    try {
+      const body = await req.json().catch(() => ({}));
+      if (body?.plan === "enterprise") plan = "enterprise";
+    } catch {}
+
+    const priceId = priceIdFor(plan);
+    if (!priceId) {
+      return NextResponse.json(
+        { error: `Plan ${plan} no configurado` },
+        { status: 503 },
+      );
     }
 
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || new URL(req.url).origin;
@@ -36,16 +48,19 @@ export async function POST(req: NextRequest) {
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       payment_method_types: ["card"],
-      line_items: [{ price: PRO_PRICE_ID, quantity: 1 }],
+      line_items: [{ price: priceId, quantity: 1 }],
       customer_email: user.email,
       // Vinculamos la session con nuestro user.id — el webhook lo lee para
-      // saber qué profile actualizar.
+      // saber qué profile actualizar. También pasamos el plan deseado en
+      // metadata como backup (el webhook prefiere mirar el price_id real).
       client_reference_id: user.id,
-      metadata: { supabase_user_id: user.id },
-      success_url: `${baseUrl}/pricing?success=1&session_id={CHECKOUT_SESSION_ID}`,
+      metadata: { supabase_user_id: user.id, requested_plan: plan },
+      subscription_data: {
+        metadata: { supabase_user_id: user.id, requested_plan: plan },
+      },
+      success_url: `${baseUrl}/pricing?success=1&plan=${plan}&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${baseUrl}/pricing?canceled=1`,
       allow_promotion_codes: true,
-      // Reusar mismo customer si ya pago antes (evita duplicados)
       billing_address_collection: "auto",
     });
 

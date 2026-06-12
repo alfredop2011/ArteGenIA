@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { stripe } from "@/lib/stripe";
+import { stripe, planFromPriceId, type PlanKey } from "@/lib/stripe";
 import { createClient } from "@supabase/supabase-js";
 import type Stripe from "stripe";
 
@@ -36,7 +36,7 @@ function adminClient() {
   });
 }
 
-async function updatePlan(userId: string, plan: "free" | "pro") {
+async function updatePlan(userId: string, plan: "free" | PlanKey) {
   const sb = adminClient();
   const { error } = await sb
     .from("profiles")
@@ -44,6 +44,20 @@ async function updatePlan(userId: string, plan: "free" | "pro") {
     .eq("id", userId);
   if (error) console.error("[stripe-webhook] update plan failed:", error);
   else console.log(`[stripe-webhook] user ${userId} → plan=${plan}`);
+}
+
+/** Dada una subscription Stripe, devuelve qué plan (pro/enterprise/null)
+ *  comparando el price_id del primer item con los IDs configurados.
+ *  Fallback a metadata.requested_plan si por algún motivo no matchea. */
+function detectPlanFromSubscription(sub: Stripe.Subscription): PlanKey | null {
+  const priceId = sub.items?.data?.[0]?.price?.id;
+  if (priceId) {
+    const matched = planFromPriceId(priceId);
+    if (matched) return matched;
+  }
+  const fallback = sub.metadata?.requested_plan;
+  if (fallback === "pro" || fallback === "enterprise") return fallback;
+  return null;
 }
 
 export async function POST(req: NextRequest) {
@@ -74,13 +88,31 @@ export async function POST(req: NextRequest) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
         const userId = session.client_reference_id ?? session.metadata?.supabase_user_id;
-        if (userId) await updatePlan(userId, "pro");
+        if (!userId) break;
+        // Recuperar la subscription para saber qué plan compró (price_id).
+        // En checkout.session.completed la subscription es solo un string ID,
+        // hay que fetchearla expandida.
+        let plan: PlanKey = "pro"; // default si no podemos detectar
+        if (session.subscription) {
+          try {
+            const sub = await stripe.subscriptions.retrieve(
+              typeof session.subscription === "string"
+                ? session.subscription
+                : session.subscription.id,
+            );
+            const detected = detectPlanFromSubscription(sub);
+            if (detected) plan = detected;
+          } catch (e) {
+            console.warn("[stripe-webhook] no pude leer subscription:", e);
+          }
+        }
+        // Si todo falla, mira el metadata.requested_plan que pusimos al crear
+        if (session.metadata?.requested_plan === "enterprise") plan = "enterprise";
+        await updatePlan(userId, plan);
         break;
       }
       case "customer.subscription.deleted": {
         const sub = event.data.object as Stripe.Subscription;
-        // Obtener el customer y de ahí el email para buscar el user
-        // O usar metadata si la guardamos al crear
         const userId = sub.metadata?.supabase_user_id;
         if (userId) await updatePlan(userId, "free");
         break;
@@ -89,9 +121,10 @@ export async function POST(req: NextRequest) {
         const sub = event.data.object as Stripe.Subscription;
         const userId = sub.metadata?.supabase_user_id;
         if (!userId) break;
-        // Si la suscripción está activa, asegurar plan=pro
+        // Activa: plan según price_id (pro o enterprise). Cancelada: free.
         if (sub.status === "active" || sub.status === "trialing") {
-          await updatePlan(userId, "pro");
+          const detected = detectPlanFromSubscription(sub) ?? "pro";
+          await updatePlan(userId, detected);
         } else if (sub.status === "canceled" || sub.status === "unpaid" || sub.status === "incomplete_expired") {
           await updatePlan(userId, "free");
         }

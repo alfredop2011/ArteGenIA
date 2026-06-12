@@ -23,7 +23,26 @@ export const stripe = new Stripe(apiKey ?? "sk_test_dummy", {
   typescript: true,
 });
 
-/** Price ID del plan Pro recurrente (mensual). Crear en Stripe Dashboard:
- *  Products → Add product → "ArteGenIA Pro" → Add price ($9.99/month) →
- *  copiar Price ID (empieza por price_...) y pegarlo en .env. */
+/** Price IDs recurrentes mensuales por plan. Crear en Stripe Dashboard:
+ *  Products → Add product → "ArteGenIA Pro" (9,99€/mes) o
+ *  "ArteGenIA Enterprise" (34,99€/mes) → copiar Price ID. */
 export const PRO_PRICE_ID = process.env.STRIPE_PRO_PRICE_ID ?? "";
+export const ENTERPRISE_PRICE_ID = process.env.STRIPE_ENTERPRISE_PRICE_ID ?? "";
+
+export type PlanKey = "pro" | "enterprise";
+
+/** Mapea plan key → price ID Stripe. Usado por checkout para saber qué
+ *  product line item suscribir y por webhook para detectar qué plan se
+ *  compró (comparando subscription.items[0].price.id). */
+export function priceIdFor(plan: PlanKey): string {
+  return plan === "enterprise" ? ENTERPRISE_PRICE_ID : PRO_PRICE_ID;
+}
+
+/** Reverse lookup: dado un price ID, ¿qué plan es? Devuelve null si
+ *  el ID no coincide con ningún price configurado (puede pasar si el
+ *  user tenía un plan legacy borrado). */
+export function planFromPriceId(priceId: string): PlanKey | null {
+  if (priceId && priceId === ENTERPRISE_PRICE_ID) return "enterprise";
+  if (priceId && priceId === PRO_PRICE_ID) return "pro";
+  return null;
+}
