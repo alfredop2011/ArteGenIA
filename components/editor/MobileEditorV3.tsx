@@ -1433,7 +1433,7 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
   }, [shareUrl, lastExportedDataUrl, authUser, toast]);
 
   // ─── Export ─────────────────────────────────────────────────────────────
-  const doExport = useCallback(async (format: "png" | "jpg" = "png") => {
+  const doExport = useCallback(async (format: "png" | "jpg" | "pdf" | "svg" = "png") => {
     const fc = fabricRef.current;
     if (!fc) return;
     setExporting(true);
@@ -1442,26 +1442,76 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
       const currentVpt = fc.viewportTransform ? [...fc.viewportTransform] : null;
       fc.setZoom(1);
       fc.setDimensions({ width: canvasSize.w, height: canvasSize.h });
-      const rawDataUrl = fc.toDataURL({ format: format === "jpg" ? "jpeg" : "png", quality: 0.95, multiplier: 1 });
+
+      // SVG — output directo de Fabric (vectorial)
+      if (format === "svg") {
+        const svg = fc.toSVG();
+        fc.setZoom(currentZoom);
+        if (currentVpt) fc.setViewportTransform(currentVpt as [number, number, number, number, number, number]);
+        fc.requestRenderAll();
+        const blob = new Blob([svg], { type: "image/svg+xml" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.download = "artegenia-flyer.svg";
+        link.href = url;
+        link.click();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        toast.success("Descargado SVG vectorial");
+        if (authUser) {
+          // Para Compartir, generamos PNG aparte (las redes no aceptan SVG bien)
+          fc.setZoom(1);
+          fc.setDimensions({ width: canvasSize.w, height: canvasSize.h });
+          const pngUrl = fc.toDataURL({ format: "png", quality: 0.95, multiplier: 1 });
+          fc.setZoom(currentZoom);
+          if (currentVpt) fc.setViewportTransform(currentVpt as [number, number, number, number, number, number]);
+          fc.requestRenderAll();
+          setLastExportedDataUrl(pngUrl);
+          setShareUrl(null);
+          setOpenSheet(null);
+          setShareOpen(true);
+        }
+        return;
+      }
+
+      // PNG / JPG / PDF — todos requieren raster primero
+      const rawDataUrl = fc.toDataURL({
+        format: format === "jpg" ? "jpeg" : "png",
+        quality: format === "jpg" ? 0.92 : 0.95,
+        multiplier: 1,
+      });
       fc.setZoom(currentZoom);
       if (currentVpt) fc.setViewportTransform(currentVpt as [number, number, number, number, number, number]);
       fc.requestRenderAll();
+
       let finalUrl = rawDataUrl;
       if (shouldWatermark(authProfile?.plan)) {
         try { finalUrl = await applyWatermark(rawDataUrl); }
         catch (e) { console.warn(e); }
       }
-      const link = document.createElement("a");
-      link.download = `artegenia-flyer.${format}`;
-      link.href = finalUrl;
-      link.click();
-      // Guardar dataURL para que el modal Compartir pueda re-subir a R2
-      // sin re-renderizar el canvas.
+
+      if (format === "pdf") {
+        // jspdf: embed la imagen al tamaño real del canvas
+        const { jsPDF } = await import("jspdf");
+        // 1 px = 0.264583 mm a 96 DPI estándar
+        const pxToMm = 25.4 / 96;
+        const wMm = canvasSize.w * pxToMm;
+        const hMm = canvasSize.h * pxToMm;
+        const orientation = wMm >= hMm ? "landscape" : "portrait";
+        const pdf = new jsPDF({ orientation, unit: "mm", format: [wMm, hMm] });
+        pdf.addImage(finalUrl, "PNG", 0, 0, wMm, hMm);
+        pdf.save("artegenia-flyer.pdf");
+        toast.success("Descargado PDF para imprenta");
+      } else {
+        const link = document.createElement("a");
+        link.download = `artegenia-flyer.${format}`;
+        link.href = finalUrl;
+        link.click();
+        toast.success(`Descargado ${format.toUpperCase()}`);
+      }
+
+      // Guardar para Compartir — PNG/JPG funcionan directo; PDF cae al PNG
       setLastExportedDataUrl(finalUrl);
-      setShareUrl(null); // invalida cache (es un nuevo render)
-      toast.success(`Descargado ${format.toUpperCase()}`);
-      // Auto-abrir modal compartir tras descarga exitosa (si user logueado).
-      // El sheet export se cierra para no saturar visual.
+      setShareUrl(null);
       if (authUser) {
         setOpenSheet(null);
         setShareOpen(true);
@@ -1484,9 +1534,12 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
   // Las paletas/remixes NO se replican aqui — para preservarlos exactos
   // exportamos el formato ACTUAL via doExport() y los OTROS formatos llevan
   // el variant original con solo los textos editados. Trade-off documentado.
-  // exportFileFormat: toggle PNG (calidad lossless, archivo grande) vs JPG
-  // (lossy ~5x mas liviano, sin transparencia — ideal WhatsApp).
-  const [exportFileFormat, setExportFileFormat] = useState<"png" | "jpg">("png");
+  // exportFileFormat: 4 tipos disponibles:
+  //  - PNG: lossless, ideal redes sociales y reediciones
+  //  - JPG: ~5x más liviano, ideal WhatsApp
+  //  - PDF: vectorial-ish (imagen embedded a tamaño real), ideal imprenta
+  //  - SVG: vectorial real, ideal reusar en otros editores
+  const [exportFileFormat, setExportFileFormat] = useState<"png" | "jpg" | "pdf" | "svg">("png");
 
   const renderVariantOffscreen = useCallback(async (variant: ReturnType<typeof getVariant>, fileFormat: "png" | "jpg" = "png"): Promise<string | null> => {
     if (!variant) return null;
@@ -1540,14 +1593,36 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
         toast.error(`Esta plantilla no tiene variante ${FORMATS[fmtId].name}`);
         return;
       }
-      const url = await renderVariantOffscreen(variant, exportFileFormat);
+      // PNG/JPG/PDF: render off-screen como PNG/JPG, luego convertir si PDF
+      // SVG: el render off-screen siempre devuelve raster — para SVG en multi-
+      // formato, fallback a PNG con warning porque necesitaríamos un flow
+      // off-screen-toSVG (no implementado para mantener simple).
+      const rasterFormat: "png" | "jpg" =
+        exportFileFormat === "jpg" ? "jpg" : "png";
+      const url = await renderVariantOffscreen(variant, rasterFormat);
       if (!url) { toast.error("Error al renderizar"); return; }
       let finalUrl = url;
       if (shouldWatermark(authProfile?.plan)) {
         try { finalUrl = await applyWatermark(url); } catch (e) { console.warn(e); }
       }
-      downloadDataUrl(finalUrl, `artegenia-${template.id}-${fmtId}.${exportFileFormat}`);
-      toast.success(`Descargado ${FORMATS[fmtId].name} (${exportFileFormat.toUpperCase()})`);
+      if (exportFileFormat === "pdf") {
+        const { jsPDF } = await import("jspdf");
+        const pxToMm = 25.4 / 96;
+        const wMm = variant.width * pxToMm;
+        const hMm = variant.height * pxToMm;
+        const orientation = wMm >= hMm ? "landscape" : "portrait";
+        const pdf = new jsPDF({ orientation, unit: "mm", format: [wMm, hMm] });
+        pdf.addImage(finalUrl, "PNG", 0, 0, wMm, hMm);
+        pdf.save(`artegenia-${template.id}-${fmtId}.pdf`);
+        toast.success(`Descargado ${FORMATS[fmtId].name} (PDF)`);
+      } else if (exportFileFormat === "svg") {
+        // Multi-formato + SVG no soportado off-screen — fallback a PNG con info
+        downloadDataUrl(finalUrl, `artegenia-${template.id}-${fmtId}.png`);
+        toast.info(`${FORMATS[fmtId].name} no se exporta SVG — descargado PNG`);
+      } else {
+        downloadDataUrl(finalUrl, `artegenia-${template.id}-${fmtId}.${exportFileFormat}`);
+        toast.success(`Descargado ${FORMATS[fmtId].name} (${exportFileFormat.toUpperCase()})`);
+      }
     } finally {
       setExporting(false);
     }
@@ -3084,50 +3159,50 @@ function ExportMultiFormatSheet({
   template: Template;
   currentFormat: FormatId | undefined;
   exporting: boolean;
-  fileFormat: "png" | "jpg";
-  onFileFormatChange: (f: "png" | "jpg") => void;
+  fileFormat: "png" | "jpg" | "pdf" | "svg";
+  onFileFormatChange: (f: "png" | "jpg" | "pdf" | "svg") => void;
   onExportOne: (f: FormatId) => void;
   onExportAll: () => void;
 }) {
   const available: FormatId[] = PUBLIC_FORMATS.filter(fmt =>
     !!template.variants.find(v => v.format === fmt)
   );
+  const fileFormatHelp: Record<typeof fileFormat, string> = {
+    png: "PNG sin pérdida. Texto nítido y bordes perfectos. Ideal imprimir o subir a Instagram en alta.",
+    jpg: "JPG comprimido (~5× más liviano). Ideal WhatsApp y rapidez. Puede mostrar artefactos en texto fino.",
+    pdf: "PDF para imprenta profesional. Tamaño real en mm, calidad de impresión. Ideal llevarlo a una imprenta o printable.",
+    svg: "SVG vectorial. Editable en Illustrator/Figma/Inkscape sin perder calidad. Las redes sociales pueden no aceptarlo.",
+  };
   return (
     <div className="flex flex-col gap-4">
-      {/* Toggle PNG/JPG */}
+      {/* Toggle PNG/JPG/PDF/SVG */}
       <div>
         <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">
           Tipo de archivo
         </div>
-        <div className="flex gap-2 p-1 rounded-xl bg-black/30 border border-white/[0.06]">
-          <button
-            onClick={() => onFileFormatChange("png")}
-            className={`flex-1 py-2 rounded-lg text-[12px] font-bold transition-colors ${
-              fileFormat === "png"
-                ? "bg-purple-500 text-white shadow-md"
-                : "text-gray-400 active:bg-white/[0.05]"
-            }`}
-          >
-            PNG
-            <span className="block text-[9px] font-normal opacity-70 mt-0.5">Calidad máxima</span>
-          </button>
-          <button
-            onClick={() => onFileFormatChange("jpg")}
-            className={`flex-1 py-2 rounded-lg text-[12px] font-bold transition-colors ${
-              fileFormat === "jpg"
-                ? "bg-purple-500 text-white shadow-md"
-                : "text-gray-400 active:bg-white/[0.05]"
-            }`}
-          >
-            JPG
-            <span className="block text-[9px] font-normal opacity-70 mt-0.5">Archivo ligero</span>
-          </button>
+        <div className="grid grid-cols-4 gap-1.5 p-1 rounded-xl bg-black/30 border border-white/[0.06]">
+          {(["png", "jpg", "pdf", "svg"] as const).map(fmt => (
+            <button
+              key={fmt}
+              onClick={() => onFileFormatChange(fmt)}
+              className={`py-2 rounded-lg text-[12px] font-bold transition-colors ${
+                fileFormat === fmt
+                  ? "bg-purple-500 text-white shadow-md"
+                  : "text-gray-400 active:bg-white/[0.05]"
+              }`}
+            >
+              {fmt.toUpperCase()}
+              <span className="block text-[8px] font-normal opacity-70 mt-0.5">
+                {fmt === "png" && "Calidad"}
+                {fmt === "jpg" && "Ligero"}
+                {fmt === "pdf" && "Imprenta"}
+                {fmt === "svg" && "Vector"}
+              </span>
+            </button>
+          ))}
         </div>
         <p className="text-[10px] text-gray-500 mt-1.5 leading-snug">
-          {fileFormat === "png"
-            ? "PNG sin pérdida. Texto nítido y bordes perfectos. Ideal imprimir o subir a Instagram en alta."
-            : "JPG comprimido (~5× más liviano). Ideal WhatsApp y rapidez. Puede mostrar artefactos en texto fino."
-          }
+          {fileFormatHelp[fileFormat]}
         </p>
       </div>
 
