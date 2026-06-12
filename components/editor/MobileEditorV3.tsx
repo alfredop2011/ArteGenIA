@@ -258,6 +258,40 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
     })();
   }, [projectId, router]);
 
+  // ─── Onboarding primera vez (Fase M.3) ─────────────────────────────────
+  // Tooltips guiados para enseñar el patron del editor. Solo se muestra la
+  // primera vez (localStorage "artegenia-v3-onboarding-seen"). 4 steps con
+  // mensaje + flecha apuntando al elemento + botones Siguiente / Saltar.
+  const ONBOARDING_KEY = "artegenia-v3-onboarding-seen";
+  const [onboardingStep, setOnboardingStep] = useState<number>(-1);
+  useEffect(() => {
+    // Disparar onboarding solo cuando el canvas esta listo Y nunca se vio
+    if (!loaded) return;
+    try {
+      const seen = window.localStorage.getItem(ONBOARDING_KEY);
+      if (!seen) {
+        // Pequeño delay para que la UI termine de animar
+        const t = setTimeout(() => setOnboardingStep(0), 700);
+        return () => clearTimeout(t);
+      }
+    } catch {}
+  }, [loaded]);
+
+  const dismissOnboarding = useCallback(() => {
+    try { window.localStorage.setItem(ONBOARDING_KEY, "1"); } catch {}
+    setOnboardingStep(-1);
+  }, []);
+
+  const nextOnboardingStep = useCallback(() => {
+    setOnboardingStep(s => {
+      if (s >= 3) {
+        try { window.localStorage.setItem(ONBOARDING_KEY, "1"); } catch {}
+        return -1;
+      }
+      return s + 1;
+    });
+  }, []);
+
   // ─── KEYBOARD AVOIDANCE (visualViewport API) ───────────────────────────
   // Cuando el teclado virtual sube en mobile, redimensionamos el editor
   // para que canvas + sheet queden VISIBLES sobre el teclado. Sin esto
@@ -2388,6 +2422,16 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
                     subtitle="Volver a tus diseños guardados"
                     onClick={() => { setOpenSheet(null); router.push("/projects"); }}
                   />
+                  <MoreRowLink
+                    icon={<Sparkles size={18}/>}
+                    label="Ver tutorial"
+                    subtitle="Repetir la guía rápida del editor"
+                    onClick={() => {
+                      try { window.localStorage.removeItem(ONBOARDING_KEY); } catch {}
+                      setOpenSheet(null);
+                      setOnboardingStep(0);
+                    }}
+                  />
                   <MoreRow icon={<Wand2 size={18}/>} label="Asistente IA" subtitle="Genera variaciones desde texto" disabled/>
                   <MoreRowLink
                     icon={<LayoutGrid size={18}/>}
@@ -2456,6 +2500,15 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
             </div>
           </div>
         </>
+      )}
+
+      {/* ═══ ONBOARDING OVERLAY — Primera vez (Fase M.3) ═══════════════ */}
+      {onboardingStep >= 0 && (
+        <OnboardingOverlay
+          step={onboardingStep}
+          onNext={nextOnboardingStep}
+          onSkip={dismissOnboarding}
+        />
       )}
 
       {/* ═══ SHARE MODAL — Compartir tras descargar (Fase H) ═══════════ */}
@@ -3374,6 +3427,109 @@ function CornerRadiusSlider({
         className="w-full accent-purple-500"
       />
     </div>
+  );
+}
+
+// ─── ONBOARDING OVERLAY (Fase M.3) ───────────────────────────────────────
+
+const ONBOARDING_STEPS = [
+  {
+    title: "Toca el texto para editarlo",
+    body: "Cualquier texto del flyer es editable. Cambia el nombre del evento, fecha, precio... Solo toca y escribe.",
+    emoji: "👆",
+    arrowDir: "down" as const,
+    anchor: "canvas-top" as const,
+  },
+  {
+    title: "Añade elementos con el +",
+    body: "Pulsa el botón Añadir abajo para insertar texto nuevo, formas, estrellas, corazones o tus propias fotos.",
+    emoji: "➕",
+    arrowDir: "down" as const,
+    anchor: "bottom-add" as const,
+  },
+  {
+    title: "Cambia el estilo con 1 tap",
+    body: "Estilo aplica paletas curadas. Remix genera variantes con IA. Comparte tu flyer en WhatsApp, Instagram y más.",
+    emoji: "🎨",
+    arrowDir: "down" as const,
+    anchor: "bottom-style" as const,
+  },
+  {
+    title: "Exporta y comparte",
+    body: "Cuando esté listo, pulsa Exportar arriba. Elige PNG, JPG, PDF imprenta o SVG vectorial. Luego compártelo en redes sociales con 1 tap.",
+    emoji: "🚀",
+    arrowDir: "up" as const,
+    anchor: "header-export" as const,
+  },
+];
+
+function OnboardingOverlay({
+  step, onNext, onSkip,
+}: {
+  step: number;
+  onNext: () => void;
+  onSkip: () => void;
+}) {
+  const data = ONBOARDING_STEPS[step] ?? ONBOARDING_STEPS[0];
+  const isLast = step >= ONBOARDING_STEPS.length - 1;
+  // Posicion de la card de mensaje según anchor
+  const cardPos =
+    data.anchor === "header-export"
+      ? "top-[65px] right-3 left-3"
+      : data.anchor === "canvas-top"
+      ? "top-[30%] left-3 right-3"
+      : data.anchor === "bottom-add" || data.anchor === "bottom-style"
+      ? "bottom-[90px] left-3 right-3"
+      : "top-1/2 left-3 right-3";
+
+  return (
+    <>
+      {/* Backdrop oscuro semi-transparente */}
+      <div
+        className="fixed inset-0 z-[80] bg-black/70 backdrop-blur-[1px] animate-in fade-in duration-300"
+        onClick={onNext}
+      />
+      {/* Card del mensaje */}
+      <div
+        className={`fixed ${cardPos} z-[90] bg-gradient-to-br from-[#1c1c2a] to-[#13131f] border border-purple-500/40 rounded-2xl shadow-2xl shadow-purple-500/20 p-4 animate-in slide-in-from-bottom duration-300`}
+      >
+        <div className="flex items-start gap-3">
+          <div className="text-[32px] leading-none shrink-0">{data.emoji}</div>
+          <div className="flex-1 min-w-0">
+            <h3 className="text-[15px] font-bold text-white leading-tight mb-1">
+              {data.title}
+            </h3>
+            <p className="text-[12px] text-gray-300 leading-relaxed">
+              {data.body}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/[0.06]">
+          <button
+            onClick={onSkip}
+            className="text-[11px] text-gray-500 font-semibold active:text-gray-300"
+          >
+            Saltar
+          </button>
+          <div className="flex items-center gap-1.5">
+            {ONBOARDING_STEPS.map((_, i) => (
+              <div
+                key={i}
+                className={`w-1.5 h-1.5 rounded-full transition-colors ${
+                  i === step ? "bg-purple-400" : "bg-white/15"
+                }`}
+              />
+            ))}
+          </div>
+          <button
+            onClick={onNext}
+            className="px-4 py-1.5 rounded-full bg-purple-500 text-white text-[12px] font-bold active:scale-95 transition-transform"
+          >
+            {isLast ? "Empezar" : "Siguiente"}
+          </button>
+        </div>
+      </div>
+    </>
   );
 }
 
