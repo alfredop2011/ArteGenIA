@@ -22,7 +22,7 @@ async function gotoEditor(page: import("@playwright/test").Page) {
 test("M-01 Más opciones no muestra PRÓXIMO en Reiniciar/Cambiar formato", async ({ page, context }) => {
   await setup(page, context);
   await gotoEditor(page);
-  await page.locator("button[aria-label='Mas']").tap();
+  await page.locator("button[aria-label='Más']").tap();
   await page.waitForTimeout(600);
   await page.screenshot({ path: ".qa-screenshots/m-01-mas-opciones.png" });
 
@@ -39,7 +39,7 @@ test("M-01 Más opciones no muestra PRÓXIMO en Reiniciar/Cambiar formato", asyn
 test("M-02 sheet Cambiar formato muestra grid de formatos", async ({ page, context }) => {
   await setup(page, context);
   await gotoEditor(page);
-  await page.locator("button[aria-label='Mas']").tap();
+  await page.locator("button[aria-label='Más']").tap();
   await page.waitForTimeout(500);
   await page.locator("button").filter({ hasText: "Cambiar formato" }).tap();
   await page.waitForTimeout(700);

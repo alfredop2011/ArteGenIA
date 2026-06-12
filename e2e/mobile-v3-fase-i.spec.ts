@@ -61,7 +61,7 @@ test("I-03 añadir título crea texto seleccionado", async ({ page, context }) =
 test("I-04 sheet Capas accesible desde Más opciones", async ({ page, context }) => {
   await setup(page, context);
   await gotoEditor(page);
-  await page.locator("button[aria-label='Mas']").tap();
+  await page.locator("button[aria-label='Más']").tap();
   await page.waitForTimeout(600);
   await expect(page.locator("text=Capas")).toBeVisible();
   await page.locator("button").filter({ hasText: "Capas" }).first().tap();

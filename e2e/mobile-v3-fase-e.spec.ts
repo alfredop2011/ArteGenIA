@@ -31,7 +31,7 @@ test("E-01 boton Guardar visible en header", async ({ page, context }) => {
 test("E-02 sheet Mas tiene Mis flyers", async ({ page, context }) => {
   await setup(page, context);
   await gotoEditor(page);
-  await page.locator("button[aria-label='Mas']").first().tap();
+  await page.locator("button[aria-label='Más']").first().tap();
   await page.waitForTimeout(800);
   await page.screenshot({ path: ".qa-screenshots/e-02-mis-flyers-link.png" });
 

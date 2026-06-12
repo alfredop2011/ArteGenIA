@@ -57,6 +57,7 @@ import { getPalettesForCategory, type Palette } from "@/data/templatePalettes";
 import { REMIX_STYLES, type RemixStyle } from "@/data/templateRemixes";
 import { useProjects } from "@/hooks/useProjects";
 import { supabase } from "@/lib/supabase";
+import { useLocale } from "@/hooks/useLocale";
 import { Save, FolderOpen, Share2, Link2, Mail, MessageCircle, Send, Plus, Layers, Lock, Unlock, Eye, EyeOff, Circle as CircleIcon, Square as SquareIcon, Triangle, Heart, Star, AlignHorizontalJustifyCenter } from "lucide-react";
 
 type Props = {
@@ -95,6 +96,7 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
 
   const { user: authUser, profile: authProfile } = useAuth();
   const { toast } = useToast();
+  const { t } = useLocale();
 
   // ─── Template & canvas ───────────────────────────────────────────────────
   const [template, setTemplate] = useState<Template | null>(null);
@@ -948,7 +950,7 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
   }, []);
 
   const handleRemoveBackground = useCallback(async () => {
-    if (!authUser) { toast.info("Inicia sesión para usar IA"); return; }
+    if (!authUser) { toast.info(t("mobileEditor.toast.loginToUseAI")); return; }
     const fc = fabricRef.current;
     const img = getActiveImage();
     if (!fc || !img) { toast.error("Selecciona primero una imagen"); return; }
@@ -1000,7 +1002,7 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
 
   const runAssistant = useCallback(async (prompt: string) => {
     if (!template) return;
-    if (!authUser) { toast.info("Inicia sesión para usar IA"); return; }
+    if (!authUser) { toast.info(t("mobileEditor.toast.loginToUseAI")); return; }
     if (!prompt.trim()) { toast.error("Escribe primero qué evento es"); return; }
     setAssistantLoading(true);
     setAssistantResult(null);
@@ -1068,7 +1070,7 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
   const handleResetTemplate = useCallback(() => {
     const fc = fabricRef.current;
     if (!fc || !template) return;
-    if (!window.confirm("¿Volver al diseño original?\n\nPerderás todos los cambios no guardados.")) return;
+    if (!window.confirm(t("mobileEditor.confirm.resetTemplate"))) return;
     const variant = getVariant(template, formatId);
     if (!variant) return;
     fc.discardActiveObject();
@@ -1139,7 +1141,7 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
       return;
     }
     if (saveState === "unsaved" && !authUser) {
-      const ok = window.confirm("Tienes cambios sin guardar. ¿Cambiar de formato igualmente? Se perderán.");
+      const ok = window.confirm(t("mobileEditor.confirm.changeFormatUnsaved"));
       if (!ok) return;
     } else if (saveState === "unsaved" && authUser) {
       // Guardar antes de cambiar — preserva trabajo. Usamos ref para evitar
@@ -1180,11 +1182,8 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
     fc.requestRenderAll();
     setSaveState("unsaved");
     pushHistory();
-    toast.success(
-      axis === "both" ? "Centrado en el canvas" :
-      axis === "h" ? "Centrado horizontal" : "Centrado vertical"
-    );
-  }, [canvasSize.w, canvasSize.h, pushHistory, toast]);
+    toast.success(t("mobileEditor.toast.centeredCanvas"));
+  }, [canvasSize.w, canvasSize.h, pushHistory, toast, t]);
 
   // ─── Añadir nuevo elemento (Fase I.1) ──────────────────────────────────
   // Helpers para crear texto/forma/imagen NUEVA y añadirla al canvas
@@ -1365,8 +1364,8 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
     fc.requestRenderAll();
     setSaveState("unsaved");
     pushHistory();
-    toast.success(next ? "Objeto bloqueado" : "Objeto desbloqueado");
-  }, [pushHistory, toast]);
+    toast.success(next ? t("mobileEditor.toast.objectLocked") : t("mobileEditor.toast.objectUnlocked"));
+  }, [pushHistory, toast, t]);
 
   /** Reemplaza la imagen activa preservando posicion + escala.
    *  Carga el archivo local via FileReader → data URL → FabricImage. */
@@ -1494,22 +1493,22 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
           window.history.replaceState(null, "", `/editor/${result}`);
         }
         setSaveState("saved");
-        if (!silent) toast.success("Diseño guardado");
+        if (!silent) toast.success(t("mobileEditor.toast.savedOk"));
       } else {
         setSaveState("unsaved");
-        if (!silent) toast.error("No se pudo guardar");
+        if (!silent) toast.error(t("mobileEditor.toast.savedFail"));
       }
     } catch (e) {
       console.error("save error", e);
       setSaveState("unsaved");
-      if (!silent) toast.error("Error al guardar");
+      if (!silent) toast.error(t("mobileEditor.toast.savedError"));
     }
-  }, [loaded, currentProjectId, docTitle, templateId, template, formatId, canvasSize, saveProject, toast]);
+  }, [loaded, currentProjectId, docTitle, templateId, template, formatId, canvasSize, saveProject, toast, t]);
 
   const handleSave = useCallback(() => {
-    if (!authUser) { toast.info("Inicia sesión para guardar"); return; }
+    if (!authUser) { toast.info(t("mobileEditor.toast.loginToSave")); return; }
     void doSave(false);
-  }, [authUser, doSave, toast]);
+  }, [authUser, doSave, toast, t]);
 
   // Sync ref para que callbacks declaradas antes de doSave (handleChangeFormat)
   // puedan invocar la version mas reciente sin closure stale.
@@ -1532,12 +1531,12 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
 
   const confirmExit = useCallback((to: string | null) => {
     if (saveState === "unsaved") {
-      const ok = window.confirm("Tienes cambios sin guardar. ¿Seguro que quieres salir?");
+      const ok = window.confirm(t("mobileEditor.confirm.exitUnsaved"));
       if (!ok) return;
     }
     if (to) router.push(to);
     else router.back();
-  }, [saveState, router]);
+  }, [saveState, router, t]);
 
   // ─── Auto-save (cada 12s si hay cambios sin guardar y user autenticado) ─
   // Si dispara mientras una guardada esta en curso, se ignora porque saveState
@@ -1735,7 +1734,7 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
 
   const exportSingleFormat = useCallback(async (fmtId: FormatId) => {
     if (!template) return;
-    if (!authUser) { toast.info("Inicia sesión para descargar"); return; }
+    if (!authUser) { toast.info(t("mobileEditor.toast.loginToDownload")); return; }
     setExporting(true);
     try {
       // Si es el formato actual, usar export directo del canvas vivo (preserva
@@ -1857,7 +1856,7 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
 
   const requestAIRemix = useCallback(async (mood?: string) => {
     if (!template) return;
-    if (!authUser) { toast.info("Inicia sesión para usar IA"); return; }
+    if (!authUser) { toast.info(t("mobileEditor.toast.loginToUseAI")); return; }
     setAiRemixing(true);
     try {
       const res = await fetch("/api/remix", {
@@ -1970,7 +1969,7 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
       <header className="h-[50px] px-2 flex items-center gap-1 border-b border-white/[0.06] shrink-0">
         <button
           onClick={() => confirmExit(null)}
-          aria-label="Volver"
+          aria-label={t("mobileEditor.header.back")}
           className="w-9 h-9 rounded-lg flex items-center justify-center active:bg-white/10 transition-colors"
         >
           <ArrowLeft size={20} strokeWidth={2.2}/>
@@ -1978,25 +1977,29 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
         <button
           className="flex-1 min-w-0 px-1 text-left active:bg-white/[0.04] rounded-md py-0.5"
           onClick={() => {
-            const next = window.prompt("Nombre del flyer", docTitle || template?.title || "");
+            const next = window.prompt(t("mobileEditor.header.renamePromptName"), docTitle || template?.title || "");
             if (next === null) return;
             const trimmed = next.trim();
             if (!trimmed) return;
             setDocTitle(trimmed);
             setSaveState("unsaved");
           }}
-          aria-label="Renombrar flyer"
-          title="Tap para renombrar"
+          aria-label={t("mobileEditor.header.renameLabel")}
+          title={t("mobileEditor.header.renameTitle")}
         >
           <h1 className="text-[13px] font-bold leading-tight truncate">
-            {docTitle || template?.title || "Cargando…"}
+            {docTitle || template?.title || t("mobileEditor.header.loading")}
           </h1>
           <p className="text-[9px] text-gray-500 leading-tight">
-            {canvasSize.w}×{canvasSize.h} · {saveState === "saved" ? "Guardado" : saveState === "saving" ? "Guardando…" : "Sin guardar"}
+            {canvasSize.w}×{canvasSize.h} · {
+              saveState === "saved" ? t("mobileEditor.state.saved")
+              : saveState === "saving" ? t("mobileEditor.state.saving")
+              : t("mobileEditor.state.unsaved")
+            }
           </p>
         </button>
         <button
-          aria-label="Deshacer"
+          aria-label={t("mobileEditor.header.undo")}
           onClick={() => void handleUndo()}
           disabled={!canUndo}
           className="w-9 h-9 rounded-lg flex items-center justify-center text-gray-300 active:bg-white/10 disabled:opacity-25"
@@ -2004,7 +2007,7 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
           <Undo2 size={17} strokeWidth={2}/>
         </button>
         <button
-          aria-label="Rehacer"
+          aria-label={t("mobileEditor.header.redo")}
           onClick={() => void handleRedo()}
           disabled={!canRedo}
           className="w-9 h-9 rounded-lg flex items-center justify-center text-gray-300 active:bg-white/10 disabled:opacity-25"
@@ -2012,7 +2015,7 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
           <Redo2 size={17} strokeWidth={2}/>
         </button>
         <button
-          aria-label="Guardar"
+          aria-label={t("mobileEditor.header.saveShort")}
           onClick={handleSave}
           disabled={saveState === "saving"}
           className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors disabled:opacity-50 ${
@@ -2020,12 +2023,12 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
               ? "text-emerald-400 active:bg-white/10"
               : "text-gray-300 active:bg-white/10"
           }`}
-          title={currentProjectId ? "Guardar cambios" : "Guardar nuevo diseño"}
+          title={currentProjectId ? t("mobileEditor.header.save") : t("mobileEditor.header.saveNew")}
         >
           <Save size={16} strokeWidth={2.2}/>
         </button>
         <button
-          aria-label="Mas"
+          aria-label={t("mobileEditor.header.more")}
           onClick={() => setOpenSheet(s => s === "more" ? null : "more")}
           className="w-9 h-9 rounded-lg flex items-center justify-center text-gray-300 active:bg-white/10"
         >
@@ -2037,7 +2040,7 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
           className="ml-1 h-9 px-3 rounded-lg bg-gradient-to-br from-purple-600 to-fuchsia-600 text-white font-bold text-[12px] flex items-center gap-1 active:scale-95 transition-transform shadow-md shadow-purple-500/30 disabled:opacity-60"
         >
           <Download size={14} strokeWidth={2.4}/>
-          Exportar
+          {t("mobileEditor.header.export")}
         </button>
       </header>
 
@@ -2299,30 +2302,30 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
         <nav className="h-[68px] border-t border-white/[0.08] bg-[#0a0a14] flex items-center justify-around shrink-0 safe-area-bottom">
           <BarBtn
             icon={<LayoutGrid size={18} strokeWidth={2}/>}
-            label="Plantillas"
+            label={t("mobileEditor.bottomBar.templates")}
             onClick={() => confirmExit("/templates")}
           />
           <BarBtn
             icon={<Plus size={20} strokeWidth={2.4}/>}
-            label="Añadir"
+            label={t("mobileEditor.bottomBar.add")}
             active={openSheet === "add"}
             onClick={() => setOpenSheet(s => s === "add" ? null : "add")}
           />
           <BarBtn
             icon={<ImageIcon size={18} strokeWidth={2}/>}
-            label="Foto"
+            label={t("mobileEditor.bottomBar.photo")}
             active={openSheet === "foto"}
             onClick={() => setOpenSheet(s => s === "foto" ? null : "foto")}
           />
           <BarBtn
             icon={<PaletteIcon size={18} strokeWidth={2}/>}
-            label="Estilo"
+            label={t("mobileEditor.bottomBar.style")}
             active={openSheet === "estilo"}
             onClick={() => setOpenSheet(s => s === "estilo" ? null : "estilo")}
           />
           <BarBtn
             icon={<Sparkles size={18} strokeWidth={2}/>}
-            label="Remix"
+            label={t("mobileEditor.bottomBar.remix")}
             active={openSheet === "ia"}
             onClick={() => setOpenSheet(s => s === "ia" ? null : "ia")}
           />

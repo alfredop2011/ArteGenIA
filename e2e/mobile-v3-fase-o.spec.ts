@@ -18,7 +18,7 @@ test("O-01 Asistente IA accesible desde Más opciones", async ({ page, context }
   await page.goto(`/editor/44?format=portrait`, { waitUntil: "networkidle", timeout: 30_000 });
   await page.waitForSelector("canvas");
   await page.waitForTimeout(4000);
-  await page.locator("button[aria-label='Mas']").tap();
+  await page.locator("button[aria-label='Más']").tap();
   await page.waitForTimeout(600);
   await page.screenshot({ path: ".qa-screenshots/o-01-mas-sin-proximo.png" });
 
@@ -33,7 +33,7 @@ test("O-02 sheet Asistente IA muestra textarea + ejemplos + boton", async ({ pag
   await page.goto(`/editor/44?format=portrait`, { waitUntil: "networkidle", timeout: 30_000 });
   await page.waitForSelector("canvas");
   await page.waitForTimeout(4000);
-  await page.locator("button[aria-label='Mas']").tap();
+  await page.locator("button[aria-label='Más']").tap();
   await page.waitForTimeout(500);
   await page.locator("button").filter({ hasText: "Asistente IA" }).tap();
   await page.waitForTimeout(800);

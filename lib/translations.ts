@@ -450,7 +450,49 @@ export type TranslationKey =
   | "editor.layerName.frame"
   | "editor.layerName.text"
   | "editor.fallback.title"
-  | "editor.deleteLayer";
+  | "editor.deleteLayer"
+  // ── EDITOR MOBILE V3 (Fase P.1 — Header + Bottom + comunes) ──
+  | "mobileEditor.header.back"
+  | "mobileEditor.header.undo"
+  | "mobileEditor.header.redo"
+  | "mobileEditor.header.save"
+  | "mobileEditor.header.saveShort"
+  | "mobileEditor.header.saveNew"
+  | "mobileEditor.header.more"
+  | "mobileEditor.header.export"
+  | "mobileEditor.header.loading"
+  | "mobileEditor.header.renameLabel"
+  | "mobileEditor.header.renameTitle"
+  | "mobileEditor.header.renamePromptName"
+  | "mobileEditor.state.saved"
+  | "mobileEditor.state.saving"
+  | "mobileEditor.state.unsaved"
+  | "mobileEditor.bottomBar.templates"
+  | "mobileEditor.bottomBar.add"
+  | "mobileEditor.bottomBar.photo"
+  | "mobileEditor.bottomBar.style"
+  | "mobileEditor.bottomBar.remix"
+  | "mobileEditor.confirm.exitUnsaved"
+  | "mobileEditor.confirm.resetTemplate"
+  | "mobileEditor.confirm.changeFormatUnsaved"
+  | "mobileEditor.toast.savedOk"
+  | "mobileEditor.toast.savedFail"
+  | "mobileEditor.toast.savedError"
+  | "mobileEditor.toast.loginToSave"
+  | "mobileEditor.toast.loginToDownload"
+  | "mobileEditor.toast.loginToUseAI"
+  | "mobileEditor.fab.edit"
+  | "mobileEditor.fab.layerUp"
+  | "mobileEditor.fab.layerDown"
+  | "mobileEditor.fab.duplicate"
+  | "mobileEditor.fab.centerCanvas"
+  | "mobileEditor.fab.lock"
+  | "mobileEditor.fab.unlock"
+  | "mobileEditor.fab.delete"
+  | "mobileEditor.fab.done"
+  | "mobileEditor.toast.objectLocked"
+  | "mobileEditor.toast.objectUnlocked"
+  | "mobileEditor.toast.centeredCanvas";
 
 type Dict = Record<TranslationKey, string>;
 
@@ -886,6 +928,48 @@ const es: Dict = {
   "editor.layerName.text": "Texto",
   "editor.fallback.title": "Editor",
   "editor.deleteLayer": "Eliminar capa",
+  // ── EDITOR MOBILE V3 ──
+  "mobileEditor.header.back": "Volver",
+  "mobileEditor.header.undo": "Deshacer",
+  "mobileEditor.header.redo": "Rehacer",
+  "mobileEditor.header.save": "Guardar cambios",
+  "mobileEditor.header.saveShort": "Guardar",
+  "mobileEditor.header.saveNew": "Guardar nuevo diseño",
+  "mobileEditor.header.more": "Más",
+  "mobileEditor.header.export": "Exportar",
+  "mobileEditor.header.loading": "Cargando…",
+  "mobileEditor.header.renameLabel": "Renombrar flyer",
+  "mobileEditor.header.renameTitle": "Tap para renombrar",
+  "mobileEditor.header.renamePromptName": "Nombre del flyer",
+  "mobileEditor.state.saved": "Guardado",
+  "mobileEditor.state.saving": "Guardando…",
+  "mobileEditor.state.unsaved": "Sin guardar",
+  "mobileEditor.bottomBar.templates": "Plantillas",
+  "mobileEditor.bottomBar.add": "Añadir",
+  "mobileEditor.bottomBar.photo": "Foto",
+  "mobileEditor.bottomBar.style": "Estilo",
+  "mobileEditor.bottomBar.remix": "Remix",
+  "mobileEditor.confirm.exitUnsaved": "Tienes cambios sin guardar. ¿Seguro que quieres salir?",
+  "mobileEditor.confirm.resetTemplate": "¿Volver al diseño original?\n\nPerderás todos los cambios no guardados.",
+  "mobileEditor.confirm.changeFormatUnsaved": "Tienes cambios sin guardar. ¿Cambiar de formato igualmente? Se perderán.",
+  "mobileEditor.toast.savedOk": "Diseño guardado",
+  "mobileEditor.toast.savedFail": "No se pudo guardar",
+  "mobileEditor.toast.savedError": "Error al guardar",
+  "mobileEditor.toast.loginToSave": "Inicia sesión para guardar",
+  "mobileEditor.toast.loginToDownload": "Inicia sesión para descargar",
+  "mobileEditor.toast.loginToUseAI": "Inicia sesión para usar IA",
+  "mobileEditor.fab.edit": "Editar",
+  "mobileEditor.fab.layerUp": "Subir",
+  "mobileEditor.fab.layerDown": "Bajar",
+  "mobileEditor.fab.duplicate": "Duplicar",
+  "mobileEditor.fab.centerCanvas": "Centrar al canvas",
+  "mobileEditor.fab.lock": "Bloquear",
+  "mobileEditor.fab.unlock": "Desbloquear",
+  "mobileEditor.fab.delete": "Borrar",
+  "mobileEditor.fab.done": "Listo",
+  "mobileEditor.toast.objectLocked": "Objeto bloqueado",
+  "mobileEditor.toast.objectUnlocked": "Objeto desbloqueado",
+  "mobileEditor.toast.centeredCanvas": "Centrado en el canvas",
 };
 
 const en: Dict = {
@@ -1320,6 +1404,48 @@ const en: Dict = {
   "editor.layerName.text": "Text",
   "editor.fallback.title": "Editor",
   "editor.deleteLayer": "Delete layer",
+  // ── MOBILE EDITOR V3 ──
+  "mobileEditor.header.back": "Back",
+  "mobileEditor.header.undo": "Undo",
+  "mobileEditor.header.redo": "Redo",
+  "mobileEditor.header.save": "Save changes",
+  "mobileEditor.header.saveShort": "Save",
+  "mobileEditor.header.saveNew": "Save new design",
+  "mobileEditor.header.more": "More",
+  "mobileEditor.header.export": "Export",
+  "mobileEditor.header.loading": "Loading…",
+  "mobileEditor.header.renameLabel": "Rename flyer",
+  "mobileEditor.header.renameTitle": "Tap to rename",
+  "mobileEditor.header.renamePromptName": "Flyer name",
+  "mobileEditor.state.saved": "Saved",
+  "mobileEditor.state.saving": "Saving…",
+  "mobileEditor.state.unsaved": "Unsaved",
+  "mobileEditor.bottomBar.templates": "Templates",
+  "mobileEditor.bottomBar.add": "Add",
+  "mobileEditor.bottomBar.photo": "Photo",
+  "mobileEditor.bottomBar.style": "Style",
+  "mobileEditor.bottomBar.remix": "Remix",
+  "mobileEditor.confirm.exitUnsaved": "You have unsaved changes. Are you sure you want to leave?",
+  "mobileEditor.confirm.resetTemplate": "Restore the original design?\n\nYou will lose all unsaved changes.",
+  "mobileEditor.confirm.changeFormatUnsaved": "You have unsaved changes. Change format anyway? They will be lost.",
+  "mobileEditor.toast.savedOk": "Design saved",
+  "mobileEditor.toast.savedFail": "Could not save",
+  "mobileEditor.toast.savedError": "Error saving",
+  "mobileEditor.toast.loginToSave": "Sign in to save",
+  "mobileEditor.toast.loginToDownload": "Sign in to download",
+  "mobileEditor.toast.loginToUseAI": "Sign in to use AI",
+  "mobileEditor.fab.edit": "Edit",
+  "mobileEditor.fab.layerUp": "Bring forward",
+  "mobileEditor.fab.layerDown": "Send backward",
+  "mobileEditor.fab.duplicate": "Duplicate",
+  "mobileEditor.fab.centerCanvas": "Center on canvas",
+  "mobileEditor.fab.lock": "Lock",
+  "mobileEditor.fab.unlock": "Unlock",
+  "mobileEditor.fab.delete": "Delete",
+  "mobileEditor.fab.done": "Done",
+  "mobileEditor.toast.objectLocked": "Object locked",
+  "mobileEditor.toast.objectUnlocked": "Object unlocked",
+  "mobileEditor.toast.centeredCanvas": "Centered on canvas",
 };
 
 const fr: Dict = {
@@ -1754,6 +1880,48 @@ const fr: Dict = {
   "editor.layerName.text": "Texte",
   "editor.fallback.title": "Éditeur",
   "editor.deleteLayer": "Supprimer calque",
+  // ── MOBILE EDITOR V3 ──
+  "mobileEditor.header.back": "Retour",
+  "mobileEditor.header.undo": "Annuler",
+  "mobileEditor.header.redo": "Rétablir",
+  "mobileEditor.header.save": "Enregistrer les modifications",
+  "mobileEditor.header.saveShort": "Enregistrer",
+  "mobileEditor.header.saveNew": "Enregistrer un nouveau design",
+  "mobileEditor.header.more": "Plus",
+  "mobileEditor.header.export": "Exporter",
+  "mobileEditor.header.loading": "Chargement…",
+  "mobileEditor.header.renameLabel": "Renommer le flyer",
+  "mobileEditor.header.renameTitle": "Touchez pour renommer",
+  "mobileEditor.header.renamePromptName": "Nom du flyer",
+  "mobileEditor.state.saved": "Enregistré",
+  "mobileEditor.state.saving": "Enregistrement…",
+  "mobileEditor.state.unsaved": "Non enregistré",
+  "mobileEditor.bottomBar.templates": "Modèles",
+  "mobileEditor.bottomBar.add": "Ajouter",
+  "mobileEditor.bottomBar.photo": "Photo",
+  "mobileEditor.bottomBar.style": "Style",
+  "mobileEditor.bottomBar.remix": "Remix",
+  "mobileEditor.confirm.exitUnsaved": "Vous avez des modifications non enregistrées. Voulez-vous vraiment quitter ?",
+  "mobileEditor.confirm.resetTemplate": "Restaurer le design original ?\n\nToutes les modifications non enregistrées seront perdues.",
+  "mobileEditor.confirm.changeFormatUnsaved": "Vous avez des modifications non enregistrées. Changer de format quand même ? Elles seront perdues.",
+  "mobileEditor.toast.savedOk": "Design enregistré",
+  "mobileEditor.toast.savedFail": "Impossible d'enregistrer",
+  "mobileEditor.toast.savedError": "Erreur lors de l'enregistrement",
+  "mobileEditor.toast.loginToSave": "Connectez-vous pour enregistrer",
+  "mobileEditor.toast.loginToDownload": "Connectez-vous pour télécharger",
+  "mobileEditor.toast.loginToUseAI": "Connectez-vous pour utiliser l'IA",
+  "mobileEditor.fab.edit": "Modifier",
+  "mobileEditor.fab.layerUp": "Avancer",
+  "mobileEditor.fab.layerDown": "Reculer",
+  "mobileEditor.fab.duplicate": "Dupliquer",
+  "mobileEditor.fab.centerCanvas": "Centrer sur le canevas",
+  "mobileEditor.fab.lock": "Verrouiller",
+  "mobileEditor.fab.unlock": "Déverrouiller",
+  "mobileEditor.fab.delete": "Supprimer",
+  "mobileEditor.fab.done": "Terminé",
+  "mobileEditor.toast.objectLocked": "Objet verrouillé",
+  "mobileEditor.toast.objectUnlocked": "Objet déverrouillé",
+  "mobileEditor.toast.centeredCanvas": "Centré sur le canevas",
 };
 
 const pt: Dict = {
@@ -2188,6 +2356,48 @@ const pt: Dict = {
   "editor.layerName.text": "Texto",
   "editor.fallback.title": "Editor",
   "editor.deleteLayer": "Eliminar camada",
+  // ── MOBILE EDITOR V3 ──
+  "mobileEditor.header.back": "Voltar",
+  "mobileEditor.header.undo": "Desfazer",
+  "mobileEditor.header.redo": "Refazer",
+  "mobileEditor.header.save": "Guardar alterações",
+  "mobileEditor.header.saveShort": "Guardar",
+  "mobileEditor.header.saveNew": "Guardar novo design",
+  "mobileEditor.header.more": "Mais",
+  "mobileEditor.header.export": "Exportar",
+  "mobileEditor.header.loading": "A carregar…",
+  "mobileEditor.header.renameLabel": "Renomear flyer",
+  "mobileEditor.header.renameTitle": "Toque para renomear",
+  "mobileEditor.header.renamePromptName": "Nome do flyer",
+  "mobileEditor.state.saved": "Guardado",
+  "mobileEditor.state.saving": "A guardar…",
+  "mobileEditor.state.unsaved": "Não guardado",
+  "mobileEditor.bottomBar.templates": "Modelos",
+  "mobileEditor.bottomBar.add": "Adicionar",
+  "mobileEditor.bottomBar.photo": "Foto",
+  "mobileEditor.bottomBar.style": "Estilo",
+  "mobileEditor.bottomBar.remix": "Remix",
+  "mobileEditor.confirm.exitUnsaved": "Tem alterações não guardadas. Tem a certeza que deseja sair?",
+  "mobileEditor.confirm.resetTemplate": "Restaurar o design original?\n\nPerderá todas as alterações não guardadas.",
+  "mobileEditor.confirm.changeFormatUnsaved": "Tem alterações não guardadas. Mudar de formato mesmo assim? Serão perdidas.",
+  "mobileEditor.toast.savedOk": "Design guardado",
+  "mobileEditor.toast.savedFail": "Não foi possível guardar",
+  "mobileEditor.toast.savedError": "Erro ao guardar",
+  "mobileEditor.toast.loginToSave": "Inicie sessão para guardar",
+  "mobileEditor.toast.loginToDownload": "Inicie sessão para descarregar",
+  "mobileEditor.toast.loginToUseAI": "Inicie sessão para usar a IA",
+  "mobileEditor.fab.edit": "Editar",
+  "mobileEditor.fab.layerUp": "Avançar",
+  "mobileEditor.fab.layerDown": "Recuar",
+  "mobileEditor.fab.duplicate": "Duplicar",
+  "mobileEditor.fab.centerCanvas": "Centrar no canvas",
+  "mobileEditor.fab.lock": "Bloquear",
+  "mobileEditor.fab.unlock": "Desbloquear",
+  "mobileEditor.fab.delete": "Apagar",
+  "mobileEditor.fab.done": "Pronto",
+  "mobileEditor.toast.objectLocked": "Objeto bloqueado",
+  "mobileEditor.toast.objectUnlocked": "Objeto desbloqueado",
+  "mobileEditor.toast.centeredCanvas": "Centrado no canvas",
 };
 
 export const TRANSLATIONS: Record<Locale, Dict> = { es, en, fr, pt };
