@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
-import { Zap, Bell, Crown, Image as ImageIcon, History, LogOut, Plus, LayoutGrid, FolderOpen, Menu, Users, CreditCard } from "lucide-react";
+import { Zap, Bell, Crown, Image as ImageIcon, History, LogOut, Plus, LayoutGrid, FolderOpen, Menu, Users, CreditCard, Wand2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import AuthModal from "@/components/auth/AuthModal";
 import { isAdmin } from "@/lib/admin";
@@ -51,6 +51,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     // Nav links — labels via t() para idiomatizar. href intacto.
     const navLinks = [
         { href: "/create", label: t("nav.create") },
+        { href: "/capas-magicas", label: "Capas Mágicas" },
         { href: "/templates", label: t("nav.templates") },
         { href: "/projects", label: t("nav.projects") },
         { href: "/colaboradores", label: t("nav.collaborators") },
@@ -276,6 +277,11 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                          style={{ background: "var(--home-bg-soft)", borderColor: "var(--home-card-border)" }}>
                         <div className="w-12 h-1 bg-white/20 rounded-full mx-auto mt-3 mb-4" />
                         <div className="px-4 space-y-1">
+                            <Link href="/capas-magicas" onClick={() => setShowMobileMenu(false)}
+                                className="flex items-center gap-3 px-4 py-3 rounded-xl text-base text-purple-300 active:bg-purple-500/10">
+                                <Wand2 size={20} strokeWidth={1.8} />
+                                Capas Mágicas
+                            </Link>
                             <Link href="/pricing" onClick={() => setShowMobileMenu(false)}
                                 className="flex items-center gap-3 px-4 py-3 rounded-xl text-base text-gray-300 active:bg-white/10">
                                 <CreditCard size={20} strokeWidth={1.8} />
