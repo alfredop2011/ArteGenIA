@@ -435,14 +435,24 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
     };
 
     if (isLoadMode) {
-      // Hidrata canvas desde el JSON guardado. Despues de loadFromJSON
-      // los objetos no traen customId si fueron serializados sin pasarlo
-      // a toJSON, pero el desktop lo hace, asi que customId esta presente.
+      // ─── Detectar formato Capas Mágicas ──────────────────────────────
+      // Si el fabric_json viene marcado __magicLayers, NO usar loadFromJSON
+      // sino aplicar via applyTemplateLayers (carga imágenes async bien).
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (fc.loadFromJSON as any)(pendingFabricJsonRef.current).then(() => {
-        pendingFabricJsonRef.current = null;
-        setupAfterLoad();
-      });
+      const pending = pendingFabricJsonRef.current as any;
+      if (pending && pending.__magicLayers === true && Array.isArray(pending.layers)) {
+        applyTemplateLayers(fc, pending.layers).then(() => {
+          pendingFabricJsonRef.current = null;
+          setupAfterLoad();
+        });
+      } else {
+        // Hidratación normal: loadFromJSON con el fabric serializado.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (fc.loadFromJSON as any)(pendingFabricJsonRef.current).then(() => {
+          pendingFabricJsonRef.current = null;
+          setupAfterLoad();
+        });
+      }
     } else {
       const variant = getVariant(template!, formatId);
       if (!variant) return;

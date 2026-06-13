@@ -1,26 +1,30 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
+import type { TemplateLayer } from "@/data/templates";
 
 /**
  * POST /api/projects/from-magic-layers
  *
- * Recibe el fabric_json YA SERIALIZADO desde el cliente (que lo generó
- * con StaticCanvas + applyTemplateLayers) y lo persiste en Supabase.
- * Devuelve el projectId para que el cliente redirija a /editor/[id].
+ * Recibe los TemplateLayer[] (output de /api/photo-to-template, posiblemente
+ * con ediciones inline del usuario aplicadas) y crea un proyecto en Supabase.
  *
- * El fabric_json se serializa cliente-side porque:
- *  1. applyTemplateLayers carga imágenes async (await FabricImage.fromURL)
- *     que requieren DOM canvas — no funciona en server.
- *  2. canvas.toJSON() del cliente produce el formato EXACTO que el editor
- *     espera al hacer loadFromJSON, sin riesgo de inconsistencias.
+ * Guardamos en fabric_json un formato custom marcado con __magicLayers=true.
+ * El editor detecta este formato y aplica via applyTemplateLayers (que
+ * maneja correctamente la carga async de imágenes), en lugar de loadFromJSON
+ * (que requiere objetos Fabric ya serializados).
+ *
+ * Trade-off: no usamos toJSON() del cliente para evitar el bug de imágenes
+ * que no cargan en StaticCanvas headless (Fabric necesita DOM real para
+ * FabricImage.fromURL async, y los timeouts pueden hacer que se persistan
+ * objects vacíos).
  */
 
 type Body = {
   title: string;
   width: number;
   height: number;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  fabricJson: any;
+  layers: TemplateLayer[];
+  originalImageUrl?: string;
 };
 
 export async function POST(req: Request) {
@@ -32,8 +36,8 @@ export async function POST(req: Request) {
     }
 
     const body = (await req.json()) as Body;
-    if (!body?.fabricJson || typeof body.fabricJson !== "object") {
-      return NextResponse.json({ error: "fabricJson obligatorio" }, { status: 400 });
+    if (!Array.isArray(body?.layers) || body.layers.length === 0) {
+      return NextResponse.json({ error: "layers obligatorio (array no vacío)" }, { status: 400 });
     }
     if (!body.width || !body.height) {
       return NextResponse.json({ error: "width/height obligatorios" }, { status: 400 });
@@ -41,15 +45,26 @@ export async function POST(req: Request) {
 
     const title = (body.title || "Mi flyer mágico").slice(0, 120);
 
-    // Crear el proyecto. template_id=0 marca "custom magic layers"
-    // (no usa plantilla predefinida, viene de upload del usuario).
+    // Formato custom que el editor detecta y aplica con applyTemplateLayers.
+    // Esto se hace para que las imágenes async se carguen correctamente
+    // en el DOM canvas real del editor (no en un StaticCanvas headless).
+    const fabricJson = {
+      __magicLayers: true,
+      version: "magic-layers-v1",
+      layers: body.layers,
+      width: body.width,
+      height: body.height,
+      originalImageUrl: body.originalImageUrl ?? null,
+    };
+
+    // Crear el proyecto. template_id=0 marca "custom magic layers".
     const { data, error } = await supabase
       .from("projects")
       .insert({
         user_id: user.id,
         title,
         template_id: 0,
-        fabric_json: body.fabricJson,
+        fabric_json: fabricJson,
         format: "custom",
         width: body.width,
         height: body.height,

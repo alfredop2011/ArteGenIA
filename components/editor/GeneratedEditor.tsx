@@ -663,7 +663,17 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
       if (pendingJson) {
         delete (window as unknown as { __pendingFabricJson?: object }).__pendingFabricJson;
         try {
-          await canvas.loadFromJSON(pendingJson);
+          // ── Detectar formato Capas Mágicas (Fase V.1) ──────────────
+          // Si viene marcado __magicLayers, aplicamos con applyTemplateLayers
+          // (que carga imágenes async correctamente en lugar de loadFromJSON
+          // que no espera a que las URLs HTTP terminen de cargar).
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const magic = pendingJson as any;
+          if (magic.__magicLayers === true && Array.isArray(magic.layers)) {
+            await applyTemplateLayers(canvas, magic.layers);
+          } else {
+            await canvas.loadFromJSON(pendingJson);
+          }
           canvas.setZoom(scale);
           canvas.setDimensions({ width: dims.w * scale, height: dims.h * scale });
           canvas.renderAll();

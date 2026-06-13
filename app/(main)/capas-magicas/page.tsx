@@ -162,7 +162,8 @@ export default function CapasMagicasPage() {
     if (!result) return;
     setApplying(true);
     try {
-      // 1. Aplicar las ediciones inline del usuario a los layers
+      // Aplicar ediciones inline del usuario a los textos detectados.
+      // El resto de layers (background image, image-regions, shapes) van tal cual.
       const finalLayers: TemplateLayer[] = result.layers.map((l) => {
         if (l.type === "text" && editedTexts[l.id] !== undefined) {
           return { ...l, text: editedTexts[l.id] };
@@ -170,51 +171,9 @@ export default function CapasMagicasPage() {
         return l;
       });
 
-      // 2. Generar el fabric_json en el cliente usando StaticCanvas +
-      //    applyTemplateLayers. Esto garantiza que el formato sea EXACTAMENTE
-      //    el que el editor espera al hacer loadFromJSON (mismo path que
-      //    cuando se guarda un proyecto desde el editor).
-      //    Lazy import para no romper SSR.
-      const { StaticCanvas } = await import("fabric");
-      const { applyTemplateLayers } = await import("@/lib/fabricApplyTemplateLayers");
-
-      const canvas = new StaticCanvas(undefined, {
-        width: result.meta.width,
-        height: result.meta.height,
-        backgroundColor: "#ffffff",
-      });
-
-      // applyTemplateLayers carga imágenes async. Esperar a que todas
-      // las imágenes estén listas antes de serializar (si no, toJSON()
-      // captura objects vacíos).
-      await applyTemplateLayers(canvas, finalLayers, 1);
-      // Esperar a que las imágenes hayan terminado de cargar realmente
-      // (FabricImage.fromURL es async pero el render puede no haber
-      // terminado todavía).
-      await new Promise<void>((resolve) => {
-        const check = () => {
-          const imagesNotReady = canvas.getObjects().some((o) => {
-            if (o.type !== "image") return false;
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const getEl = (o as any).getElement?.bind(o);
-            const el = getEl ? (getEl() as HTMLImageElement | undefined) : undefined;
-            return !el || !el.complete || el.naturalWidth === 0;
-          });
-          if (!imagesNotReady) resolve();
-          else setTimeout(check, 100);
-        };
-        check();
-        // Failsafe: máximo 8s esperando
-        setTimeout(() => resolve(), 8000);
-      });
-      canvas.renderAll();
-
-      // 3. Serializar — toJSON() de fabric devuelve el formato que
-      //    loadFromJSON entiende. Reutilizable directamente por el editor.
-      const fabricJson = canvas.toJSON();
-      canvas.dispose();
-
-      // 4. Crear proyecto en Supabase
+      // Persistir los TemplateLayer[] crudos. El editor los aplicará con
+      // applyTemplateLayers (que maneja correctamente la carga async de
+      // imágenes). Mucho más fiable que serializar fabric_json en cliente.
       const res = await fetch("/api/projects/from-magic-layers", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -222,7 +181,8 @@ export default function CapasMagicasPage() {
           title: "Mi flyer mágico",
           width: result.meta.width,
           height: result.meta.height,
-          fabricJson,
+          layers: finalLayers,
+          originalImageUrl: imageUrl,
         }),
       });
       if (!res.ok) {
