@@ -687,6 +687,59 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
             newLayers.push({ id: cid, name: `Capa ${i+1}`, type: layerType, obj, visible: true, locked: false });
           });
           if (isMounted) setLayers([...newLayers].reverse());
+
+          // ── SELECTION HANDLERS para proyecto guardado ──────────────
+          // Bug fix: sin esto el panel derecho de propiedades nunca se
+          // actualizaba al seleccionar objetos en proyectos cargados
+          // (template handlers solo se registraban en MODO PLANTILLA).
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const handleSelProj = (obj: any) => {
+            const id = (obj as FabricObject & { customId?: string }).customId ?? "";
+            const layer = newLayers.find(l => l.id === id) ?? null;
+            setSelectedLayer(layer);
+            if (obj.type === "i-text" || obj.type === "text" || obj.type === "textbox") {
+              const t = obj as IText;
+              const sh = t.shadow as { color?: string; blur?: number } | null;
+              setTextProps({
+                text: t.text ?? "",
+                fontFamily: String(t.fontFamily ?? "Montserrat"),
+                fontSize: t.fontSize ?? 60,
+                fill: String(t.fill ?? "#ffffff"),
+                textAlign: t.textAlign ?? "center",
+                fontWeight: String(t.fontWeight ?? "700"),
+                charSpacing: t.charSpacing ?? 0,
+                lineHeight: t.lineHeight ?? 1.2,
+                opacity: t.opacity ?? 1,
+                angle: t.angle ?? 0,
+                left: t.left ?? 0,
+                top: t.top ?? 0,
+                width: t.width ?? 900,
+                shadow: !!sh,
+                shadowColor: sh?.color ?? "#000000",
+                shadowBlur: sh?.blur ?? 10,
+              });
+            } else {
+              setImageProps({
+                opacity: obj.opacity ?? 1,
+                angle: obj.angle ?? 0,
+                left: obj.left ?? 0,
+                top: obj.top ?? 0,
+                width: (obj.width ?? 400) * (obj.scaleX ?? 1),
+                height: (obj.height ?? 600) * (obj.scaleY ?? 1),
+                flipX: obj.flipX ?? false,
+                flipY: obj.flipY ?? false,
+              });
+            }
+          };
+          canvas.on("selection:created", e => { const o = e.selected?.[0]; if (o) handleSelProj(o); updateFloatingToolbar(); });
+          canvas.on("selection:updated", e => { const o = e.selected?.[0]; if (o) handleSelProj(o); updateFloatingToolbar(); });
+          canvas.on("selection:cleared", () => { setSelectedLayer(null); setFloatingToolbar(p => ({ ...p, visible: false, alignOpen: false, moreOpen: false })); });
+          canvas.on("object:modified", () => { const o = canvas?.getActiveObject(); if (o) handleSelProj(o); setSaveState("unsaved"); updateFloatingToolbar(); pushSnapshot(); });
+          canvas.on("object:added",    () => { pushSnapshot(); });
+          canvas.on("object:removed",  () => { pushSnapshot(); });
+          canvas.on("text:changed",    () => { pushSnapshotDebounced(); });
+          canvas.on("object:moving",   () => updateFloatingToolbar());
+          canvas.on("object:scaling",  () => updateFloatingToolbar());
           return;
         } catch (e) {
           console.warn("Error cargando proyecto:", e);
