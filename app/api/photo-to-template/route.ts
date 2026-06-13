@@ -377,13 +377,30 @@ export async function POST(req: Request) {
     }
 
     // ─── 7. ARMAR TemplateLayer[] ────────────────────────────────────────
-    const W = claudeOut.imageWidth || 1080;
-    const H = claudeOut.imageHeight || 1350;
+    // Usar el tamaño REAL de la imagen (no lo que reporta Claude — puede
+    // tener offset). sharp metadata es la fuente de verdad.
+    let realW = claudeOut.imageWidth || 1080;
+    let realH = claudeOut.imageHeight || 1350;
+    try {
+      const meta = await sharp(imgBuf).metadata();
+      if (meta.width && meta.height) {
+        realW = meta.width;
+        realH = meta.height;
+      }
+    } catch (e) {
+      console.warn("[photo-to-template] sharp metadata failed:", e);
+    }
+    const W = realW;
+    const H = realH;
     const generatedLayers: GeneratedLayer[] = [];
 
-    // Layer 0: imagen original como fondo (escala 1:1 → tamaño completo canvas)
+    // Layer 0: imagen original como fondo.
+    // IMPORTANTE: el id debe ser "bg-photo" para que applyTemplateLayers
+    // detecte que es background y aplique scaleToFill = canvas.width / img.width.
+    // Si usamos otro id, Fabric renderiza la imagen a su tamaño natural y
+    // queda descolocada respecto al canvas.
     generatedLayers.push({
-      id: "bg-original",
+      id: "bg-photo",
       type: "image",
       src: body.imageUrl,
       x: 0,
@@ -432,12 +449,15 @@ export async function POST(req: Request) {
       });
     }
 
-    // Layers de objetos visuales detectados por Florence (crops del original)
-    // Limitar a top-20 objetos por área para evitar spam de capas pequeñas.
+    // Layers de objetos visuales detectados por Florence (crops del original).
+    // Limitar a top-5 más grandes — más allá de eso, los crops pequeños se
+    // amontonan sobre los textos y confunden al usuario. Si Florence detecta
+    // un grupo masivo (DJs juntos) lo trata como UN solo elemento; intentar
+    // separarlo en N personas individuales requiere SAM-2 ($1+/uso, descartado).
     const topObjects = objects
-      .filter((o) => o.w * o.h > 1000) // ignorar bboxes diminutos (ruido)
+      .filter((o) => o.w * o.h > (W * H) * 0.01) // mínimo 1% del área total
       .sort((a, b) => b.w * b.h - a.w * a.h)
-      .slice(0, 20);
+      .slice(0, 5);
     for (const [i, box] of topObjects.entries()) {
       generatedLayers.push({
         id: `obj-${i}`,
