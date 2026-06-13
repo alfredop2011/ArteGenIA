@@ -412,12 +412,16 @@ export async function POST(req: Request) {
     const generatedLayers: GeneratedLayer[] = [];
 
     // Layer 0: imagen original como fondo.
-    // IMPORTANTE: el id debe ser "bg-photo" para que applyTemplateLayers
-    // detecte que es background y aplique scaleToFill = canvas.width / img.width.
-    // Si usamos otro id, Fabric renderiza la imagen a su tamaño natural y
-    // queda descolocada respecto al canvas.
+    // IMPORTANTE: id "bg-magic" (NO "bg-photo") porque:
+    // - "bg-photo" activa el branch isBg en applyTemplateLayers que fuerza
+    //   un re-escalado canvas.width/img.width — eso rompe nuestro caso
+    //   donde el canvas YA tiene exactamente las dimensions de la imagen
+    //   (sharp metadata) y queremos scaleX=1:1 puro.
+    // - "bg-magic" cae al else branch que respeta scaleX/scaleY del layer.
+    // - El editor mobile detecta backgrounds por cid.startsWith("bg-") así
+    //   que sigue siendo bloqueable.
     generatedLayers.push({
-      id: "bg-photo",
+      id: "bg-magic",
       type: "image",
       src: body.imageUrl,
       x: 0,

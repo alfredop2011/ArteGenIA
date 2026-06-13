@@ -149,9 +149,12 @@ export async function POST(req: Request) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const layers: any[] = [];
 
-    // Layer 0: fondo generado por Flux
+    // Layer 0: fondo generado por Flux.
+    // IMPORTANTE: id "bg-magic" (NO "bg-photo") — ver explicación en
+    // /api/photo-to-template/route.ts. Canvas dims = imagen dims, no
+    // necesitamos re-escalado.
     layers.push({
-      id: "bg-photo",
+      id: "bg-magic",
       type: "image",
       src: bgImageUrl,
       x: 0,
