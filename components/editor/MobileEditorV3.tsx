@@ -1051,16 +1051,29 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
       const el = img.getElement() as HTMLImageElement;
       let publicUrl = el?.src ?? "";
 
-      // Si es data: o blob:, subir a Fal storage primero (igual que segment-person)
+      // Si es data: o blob:, subir a R2 primero — /api/share-upload espera
+      // JSON con imageDataUrl en formato base64, no FormData.
       if (publicUrl.startsWith("data:") || publicUrl.startsWith("blob:")) {
         toast.info("Subiendo imagen…");
-        const blob = await (await fetch(publicUrl)).blob();
-        const formData = new FormData();
-        formData.append("file", new File([blob], "input.jpg", { type: blob.type || "image/jpeg" }));
-        // Reusamos share-upload (acepta blobs y devuelve URL R2 pública).
-        const upRes = await fetch("/api/share-upload", { method: "POST", body: formData });
+        // Si es blob:, convertimos a dataURL. Si ya es data:, lo usamos tal cual.
+        let imageDataUrl = publicUrl;
+        if (publicUrl.startsWith("blob:")) {
+          const blob = await (await fetch(publicUrl)).blob();
+          imageDataUrl = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = () => reject(new Error("No se pudo leer la imagen"));
+            reader.readAsDataURL(blob);
+          });
+        }
+        const upRes = await fetch("/api/share-upload", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ imageDataUrl, title: "Capas Mágicas" }),
+        });
         if (!upRes.ok) {
-          toast.error("No se pudo subir la imagen");
+          const err = await upRes.json().catch(() => ({})) as { error?: string };
+          toast.error(err.error || "No se pudo subir la imagen");
           return;
         }
         const { url } = await upRes.json() as { url: string };

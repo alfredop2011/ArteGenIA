@@ -93,12 +93,24 @@ export default function CapasMagicasPage() {
     setProgress("Subiendo imagen…");
 
     try {
-      // 1. Subir a R2 vía /api/share-upload (acepta FormData con file)
-      const fd = new FormData();
-      fd.append("file", file);
-      const upRes = await fetch("/api/share-upload", { method: "POST", body: fd });
+      // 1. Convertir File a dataURL — /api/share-upload espera JSON
+      // { imageDataUrl: "data:image/...;base64,..." }, no FormData.
+      const imageDataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = () => reject(new Error("No se pudo leer el archivo"));
+        reader.readAsDataURL(file);
+      });
+
+      // 2. Subir a R2 vía /api/share-upload (devuelve URL pública)
+      const upRes = await fetch("/api/share-upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imageDataUrl, title: "Capas Mágicas" }),
+      });
       if (!upRes.ok) {
-        toast.error("No se pudo subir la imagen");
+        const err = await upRes.json().catch(() => ({})) as { error?: string };
+        toast.error(err.error || "No se pudo subir la imagen");
         setState("upload");
         return;
       }
