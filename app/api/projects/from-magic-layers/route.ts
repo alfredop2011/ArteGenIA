@@ -23,7 +23,12 @@ type Body = {
   title: string;
   width: number;
   height: number;
-  layers: TemplateLayer[];
+  layers?: TemplateLayer[];
+  // Compat: cliente viejo que aún manda fabricJson serializado por
+  // StaticCanvas. Lo aceptamos un tiempo para evitar errores 400 a
+  // usuarios con bundle JS cacheado tras el deploy de la nueva versión.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  fabricJson?: any;
   originalImageUrl?: string;
 };
 
@@ -36,8 +41,19 @@ export async function POST(req: Request) {
     }
 
     const body = (await req.json()) as Body;
-    if (!Array.isArray(body?.layers) || body.layers.length === 0) {
-      return NextResponse.json({ error: "layers obligatorio (array no vacío)" }, { status: 400 });
+    const hasLayers = Array.isArray(body?.layers) && body.layers.length > 0;
+    const hasLegacyFabric =
+      body?.fabricJson != null && typeof body.fabricJson === "object";
+
+    if (!hasLayers && !hasLegacyFabric) {
+      return NextResponse.json(
+        {
+          error:
+            "Recarga la página (Cmd+Shift+R) y vuelve a intentarlo. " +
+            "Tu navegador tiene una versión vieja cacheada.",
+        },
+        { status: 400 },
+      );
     }
     if (!body.width || !body.height) {
       return NextResponse.json({ error: "width/height obligatorios" }, { status: 400 });
@@ -45,17 +61,21 @@ export async function POST(req: Request) {
 
     const title = (body.title || "Mi flyer mágico").slice(0, 120);
 
-    // Formato custom que el editor detecta y aplica con applyTemplateLayers.
-    // Esto se hace para que las imágenes async se carguen correctamente
-    // en el DOM canvas real del editor (no en un StaticCanvas headless).
-    const fabricJson = {
-      __magicLayers: true,
-      version: "magic-layers-v1",
-      layers: body.layers,
-      width: body.width,
-      height: body.height,
-      originalImageUrl: body.originalImageUrl ?? null,
-    };
+    // Formato preferido: __magicLayers para que el editor cargue con
+    // applyTemplateLayers (imágenes async cargan bien). Si llega del
+    // cliente viejo cacheado un fabricJson serializado, lo persistimos
+    // tal cual — el editor lo cargará con loadFromJSON (puede tener
+    // image bug pero no crashea).
+    const fabricJson = hasLayers
+      ? {
+          __magicLayers: true,
+          version: "magic-layers-v1",
+          layers: body.layers,
+          width: body.width,
+          height: body.height,
+          originalImageUrl: body.originalImageUrl ?? null,
+        }
+      : body.fabricJson;
 
     // Crear el proyecto. template_id=0 marca "custom magic layers".
     const { data, error } = await supabase
