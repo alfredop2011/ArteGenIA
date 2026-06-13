@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { supabase, type Profile } from "@/lib/supabase";
 import type { User } from "@supabase/supabase-js";
 
@@ -7,6 +7,12 @@ export function useAuth() {
     const [user, setUser] = useState<User | null>(null);
     const [profile, setProfile] = useState<Profile | null>(null);
     const [loading, setLoading] = useState(true);
+
+    const fetchProfile = useCallback(async (userId: string) => {
+        const { data } = await supabase.from("profiles").select("*").eq("id", userId).single();
+        setProfile(data);
+        setLoading(false);
+    }, []);
 
     useEffect(() => {
         // Get initial session
@@ -24,13 +30,16 @@ export function useAuth() {
         });
 
         return () => subscription.unsubscribe();
-    }, []);
+    }, [fetchProfile]);
 
-    const fetchProfile = async (userId: string) => {
-        const { data } = await supabase.from("profiles").select("*").eq("id", userId).single();
-        setProfile(data);
-        setLoading(false);
-    };
+    /** Re-lee el profile actual desde Supabase. Útil después de eventos
+     *  externos que cambian el plan (webhook Stripe post-pago, upgrades
+     *  manuales, etc.) — sin esto la UI sigue mostrando el plan cacheado
+     *  en memoria hasta que el user cierre sesión. */
+    const refreshProfile = useCallback(async () => {
+        if (!user?.id) return;
+        await fetchProfile(user.id);
+    }, [user?.id, fetchProfile]);
 
     /** Inicia OAuth Google.
      *  @param nextUrl opcional — ruta absoluta o relativa a la que volver
@@ -53,5 +62,5 @@ export function useAuth() {
 
     const signOut = () => supabase.auth.signOut();
 
-    return { user, profile, loading, signInWithGoogle, signInWithEmail, signUpWithEmail, signOut };
+    return { user, profile, loading, signInWithGoogle, signInWithEmail, signUpWithEmail, signOut, refreshProfile };
 }

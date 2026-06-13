@@ -21,7 +21,7 @@ import AuthModal from "@/components/auth/AuthModal";
  */
 
 function PricingContent() {
-  const { user, profile } = useAuth();
+  const { user, profile, refreshProfile } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
   const sp = useSearchParams();
@@ -51,9 +51,23 @@ function PricingContent() {
     if (success) {
       if (successPlan === "enterprise") toast.success("🚀 ¡Bienvenido a Enterprise!");
       else toast.success("¡Bienvenido a Pro! 🎉");
+      // Tras volver de Stripe Checkout, el webhook tarda 1-3s en propagar
+      // el plan a nuestra BD. Refrescamos el profile con reintentos cortos
+      // hasta detectar el cambio o tras 5 intentos (~10s) — así el badge
+      // del header y el banner "Gestionar suscripción" se actualizan solos
+      // sin que el user tenga que cerrar sesión y volver a entrar.
+      let attempts = 0;
+      const interval = setInterval(async () => {
+        attempts += 1;
+        await refreshProfile();
+        if (attempts >= 5) clearInterval(interval);
+      }, 2000);
+      // Primer refresh inmediato (por si el webhook ya completó)
+      void refreshProfile();
+      return () => clearInterval(interval);
     }
     if (canceled) toast.info("Pago cancelado — sin cargo.");
-  }, [success, canceled, successPlan, toast]);
+  }, [success, canceled, successPlan, toast, refreshProfile]);
 
   const [portalLoading, setPortalLoading] = useState(false);
 
