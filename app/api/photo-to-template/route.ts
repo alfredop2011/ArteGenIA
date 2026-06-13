@@ -4,6 +4,7 @@ import sharp from "sharp";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { COST_PER_ACTION_USD, getQuota, isUnlimited } from "@/lib/quotas";
+import { matchFont } from "@/lib/fontCatalog";
 
 /**
  * POST /api/photo-to-template
@@ -66,6 +67,10 @@ type ClaudeOutput = {
         color: string;
         weight: "bold" | "regular";
         textAlign?: "left" | "center" | "right";
+        /** Categoría tipográfica detectada (Fase W.3 — font matching) */
+        fontCategory?: "display" | "serif" | "sans" | "script" | "mono";
+        /** Descripción visual de la tipografía (ej. "bold geometric sans") */
+        fontDescription?: string;
       }
     | { type: "image-region"; label: string; x: number; y: number; w: number; h: number }
     | { type: "shape"; color: string; x: number; y: number; w: number; h: number }
@@ -211,6 +216,16 @@ REGLAS DE PRECISIÓN (críticas):
    - "small" si h <= 3 (URLs, créditos, listas finas)
 7. weight: "bold" si el texto es claramente negrita o más grueso que cuerpo.
 8. textAlign: "left", "center" o "right" según la alineación visual.
+9. fontCategory: la familia tipográfica que MEJOR aproxime la fuente original.
+   - "display" → títulos grandes, condensados, impacto (Bebas Neue/Anton style)
+   - "serif" → letras con remates clásicos (Playfair/Cormorant style)
+   - "sans" → palo seco moderno (Montserrat/Inter style)
+   - "script" → manuscrita/cursiva (Great Vibes style)
+   - "mono" → monoespaciada (Courier style)
+10. fontDescription: 2-4 palabras clave visuales que describan la fuente,
+    para mejor matching. Ejemplos: "bold geometric sans", "elegant thin serif",
+    "condensed uppercase display", "flowing handwritten script",
+    "round friendly sans", "high contrast modern serif".
 
 Devuelve SOLO JSON, sin markdown, sin explicación:
 {
@@ -225,7 +240,9 @@ Devuelve SOLO JSON, sin markdown, sin explicación:
       "fontSize": "large",
       "color": "#RRGGBB",
       "weight": "bold",
-      "textAlign": "center"
+      "textAlign": "center",
+      "fontCategory": "display",
+      "fontDescription": "bold condensed uppercase"
     }
   ]
 }
@@ -425,7 +442,7 @@ export async function POST(req: Request) {
       )
     );
 
-    // 3. Conversión final a TemplateLayer[]
+    // 3. Conversión final a TemplateLayer[] con font matching real
     let textIdx = 0;
     for (let i = 0; i < dedupedTextLayers.length; i++) {
       const layer = dedupedTextLayers[i];
@@ -434,6 +451,13 @@ export async function POST(req: Request) {
       const xPx = Math.round((layer.x / 100) * W);
       const yPx = Math.round((layer.y / 100) * H);
       const wPx = Math.round((layer.w / 100) * W);
+      // Font matching: mapear (categoría + descripción + peso) → fuente
+      // concreta del catálogo Google Fonts cargado en layout.tsx.
+      const matchedFont = matchFont({
+        category: layer.fontCategory,
+        description: layer.fontDescription,
+        weight: layer.weight,
+      });
       generatedLayers.push({
         id: `text-${textIdx++}`,
         type: "text",
@@ -442,7 +466,7 @@ export async function POST(req: Request) {
         y: yPx,
         width: Math.max(wPx, 80),
         fontSize: fontSizeToPx(layer.fontSize, H),
-        fontFamily: "Arial",
+        fontFamily: matchedFont, // ← Bebas Neue / Playfair / Montserrat etc.
         color: sampledColor, // ← color real del píxel, no el adivinado
         fontWeight: layer.weight === "bold" ? "bold" : "normal",
         textAlign: layer.textAlign ?? "left", // ← respeta alineación detectada
