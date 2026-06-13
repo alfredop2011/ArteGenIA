@@ -55,7 +55,8 @@ export const COST_PER_ACTION_USD: Record<AIAction, number> = {
   // BiRefNet + Bria refinement HD
   segment_person_hd: 0.06,
   // Sonnet 4.6 visión ($0.036 medido) + Florence-2 ($0.005) + sharp local
-  photo_to_template: 0.05,
+  // Sonnet 4.6 visión ($0.036) + Florence-2 ($0.005) + Flux Fill inpainting ($0.04)
+  photo_to_template: 0.09,
 };
 
 /** Devuelve la cuota mensual de un (plan, action). Si el plan no se

@@ -77,6 +77,84 @@ type ClaudeOutput = {
   >;
 };
 
+/** Genera una máscara PNG (blanco donde hay texto, negro donde no) lista
+ *  para enviar a Flux Fill inpainting. Margen 10% en cada lado para cubrir
+ *  descenders, ascenders y antialias del texto original. */
+async function buildTextMask(
+  imageW: number,
+  imageH: number,
+  textBboxesPct: Array<{ x: number; y: number; w: number; h: number }>,
+): Promise<Buffer> {
+  // SVG con rectángulos blancos donde hay texto, fondo negro.
+  // sharp lo convierte a PNG raster del tamaño exacto.
+  const rects = textBboxesPct
+    .map((b) => {
+      const x = Math.max(0, ((b.x - b.w * 0.04) / 100) * imageW);
+      const y = Math.max(0, ((b.y - b.h * 0.12) / 100) * imageH);
+      const w = Math.min(imageW - x, ((b.w * 1.08) / 100) * imageW);
+      const h = Math.min(imageH - y, ((b.h * 1.24) / 100) * imageH);
+      return `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="white"/>`;
+    })
+    .join("");
+  const svg = `<svg width="${imageW}" height="${imageH}" xmlns="http://www.w3.org/2000/svg"><rect width="100%" height="100%" fill="black"/>${rects}</svg>`;
+  return await sharp(Buffer.from(svg)).png().toBuffer();
+}
+
+/** Inpainting con Flux Fill: borra los textos del fondo manteniendo el
+ *  resto del diseño. Sube la imagen + mask a Fal storage, llama el modelo
+ *  y descarga el resultado. Si algo falla en cualquier paso, devuelve null
+ *  (el caller cae al fallback de la imagen original con cover rectangles). */
+async function inpaintTextRegions(
+  imageBuf: Buffer,
+  maskBuf: Buffer,
+  mediaType: string,
+): Promise<string | null> {
+  try {
+    // 1. Subir imagen y máscara a Fal storage
+    const imageFile = new File(
+      [imageBuf as unknown as BlobPart],
+      "input.jpg",
+      { type: mediaType },
+    );
+    const maskFile = new File(
+      [maskBuf as unknown as BlobPart],
+      "mask.png",
+      { type: "image/png" },
+    );
+    const [imageUrl, maskUrl] = await Promise.all([
+      fal.storage.upload(imageFile),
+      fal.storage.upload(maskFile),
+    ]);
+
+    // 2. Llamar Flux Fill (inpainting). Endpoint Pro v1 fill.
+    //    Solo params soportados: image_url, mask_url, prompt.
+    const result = await fal.subscribe("fal-ai/flux-pro/v1/fill", {
+      input: {
+        image_url: imageUrl,
+        mask_url: maskUrl,
+        prompt:
+          "Clean background, no text, no letters, no logo text. " +
+          "Preserve the original design, people, atmosphere, lighting, colors and visual style intact. " +
+          "Just remove the textual elements seamlessly.",
+      },
+      logs: false,
+    });
+
+    // 3. Extraer URL del resultado
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const data = (result as any)?.data;
+    const outUrl = data?.images?.[0]?.url ?? data?.image?.url;
+    if (typeof outUrl !== "string") {
+      console.warn("[photo-to-template] Flux Fill no devolvió URL:", result);
+      return null;
+    }
+    return outUrl;
+  } catch (e) {
+    console.warn("[photo-to-template] inpaint failed, falling back:", e instanceof Error ? e.message : e);
+    return null;
+  }
+}
+
 /** Samplea el color del FONDO alrededor del bbox del texto (NO del texto
  *  mismo). Útil para construir rectángulos "cover" que oculten el texto
  *  original del flyer y dejen visible solo el texto editable encima.
@@ -488,28 +566,10 @@ export async function POST(req: Request) {
     const H = realH;
     const generatedLayers: GeneratedLayer[] = [];
 
-    // Layer 0: imagen original como fondo.
-    // IMPORTANTE: id "bg-magic" (NO "bg-photo") porque:
-    // - "bg-photo" activa el branch isBg en applyTemplateLayers que fuerza
-    //   un re-escalado canvas.width/img.width — eso rompe nuestro caso
-    //   donde el canvas YA tiene exactamente las dimensions de la imagen
-    //   (sharp metadata) y queremos scaleX=1:1 puro.
-    // - "bg-magic" cae al else branch que respeta scaleX/scaleY del layer.
-    // - El editor mobile detecta backgrounds por cid.startsWith("bg-") así
-    //   que sigue siendo bloqueable.
-    generatedLayers.push({
-      id: "bg-magic",
-      type: "image",
-      src: body.imageUrl,
-      x: 0,
-      y: 0,
-      scaleX: 1,
-      scaleY: 1,
-      opacity: 1,
-    });
-
     // ─── Mejoras de calidad ─────────────────────────────────────────────
     // 1. Filtrar solo layers de texto válidos y deduplicar overlaps
+    //    (lo movemos arriba del push de bg-magic porque necesitamos los
+    //    bboxes para construir la mask de inpainting).
     const rawTextLayers = (claudeOut.layers ?? []).filter(
       (l): l is Extract<typeof l, { type: "text" }> => l.type === "text"
     );
@@ -523,15 +583,49 @@ export async function POST(req: Request) {
       )
     );
 
-    // 2b. Color de FONDO alrededor de cada bbox de texto. Lo usamos para
-    //     pintar un rectángulo opaco DEBAJO del texto editable que cubra
-    //     el texto original del flyer (sin esto se ven duplicados). Es la
-    //     alternativa pragmática barata al inpainting con Flux ($0.05/uso).
+    // 2b. Color de FONDO alrededor de cada bbox de texto. Lo usamos como
+    //     fallback si el inpainting con Flux falla — pintamos un rectángulo
+    //     opaco debajo del texto editable para cubrir el original.
     const sampledBgColors = await Promise.all(
       dedupedTextLayers.map((layer) =>
         sampleBackgroundAround(imgBuf, W, H, layer.x, layer.y, layer.w, layer.h, "#000000")
       )
     );
+
+    // 2c. INPAINTING con Flux Fill: borrar los textos del fondo manteniendo
+    //     el resto del diseño intacto. Esto es lo que hace Canva para que
+    //     el flyer se vea como un diseño nativo, no como una foto con textos
+    //     encima. Si Flux Fill falla, usamos la imagen original como fallback
+    //     (los cover rectangles siguen ahí como red de seguridad visual).
+    let backgroundUrl = body.imageUrl;
+    let usedInpainting = false;
+    if (dedupedTextLayers.length > 0) {
+      try {
+        const bboxes = dedupedTextLayers.map((l) => ({ x: l.x, y: l.y, w: l.w, h: l.h }));
+        const maskBuf = await buildTextMask(W, H, bboxes);
+        const inpaintedUrl = await inpaintTextRegions(imgBuf, maskBuf, mediaType);
+        if (inpaintedUrl) {
+          backgroundUrl = inpaintedUrl;
+          usedInpainting = true;
+        }
+      } catch (e) {
+        console.warn("[photo-to-template] inpaint pipeline error:", e);
+      }
+    }
+
+    // ─── Layer 0: imagen como fondo (inpaintada si Flux Fill funcionó) ─
+    // id "bg-magic" para que applyTemplateLayers NO aplique scale-to-fill
+    // forzado (mantiene scaleX/scaleY=1 que coinciden con el canvas).
+    generatedLayers.push({
+      id: "bg-magic",
+      type: "image",
+      src: backgroundUrl,
+      x: 0,
+      y: 0,
+      scaleX: 1,
+      scaleY: 1,
+      opacity: 1,
+    });
 
     // 3. Conversión final a TemplateLayer[] con font matching real
     let textIdx = 0;
@@ -546,23 +640,24 @@ export async function POST(req: Request) {
       const wPx = Math.round((layer.w / 100) * W);
       const hPx = Math.round((layer.h / 100) * H);
 
-      // 3a. Rectángulo COVER del color del fondo — oculta el texto original
-      //     del flyer para que solo se vea el texto editable encima.
-      //     Margen 8% extra en cada lado para asegurar cobertura completa
-      //     incluso si el bbox de Claude es ligeramente apretado.
-      const coverMarginX = Math.round(wPx * 0.04);
-      const coverMarginY = Math.round(hPx * 0.15);
-      generatedLayers.push({
-        id: `cover-${coverIdx++}`,
-        type: "shape",
-        shape: "rect",
-        x: Math.max(0, xPx - coverMarginX),
-        y: Math.max(0, yPx - coverMarginY),
-        width: wPx + coverMarginX * 2,
-        height: hPx + coverMarginY * 2,
-        fill: bgColor,
-        opacity: 1,
-      });
+      // 3a. Rectángulo COVER — SOLO si el inpainting con Flux Fill falló.
+      //     Si funcionó, el fondo ya no tiene texto y los rects estorbarían
+      //     visualmente (parches sólidos sobre fondo limpio).
+      if (!usedInpainting) {
+        const coverMarginX = Math.round(wPx * 0.04);
+        const coverMarginY = Math.round(hPx * 0.15);
+        generatedLayers.push({
+          id: `cover-${coverIdx++}`,
+          type: "shape",
+          shape: "rect",
+          x: Math.max(0, xPx - coverMarginX),
+          y: Math.max(0, yPx - coverMarginY),
+          width: wPx + coverMarginX * 2,
+          height: hPx + coverMarginY * 2,
+          fill: bgColor,
+          opacity: 1,
+        });
+      }
 
       // 3b. Font matching: mapear (categoría + descripción + peso) → fuente
       //     concreta del catálogo Google Fonts cargado en layout.tsx.
@@ -618,7 +713,8 @@ export async function POST(req: Request) {
     void supabaseAdmin.from("ai_usage").insert({
       user_id: user.id,
       action: ACTION,
-      cost_usd: COST_PER_ACTION_USD[ACTION],
+      // Coste base + Flux Fill si se usó inpainting
+      cost_usd: COST_PER_ACTION_USD[ACTION] + (usedInpainting ? 0.04 : 0),
       meta: {
         elapsed_ms: elapsed,
         model: MODEL,
@@ -627,6 +723,7 @@ export async function POST(req: Request) {
         text_layers_merged: textsRaw - textsDetected,
         object_layers: topObjects.length,
         image_size: imgBuf.length,
+        used_inpainting: usedInpainting,
       },
     });
 
@@ -719,4 +816,6 @@ export async function GET() {
 }
 
 export const runtime = "nodejs";
-export const maxDuration = 60; // Claude + Florence pueden tardar 15-30s
+// Claude (~30s) + Florence (~5s) + Flux Fill inpainting (~15-20s) = ~50-55s.
+// Margen de seguridad para casos lentos.
+export const maxDuration = 90;
