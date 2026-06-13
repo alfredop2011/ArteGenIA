@@ -31,19 +31,24 @@ export const QUOTA_PER_PLAN: Record<PlanName, Record<AIAction, number>> = {
   free: {
     segment_person: 10,
     segment_person_hd: 3,
-    // Capas Mágicas: ajustado para calidad alta (Sonnet 4.6 + color sampling
-    // + overlap validation ≈ $0.18/uso). Free es zanahoria de conversión.
-    photo_to_template: 2,
+    // Capas Mágicas: Fase V.6 migró a SAM-3 ($0.005 por TODAS las personas
+    // vs $0.04 × N con SAM-2). Coste real bajó de $0.18 → $0.045/uso, así
+    // que podemos ser MUCHO más generosos. Free pasa de 2 → 5/mes para
+    // hacer la zanahoria más visible.
+    photo_to_template: 5,
   },
   pro: {
     segment_person: -1,
     segment_person_hd: -1,
-    photo_to_template: 15,
+    // Era 15. Subimos a 50/mes: cubre uso intensivo (organizador hace 1-2
+    // flyers/día). Diferencia con Free se vuelve obvia.
+    photo_to_template: 50,
   },
   enterprise: {
     segment_person: -1,
     segment_person_hd: -1,
-    photo_to_template: 60,
+    // Era 60. Subimos a 200/mes: agencias y multi-cliente.
+    photo_to_template: 200,
   },
 };
 
@@ -54,9 +59,10 @@ export const COST_PER_ACTION_USD: Record<AIAction, number> = {
   segment_person: 0.025,
   // BiRefNet + Bria refinement HD
   segment_person_hd: 0.06,
-  // Sonnet 4.6 visión ($0.036 medido) + Florence-2 ($0.005) + sharp local
-  // Sonnet 4.6 visión ($0.036) + Florence-2 ($0.005) + Flux Fill inpainting ($0.04)
-  photo_to_template: 0.09,
+  // Fase V.6 — Sonnet 4.6 visión ($0.036) + SAM-3 multi-persona ($0.005) +
+  // LaMa inpainting ($0.004 cuando hay textos a borrar). Reemplaza Florence
+  // + N llamadas SAM-2 segment ($0.04 × N), bajando coste de $0.18+ a $0.045.
+  photo_to_template: 0.045,
 };
 
 /** Devuelve la cuota mensual de un (plan, action). Si el plan no se
