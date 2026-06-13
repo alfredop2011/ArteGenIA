@@ -66,6 +66,21 @@ export async function POST(req: Request) {
     // cliente viejo cacheado un fabricJson serializado, lo persistimos
     // tal cual — el editor lo cargará con loadFromJSON (puede tener
     // image bug pero no crashea).
+    // Extraer las personas (layers id=person-N) como "stickers" reutilizables.
+    // Mantenemos también el array completo de URLs + bbox originales para que
+    // el editor pueda re-añadirlas al canvas si el usuario las borra.
+    const magicStickers = hasLayers && body.layers
+      ? body.layers
+          .filter((l): l is typeof l & { type: "image"; src: string } =>
+            typeof l.id === "string" && l.id.startsWith("person-") && l.type === "image" && !!l.src)
+          .map((l) => ({
+            id: l.id,
+            src: l.src,
+            originalX: l.x ?? 0,
+            originalY: l.y ?? 0,
+          }))
+      : [];
+
     const fabricJson = hasLayers
       ? {
           __magicLayers: true,
@@ -74,6 +89,9 @@ export async function POST(req: Request) {
           width: body.width,
           height: body.height,
           originalImageUrl: body.originalImageUrl ?? null,
+          // Stickers reutilizables — el editor los expone en un panel
+          // para que el usuario pueda re-añadirlos al canvas si los borra.
+          __magicStickers: magicStickers,
         }
       : body.fabricJson;
 

@@ -372,6 +372,10 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
   const { toast } = useToast();
   const [saveState, setSaveState] = useState<SaveState>("saved");
   const [canvasSize, setCanvasSize] = useState({ w: 1080, h: 1350 });
+  // Fase V.7 — Stickers IA (personas extraídas por SAM-3 al usar Capas
+  // Mágicas). Se cargan desde fabric_json.__magicStickers del proyecto.
+  // Se muestran en panel "IA" del sidebar — click añade al canvas.
+  const [magicStickers, setMagicStickers] = useState<Array<{ id: string; src: string; originalX: number; originalY: number }>>([]);
 
   // ─── ADMIN CREATOR MODE (sesion 4 creador) ────────────────────────────────
   // Cuando se pasa draftId, el editor entra en modo admin: barra metadata
@@ -690,6 +694,12 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
           const magic = pendingJson as any;
           if (magic.__magicLayers === true && Array.isArray(magic.layers)) {
             await applyTemplateLayers(canvas, magic.layers);
+            // Cargar stickers IA si vienen — el panel "IA" del sidebar los expone
+            if (Array.isArray(magic.__magicStickers) && magic.__magicStickers.length > 0) {
+              setMagicStickers(magic.__magicStickers);
+              // Auto-abrir tab IA para que el usuario los descubra
+              setActiveTool("ai");
+            }
           } else {
             await canvas.loadFromJSON(pendingJson);
           }
@@ -1851,6 +1861,35 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
     addShapeToCanvas(img, t("editor.layerName.image"));
   }, [canvasSize, addShapeToCanvas, t]);
 
+  /** Fase V.7 — Añadir un sticker IA (persona extraída) al canvas. Se carga
+   *  desde URL PNG transparente y se centra en el canvas a tamaño razonable. */
+  const addStickerToCanvas = useCallback(async (src: string) => {
+    const fabric = await import("fabric");
+    try {
+      const img = await fabric.FabricImage.fromURL(src, { crossOrigin: "anonymous" });
+      const imgW = img.width ?? 1;
+      const imgH = img.height ?? 1;
+      // Escalar a 40% del canvas para que no domine — usuario puede agrandar
+      const targetMax = Math.min(canvasSize.w, canvasSize.h) * 0.4;
+      const scale = Math.min(targetMax / imgW, targetMax / imgH, 1);
+      img.set({
+        left: canvasSize.w / 2,
+        top: canvasSize.h / 2,
+        originX: "center",
+        originY: "center",
+        scaleX: scale,
+        scaleY: scale,
+        selectable: true,
+        evented: true,
+      });
+      addShapeToCanvas(img, "Sticker IA");
+      toast.success("Sticker añadido");
+    } catch (e) {
+      console.error("[sticker] error:", e);
+      toast.error("No se pudo añadir el sticker");
+    }
+  }, [canvasSize, addShapeToCanvas, toast]);
+
   const addRect = useCallback(() => {
     addShapeToCanvas(
       new FabricRect({ left: canvasSize.w / 2 - 150, top: canvasSize.h / 2 - 150, width: 300, height: 300, fill: "#a855f7", opacity: 0.85, selectable: true, evented: true }),
@@ -2395,7 +2434,7 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
     { id: "photos",    label: t("editor.tool.photos"),     icon: <ImageIcon className="w-5 h-5" strokeWidth={1.5} /> },
     { id: "background",label: t("editor.tool.background"), icon: <Mountain className="w-5 h-5" strokeWidth={1.5} />, hidden: !FEATURES.backgroundTab },
     { id: "layers",    label: t("editor.tool.layers"),     icon: <LayersIcon className="w-5 h-5" strokeWidth={1.5} />, hidden: !FEATURES.layersPanel },
-    { id: "ai",        label: t("editor.tool.ai"),         icon: <Wand2 className="w-5 h-5" strokeWidth={1.5} />, comingSoon: true },
+    { id: "ai",        label: t("editor.tool.ai"),         icon: <Wand2 className="w-5 h-5" strokeWidth={1.5} /> },
     { id: "brand",     label: t("editor.tool.brand"),      icon: <Tag className="w-5 h-5" strokeWidth={1.5} />, comingSoon: true, hidden: !FEATURES.brandKit },
     { id: "favorites", label: t("editor.tool.favorites"),  icon: <Heart className="w-5 h-5" strokeWidth={1.5} />, comingSoon: true, hidden: !FEATURES.favorites },
   ];
@@ -2744,6 +2783,57 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
               <p className="text-[10px] text-gray-600 mt-3 px-1 leading-snug">
                 Toca una forma para añadirla al diseño. Despues puedes mover, escalar y rotar.
               </p>
+            </div>
+          </div>
+        )}
+
+        {/* AI PANEL - Stickers IA (personas extraídas con SAM-3 desde Capas
+            Mágicas). Si no hay stickers en este proyecto, mensaje vacío con
+            CTA para ir a /capas-magicas. */}
+        {activeTool === "ai" && !isMobile && (
+          <div className="w-52 ag-glass border-r border-white/[0.06] flex flex-col shrink-0">
+            <div className="px-3 py-2.5 border-b border-white/[0.06]">
+              <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-widest">Stickers IA</p>
+            </div>
+            <div className="flex-1 overflow-y-auto p-2">
+              {magicStickers.length > 0 ? (
+                <>
+                  <p className="text-[10px] text-gray-400 mb-2 px-1 leading-snug">
+                    {magicStickers.length} {magicStickers.length === 1 ? "persona extraída" : "personas extraídas"} de tu flyer. Toca para añadirla al canvas.
+                  </p>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {magicStickers.map((s) => (
+                      <button
+                        key={s.id}
+                        onClick={() => addStickerToCanvas(s.src)}
+                        className="aspect-square rounded-xl overflow-hidden bg-white/[0.04] hover:bg-white/[0.10] border border-white/[0.08] hover:border-purple-500/40 transition-all group"
+                        title="Añadir al canvas"
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={s.src}
+                          alt="Sticker IA"
+                          className="w-full h-full object-contain p-1 group-hover:scale-105 transition-transform"
+                          crossOrigin="anonymous"
+                        />
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-[9.5px] text-gray-600 mt-3 px-1 leading-snug">
+                    💡 Si borras una persona del flyer, puedes volver a añadirla aquí
+                  </p>
+                </>
+              ) : (
+                <div className="text-center py-8 px-2">
+                  <Wand2 className="w-8 h-8 mx-auto mb-3 text-purple-300/60" strokeWidth={1.5} />
+                  <p className="text-[11px] text-gray-400 leading-relaxed mb-3">
+                    Aún no tienes stickers IA en este flyer.
+                  </p>
+                  <p className="text-[10px] text-gray-500 leading-snug">
+                    Usa <span className="text-purple-300 font-medium">Capas Mágicas</span> para extraer personas de cualquier foto y reusarlas como stickers.
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         )}
