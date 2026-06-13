@@ -561,8 +561,32 @@ Devuelve SOLO JSON, sin markdown, sin explicación:
   ]
 }
 
-Solo TEXTOS. NO detectes personas ni gráficos. Sé exhaustivo: detecta
-TODOS los textos, incluso los pequeños (URLs, créditos al pie, listas).`;
+Solo TEXTOS PLANOS editables. Sé exhaustivo CON UNA EXCEPCIÓN crítica:
+
+NO detectes textos que están DENTRO de logos, iconos circulares, o
+elementos gráficos integrados al diseño. Si ves un círculo decorativo
+con "MUNDO SALSA" dentro, eso es un LOGO, no un texto editable —
+ignóralo. El usuario no va a editarlo y crear una capa encima rompe
+el diseño visual del logo.
+
+REGLA para distinguir TEXTO vs LOGO:
+- TEXTO PLANO: tipografía limpia sobre fondo plano (titulares, listas,
+  fechas, créditos al pie, URLs, etc.) → SÍ detectar.
+- TEXTO EN LOGO: dentro de un círculo de color, badge, sello, ícono,
+  monograma, o cualquier forma decorativa → NO detectar.
+
+PRECISIÓN MÁXIMA DE BBOX (especialmente en flyers densos con muchos
+textos juntos verticalmente, tipo tracklist o setlist):
+- La altura h debe ser AJUSTADA al glyph real, sin padding extra
+  arriba o abajo. Si te equivocas, equivócate por DEFECTO (h más
+  pequeño), no por exceso. Tapamos los textos con cover rectangles
+  del color del fondo — si tu h es demasiado grande, el cover tapa
+  texto de la línea siguiente.
+- En textos de lista (1., 2., 3., ... canciones), cada línea es un
+  layer SEPARADO. NUNCA juntes dos canciones en un bbox.
+- Si dos trozos de texto están en la MISMA LÍNEA HORIZONTAL (ej.
+  "Comenta 'PLAYLIST' y te la mando al DM"), trátalos como UN SOLO
+  layer con todo el contenido, no como 3 layers separados.`;
 
 async function callClaude(imageBase64: string, mediaType: string): Promise<ClaudeOutput | null> {
   const res = await fetch("https://api.anthropic.com/v1/messages", {
@@ -962,10 +986,17 @@ export async function POST(req: Request) {
 
       // 3a. Rectángulo COVER del color del fondo sampleado, ENCIMA del bg
       //     original y DEBAJO del texto editable. Tapa el texto original
-      //     del flyer para evitar duplicidad visual cuando el usuario vea
-      //     la versión editable.
-      const coverMarginX = Math.round(wPx * 0.04);
-      const coverMarginY = Math.round(hPx * 0.15);
+      //     del flyer para evitar duplicidad visual.
+      //
+      //     Márgenes MUY ajustados (2% Y, 1% X) para evitar solapamiento
+      //     entre textos verticales adyacentes en flyers densos tipo
+      //     tracklist/setlist. Antes (15% Y) los rects de líneas seguidas
+      //     se invadían unas a otras tapando texto de líneas vecinas.
+      //     Trade-off: si el OCR de Sonnet subestima la altura del bbox,
+      //     puede asomar 1-2px del texto original — visible pero menos
+      //     malo que la duplicidad masiva del problema anterior.
+      const coverMarginX = Math.max(2, Math.round(wPx * 0.01));
+      const coverMarginY = Math.max(2, Math.round(hPx * 0.02));
       generatedLayers.push({
         id: `cover-${coverIdx++}`,
         type: "shape",
