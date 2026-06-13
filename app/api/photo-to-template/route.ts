@@ -100,15 +100,22 @@ async function buildTextMask(
   return await sharp(Buffer.from(svg)).png().toBuffer();
 }
 
-/** Inpainting con Flux Fill: borra los textos del fondo manteniendo el
- *  resto del diseño. Sube la imagen + mask a Fal storage, llama el modelo
- *  y descarga el resultado. Si algo falla en cualquier paso, devuelve null
- *  (el caller cae al fallback de la imagen original con cover rectangles). */
+/** Inpainting con LaMa: borra los textos del fondo SIN inventar contenido
+ *  nuevo. LaMa (Resolution-robust Large Mask Inpainting, Samsung Research)
+ *  está específicamente diseñado para object removal, a diferencia de Flux
+ *  Fill que tiende a generar texto inventado cuando se le pide borrar texto.
+ *
+ *  Cascade de modelos: intenta LaMa primero, si falla cae a Flux Fill con
+ *  prompt anti-texto reforzado. Si los dos fallan, devuelve null (cover
+ *  rectangles entran como fallback final).
+ */
 async function inpaintTextRegions(
   imageBuf: Buffer,
   maskBuf: Buffer,
   mediaType: string,
 ): Promise<string | null> {
+  let imageUrl: string;
+  let maskUrl: string;
   try {
     // 1. Subir imagen y máscara a Fal storage
     const imageFile = new File(
@@ -121,38 +128,57 @@ async function inpaintTextRegions(
       "mask.png",
       { type: "image/png" },
     );
-    const [imageUrl, maskUrl] = await Promise.all([
+    [imageUrl, maskUrl] = await Promise.all([
       fal.storage.upload(imageFile),
       fal.storage.upload(maskFile),
     ]);
+  } catch (e) {
+    console.warn("[photo-to-template] fal upload failed:", e);
+    return null;
+  }
 
-    // 2. Llamar Flux Fill (inpainting). Endpoint Pro v1 fill.
-    //    Solo params soportados: image_url, mask_url, prompt.
+  // ─── INTENTO 1: LaMa (object removal sin generar) ─────────────────────
+  // Endpoint: fal-ai/lama (Samsung LaMa, ideal para borrar texto/objetos)
+  try {
+    const result = await fal.subscribe("fal-ai/lama", {
+      input: {
+        image_url: imageUrl,
+        mask_url: maskUrl,
+      },
+      logs: false,
+    });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const data = (result as any)?.data;
+    const outUrl = data?.image?.url ?? data?.images?.[0]?.url ?? data?.output_image?.url;
+    if (typeof outUrl === "string") return outUrl;
+    console.warn("[photo-to-template] LaMa no devolvió URL:", result);
+  } catch (e) {
+    console.warn("[photo-to-template] LaMa failed, trying Flux Fill:", e instanceof Error ? e.message : e);
+  }
+
+  // ─── INTENTO 2 (fallback): Flux Fill con prompt anti-texto reforzado ──
+  try {
     const result = await fal.subscribe("fal-ai/flux-pro/v1/fill", {
       input: {
         image_url: imageUrl,
         mask_url: maskUrl,
+        // Prompt MUY explícito anti-generación de texto
         prompt:
-          "Clean background, no text, no letters, no logo text. " +
-          "Preserve the original design, people, atmosphere, lighting, colors and visual style intact. " +
-          "Just remove the textual elements seamlessly.",
+          "Plain empty smooth background continuation, completely textless, no letters, no words, no characters, no typography, no logos, no symbols, no writing, no signage. " +
+          "Continue the surrounding texture, lighting, gradient, sky, fabric, skin, walls or whatever the surrounding area is, naturally and seamlessly without any markings.",
       },
       logs: false,
     });
-
-    // 3. Extraer URL del resultado
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const data = (result as any)?.data;
     const outUrl = data?.images?.[0]?.url ?? data?.image?.url;
-    if (typeof outUrl !== "string") {
-      console.warn("[photo-to-template] Flux Fill no devolvió URL:", result);
-      return null;
-    }
-    return outUrl;
+    if (typeof outUrl === "string") return outUrl;
+    console.warn("[photo-to-template] Flux Fill no devolvió URL:", result);
   } catch (e) {
-    console.warn("[photo-to-template] inpaint failed, falling back:", e instanceof Error ? e.message : e);
-    return null;
+    console.warn("[photo-to-template] Flux Fill also failed:", e instanceof Error ? e.message : e);
   }
+
+  return null;
 }
 
 /** Samplea el color del FONDO alrededor del bbox del texto (NO del texto
