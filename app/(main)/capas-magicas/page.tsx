@@ -56,6 +56,10 @@ type PhotoToTemplateResponse = {
       scoresCount: number;
       metadataCount: number;
       scoresSample: number[];
+      boxesSample?: number[][];
+      imageW?: number;
+      imageH?: number;
+      boxFormat?: string;
       error: string | null;
       finalCount: number;
     };

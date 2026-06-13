@@ -644,6 +644,10 @@ type SamDebug = {
   scoresCount: number;
   metadataCount: number;
   scoresSample: number[];
+  boxesSample: number[][];
+  imageW: number;
+  imageH: number;
+  boxFormat: "xyxy-px" | "xyxy-norm" | "xywh-px" | "xywh-norm" | "unknown";
   error: string | null;
   finalCount: number;
 };
@@ -659,6 +663,10 @@ async function detectAndSegmentPeople(imageUrl: string): Promise<{
     scoresCount: 0,
     metadataCount: 0,
     scoresSample: [],
+    boxesSample: [],
+    imageW: 0,
+    imageH: 0,
+    boxFormat: "unknown",
     error: null,
     finalCount: 0,
   };
@@ -684,18 +692,45 @@ async function detectAndSegmentPeople(imageUrl: string): Promise<{
     debug.scoresCount = (data.scores ?? []).length;
     debug.metadataCount = (data.metadata ?? []).length;
     debug.scoresSample = ((data.scores ?? []) as number[]).slice(0, 10);
+    debug.boxesSample = ((data.boxes ?? []) as number[][]).slice(0, 4);
+    debug.imageW = (data.image?.width as number) ?? 0;
+    debug.imageH = (data.image?.height as number) ?? 0;
     console.log("[sam-3] debug:", JSON.stringify(debug));
 
     const masks = (data.masks ?? []) as Array<{ url: string }>;
-    // El schema oficial de SAM-3 expone (score, box) tanto en arrays sueltos
-    // (data.boxes / data.scores) COMO dentro de data.metadata[].
-    // Algunos despliegues pueblan uno u otro — leemos de metadata primero
-    // (suele ser más fiable) con fallback a los arrays sueltos.
     const metadata = (data.metadata ?? []) as Array<{
       index?: number; score?: number; box?: number[];
     }>;
     const boxesFlat = (data.boxes ?? []) as Array<[number, number, number, number]>;
     const scoresFlat = (data.scores ?? []) as Array<number>;
+
+    // ── Detección del formato de los boxes ──────────────────────────────
+    // SAM-3 puede devolver boxes en distintos formatos según despliegue:
+    //   - [x_min, y_min, x_max, y_max] en píxeles absolutos (xyxy-px)
+    //   - [x_min, y_min, x_max, y_max] normalizadas 0..1 (xyxy-norm)
+    //   - [x_min, y_min, width, height] en píxeles (xywh-px)
+    //   - [x_min, y_min, width, height] normalizadas (xywh-norm)
+    // Detectamos automáticamente mirando el primer box:
+    //   - Si max value <= 1.5 → normalizadas
+    //   - Si b[2] < b[0] o b[3] < b[1] → xywh (no xyxy)
+    const firstBox = boxesFlat[0] ?? (metadata[0]?.box as number[] | undefined);
+    let isNormalized = false;
+    let isXywh = false;
+    if (firstBox && firstBox.length === 4) {
+      const max = Math.max(...firstBox);
+      isNormalized = max <= 1.5;
+      // En xyxy: b[2] > b[0] y b[3] > b[1] siempre. Si no se cumple, es xywh.
+      isXywh = firstBox[2] < firstBox[0] || firstBox[3] < firstBox[1];
+    }
+    debug.boxFormat = isXywh
+      ? (isNormalized ? "xywh-norm" : "xywh-px")
+      : (isNormalized ? "xyxy-norm" : "xyxy-px");
+
+    // Multiplicadores para denormalizar. Si imagen tiene dims, las usamos;
+    // si no, asumimos 1 (deja los valores como están — solo funciona si ya
+    // están en píxeles).
+    const sx = isNormalized && debug.imageW > 0 ? debug.imageW : 1;
+    const sy = isNormalized && debug.imageH > 0 ? debug.imageH : 1;
 
     const persons: SegmentedPerson[] = masks
       .map((m, i) => {
@@ -704,9 +739,14 @@ async function detectAndSegmentPeople(imageUrl: string): Promise<{
           | [number, number, number, number] | undefined;
         const score = meta?.score ?? scoresFlat[i] ?? 0;
         const b = box ?? [0, 0, 0, 0];
+        // Aplicar formato detectado: convertir a xyxy-px siempre
+        const x = b[0] * sx;
+        const y = b[1] * sy;
+        const w = isXywh ? b[2] * sx : (b[2] - b[0]) * sx;
+        const h = isXywh ? b[3] * sy : (b[3] - b[1]) * sy;
         return {
           pngUrl: m.url,
-          bbox: { x: b[0], y: b[1], w: b[2] - b[0], h: b[3] - b[1] },
+          bbox: { x, y, w, h },
           score,
         };
       })
