@@ -49,6 +49,16 @@ type PhotoToTemplateResponse = {
     personsDetected: number;
     originalUrl: string;
     detectedPersons?: DetectedPerson[];
+    samDebug?: {
+      responseKeys: string[];
+      masksCount: number;
+      boxesCount: number;
+      scoresCount: number;
+      metadataCount: number;
+      scoresSample: number[];
+      error: string | null;
+      finalCount: number;
+    };
     quota: { used: number; limit: number; unlimited: boolean };
   };
 };
@@ -442,6 +452,18 @@ export default function CapasMagicasPage() {
                     Toca cualquiera para quitarla del flyer editable. Las demás aparecerán como capas movibles en el editor.
                   </p>
                 </div>
+              )}
+              {/* Debug temporal: si SAM-3 devolvió 0 personas, mostrar shape
+                  del response para diagnosticar. Quitar cuando esté estable. */}
+              {result.meta.detectedPersons && result.meta.detectedPersons.length === 0 && result.meta.samDebug && (
+                <details className="mt-3 p-3 rounded-xl bg-amber-500/[0.06] border border-amber-500/30 text-[11px]">
+                  <summary className="cursor-pointer text-amber-300 font-bold">
+                    ⚠ 0 personas detectadas — debug SAM-3
+                  </summary>
+                  <pre className="mt-2 text-[10px] text-amber-100/80 whitespace-pre-wrap break-all">
+{JSON.stringify(result.meta.samDebug, null, 2)}
+                  </pre>
+                </details>
               )}
             </div>
 

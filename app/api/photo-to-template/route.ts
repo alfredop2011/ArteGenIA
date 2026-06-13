@@ -637,7 +637,31 @@ type SegmentedPerson = {
  *    siluetas en el fondo, etc.).
  *  - Dedup por IoU > 0.7: SAM-3 a veces devuelve body+face como dos
  *    instancias separadas — nos quedamos con la de mayor score. */
-async function detectAndSegmentPeople(imageUrl: string): Promise<SegmentedPerson[]> {
+type SamDebug = {
+  responseKeys: string[];
+  masksCount: number;
+  boxesCount: number;
+  scoresCount: number;
+  metadataCount: number;
+  scoresSample: number[];
+  error: string | null;
+  finalCount: number;
+};
+
+async function detectAndSegmentPeople(imageUrl: string): Promise<{
+  persons: SegmentedPerson[];
+  debug: SamDebug;
+}> {
+  const debug: SamDebug = {
+    responseKeys: [],
+    masksCount: 0,
+    boxesCount: 0,
+    scoresCount: 0,
+    metadataCount: 0,
+    scoresSample: [],
+    error: null,
+    finalCount: 0,
+  };
   try {
     const res = await fal.subscribe("fal-ai/sam-3/image", {
       input: {
@@ -654,12 +678,13 @@ async function detectAndSegmentPeople(imageUrl: string): Promise<SegmentedPerson
     });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const data = (res as any)?.data ?? {};
-    // Debug: ver el shape real del response en Vercel logs cuando algo falla.
-    console.log("[sam-3] response keys:", Object.keys(data));
-    console.log("[sam-3] masks:", (data.masks ?? []).length,
-      "boxes:", (data.boxes ?? []).length,
-      "scores:", (data.scores ?? []).length,
-      "metadata:", (data.metadata ?? []).length);
+    debug.responseKeys = Object.keys(data);
+    debug.masksCount = (data.masks ?? []).length;
+    debug.boxesCount = (data.boxes ?? []).length;
+    debug.scoresCount = (data.scores ?? []).length;
+    debug.metadataCount = (data.metadata ?? []).length;
+    debug.scoresSample = ((data.scores ?? []) as number[]).slice(0, 10);
+    console.log("[sam-3] debug:", JSON.stringify(debug));
 
     const masks = (data.masks ?? []) as Array<{ url: string }>;
     // El schema oficial de SAM-3 expone (score, box) tanto en arrays sueltos
@@ -688,7 +713,6 @@ async function detectAndSegmentPeople(imageUrl: string): Promise<SegmentedPerson
       // Threshold permisivo: 0.3 (era 0.5). En flyers densos / con poca luz
       // SAM-3 suele dar scores entre 0.3-0.6 incluso para personas obvias.
       .filter((p) => p.score >= 0.3 && p.bbox.w > 5 && p.bbox.h > 5);
-    console.log("[sam-3] persons después de filtro score>=0.3:", persons.length);
 
     // Dedup por IoU: SAM-3 a veces solapa body+face. Nos quedamos con la
     // máscara de mayor área (= persona completa, no solo cara).
@@ -700,11 +724,12 @@ async function detectAndSegmentPeople(imageUrl: string): Promise<SegmentedPerson
       const overlaps = deduped.some((kept) => iou(cand.bbox, kept.bbox) > 0.7);
       if (!overlaps) deduped.push(cand);
     }
-    console.log("[sam-3] personas finales tras dedup IoU:", deduped.length);
-    return deduped;
+    debug.finalCount = deduped.length;
+    return { persons: deduped, debug };
   } catch (e) {
+    debug.error = e instanceof Error ? e.message : String(e);
     console.error("[photo-to-template] SAM-3 failed:", e);
-    return [];
+    return { persons: [], debug };
   }
 }
 
@@ -795,10 +820,12 @@ export async function POST(req: Request) {
     // SAM-3 reemplaza al pipeline Florence-2 + N llamadas SAM-2 segment.
     // En paralelo con Claude: extrae TODAS las personas como PNG transparente
     // en una sola llamada $0.005 (vs $0.04 × N personas con SAM-2).
-    const [claudeOut, persons] = await Promise.all([
+    const [claudeOut, samResult] = await Promise.all([
       callClaude(imgBase64, mediaType),
       detectAndSegmentPeople(body.imageUrl),
     ]);
+    const persons = samResult.persons;
+    const samDebug = samResult.debug;
     const elapsed = Date.now() - t0;
 
     if (!claudeOut) {
@@ -852,26 +879,15 @@ export async function POST(req: Request) {
     //     color con picker en editor (1 click).
     const sampledColors = dedupedTextLayers.map((l) => l.color ?? "#ffffff");
 
-    // 2c. INPAINTING con Flux Fill: borrar los textos del fondo manteniendo
-    //     el resto del diseño intacto. Esto es lo que hace Canva para que
-    //     el flyer se vea como un diseño nativo, no como una foto con textos
-    //     encima. Si Flux Fill falla, usamos la imagen original como fallback
-    //     (los cover rectangles siguen ahí como red de seguridad visual).
-    let backgroundUrl = body.imageUrl;
-    let usedInpainting = false;
-    if (dedupedTextLayers.length > 0) {
-      try {
-        const bboxes = dedupedTextLayers.map((l) => ({ x: l.x, y: l.y, w: l.w, h: l.h }));
-        const maskBuf = await buildTextMask(W, H, bboxes);
-        const inpaintedUrl = await inpaintTextRegions(imgBuf, maskBuf, mediaType);
-        if (inpaintedUrl) {
-          backgroundUrl = inpaintedUrl;
-          usedInpainting = true;
-        }
-      } catch (e) {
-        console.warn("[photo-to-template] inpaint pipeline error:", e);
-      }
-    }
+    // INPAINTING desactivado temporalmente. LaMa producía artefactos visibles
+    // (texto distorsionado tipo "SUPOSTREE" en lugar de fondo limpio) y Flux
+    // Fill inventaba textos nuevos. Además sumaba 3-8s al pipeline causando
+    // timeouts 504 en Vercel. Usamos cover rectangles del bgColor sampleado:
+    // menos elegante que un fondo perfectamente reconstruido, pero MÁS FIABLE
+    // (parche sólido del color correcto = no se notará si el bgColor es bueno).
+    // Cuando tengamos un modelo de inpainting con calidad consistente
+    // (ej. SAM-3 + Flux Inpaint con prompt vacío, o LaMa fine-tuned), volver.
+    const backgroundUrl = body.imageUrl;
 
     // ─── Layer 0: imagen como fondo (inpaintada si Flux Fill funcionó) ─
     // id "bg-magic" para que applyTemplateLayers NO aplique scale-to-fill
@@ -900,24 +916,23 @@ export async function POST(req: Request) {
       const wPx = Math.round((layer.w / 100) * W);
       const hPx = Math.round((layer.h / 100) * H);
 
-      // 3a. Rectángulo COVER — SOLO si el inpainting con Flux Fill falló.
-      //     Si funcionó, el fondo ya no tiene texto y los rects estorbarían
-      //     visualmente (parches sólidos sobre fondo limpio).
-      if (!usedInpainting) {
-        const coverMarginX = Math.round(wPx * 0.04);
-        const coverMarginY = Math.round(hPx * 0.15);
-        generatedLayers.push({
-          id: `cover-${coverIdx++}`,
-          type: "shape",
-          shape: "rect",
-          x: Math.max(0, xPx - coverMarginX),
-          y: Math.max(0, yPx - coverMarginY),
-          width: wPx + coverMarginX * 2,
-          height: hPx + coverMarginY * 2,
-          fill: bgColor,
-          opacity: 1,
-        });
-      }
+      // 3a. Rectángulo COVER del color del fondo sampleado, ENCIMA del bg
+      //     original y DEBAJO del texto editable. Tapa el texto original
+      //     del flyer para evitar duplicidad visual cuando el usuario vea
+      //     la versión editable.
+      const coverMarginX = Math.round(wPx * 0.04);
+      const coverMarginY = Math.round(hPx * 0.15);
+      generatedLayers.push({
+        id: `cover-${coverIdx++}`,
+        type: "shape",
+        shape: "rect",
+        x: Math.max(0, xPx - coverMarginX),
+        y: Math.max(0, yPx - coverMarginY),
+        width: wPx + coverMarginX * 2,
+        height: hPx + coverMarginY * 2,
+        fill: bgColor,
+        opacity: 1,
+      });
 
       // 3b. Font matching: prefiere fontFamily que Sonnet eligió DIRECTAMENTE
       //     del catálogo (si vino y es válido — más preciso que heurística).
@@ -971,9 +986,8 @@ export async function POST(req: Request) {
     void supabaseAdmin.from("ai_usage").insert({
       user_id: user.id,
       action: ACTION,
-      // Coste real: Sonnet $0.036 + SAM-3 $0.005 + LaMa $0.004 (si inpainting).
-      // 80× más barato que Florence+SAM-2 manual del usuario.
-      cost_usd: COST_PER_ACTION_USD[ACTION] + (usedInpainting ? 0.04 : 0),
+      // Coste real: Sonnet $0.036 + SAM-3 $0.005 = $0.041/uso.
+      cost_usd: COST_PER_ACTION_USD[ACTION],
       meta: {
         elapsed_ms: elapsed,
         model: MODEL,
@@ -982,7 +996,6 @@ export async function POST(req: Request) {
         text_layers_merged: textsRaw - textsDetected,
         persons_segmented: visiblePersons.length,
         image_size: imgBuf.length,
-        used_inpainting: usedInpainting,
         segmentation_model: "sam-3",
       },
     });
@@ -1016,6 +1029,9 @@ export async function POST(req: Request) {
         // Personas ya extraídas como PNG transparente — listas para mostrar
         // como thumbnails en el preview (Fase V.6 con SAM-3).
         detectedPersons,
+        // Debug info de SAM-3 para diagnosticar "0 personas" en flyers obvios.
+        // Si el usuario nos pasa esto, sabemos exactamente qué shape devolvió.
+        samDebug,
         // Cuota actualizada (used+1 porque acabamos de consumir uno)
         quota: { used: used + 1, limit, plan, unlimited: limit === -1 },
       },
