@@ -56,6 +56,7 @@ import { getBlocksForTemplate, BLOCK_ICONS, BLOCK_TINTS, type EditableBlock } fr
 import { getPalettesForCategory, type Palette } from "@/data/templatePalettes";
 import { REMIX_STYLES, type RemixStyle } from "@/data/templateRemixes";
 import { useProjects } from "@/hooks/useProjects";
+import { useProjectPages } from "@/hooks/useProjectPages";
 import { supabase } from "@/lib/supabase";
 import { useLocale } from "@/hooks/useLocale";
 import { UpgradeModal, type UpgradeFeature } from "@/components/upgrade/UpgradeModal";
@@ -82,6 +83,11 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
   const { saveProject } = useProjects();
   const [currentProjectId, setCurrentProjectId] = useState<string | null>(projectId ?? null);
   const [docTitle, setDocTitle] = useState<string>("");
+  // Multi-página (Fase W.1). Backward-compat: proyectos legacy se tratan
+  // como 1 sola página automáticamente. El sheet de páginas se abre desde
+  // bottom-nav cuando no hay objeto seleccionado.
+  const pages = useProjectPages();
+  const [showPagesSheet, setShowPagesSheet] = useState(false);
   // JSON pendiente para hidratar canvas al crearse (load mode)
   const pendingFabricJsonRef = useRef<object | null>(null);
   const [pendingProjectMeta, setPendingProjectMeta] = useState<{
@@ -273,8 +279,12 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
         height: row.height ?? 1350,
         format: row.format ?? "portrait",
       });
-      pendingFabricJsonRef.current = row.fabric_json ?? null;
+      // Hidratar el hook de páginas (detecta formato legacy vs multi-página)
+      pages.hydrate(row.fabric_json, row.width ?? 1080, row.height ?? 1350);
+      // El canvas cargará la fabric de la página activa
+      pendingFabricJsonRef.current = pages.consumePendingFabric();
     })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId, router]);
 
   // ─── Onboarding primera vez (Fase M.3) ─────────────────────────────────
@@ -1609,8 +1619,14 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
     if (!fc || !loaded) return;
     setSaveState("saving");
     try {
+      // Multi-página: si hay más de 1 página o el proyecto ya está en
+      // formato nuevo, serializamos como ProjectPages. Si no (proyecto
+      // legacy con 1 página), guardamos el JSON plano de Fabric para
+      // mantener backward compat con el resto del código.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const fabricJson = (fc.toJSON as any)(["customId"]) as object;
+      const fabricJson: object = pages.pageCount > 1
+        ? (pages.serializeForSave(fc) as unknown as object)
+        : ((fc.toJSON as any)(["customId"]) as object);
       // Thumbnail JPEG ~320px
       let thumbnailUrl: string | null = null;
       try {
@@ -1653,6 +1669,40 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
       if (!silent) toast.error(t("mobileEditor.toast.savedError"));
     }
   }, [loaded, currentProjectId, docTitle, templateId, template, formatId, canvasSize, saveProject, toast, t]);
+
+  // ─── Multi-página: switch + add (Fase W.1) ──────────────────────────────
+  // Cambia la página activa: serializa la actual, carga la nueva en el canvas.
+  // El hook ya hace el guardado interno; aquí solo aplicamos al Fabric Canvas.
+  const switchToPage = useCallback((index: number) => {
+    const fc = fabricRef.current;
+    if (!fc) return;
+    pages.switchTo(index, fc);
+    const next = pages.consumePendingFabric();
+    if (!next) return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (fc.loadFromJSON as any)(next).then(() => {
+      fc.requestRenderAll();
+      // Reset selección (cada página tiene sus propios objetos)
+      fc.discardActiveObject();
+    });
+    setSaveState("unsaved");
+  }, [pages]);
+
+  // Añade una página vacía con las dimensiones de la activa y la activa.
+  const handleAddPage = useCallback(() => {
+    const fc = fabricRef.current;
+    if (!fc) return;
+    pages.addPage(fc);
+    const next = pages.consumePendingFabric();
+    if (!next) return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (fc.loadFromJSON as any)(next).then(() => {
+      fc.requestRenderAll();
+      fc.discardActiveObject();
+    });
+    setSaveState("unsaved");
+    toast.success(`Página ${pages.pageCount + 1} añadida`);
+  }, [pages, toast]);
 
   const handleSave = useCallback(() => {
     if (!authUser) { toast.info(t("mobileEditor.toast.loginToSave")); return; }
@@ -2521,6 +2571,23 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
             active={openSheet === "ia"}
             onClick={() => setOpenSheet(s => s === "ia" ? null : "ia")}
           />
+          {/* Botón Páginas (Fase W.1) — abre sheet con lista de páginas + add.
+              Badge con número de página activa si hay más de 1 página. */}
+          <BarBtn
+            icon={
+              <span className="relative inline-flex items-center">
+                <Copy size={18} strokeWidth={2}/>
+                {pages.pageCount > 1 && (
+                  <span className="absolute -top-1.5 -right-2 text-[9px] font-black px-1 py-0.5 rounded-md bg-purple-500/30 text-purple-200">
+                    {pages.activeIndex + 1}
+                  </span>
+                )}
+              </span>
+            }
+            label="Páginas"
+            active={showPagesSheet}
+            onClick={() => setShowPagesSheet(true)}
+          />
         </nav>
       )}
 
@@ -2878,6 +2945,17 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
         />
       )}
 
+      {/* PÁGINAS SHEET — Multi-página (Fase W.1) */}
+      {showPagesSheet && (
+        <PagesSheet
+          pages={pages.pages}
+          activeIndex={pages.activeIndex}
+          onSwitch={(i) => { switchToPage(i); setShowPagesSheet(false); }}
+          onAdd={() => { handleAddPage(); setShowPagesSheet(false); }}
+          onClose={() => setShowPagesSheet(false)}
+        />
+      )}
+
       {shareOpen && (
         <ShareModal
           flyerTitle={docTitle || template?.title || "Mi flyer"}
@@ -2911,6 +2989,97 @@ function ChipBtn({
     >
       {icon}
     </button>
+  );
+}
+
+/** Sheet de páginas (Fase W.1 MVP). Lista las páginas del proyecto, marca
+ *  la activa, y permite añadir página vacía. Polish (duplicar, borrar,
+ *  renombrar, thumbnails con preview real) viene en V2. */
+function PagesSheet({
+  pages, activeIndex, onSwitch, onAdd, onClose,
+}: {
+  pages: Array<{ name: string; width: number; height: number }>;
+  activeIndex: number;
+  onSwitch: (index: number) => void;
+  onAdd: () => void;
+  onClose: () => void;
+}) {
+  return (
+    <>
+      <div
+        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100]"
+        onClick={onClose}
+      />
+      <div className="fixed bottom-0 left-0 right-0 z-[100] rounded-t-3xl bg-[#0a0a14] border-t border-white/[0.08] pb-8 max-h-[75vh] flex flex-col">
+        <div className="w-12 h-1 bg-white/20 rounded-full mx-auto mt-3 mb-2"/>
+        <div className="px-5 pt-2 pb-3 flex items-center justify-between border-b border-white/[0.06]">
+          <div>
+            <h2 className="text-[16px] font-black">Páginas</h2>
+            <p className="text-[11px] text-gray-500">
+              {pages.length} {pages.length === 1 ? "página" : "páginas"} · misma medida
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-9 h-9 rounded-full bg-white/[0.06] flex items-center justify-center text-gray-400 active:bg-white/[0.10]"
+            aria-label="Cerrar"
+          >
+            <XIcon size={16} strokeWidth={2.2}/>
+          </button>
+        </div>
+
+        <div className="overflow-y-auto px-5 py-4 space-y-2 flex-1">
+          {pages.map((p, i) => {
+            const isActive = i === activeIndex;
+            return (
+              <button
+                key={i}
+                onClick={() => onSwitch(i)}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border transition-colors text-left ${
+                  isActive
+                    ? "bg-purple-500/15 border-purple-500/40"
+                    : "bg-white/[0.03] border-white/[0.06] active:bg-white/[0.08]"
+                }`}
+              >
+                {/* Thumbnail placeholder (proporción real) */}
+                <div
+                  className={`w-12 shrink-0 rounded-md border ${
+                    isActive ? "border-purple-400/60 bg-purple-500/10" : "border-white/10 bg-white/[0.04]"
+                  }`}
+                  style={{ aspectRatio: `${p.width}/${p.height}` }}
+                />
+                <div className="flex-1 min-w-0">
+                  <p className={`text-[13px] font-bold truncate ${isActive ? "text-purple-200" : "text-gray-200"}`}>
+                    {p.name || `Página ${i + 1}`}
+                  </p>
+                  <p className="text-[10px] text-gray-500">
+                    {p.width} × {p.height}
+                  </p>
+                </div>
+                {isActive && (
+                  <span className="text-[10px] font-bold text-purple-300 bg-purple-500/20 px-2 py-0.5 rounded-md">
+                    Activa
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="px-5 pt-3 pb-1 border-t border-white/[0.06]">
+          <button
+            onClick={onAdd}
+            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-gradient-to-br from-purple-600 to-fuchsia-600 text-white font-black text-[13px] active:scale-[0.97] transition-transform"
+          >
+            <Plus size={16} strokeWidth={2.5}/>
+            Añadir página
+          </button>
+          <p className="text-[10px] text-gray-500 text-center mt-2">
+            Duplicar, borrar y renombrar — próximamente
+          </p>
+        </div>
+      </div>
+    </>
   );
 }
 
