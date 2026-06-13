@@ -100,8 +100,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        {/* Catálogo expandido (30+ fuentes) para Capas Mágicas: cubre display,
+            sans, serif, script y decorative. Cuando edites esta lista,
+            actualiza también lib/fontCatalog.ts (mismo orden categoría). */}
         <link
-          href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Anton&family=Montserrat:wght@400;500;600;700;900&family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Cormorant+Garamond:wght@300;400;500;700&family=Great+Vibes&family=Oswald:wght@400;600;700&family=Inter:wght@400;500;600;700&family=Poppins:wght@400;500;600;700;800&family=Roboto+Condensed:wght@400;700&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Allura&family=Anton&family=Bebas+Neue&family=Black+Ops+One&family=Bowlby+One&family=Bungee&family=Caveat:wght@400;700&family=Cinzel:wght@400;700;900&family=Cormorant+Garamond:wght@300;400;500;700&family=DM+Serif+Display&family=Dancing+Script:wght@400;700&family=EB+Garamond:wght@400;700&family=Great+Vibes&family=Indie+Flower&family=Inter:wght@400;500;600;700&family=Kaushan+Script&family=Lobster&family=Lora:wght@400;600;700&family=Montserrat:wght@400;500;600;700;900&family=Oswald:wght@400;600;700&family=Outfit:wght@400;600;700;800&family=Pacifico&family=Permanent+Marker&family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Poppins:wght@400;500;600;700;800&family=Raleway:wght@400;600;700&family=Roboto+Condensed:wght@400;700&family=Russo+One&family=Sacramento&family=Satisfy&family=Work+Sans:wght@400;600;700&display=swap"
           rel="stylesheet"
         />
       </head>

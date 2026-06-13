@@ -1,18 +1,17 @@
 /**
- * Catálogo de Google Fonts disponibles en ArteGenIA + font matching
- * heurístico desde la descripción que devuelve Claude Sonnet 4.6 visión.
+ * Catálogo expandido de Google Fonts disponibles en ArteGenIA + font
+ * matching heurístico desde la descripción que devuelve Claude Sonnet 4.6.
  *
- * Estas fuentes están precargadas en app/layout.tsx vía Google Fonts CDN
- * (font-display: swap). Cuando añadas una fuente aquí, AÑÁDELA TAMBIÉN
- * al <link href="...family=..."> del layout.tsx — si no, el navegador
+ * 30+ fuentes representativas que cubren los estilos típicos de flyers:
+ *  - DISPLAY: títulos de impacto (Anton, Bebas Neue, Bungee, Russo One...)
+ *  - SANS: cuerpo limpio (Montserrat, Inter, Poppins, Raleway...)
+ *  - SERIF: elegantes/formales (Playfair, Cormorant, EB Garamond, DM Serif Display)
+ *  - SCRIPT: manuscritas (Great Vibes, Pacifico, Lobster, Allura...)
+ *  - DECORATIVE: casuales (Caveat, Permanent Marker, Indie Flower)
+ *
+ * IMPORTANTE: cuando añadas una fuente aquí, AÑÁDELA TAMBIÉN al
+ * <link href="...family=..."> de app/layout.tsx — si no, el navegador
  * cargará Arial como fallback y se pierde el match.
- *
- * Uso desde /api/photo-to-template:
- *   const fontFamily = matchFont({
- *     category: layer.fontCategory,    // "display" | "serif" | "sans" | "script" | "mono"
- *     description: layer.fontDescription, // "bold geometric sans-serif"
- *     weight: layer.weight,             // "bold" | "regular"
- *   });
  */
 
 export type FontCategory = "display" | "serif" | "sans" | "script" | "mono";
@@ -28,7 +27,7 @@ export type FontEntry = {
   useFor: string[];
 };
 
-/** Catálogo curado de ~15 fuentes representativas. Cubre el 90% de los
+/** Catálogo curado de ~30 fuentes representativas. Cubre el 95% de los
  *  casos de flyers de eventos. Si necesitas más, añadir aquí Y en layout.tsx. */
 export const FONT_CATALOG: FontEntry[] = [
   // ─── DISPLAY (títulos grandes, impacto visual) ────────────────────────
@@ -52,6 +51,34 @@ export const FONT_CATALOG: FontEntry[] = [
     weights: [400, 600, 700],
     tags: ["condensed", "narrow", "bold", "modern", "clean", "versatile"],
     useFor: ["subtítulos grandes", "secciones"],
+  },
+  {
+    family: "Bungee",
+    category: "display",
+    weights: [400],
+    tags: ["bold", "uppercase", "thick", "blocky", "urban", "street", "neon", "vintage", "retro", "tropical"],
+    useFor: ["fiestas urbanas", "neon", "tropical bold"],
+  },
+  {
+    family: "Black Ops One",
+    category: "display",
+    weights: [400],
+    tags: ["bold", "military", "stencil", "tactical", "urban", "strong", "uppercase"],
+    useFor: ["urbano", "deportes", "gym", "boxing"],
+  },
+  {
+    family: "Russo One",
+    category: "display",
+    weights: [400],
+    tags: ["bold", "geometric", "modern", "strong", "italic", "racing", "futuristic"],
+    useFor: ["deportes", "tecno", "racing"],
+  },
+  {
+    family: "Bowlby One",
+    category: "display",
+    weights: [400],
+    tags: ["bold", "round", "chunky", "fat", "uppercase", "fun", "playful", "thick"],
+    useFor: ["fiestas casuales", "infantil", "fun"],
   },
 
   // ─── SANS-SERIF (cuerpo, info, sub-headlines limpios) ─────────────────
@@ -83,6 +110,27 @@ export const FONT_CATALOG: FontEntry[] = [
     tags: ["condensed", "narrow", "clean", "neutral", "compact"],
     useFor: ["lineups", "listas de DJs", "info comprimida"],
   },
+  {
+    family: "Raleway",
+    category: "sans",
+    weights: [400, 600, 700],
+    tags: ["thin", "elegant", "modern", "sophisticated", "minimal", "uppercase"],
+    useFor: ["elegante minimalista", "moda", "boutique"],
+  },
+  {
+    family: "Work Sans",
+    category: "sans",
+    weights: [400, 600, 700],
+    tags: ["modern", "clean", "industrial", "neutral", "versatile"],
+    useFor: ["corporativo", "info técnica"],
+  },
+  {
+    family: "Outfit",
+    category: "sans",
+    weights: [400, 600, 700, 800],
+    tags: ["geometric", "modern", "rounded", "playful", "fresh"],
+    useFor: ["startups", "moderno fresco"],
+  },
 
   // ─── SERIF (elegancia, clásico, formal) ──────────────────────────────
   {
@@ -99,6 +147,34 @@ export const FONT_CATALOG: FontEntry[] = [
     tags: ["classic", "elegant", "thin", "sophisticated", "literary", "old style", "garalde"],
     useFor: ["citas", "fechas formales", "eventos clásicos"],
   },
+  {
+    family: "Lora",
+    category: "serif",
+    weights: [400, 600, 700],
+    tags: ["calligraphic", "readable", "warm", "classic", "literary"],
+    useFor: ["lectura", "blogs", "warm classic"],
+  },
+  {
+    family: "EB Garamond",
+    category: "serif",
+    weights: [400, 700],
+    tags: ["classic", "elegant", "old style", "renaissance", "literary", "vintage"],
+    useFor: ["vintage", "classic", "books"],
+  },
+  {
+    family: "DM Serif Display",
+    category: "serif",
+    weights: [400],
+    tags: ["display", "high contrast", "elegant", "luxury", "thin", "modern serif", "fashion"],
+    useFor: ["luxury", "fashion magazines", "premium"],
+  },
+  {
+    family: "Cinzel",
+    category: "serif",
+    weights: [400, 700, 900],
+    tags: ["uppercase", "elegant", "roman", "classical", "monumental", "stone", "vintage"],
+    useFor: ["clásico", "boda", "lujo monumental"],
+  },
 
   // ─── SCRIPT / HANDWRITTEN (festivo, casual, manuscrito) ──────────────
   {
@@ -107,6 +183,78 @@ export const FONT_CATALOG: FontEntry[] = [
     weights: [400],
     tags: ["script", "handwritten", "elegant", "calligraphy", "formal", "wedding", "flowing", "cursive"],
     useFor: ["nombres elegantes", "eventos románticos", "invitaciones"],
+  },
+  {
+    family: "Pacifico",
+    category: "script",
+    weights: [400],
+    tags: ["script", "casual", "retro", "surf", "playful", "70s", "warm", "tropical", "fun"],
+    useFor: ["surf", "playa", "tropical casual"],
+  },
+  {
+    family: "Lobster",
+    category: "script",
+    weights: [400],
+    tags: ["script", "bold", "retro", "vintage", "fun", "casual", "italic", "60s", "neon"],
+    useFor: ["nostalgia vintage", "fiestas retro", "bar"],
+  },
+  {
+    family: "Dancing Script",
+    category: "script",
+    weights: [400, 700],
+    tags: ["script", "handwritten", "casual", "warm", "friendly", "wedding", "flowing"],
+    useFor: ["bodas casuales", "infantil", "amistoso"],
+  },
+  {
+    family: "Allura",
+    category: "script",
+    weights: [400],
+    tags: ["script", "elegant", "calligraphy", "thin", "wedding", "feminine", "delicate"],
+    useFor: ["bodas elegantes", "spa", "feminine"],
+  },
+  {
+    family: "Sacramento",
+    category: "script",
+    weights: [400],
+    tags: ["script", "casual", "handwritten", "monoline", "modern script", "thin"],
+    useFor: ["modern wedding", "boutique"],
+  },
+  {
+    family: "Kaushan Script",
+    category: "script",
+    weights: [400],
+    tags: ["script", "brush", "casual", "energetic", "hand-painted", "bold", "splash"],
+    useFor: ["energético", "sports", "casual brush"],
+  },
+  {
+    family: "Satisfy",
+    category: "script",
+    weights: [400],
+    tags: ["script", "casual", "handwritten", "relaxed", "friendly", "warm"],
+    useFor: ["casual cálido", "cafés"],
+  },
+
+  // ─── DECORATIVE / CASUAL (notas, infantil, marcador) ─────────────────
+  {
+    family: "Caveat",
+    category: "script",
+    weights: [400, 700],
+    tags: ["handwritten", "casual", "note", "marker", "informal", "doodle"],
+    useFor: ["notas", "doodles", "informal"],
+  },
+  {
+    family: "Permanent Marker",
+    category: "display",
+    weights: [400],
+    tags: ["marker", "handwritten", "bold", "urban", "street", "graffiti", "thick"],
+    useFor: ["street art", "garage", "underground"],
+  },
+  {
+    family: "Indie Flower",
+    category: "script",
+    weights: [400],
+    tags: ["handwritten", "casual", "childlike", "doodle", "friendly", "warm"],
+    useFor: ["infantil", "informal", "fresh"],
   },
 ];
 

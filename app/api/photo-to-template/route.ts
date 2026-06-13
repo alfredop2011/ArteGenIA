@@ -4,7 +4,7 @@ import sharp from "sharp";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { COST_PER_ACTION_USD, getQuota, isUnlimited } from "@/lib/quotas";
-import { matchFont } from "@/lib/fontCatalog";
+import { FONT_CATALOG, matchFont } from "@/lib/fontCatalog";
 
 /**
  * POST /api/photo-to-template
@@ -69,7 +69,12 @@ type ClaudeOutput = {
         textAlign?: "left" | "center" | "right";
         /** Categoría tipográfica detectada (Fase W.3 — font matching) */
         fontCategory?: "display" | "serif" | "sans" | "script" | "mono";
-        /** Descripción visual de la tipografía (ej. "bold geometric sans") */
+        /** Nombre exacto Google Font elegido por Sonnet del catálogo de 30
+         *  fuentes (preferido frente a fontDescription si está presente y es
+         *  válido en FONT_CATALOG). */
+        fontFamily?: string;
+        /** Descripción visual de la tipografía (ej. "bold geometric sans") —
+         *  legacy/fallback para matching heurístico. */
         fontDescription?: string;
       }
     | { type: "image-region"; label: string; x: number; y: number; w: number; h: number }
@@ -471,16 +476,54 @@ REGLAS DE PRECISIÓN (críticas):
    - "small" si h <= 3 (URLs, créditos, listas finas)
 7. weight: "bold" si el texto es claramente negrita o más grueso que cuerpo.
 8. textAlign: "left", "center" o "right" según la alineación visual.
-9. fontCategory: la familia tipográfica que MEJOR aproxime la fuente original.
-   - "display" → títulos grandes, condensados, impacto (Bebas Neue/Anton style)
-   - "serif" → letras con remates clásicos (Playfair/Cormorant style)
-   - "sans" → palo seco moderno (Montserrat/Inter style)
-   - "script" → manuscrita/cursiva (Great Vibes style)
-   - "mono" → monoespaciada (Courier style)
-10. fontDescription: 2-4 palabras clave visuales que describan la fuente,
-    para mejor matching. Ejemplos: "bold geometric sans", "elegant thin serif",
-    "condensed uppercase display", "flowing handwritten script",
-    "round friendly sans", "high contrast modern serif".
+9. fontFamily: elige la Google Font que MEJOR aproxime la fuente del texto.
+   IMPORTANTE: el editor SOLO tiene cargadas estas 30 fuentes. Devuelve el
+   nombre EXACTO de UNA de esta lista (no inventes, no "Arial", no "Helvetica"):
+
+   DISPLAY (títulos impacto):
+   - "Anton" → condensada negrita extrema, uppercase
+   - "Bebas Neue" → condensada limpia uppercase clásica
+   - "Oswald" → condensada moderna versátil
+   - "Bungee" → bold blocky urbano/neon/tropical
+   - "Black Ops One" → stencil militar urbano
+   - "Russo One" → bold geométrica futurista racing
+   - "Bowlby One" → fat round chunky fun
+   - "Permanent Marker" → rotulador street graffiti
+
+   SANS (texto info limpio):
+   - "Montserrat" → geométrica moderna versátil round
+   - "Inter" → UI neutra clean moderna
+   - "Poppins" → geométrica round friendly playful
+   - "Roboto Condensed" → condensada compacta para listas
+   - "Raleway" → thin elegante minimal sofisticada
+   - "Work Sans" → industrial clean neutral
+   - "Outfit" → geométrica moderna rounded fresh
+
+   SERIF (elegante/clásica):
+   - "Playfair Display" → high contrast modern serif editorial
+   - "Cormorant Garamond" → thin elegante old style literaria
+   - "Lora" → cálida readable calligraphic clásica
+   - "EB Garamond" → renaissance vintage literaria
+   - "DM Serif Display" → high contrast luxury fashion
+   - "Cinzel" → roman classical monumental stone uppercase
+
+   SCRIPT (manuscrita/cursiva):
+   - "Great Vibes" → elegante calligraphy wedding formal
+   - "Pacifico" → casual retro surf 70s tropical warm
+   - "Lobster" → bold vintage retro neon italic 60s
+   - "Dancing Script" → handwritten warm wedding casual
+   - "Allura" → thin elegant feminine delicada
+   - "Sacramento" → modern script monoline thin
+   - "Kaushan Script" → brush bold energético sports
+   - "Satisfy" → relaxed cálida casual
+   - "Caveat" → marker informal doodle nota
+   - "Indie Flower" → childlike doodle friendly
+
+   Mira BIEN la fuente del texto: ¿es condensada o ancha? ¿bold o thin?
+   ¿uppercase? ¿tiene remates (serif) o no (sans)? ¿es manuscrita?
+   ¿geométrica o orgánica? Elige la fuente del catálogo más parecida.
+10. fontCategory: "display" | "serif" | "sans" | "script" | "mono".
+    Debe coincidir con la categoría de la fontFamily que elegiste.
 
 Devuelve SOLO JSON, sin markdown, sin explicación:
 {
@@ -496,8 +539,8 @@ Devuelve SOLO JSON, sin markdown, sin explicación:
       "color": "#RRGGBB",
       "weight": "bold",
       "textAlign": "center",
-      "fontCategory": "display",
-      "fontDescription": "bold condensed uppercase"
+      "fontFamily": "Bebas Neue",
+      "fontCategory": "display"
     }
   ]
 }
@@ -764,13 +807,18 @@ export async function POST(req: Request) {
         });
       }
 
-      // 3b. Font matching: mapear (categoría + descripción + peso) → fuente
-      //     concreta del catálogo Google Fonts cargado en layout.tsx.
-      const matchedFont = matchFont({
-        category: layer.fontCategory,
-        description: layer.fontDescription,
-        weight: layer.weight,
-      });
+      // 3b. Font matching: prefiere fontFamily que Sonnet eligió DIRECTAMENTE
+      //     del catálogo (si vino y es válido — más preciso que heurística).
+      //     Fallback a matchFont por categoría+descripción si no.
+      const claudeFont = (layer.fontFamily ?? "").trim();
+      const validClaudeFont = claudeFont && FONT_CATALOG.some((f) => f.family === claudeFont);
+      const matchedFont = validClaudeFont
+        ? claudeFont
+        : matchFont({
+            category: layer.fontCategory,
+            description: layer.fontDescription,
+            weight: layer.weight,
+          });
       generatedLayers.push({
         id: `text-${textIdx++}`,
         type: "text",
