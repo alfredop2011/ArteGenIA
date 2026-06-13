@@ -50,10 +50,12 @@ export const QUOTA_PER_PLAN: Record<PlanName, Record<AIAction, number>> = {
 /** Coste estimado en USD por llamada — solo para auditoría/analytics.
  *  No se cobra al usuario, sirve para monitorizar el gasto real. */
 export const COST_PER_ACTION_USD: Record<AIAction, number> = {
-  segment_person: 0.04,
-  segment_person_hd: 0.08,
-  // Sonnet 4.6 visión ($0.15) + Florence-2 ($0.005) + sharp local (gratis)
-  photo_to_template: 0.18,
+  // BiRefNet vía Fal.ai (reemplaza remove.bg $0.18, 7× más barato)
+  segment_person: 0.025,
+  // BiRefNet + Bria refinement HD
+  segment_person_hd: 0.06,
+  // Sonnet 4.6 visión ($0.036 medido) + Florence-2 ($0.005) + sharp local
+  photo_to_template: 0.05,
 };
 
 /** Devuelve la cuota mensual de un (plan, action). Si el plan no se
