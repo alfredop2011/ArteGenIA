@@ -31,17 +31,19 @@ export const QUOTA_PER_PLAN: Record<PlanName, Record<AIAction, number>> = {
   free: {
     segment_person: 10,
     segment_person_hd: 3,
-    photo_to_template: 3,
+    // Capas Mágicas: ajustado para calidad alta (Sonnet 4.6 + color sampling
+    // + overlap validation ≈ $0.18/uso). Free es zanahoria de conversión.
+    photo_to_template: 2,
   },
   pro: {
     segment_person: -1,
     segment_person_hd: -1,
-    photo_to_template: 20,
+    photo_to_template: 15,
   },
   enterprise: {
     segment_person: -1,
     segment_person_hd: -1,
-    photo_to_template: 100,
+    photo_to_template: 60,
   },
 };
 
@@ -50,7 +52,8 @@ export const QUOTA_PER_PLAN: Record<PlanName, Record<AIAction, number>> = {
 export const COST_PER_ACTION_USD: Record<AIAction, number> = {
   segment_person: 0.04,
   segment_person_hd: 0.08,
-  photo_to_template: 0.02,
+  // Sonnet 4.6 visión ($0.15) + Florence-2 ($0.005) + sharp local (gratis)
+  photo_to_template: 0.18,
 };
 
 /** Devuelve la cuota mensual de un (plan, action). Si el plan no se

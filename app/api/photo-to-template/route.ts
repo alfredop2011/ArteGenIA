@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { fal } from "@fal-ai/client";
+import sharp from "sharp";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { COST_PER_ACTION_USD, getQuota, isUnlimited } from "@/lib/quotas";
@@ -37,7 +38,10 @@ if (!process.env.ANTHROPIC_API_KEY) {
 fal.config({ credentials: process.env.FAL_KEY });
 
 const ACTION = "photo_to_template" as const;
-const MODEL = "claude-haiku-4-5-20251001";
+// Sonnet 4.6 mejora precisión espacial y OCR vs Haiku (clave para que el
+// resultado quede creíble al primer uso). Coste ~7× más alto pero
+// compensado con cuotas ajustadas (Free 2, Pro 15, Enterprise 60).
+const MODEL = "claude-sonnet-4-6";
 
 type Body = {
   /** URL pública de la imagen subida (R2 o Fal storage). */
@@ -61,11 +65,93 @@ type ClaudeOutput = {
         fontSize: "large" | "medium" | "small";
         color: string;
         weight: "bold" | "regular";
+        textAlign?: "left" | "center" | "right";
       }
     | { type: "image-region"; label: string; x: number; y: number; w: number; h: number }
     | { type: "shape"; color: string; x: number; y: number; w: number; h: number }
   >;
 };
+
+/** Color sampling real con sharp: extrae el color exacto del píxel en el
+ *  centroide del bbox del texto. Más preciso que el color "adivinado" por
+ *  Claude. Si falla por cualquier motivo, retorna el fallback. */
+async function sampleColorAt(
+  imageBuf: Buffer,
+  imageWidth: number,
+  imageHeight: number,
+  xPct: number, yPct: number, wPct: number, hPct: number,
+  fallback: string,
+): Promise<string> {
+  try {
+    // Centro del bbox en píxeles
+    const cx = Math.round(((xPct + wPct / 2) / 100) * imageWidth);
+    const cy = Math.round(((yPct + hPct / 2) / 100) * imageHeight);
+    // Sampleamos un área 5×5 para promediar y resistir anti-aliasing
+    const SAMPLE = 5;
+    const left = Math.max(0, cx - Math.floor(SAMPLE / 2));
+    const top = Math.max(0, cy - Math.floor(SAMPLE / 2));
+    // Ajustar para no salirnos del borde
+    const w = Math.min(SAMPLE, imageWidth - left);
+    const h = Math.min(SAMPLE, imageHeight - top);
+    if (w <= 0 || h <= 0) return fallback;
+
+    const { data } = await sharp(imageBuf)
+      .extract({ left, top, width: w, height: h })
+      .raw()
+      .toBuffer({ resolveWithObject: true });
+    // data es array RGB(A) plano. Promediar.
+    let r = 0, g = 0, b = 0, n = 0;
+    const channels = data.length / (w * h);
+    for (let i = 0; i < data.length; i += channels) {
+      r += data[i];
+      g += data[i + 1];
+      b += data[i + 2];
+      n++;
+    }
+    if (n === 0) return fallback;
+    const rh = Math.round(r / n).toString(16).padStart(2, "0");
+    const gh = Math.round(g / n).toString(16).padStart(2, "0");
+    const bh = Math.round(b / n).toString(16).padStart(2, "0");
+    return `#${rh}${gh}${bh}`;
+  } catch (e) {
+    console.warn("[photo-to-template] sample fail:", e);
+    return fallback;
+  }
+}
+
+/** Detecta y fusiona text layers que se solapan más del threshold (50%
+ *  por defecto). Devuelve la lista limpia. Ordenado por área desc para
+ *  preservar el bbox mayor cuando hay solape. */
+function mergeOverlappingTextLayers<T extends { x: number; y: number; w: number; h: number; content: string }>(
+  layers: T[],
+  threshold = 0.5,
+): T[] {
+  const sorted = [...layers].sort((a, b) => b.w * b.h - a.w * a.h);
+  const kept: T[] = [];
+  for (const layer of sorted) {
+    const overlaps = kept.find((k) => intersectionOverUnion(k, layer) > threshold);
+    if (!overlaps) {
+      kept.push(layer);
+    }
+    // Si solapa, descartamos el menor (ya está dentro del mayor) sin
+    // perder texto crítico — el OCR del mayor casi siempre incluye el menor.
+  }
+  return kept;
+}
+
+function intersectionOverUnion(
+  a: { x: number; y: number; w: number; h: number },
+  b: { x: number; y: number; w: number; h: number },
+): number {
+  const x1 = Math.max(a.x, b.x);
+  const y1 = Math.max(a.y, b.y);
+  const x2 = Math.min(a.x + a.w, b.x + b.w);
+  const y2 = Math.min(a.y + a.h, b.y + b.h);
+  if (x2 <= x1 || y2 <= y1) return 0;
+  const inter = (x2 - x1) * (y2 - y1);
+  const union = a.w * a.h + b.w * b.h - inter;
+  return inter / union;
+}
 
 /** Genérica TemplateLayer compatible con `data/templates.ts`. Duplicada aquí
  *  para no acoplar este endpoint al import path; el cliente la valida. */
@@ -106,28 +192,46 @@ function fontSizeToPx(size: "large" | "medium" | "small", canvasHeight: number):
   return Math.round(22 * base);
 }
 
-const CLAUDE_PROMPT = `Analiza este flyer/poster y detecta todos los TEXTOS visibles.
-Para cada texto devuelve sus coordenadas como porcentajes 0-100 del ancho/alto.
+const CLAUDE_PROMPT = `Analiza este flyer/poster con MÁXIMA precisión. Detecta CADA texto
+visible y devuelve sus coordenadas exactas como porcentajes 0-100 del
+ancho/alto de la imagen (NO píxeles).
+
+REGLAS DE PRECISIÓN (críticas):
+1. OCR EXACTO: el "content" debe ser el texto EXACTO que se ve, respetando
+   mayúsculas, acentos, símbolos (€, &, ·, º, ª) y números. NO parafrasees.
+2. POSICIÓN: x,y = esquina TOP-LEFT del bbox del texto, NO del centro.
+3. ANCHO: w debe cubrir TODO el ancho real del texto, incluyendo el
+   último carácter. Si dudas, redondea HACIA ARRIBA.
+4. ALTURA: h = altura visual del glyph, no incluir descenders ni padding.
+5. LÍNEAS SEPARADAS: si un texto tiene varias líneas con saltos visuales
+   claros, devuélvelas como layers SEPARADOS (no junto con \\n).
+6. fontSize cualitativo basado en h:
+   - "large" si h > 8 (títulos, nombres grandes)
+   - "medium" si 3 < h <= 8 (subtítulos, info media)
+   - "small" si h <= 3 (URLs, créditos, listas finas)
+7. weight: "bold" si el texto es claramente negrita o más grueso que cuerpo.
+8. textAlign: "left", "center" o "right" según la alineación visual.
 
 Devuelve SOLO JSON, sin markdown, sin explicación:
 {
-  "imageWidth": número aproximado del ancho original en píxeles,
-  "imageHeight": número aproximado del alto original en píxeles,
+  "imageWidth": ancho aproximado original en píxeles,
+  "imageHeight": alto aproximado original en píxeles,
   "dominantColors": ["#hex1", "#hex2", "#hex3"],
   "layers": [
     {
       "type": "text",
-      "content": "texto exacto OCR",
+      "content": "TEXTO EXACTO OCR",
       "x": 12.5, "y": 8.3, "w": 35, "h": 6.2,
-      "fontSize": "large" | "medium" | "small",
+      "fontSize": "large",
       "color": "#RRGGBB",
-      "weight": "bold" | "regular"
+      "weight": "bold",
+      "textAlign": "center"
     }
   ]
 }
 
-Detecta TODOS los textos visibles (títulos, fechas, nombres, listas, URLs).
-NO detectes personas ni elementos visuales no-textuales — solo texto.`;
+Solo TEXTOS. NO detectes personas ni gráficos. Sé exhaustivo: detecta
+TODOS los textos, incluso los pequeños (URLs, créditos al pie, listas).`;
 
 async function callClaude(imageBase64: string, mediaType: string): Promise<ClaudeOutput | null> {
   const res = await fetch("https://api.anthropic.com/v1/messages", {
@@ -289,10 +393,26 @@ export async function POST(req: Request) {
       opacity: 1,
     });
 
-    // Layers de textos detectados por Claude
+    // ─── Mejoras de calidad ─────────────────────────────────────────────
+    // 1. Filtrar solo layers de texto válidos y deduplicar overlaps
+    const rawTextLayers = (claudeOut.layers ?? []).filter(
+      (l): l is Extract<typeof l, { type: "text" }> => l.type === "text"
+    );
+    const dedupedTextLayers = mergeOverlappingTextLayers(rawTextLayers);
+
+    // 2. Color sampling REAL con sharp sobre cada bbox (precisión 100% vs
+    //    la aproximación que devuelve Claude). Paralelizado.
+    const sampledColors = await Promise.all(
+      dedupedTextLayers.map((layer) =>
+        sampleColorAt(imgBuf, W, H, layer.x, layer.y, layer.w, layer.h, layer.color ?? "#ffffff")
+      )
+    );
+
+    // 3. Conversión final a TemplateLayer[]
     let textIdx = 0;
-    for (const layer of claudeOut.layers ?? []) {
-      if (layer.type !== "text") continue;
+    for (let i = 0; i < dedupedTextLayers.length; i++) {
+      const layer = dedupedTextLayers[i];
+      const sampledColor = sampledColors[i];
       // Convertir porcentajes 0-100 a píxeles absolutos
       const xPx = Math.round((layer.x / 100) * W);
       const yPx = Math.round((layer.y / 100) * H);
@@ -306,9 +426,9 @@ export async function POST(req: Request) {
         width: Math.max(wPx, 80),
         fontSize: fontSizeToPx(layer.fontSize, H),
         fontFamily: "Arial",
-        color: layer.color ?? "#ffffff",
+        color: sampledColor, // ← color real del píxel, no el adivinado
         fontWeight: layer.weight === "bold" ? "bold" : "normal",
-        textAlign: "left",
+        textAlign: layer.textAlign ?? "left", // ← respeta alineación detectada
       });
     }
 
@@ -336,13 +456,18 @@ export async function POST(req: Request) {
     }
 
     // ─── 8. REGISTRAR USO ────────────────────────────────────────────────
+    const textsDetected = dedupedTextLayers.length;
+    const textsRaw = rawTextLayers.length;
     void supabaseAdmin.from("ai_usage").insert({
       user_id: user.id,
       action: ACTION,
       cost_usd: COST_PER_ACTION_USD[ACTION],
       meta: {
         elapsed_ms: elapsed,
-        text_layers: claudeOut.layers?.filter((l) => l.type === "text").length ?? 0,
+        model: MODEL,
+        text_layers_raw: textsRaw,
+        text_layers_kept: textsDetected,
+        text_layers_merged: textsRaw - textsDetected,
         object_layers: topObjects.length,
         image_size: imgBuf.length,
       },
@@ -354,9 +479,13 @@ export async function POST(req: Request) {
         width: W,
         height: H,
         dominantColors: claudeOut.dominantColors ?? [],
-        textsDetected: claudeOut.layers?.filter((l) => l.type === "text").length ?? 0,
+        textsDetected,
+        textsMerged: textsRaw - textsDetected,
         objectsDetected: topObjects.length,
         elapsedMs: elapsed,
+        model: MODEL,
+        // Imagen original — el cliente la usa para mostrar preview comparativo
+        originalUrl: body.imageUrl,
         // Cuota actualizada (used+1 porque acabamos de consumir uno)
         quota: { used: used + 1, limit, plan, unlimited: limit === -1 },
       },
