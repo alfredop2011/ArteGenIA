@@ -548,6 +548,11 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
         });
         // Guardamos el JSON para hidratar el canvas cuando esté listo (en el otro useEffect)
         (window as unknown as { __pendingFabricJson?: object }).__pendingFabricJson = row.fabric_json ?? {};
+        // Y dimensiones REALES del proyecto — evita race con setCanvasSize.
+        // El useEffect de init canvas lee esto antes que canvasSize (que puede
+        // no estar actualizado por timing de React batching).
+        (window as unknown as { __pendingProjectDims?: { w: number; h: number } })
+          .__pendingProjectDims = { w: row.width, h: row.height };
       })();
       return;
     }
@@ -639,10 +644,24 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
 
     (async () => {
       const fabric = await import("fabric");
-      // Si hay plantilla, usar las dimensiones de la variante; si no, las del formato del wizard
-      const dims = template
-        ? (() => { const v = getVariant(template, formatId); return { w: v.width, h: v.height }; })()
-        : (FORMAT_DIMS[data.format ?? "instagram"] ?? FORMAT_DIMS.instagram);
+      // Prioridad de dimensiones:
+      // 1. Proyecto guardado (window.__pendingProjectDims): row.width/height
+      //    persistidas. CRÍTICO para proyectos custom (Capas Mágicas) que
+      //    pueden tener cualquier ratio — NO forzar 1080×1350.
+      // 2. Plantilla: dimensiones de la variante.
+      // 3. Wizard: formato seleccionado.
+      const pendingDims = (window as unknown as { __pendingProjectDims?: { w: number; h: number } })
+        .__pendingProjectDims;
+      const dims = pendingDims
+        ? pendingDims
+        : template
+          ? (() => { const v = getVariant(template, formatId); return { w: v.width, h: v.height }; })()
+          : (FORMAT_DIMS[data.format ?? "instagram"] ?? FORMAT_DIMS.instagram);
+      // Consumir el scratch para que no afecte futuras navegaciones a otro proyecto
+      if (pendingDims) {
+        delete (window as unknown as { __pendingProjectDims?: { w: number; h: number } })
+          .__pendingProjectDims;
+      }
       if (isMounted) setCanvasSize({ w: dims.w, h: dims.h });
 
       const scale = zoom / 100;
