@@ -705,22 +705,26 @@ async function detectAndSegmentPeople(imageUrl: string): Promise<{
     const scoresFlat = (data.scores ?? []) as Array<number>;
 
     // ── Detección del formato de los boxes ──────────────────────────────
-    // SAM-3 puede devolver boxes en distintos formatos según despliegue:
-    //   - [x_min, y_min, x_max, y_max] en píxeles absolutos (xyxy-px)
+    // SAM-3 devuelve boxes en uno de 4 formatos según despliegue:
+    //   - [x_min, y_min, x_max, y_max] píxeles (xyxy-px)
     //   - [x_min, y_min, x_max, y_max] normalizadas 0..1 (xyxy-norm)
-    //   - [x_min, y_min, width, height] en píxeles (xywh-px)
-    //   - [x_min, y_min, width, height] normalizadas (xywh-norm)
-    // Detectamos automáticamente mirando el primer box:
-    //   - Si max value <= 1.5 → normalizadas
-    //   - Si b[2] < b[0] o b[3] < b[1] → xywh (no xyxy)
-    const firstBox = boxesFlat[0] ?? (metadata[0]?.box as number[] | undefined);
+    //   - [x_min, y_min, width, height] píxeles (xywh-px)
+    //   - [x_min, y_min, width, height] normalizadas 0..1 (xywh-norm)
+    // Heurísticas:
+    //   - Normalización: max value de TODOS los boxes <= 1.5
+    //   - Formato xywh: si AL MENOS UN box tiene b[2] < b[0] (en xyxy esto
+    //     sería x_max < x_min, geométricamente imposible). Esto evita el
+    //     bug donde el primer box era ambiguo (b[2] > b[0]) pero los demás
+    //     claramente xywh — caso real reportado por el usuario.
+    const allBoxes = boxesFlat.length > 0
+      ? boxesFlat
+      : (metadata.map((m) => m.box).filter((b) => Array.isArray(b) && b.length === 4) as number[][]);
     let isNormalized = false;
     let isXywh = false;
-    if (firstBox && firstBox.length === 4) {
-      const max = Math.max(...firstBox);
-      isNormalized = max <= 1.5;
-      // En xyxy: b[2] > b[0] y b[3] > b[1] siempre. Si no se cumple, es xywh.
-      isXywh = firstBox[2] < firstBox[0] || firstBox[3] < firstBox[1];
+    if (allBoxes.length > 0) {
+      const globalMax = Math.max(...allBoxes.flat());
+      isNormalized = globalMax <= 1.5;
+      isXywh = allBoxes.some((b) => b[2] < b[0] || b[3] < b[1]);
     }
     debug.boxFormat = isXywh
       ? (isNormalized ? "xywh-norm" : "xywh-px")
