@@ -138,7 +138,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                                     <Zap size={14} strokeWidth={2.2} className="text-yellow-400 fill-yellow-400" />
                                     <span className="hidden sm:inline">{t("nav.credits")}</span>
                                     <span className="font-bold text-white">
-                                        {profile?.credits ?? 0}<span className="hidden sm:inline">/{profile?.plan === "pro" ? "∞" : "20"}</span>
+                                        {profile?.credits ?? 0}<span className="hidden sm:inline">/{profile?.plan === "pro" || profile?.plan === "enterprise" ? "∞" : "20"}</span>
                                     </span>
                                 </div>
 
@@ -161,8 +161,21 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                                             <div className="px-4 py-3 border-b border-white/[0.06]">
                                                 <p className="text-white text-sm font-semibold truncate">{profile?.name ?? user.email}</p>
                                                 <p className="text-gray-500 text-xs truncate">{user.email}</p>
-                                                <span className={`inline-flex items-center gap-1 mt-1 text-xs px-2 py-0.5 rounded-full font-medium ${profile?.plan === "pro" ? "bg-yellow-400/20 text-yellow-400" : "bg-white/5 text-gray-400"}`}>
-                                                    {profile?.plan === "pro" ? (
+                                                {/* Badge del plan: distingue 3 estados (free / pro / enterprise).
+                                                    Antes solo distinguía pro vs el resto → enterprise mostraba "Free". */}
+                                                <span className={`inline-flex items-center gap-1 mt-1 text-xs px-2 py-0.5 rounded-full font-medium ${
+                                                    profile?.plan === "enterprise"
+                                                        ? "bg-amber-500/20 text-amber-300"
+                                                        : profile?.plan === "pro"
+                                                            ? "bg-yellow-400/20 text-yellow-400"
+                                                            : "bg-white/5 text-gray-400"
+                                                }`}>
+                                                    {profile?.plan === "enterprise" ? (
+                                                        <>
+                                                            <Crown size={11} strokeWidth={2.2} className="fill-amber-300" />
+                                                            Enterprise
+                                                        </>
+                                                    ) : profile?.plan === "pro" ? (
                                                         <>
                                                             <Crown size={11} strokeWidth={2.2} className="fill-yellow-400" />
                                                             {t("nav.plan.pro")}
