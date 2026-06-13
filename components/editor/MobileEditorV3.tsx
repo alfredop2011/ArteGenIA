@@ -46,7 +46,7 @@ import {
   Replace, Crop, Eraser, Sliders, Square,
   Pencil,
 } from "lucide-react";
-import { templates, getVariant, type Template } from "@/data/templates";
+import { templates, getVariant, type Template, type TemplateLayer } from "@/data/templates";
 import { FORMATS, PUBLIC_FORMATS, type FormatId } from "@/data/formats";
 import { applyTemplateLayers } from "@/lib/fabricApplyTemplateLayers";
 import { useAuth } from "@/hooks/useAuth";
@@ -135,6 +135,7 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
     | "editar" | "fuente" | "estilos" | "tamano" | "color"
     // Imagen
     | "reemplazar" | "recortar" | "quitar-fondo" | "filtros" | "opacidad-img"
+    | "capas-magicas"
     // Forma
     | "fill" | "borde" | "opacidad-shape" | "esquinas";
   const [activeSubTool, setActiveSubTool] = useState<SubTool>(null);
@@ -1004,6 +1005,129 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
       setRemovingBg(false);
     }
   }, [authUser, getActiveImage, fabricImageToDataUrl, pushHistory, toast]);
+
+  // ─── Capas Mágicas (Fase V.1) ──────────────────────────────────────────
+  // Convierte la imagen seleccionada en plantilla editable. El endpoint
+  // /api/photo-to-template combina Claude Haiku 4.5 visión (textos) +
+  // Florence-2 detection (objetos) y devuelve TemplateLayer[]. Los aplicamos
+  // al canvas borrando la imagen original (ahora reconstruida en capas).
+  // Cuota: Free 3/mes · Pro 20/mes · Enterprise 100/mes.
+  const [magicLayersLoading, setMagicLayersLoading] = useState(false);
+  const [magicLayersQuota, setMagicLayersQuota] = useState<{ used: number; limit: number; unlimited: boolean } | null>(null);
+
+  /** Carga la cuota actual desde GET /api/photo-to-template para mostrar
+   *  badge "X/3 este mes" en el botón. */
+  const refreshMagicLayersQuota = useCallback(async () => {
+    try {
+      const res = await fetch("/api/photo-to-template", { method: "GET" });
+      if (!res.ok) return;
+      const data = await res.json() as { used: number; limit: number; unlimited: boolean };
+      setMagicLayersQuota({ used: data.used, limit: data.limit, unlimited: data.unlimited });
+    } catch (e) {
+      console.warn("[magic-layers] quota fetch failed:", e);
+    }
+  }, []);
+
+  // Cargar cuota al montar (solo si hay user)
+  useEffect(() => {
+    if (authUser) void refreshMagicLayersQuota();
+  }, [authUser, refreshMagicLayersQuota]);
+
+  const handleMagicLayers = useCallback(async () => {
+    if (!authUser) {
+      toast.info(t("mobileEditor.toast.loginToUseAI"));
+      return;
+    }
+    const fc = fabricRef.current;
+    const img = getActiveImage();
+    if (!fc || !img) {
+      toast.error(t("mobileEditor.toast.selectImageFirst"));
+      return;
+    }
+    // Subir/obtener URL HTTP pública de la imagen (el endpoint no acepta
+    // dataURLs porque Florence-2 requiere URL pública).
+    setMagicLayersLoading(true);
+    try {
+      const el = img.getElement() as HTMLImageElement;
+      let publicUrl = el?.src ?? "";
+
+      // Si es data: o blob:, subir a Fal storage primero (igual que segment-person)
+      if (publicUrl.startsWith("data:") || publicUrl.startsWith("blob:")) {
+        toast.info("Subiendo imagen…");
+        const blob = await (await fetch(publicUrl)).blob();
+        const formData = new FormData();
+        formData.append("file", new File([blob], "input.jpg", { type: blob.type || "image/jpeg" }));
+        // Reusamos share-upload (acepta blobs y devuelve URL R2 pública).
+        const upRes = await fetch("/api/share-upload", { method: "POST", body: formData });
+        if (!upRes.ok) {
+          toast.error("No se pudo subir la imagen");
+          return;
+        }
+        const { url } = await upRes.json() as { url: string };
+        publicUrl = url;
+      }
+
+      const res = await fetch("/api/photo-to-template", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imageUrl: publicUrl }),
+      });
+
+      if (res.status === 402) {
+        // Cuota agotada — abrir modal upgrade contextual
+        setUpgradeFeature("magic-layers");
+        return;
+      }
+      if (res.status === 401) {
+        toast.error("Inicia sesión");
+        return;
+      }
+      if (res.status === 429) {
+        toast.error("Demasiadas peticiones, espera 1 min");
+        return;
+      }
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({})) as { error?: string };
+        toast.error(err.error || "La IA falló — intenta de nuevo");
+        return;
+      }
+
+      const data = await res.json() as {
+        layers: TemplateLayer[];
+        meta: { textsDetected: number; objectsDetected: number; quota: { used: number; limit: number; unlimited: boolean } };
+      };
+
+      if (!data.layers?.length) {
+        toast.error("No se detectaron capas en la imagen");
+        return;
+      }
+
+      // Borrar el objeto imagen original — ahora lo sustituimos por las capas
+      // detectadas (la primera es el original como fondo de nuevo).
+      fc.remove(img);
+
+      // Aplicar las nuevas capas al canvas
+      await applyTemplateLayers(fc, data.layers, 1);
+      fc.requestRenderAll();
+      setSaveState("unsaved");
+      pushHistory();
+      setActiveSubTool(null);
+
+      // Actualizar cuota en UI
+      setMagicLayersQuota({
+        used: data.meta.quota.used,
+        limit: data.meta.quota.limit,
+        unlimited: data.meta.quota.unlimited,
+      });
+
+      toast.success(`✨ ${data.meta.textsDetected} textos y ${data.meta.objectsDetected} elementos detectados`);
+    } catch (e) {
+      console.error("[magic-layers]", e);
+      toast.error(t("mobileEditor.toast.imageError"));
+    } finally {
+      setMagicLayersLoading(false);
+    }
+  }, [authUser, getActiveImage, pushHistory, toast, t]);
 
   // ─── Asistente IA chat → flyer (Fase O) ────────────────────────────────
   // Llama /api/assistant con prompt + bloques editables → recibe valores
@@ -2250,6 +2374,13 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
               onConfirm={handleRemoveBackground}
             />
           )}
+          {selectedType === "image" && activeSubTool === "capas-magicas" && (
+            <MagicLayersInline
+              loading={magicLayersLoading}
+              quota={magicLayersQuota}
+              onConfirm={handleMagicLayers}
+            />
+          )}
           {selectedType === "image" && activeSubTool === "opacidad-img" && (
             <OpacitySlider
               current={fabricRef.current?.getActiveObject()?.opacity ?? 1}
@@ -2305,6 +2436,27 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
                 <SubToolBtnIcon node={<Crop size={18} strokeWidth={2.2}/>} label={t("mobileEditor.subtool.crop")} active={activeSubTool === "recortar"} onClick={() => setActiveSubTool(s => s === "recortar" ? null : "recortar")}/>
                 <SubToolBtnIcon node={<Sliders size={18} strokeWidth={2.2}/>} label={t("mobileEditor.subtool.filters")} active={activeSubTool === "filtros"} onClick={() => setActiveSubTool(s => s === "filtros" ? null : "filtros")}/>
                 <SubToolBtnIcon node={<Eraser size={18} strokeWidth={2.2}/>} label={t("mobileEditor.subtool.removeBg")} active={activeSubTool === "quitar-fondo"} onClick={() => setActiveSubTool(s => s === "quitar-fondo" ? null : "quitar-fondo")}/>
+                {/* Capas Mágicas (Fase V.1) — convierte foto en plantilla editable.
+                    Badge muestra cuota restante para Free; nada para Pro/Enterprise. */}
+                <SubToolBtnIcon
+                  node={
+                    <span className="relative inline-flex items-center">
+                      <Wand2 size={18} strokeWidth={2.2}/>
+                      {magicLayersQuota && !magicLayersQuota.unlimited && (
+                        <span className={`absolute -top-1.5 -right-2 text-[9px] font-black px-1 py-0.5 rounded-md ${
+                          magicLayersQuota.used >= magicLayersQuota.limit
+                            ? "bg-red-500/30 text-red-300"
+                            : "bg-emerald-500/30 text-emerald-200"
+                        }`}>
+                          {Math.max(0, magicLayersQuota.limit - magicLayersQuota.used)}
+                        </span>
+                      )}
+                    </span>
+                  }
+                  label="Capas IA"
+                  active={activeSubTool === "capas-magicas"}
+                  onClick={() => setActiveSubTool(s => s === "capas-magicas" ? null : "capas-magicas")}
+                />
                 <SubToolBtn icon="◐" label={t("mobileEditor.subtool.opacity")} active={activeSubTool === "opacidad-img"} onClick={() => setActiveSubTool(s => s === "opacidad-img" ? null : "opacidad-img")} emoji/>
               </>
             )}
@@ -3373,6 +3525,57 @@ function RemoveBgInline({
       >
         <Sparkles size={13} strokeWidth={2.5}/>
         {loading ? t("mobileEditor.removeBg.buttonLoading") : t("mobileEditor.removeBg.button")}
+      </button>
+    </div>
+  );
+}
+
+/** Capas Mágicas (Fase V.1) — convierte el flyer subido en plantilla
+ *  editable. CTA real al endpoint /api/photo-to-template. Muestra cuota
+ *  restante (X/3 para Free) y loading spinner mientras procesa (~14s). */
+function MagicLayersInline({
+  loading, onConfirm, quota,
+}: {
+  loading: boolean;
+  onConfirm: () => void;
+  quota: { used: number; limit: number; unlimited: boolean } | null;
+}) {
+  const remaining = quota && !quota.unlimited
+    ? Math.max(0, quota.limit - quota.used)
+    : null;
+  const isOutOfQuota = remaining !== null && remaining === 0;
+  return (
+    <div className="border-b border-white/[0.06] px-4 py-4 flex flex-col items-center gap-2.5 text-center">
+      <div className="w-11 h-11 rounded-full bg-fuchsia-500/15 flex items-center justify-center text-fuchsia-300">
+        {loading ? (
+          <div className="w-5 h-5 border-2 border-fuchsia-300 border-t-transparent rounded-full animate-spin"/>
+        ) : (
+          <Wand2 size={22}/>
+        )}
+      </div>
+      <p className="text-[12px] text-gray-200 font-semibold">
+        {loading ? "Analizando capas…" : "Convertir foto en plantilla editable"}
+      </p>
+      <p className="text-[10px] text-gray-500 leading-snug max-w-[300px]">
+        {loading
+          ? "Detectando textos, colores y elementos. Esto tarda ~15s."
+          : "Sube un flyer hecho con ChatGPT o cualquier imagen y la convertimos en plantilla editable sin perder el diseño."
+        }
+      </p>
+      {remaining !== null && !loading && (
+        <p className={`text-[10px] font-bold ${isOutOfQuota ? "text-red-400" : "text-emerald-300"}`}>
+          {isOutOfQuota
+            ? `0/${quota!.limit} este mes — agotado`
+            : `${remaining}/${quota!.limit} disponibles este mes`}
+        </p>
+      )}
+      <button
+        onClick={onConfirm}
+        disabled={loading || isOutOfQuota}
+        className="mt-1 px-5 py-2 rounded-xl bg-gradient-to-br from-purple-500 to-fuchsia-500 text-white text-[12px] font-bold active:scale-[0.97] transition-transform disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+      >
+        <Sparkles size={13} strokeWidth={2.5}/>
+        {loading ? "Procesando…" : isOutOfQuota ? "Sin cuota" : "Convertir con IA"}
       </button>
     </div>
   );

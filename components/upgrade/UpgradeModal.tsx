@@ -28,6 +28,7 @@ export type UpgradeFeature =
   | "fonts"
   | "watermark"
   | "ai-limit"
+  | "magic-layers"
   | "generic";
 
 const FEATURE_CONFIG: Record<UpgradeFeature, {
@@ -83,6 +84,12 @@ const FEATURE_CONFIG: Record<UpgradeFeature, {
     title: "Has agotado tu IA diaria",
     desc: "El plan Free tiene 1 generación IA al día. Pro te da uso ilimitado del asistente, remix y quitar fondo.",
     highlight: "IA ilimitada",
+  },
+  "magic-layers": {
+    icon: "🪄",
+    title: "Sin Capas Mágicas este mes",
+    desc: "Convierte cualquier flyer en plantilla editable: detectamos textos, colores y elementos para que los edites sin perder el diseño. Free 3/mes — sube a Pro para 20/mes o Enterprise para 100/mes.",
+    highlight: "Capas Mágicas IA",
   },
   "generic": {
     icon: "⭐",
