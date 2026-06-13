@@ -247,9 +247,83 @@ async function sampleBackgroundAround(
   }
 }
 
+/** Extrae el color del TEXTO en sí (no del fondo) usando el bbox + el
+ *  color del fondo ya muestreado. Estrategia: sampleamos una grilla densa
+ *  dentro del bbox, calculamos distancia euclidiana de cada píxel al
+ *  bgColor, y promediamos el top 15% más distante (esos son los píxeles
+ *  del texto por contraste). Si nada destaca, fallback al color de Claude.
+ */
+async function sampleTextColorByContrast(
+  imageBuf: Buffer,
+  imageWidth: number,
+  imageHeight: number,
+  xPct: number, yPct: number, wPct: number, hPct: number,
+  bgColorHex: string,
+  fallback: string,
+): Promise<string> {
+  try {
+    const x = Math.round((xPct / 100) * imageWidth);
+    const y = Math.round((yPct / 100) * imageHeight);
+    const w = Math.round((wPct / 100) * imageWidth);
+    const h = Math.round((hPct / 100) * imageHeight);
+    if (w <= 0 || h <= 0) return fallback;
+
+    // Recortar la región del bbox y obtener raw RGB
+    const { data, info } = await sharp(imageBuf)
+      .extract({
+        left: Math.max(0, x),
+        top: Math.max(0, y),
+        width: Math.min(w, imageWidth - x),
+        height: Math.min(h, imageHeight - y),
+      })
+      .raw()
+      .toBuffer({ resolveWithObject: true });
+
+    const channels = info.channels;
+    const totalPixels = info.width * info.height;
+    if (totalPixels === 0) return fallback;
+
+    // Parsear bgColor a RGB
+    const bgR = parseInt(bgColorHex.slice(1, 3), 16);
+    const bgG = parseInt(bgColorHex.slice(3, 5), 16);
+    const bgB = parseInt(bgColorHex.slice(5, 7), 16);
+
+    // Para cada píxel, calcular distancia al bgColor + guardar
+    const pixels: Array<{ r: number; g: number; b: number; dist: number }> = [];
+    for (let i = 0; i < data.length; i += channels) {
+      const r = data[i];
+      const g = data[i + 1];
+      const b = data[i + 2];
+      const dist = Math.sqrt((r - bgR) ** 2 + (g - bgG) ** 2 + (b - bgB) ** 2);
+      pixels.push({ r, g, b, dist });
+    }
+
+    // Top 15% más distantes del fondo = píxeles del texto
+    pixels.sort((a, b) => b.dist - a.dist);
+    const topN = Math.max(10, Math.round(pixels.length * 0.15));
+    const top = pixels.slice(0, topN);
+
+    // Verificar que el contraste es significativo (>40 = colores claramente
+    // distintos). Si no, el bbox no contiene texto contrastado y el fallback
+    // de Claude es más fiable.
+    const avgTopDist = top.reduce((s, p) => s + p.dist, 0) / top.length;
+    if (avgTopDist < 40) return fallback;
+
+    // Promedio del top → color del texto
+    const r = Math.round(top.reduce((s, p) => s + p.r, 0) / top.length);
+    const g = Math.round(top.reduce((s, p) => s + p.g, 0) / top.length);
+    const b = Math.round(top.reduce((s, p) => s + p.b, 0) / top.length);
+    return `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
+  } catch (e) {
+    console.warn("[photo-to-template] sampleTextColorByContrast fail:", e);
+    return fallback;
+  }
+}
+
 /** Color sampling real con sharp: extrae el color exacto del píxel en el
  *  centroide del bbox del texto. Más preciso que el color "adivinado" por
- *  Claude. Si falla por cualquier motivo, retorna el fallback. */
+ *  Claude. Si falla por cualquier motivo, retorna el fallback.
+ *  NOTA: legacy — usar sampleTextColorByContrast cuando se tiene bgColor. */
 async function sampleColorAt(
   imageBuf: Buffer,
   imageWidth: number,
@@ -601,20 +675,25 @@ export async function POST(req: Request) {
     );
     const dedupedTextLayers = mergeOverlappingTextLayers(rawTextLayers);
 
-    // 2. Color sampling REAL con sharp sobre cada bbox (precisión 100% vs
-    //    la aproximación que devuelve Claude). Paralelizado.
-    const sampledColors = await Promise.all(
-      dedupedTextLayers.map((layer) =>
-        sampleColorAt(imgBuf, W, H, layer.x, layer.y, layer.w, layer.h, layer.color ?? "#ffffff")
-      )
-    );
-
-    // 2b. Color de FONDO alrededor de cada bbox de texto. Lo usamos como
-    //     fallback si el inpainting con Flux falla — pintamos un rectángulo
-    //     opaco debajo del texto editable para cubrir el original.
+    // 2a. Color del FONDO alrededor de cada bbox (primero, lo necesitamos
+    //     para el sampling del texto por contraste).
     const sampledBgColors = await Promise.all(
       dedupedTextLayers.map((layer) =>
         sampleBackgroundAround(imgBuf, W, H, layer.x, layer.y, layer.w, layer.h, "#000000")
+      )
+    );
+
+    // 2b. Color del TEXTO por CONTRASTE: dentro del bbox, los píxeles más
+    //     diferentes del bgColor son el texto. Mucho más preciso que samplear
+    //     el centroide (que cae en el fondo si el bbox es grande).
+    const sampledColors = await Promise.all(
+      dedupedTextLayers.map((layer, i) =>
+        sampleTextColorByContrast(
+          imgBuf, W, H,
+          layer.x, layer.y, layer.w, layer.h,
+          sampledBgColors[i],
+          layer.color ?? "#ffffff",
+        )
       )
     );
 
