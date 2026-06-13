@@ -77,6 +77,72 @@ type ClaudeOutput = {
   >;
 };
 
+/** Samplea el color del FONDO alrededor del bbox del texto (NO del texto
+ *  mismo). Útil para construir rectángulos "cover" que oculten el texto
+ *  original del flyer y dejen visible solo el texto editable encima.
+ *  Estrategia: sample 4 esquinas exteriores al bbox + promedio robusto. */
+async function sampleBackgroundAround(
+  imageBuf: Buffer,
+  imageWidth: number,
+  imageHeight: number,
+  xPct: number, yPct: number, wPct: number, hPct: number,
+  fallback: string,
+): Promise<string> {
+  try {
+    const x = (xPct / 100) * imageWidth;
+    const y = (yPct / 100) * imageHeight;
+    const w = (wPct / 100) * imageWidth;
+    const h = (hPct / 100) * imageHeight;
+    // Margen exterior: 1.5% del lado menor para evitar caer en el texto si
+    // el bbox de Claude está apretado
+    const margin = Math.max(8, Math.round(Math.min(imageWidth, imageHeight) * 0.015));
+
+    // 4 puntos: justo encima, debajo, izquierda y derecha del CENTRO del bbox
+    // (no en las esquinas, que pueden caer en otros elementos visuales).
+    const cx = x + w / 2;
+    const cy = y + h / 2;
+    const candidates: Array<{ x: number; y: number }> = [
+      { x: cx, y: y - margin },              // arriba centro
+      { x: cx, y: y + h + margin },          // abajo centro
+      { x: x - margin, y: cy },              // izquierda centro
+      { x: x + w + margin, y: cy },          // derecha centro
+    ].filter((p) => p.x >= 0 && p.x < imageWidth && p.y >= 0 && p.y < imageHeight);
+
+    if (candidates.length === 0) return fallback;
+
+    const colors: Array<[number, number, number]> = [];
+    const SAMPLE = 3;
+    for (const p of candidates) {
+      const left = Math.max(0, Math.round(p.x - SAMPLE / 2));
+      const top = Math.max(0, Math.round(p.y - SAMPLE / 2));
+      const cw = Math.min(SAMPLE, imageWidth - left);
+      const ch = Math.min(SAMPLE, imageHeight - top);
+      if (cw <= 0 || ch <= 0) continue;
+      const { data } = await sharp(imageBuf)
+        .extract({ left, top, width: cw, height: ch })
+        .raw()
+        .toBuffer({ resolveWithObject: true });
+      const channels = data.length / (cw * ch);
+      let r = 0, g = 0, b = 0, n = 0;
+      for (let i = 0; i < data.length; i += channels) {
+        r += data[i]; g += data[i + 1]; b += data[i + 2]; n++;
+      }
+      if (n > 0) {
+        colors.push([Math.round(r / n), Math.round(g / n), Math.round(b / n)]);
+      }
+    }
+    if (colors.length === 0) return fallback;
+    // Promedio de los 4 puntos (robusto si algunos caen sobre elementos)
+    const avgR = Math.round(colors.reduce((s, c) => s + c[0], 0) / colors.length);
+    const avgG = Math.round(colors.reduce((s, c) => s + c[1], 0) / colors.length);
+    const avgB = Math.round(colors.reduce((s, c) => s + c[2], 0) / colors.length);
+    return `#${avgR.toString(16).padStart(2, "0")}${avgG.toString(16).padStart(2, "0")}${avgB.toString(16).padStart(2, "0")}`;
+  } catch (e) {
+    console.warn("[photo-to-template] sampleBackgroundAround fail:", e);
+    return fallback;
+  }
+}
+
 /** Color sampling real con sharp: extrae el color exacto del píxel en el
  *  centroide del bbox del texto. Más preciso que el color "adivinado" por
  *  Claude. Si falla por cualquier motivo, retorna el fallback. */
@@ -187,6 +253,17 @@ type GeneratedLayer =
       cropY?: number;
       cropWidth?: number;
       cropHeight?: number;
+    }
+  | {
+      id: string;
+      type: "shape";
+      shape: "rect";
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+      fill: string;
+      opacity?: number;
     };
 
 /** Mapea fontSize cualitativo de Claude → píxeles. Asume canvas 1080px wide. */
@@ -446,17 +523,49 @@ export async function POST(req: Request) {
       )
     );
 
+    // 2b. Color de FONDO alrededor de cada bbox de texto. Lo usamos para
+    //     pintar un rectángulo opaco DEBAJO del texto editable que cubra
+    //     el texto original del flyer (sin esto se ven duplicados). Es la
+    //     alternativa pragmática barata al inpainting con Flux ($0.05/uso).
+    const sampledBgColors = await Promise.all(
+      dedupedTextLayers.map((layer) =>
+        sampleBackgroundAround(imgBuf, W, H, layer.x, layer.y, layer.w, layer.h, "#000000")
+      )
+    );
+
     // 3. Conversión final a TemplateLayer[] con font matching real
     let textIdx = 0;
+    let coverIdx = 0;
     for (let i = 0; i < dedupedTextLayers.length; i++) {
       const layer = dedupedTextLayers[i];
       const sampledColor = sampledColors[i];
+      const bgColor = sampledBgColors[i];
       // Convertir porcentajes 0-100 a píxeles absolutos
       const xPx = Math.round((layer.x / 100) * W);
       const yPx = Math.round((layer.y / 100) * H);
       const wPx = Math.round((layer.w / 100) * W);
-      // Font matching: mapear (categoría + descripción + peso) → fuente
-      // concreta del catálogo Google Fonts cargado en layout.tsx.
+      const hPx = Math.round((layer.h / 100) * H);
+
+      // 3a. Rectángulo COVER del color del fondo — oculta el texto original
+      //     del flyer para que solo se vea el texto editable encima.
+      //     Margen 8% extra en cada lado para asegurar cobertura completa
+      //     incluso si el bbox de Claude es ligeramente apretado.
+      const coverMarginX = Math.round(wPx * 0.04);
+      const coverMarginY = Math.round(hPx * 0.15);
+      generatedLayers.push({
+        id: `cover-${coverIdx++}`,
+        type: "shape",
+        shape: "rect",
+        x: Math.max(0, xPx - coverMarginX),
+        y: Math.max(0, yPx - coverMarginY),
+        width: wPx + coverMarginX * 2,
+        height: hPx + coverMarginY * 2,
+        fill: bgColor,
+        opacity: 1,
+      });
+
+      // 3b. Font matching: mapear (categoría + descripción + peso) → fuente
+      //     concreta del catálogo Google Fonts cargado en layout.tsx.
       const matchedFont = matchFont({
         category: layer.fontCategory,
         description: layer.fontDescription,
