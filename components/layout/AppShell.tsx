@@ -50,7 +50,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
     // Nav links — labels via t() para idiomatizar. href intacto.
     const navLinks = [
-        { href: "/generar", label: "Generar IA" },
         { href: "/create", label: t("nav.create") },
         { href: "/capas-magicas", label: "Capas Mágicas" },
         { href: "/templates", label: t("nav.templates") },
@@ -278,11 +277,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                          style={{ background: "var(--home-bg-soft)", borderColor: "var(--home-card-border)" }}>
                         <div className="w-12 h-1 bg-white/20 rounded-full mx-auto mt-3 mb-4" />
                         <div className="px-4 space-y-1">
-                            <Link href="/generar" onClick={() => setShowMobileMenu(false)}
-                                className="flex items-center gap-3 px-4 py-3 rounded-xl text-base text-fuchsia-300 active:bg-fuchsia-500/10 font-bold">
-                                <Wand2 size={20} strokeWidth={1.8} />
-                                Generar IA <span className="ml-auto text-[10px] bg-fuchsia-500/20 text-fuchsia-200 px-2 py-0.5 rounded-full">NUEVO</span>
-                            </Link>
                             <Link href="/capas-magicas" onClick={() => setShowMobileMenu(false)}
                                 className="flex items-center gap-3 px-4 py-3 rounded-xl text-base text-purple-300 active:bg-purple-500/10">
                                 <Wand2 size={20} strokeWidth={1.8} />
