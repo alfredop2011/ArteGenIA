@@ -493,6 +493,19 @@ export async function POST(req: Request) {
       },
     });
 
+    // Devolver también las regiones detectadas en coords píxel reales.
+    // El frontend las usa para superponer bboxes clickables sobre la imagen
+    // original en el preview — el usuario tap una persona → extraemos con
+    // SAM-2 como PNG transparente.
+    const detectedRegions = topObjects.map((box, i) => ({
+      id: `region-${i}`,
+      label: box.label || "objeto",
+      x: box.x,
+      y: box.y,
+      w: box.w,
+      h: box.h,
+    }));
+
     return NextResponse.json({
       layers: generatedLayers,
       meta: {
@@ -506,6 +519,8 @@ export async function POST(req: Request) {
         model: MODEL,
         // Imagen original — el cliente la usa para mostrar preview comparativo
         originalUrl: body.imageUrl,
+        // Regiones clickables para extracción individual (Fase W.2)
+        detectedRegions,
         // Cuota actualizada (used+1 porque acabamos de consumir uno)
         quota: { used: used + 1, limit, plan, unlimited: limit === -1 },
       },

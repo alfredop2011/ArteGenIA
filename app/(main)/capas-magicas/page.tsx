@@ -28,6 +28,26 @@ import type { TemplateLayer } from "@/data/templates";
 
 type FlowState = "upload" | "processing" | "preview";
 
+type DetectedRegion = {
+  id: string;
+  label: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+};
+
+type ExtractedPerson = {
+  id: string;
+  /** PNG transparente generado por SAM-2/Bria */
+  pngUrl: string;
+  /** Coords donde estaba la persona en la imagen original (para posicionar la capa) */
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+};
+
 type PhotoToTemplateResponse = {
   layers: TemplateLayer[];
   meta: {
@@ -36,6 +56,7 @@ type PhotoToTemplateResponse = {
     textsDetected: number;
     objectsDetected: number;
     originalUrl: string;
+    detectedRegions?: DetectedRegion[];
     quota: { used: number; limit: number; unlimited: boolean };
   };
 };
@@ -53,6 +74,13 @@ export default function CapasMagicasPage() {
   const [showUpgrade, setShowUpgrade] = useState(false);
   const [editedTexts, setEditedTexts] = useState<Record<string, string>>({});
   const [applying, setApplying] = useState(false);
+
+  // Extracción de personas (Fase W.2). Cuando el user tap un bbox detectado
+  // en el overlay, llamamos /api/segment-person para generar PNG transparente
+  // y lo acumulamos aquí. Al "Abrir en el editor", cada extracted person se
+  // añade como nueva image layer encima del background.
+  const [extractedPersons, setExtractedPersons] = useState<ExtractedPerson[]>([]);
+  const [extractingRegionId, setExtractingRegionId] = useState<string | null>(null);
 
   const [quota, setQuota] = useState<{ used: number; limit: number; unlimited: boolean } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -158,6 +186,61 @@ export default function CapasMagicasPage() {
     }
   }, [user, quota, toast]);
 
+  /** Extrae una persona individual del flyer original como PNG transparente.
+   *  Reutiliza /api/segment-person (SAM-2 + Bria) que ya conoce el flujo
+   *  imageUrl + point → PNG transparente + cropBounds. */
+  const extractPerson = useCallback(async (region: DetectedRegion) => {
+    if (!imageUrl) return;
+    if (extractingRegionId) return; // ya hay una extracción en curso
+    // Si ya extrajimos esta región, no repetir
+    if (extractedPersons.some((e) => e.id === region.id)) {
+      toast.info("Ya extrajiste esta persona");
+      return;
+    }
+    setExtractingRegionId(region.id);
+    try {
+      // Centro del bbox como punto para que Florence + SAM-2 lo encuentren
+      const centerX = Math.round(region.x + region.w / 2);
+      const centerY = Math.round(region.y + region.h / 2);
+      const res = await fetch("/api/segment-person", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          imageUrl,
+          points: [{ x: centerX, y: centerY }],
+          hd: false,
+        }),
+      });
+      if (res.status === 402 || res.status === 429) {
+        toast.error("Sin cuota para extracciones. Sube a Pro.");
+        return;
+      }
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({})) as { error?: string };
+        toast.error(err.error || "No se pudo extraer la persona");
+        return;
+      }
+      const data = await res.json() as {
+        segmentedUrl: string;
+        cropBounds: { x: number; y: number; w: number; h: number };
+      };
+      setExtractedPersons((prev) => [...prev, {
+        id: region.id,
+        pngUrl: data.segmentedUrl,
+        x: data.cropBounds.x,
+        y: data.cropBounds.y,
+        w: data.cropBounds.w,
+        h: data.cropBounds.h,
+      }]);
+      toast.success("✨ Persona extraída con fondo transparente");
+    } catch (e) {
+      console.error("[extract-person]", e);
+      toast.error("Error de conexión");
+    } finally {
+      setExtractingRegionId(null);
+    }
+  }, [imageUrl, extractingRegionId, extractedPersons, toast]);
+
   const handleApply = useCallback(async () => {
     if (!result) return;
     setApplying(true);
@@ -171,6 +254,21 @@ export default function CapasMagicasPage() {
         return l;
       });
 
+      // Añadir las personas extraídas como nuevas image layers ENCIMA del
+      // background. Cada PNG transparente queda en la posición original
+      // (cropBounds) de la persona en el flyer, así el usuario puede moverla
+      // libremente y aún encaja con el contexto del diseño.
+      const extractedLayers: TemplateLayer[] = extractedPersons.map((ep, i) => ({
+        id: `extracted-${i}`,
+        type: "image",
+        src: ep.pngUrl,
+        x: ep.x,
+        y: ep.y,
+        scaleX: 1,
+        scaleY: 1,
+        opacity: 1,
+      }));
+
       // Persistir los TemplateLayer[] crudos. El editor los aplicará con
       // applyTemplateLayers (que maneja correctamente la carga async de
       // imágenes). Mucho más fiable que serializar fabric_json en cliente.
@@ -181,7 +279,8 @@ export default function CapasMagicasPage() {
           title: "Mi flyer mágico",
           width: result.meta.width,
           height: result.meta.height,
-          layers: finalLayers,
+          // background + textos detectados + personas extraídas como PNG transparente
+          layers: [...finalLayers, ...extractedLayers],
           originalImageUrl: imageUrl,
         }),
       });
@@ -199,7 +298,7 @@ export default function CapasMagicasPage() {
     } finally {
       setApplying(false);
     }
-  }, [result, editedTexts, router, toast]);
+  }, [result, editedTexts, extractedPersons, imageUrl, router, toast]);
 
   const remaining = quota && !quota.unlimited
     ? Math.max(0, quota.limit - quota.used)
@@ -354,15 +453,83 @@ export default function CapasMagicasPage() {
           </div>
 
           <div className="grid md:grid-cols-2 gap-6">
-            {/* Imagen original */}
+            {/* Imagen original con overlay de regiones clickables (Fase W.2) */}
             <div>
               <p className="text-[10px] uppercase tracking-widest text-gray-500 font-bold mb-2 text-center">
-                Original
+                Original{result.meta.detectedRegions && result.meta.detectedRegions.length > 0 && (
+                  <span className="text-purple-300 ml-2">· toca una persona para extraerla</span>
+                )}
               </p>
-              <div className="rounded-2xl overflow-hidden bg-white/[0.03] border border-white/[0.06]">
+              <div className="relative rounded-2xl overflow-hidden bg-white/[0.03] border border-white/[0.06]">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={imageUrl} alt="Original" className="w-full h-auto"/>
+                <img src={imageUrl} alt="Original" className="w-full h-auto block"/>
+                {result.meta.detectedRegions && result.meta.detectedRegions.length > 0 && (
+                  <svg
+                    viewBox={`0 0 ${result.meta.width} ${result.meta.height}`}
+                    className="absolute inset-0 w-full h-full pointer-events-none"
+                    preserveAspectRatio="none"
+                  >
+                    {result.meta.detectedRegions.map((region) => {
+                      const isExtracted = extractedPersons.some((e) => e.id === region.id);
+                      const isExtracting = extractingRegionId === region.id;
+                      return (
+                        <g key={region.id} className="pointer-events-auto">
+                          <rect
+                            x={region.x}
+                            y={region.y}
+                            width={region.w}
+                            height={region.h}
+                            fill={isExtracted ? "rgba(16,185,129,0.18)" : "rgba(168,85,247,0.10)"}
+                            stroke={isExtracted ? "#10b981" : isExtracting ? "#a855f7" : "rgba(168,85,247,0.6)"}
+                            strokeWidth={isExtracting ? 14 : 6}
+                            strokeDasharray={isExtracted ? "0" : "20 12"}
+                            onClick={() => !isExtracted && !isExtracting && extractPerson(region)}
+                            style={{ cursor: isExtracted || isExtracting ? "default" : "pointer" }}
+                          />
+                          {/* Etiqueta + check si está extraída */}
+                          <text
+                            x={region.x + 10}
+                            y={region.y + 50}
+                            fill={isExtracted ? "#10b981" : "#a855f7"}
+                            fontSize="36"
+                            fontWeight="bold"
+                            style={{ pointerEvents: "none" }}
+                          >
+                            {isExtracted ? "✓ Extraída" : isExtracting ? "⏳ Extrayendo…" : `+ Extraer ${region.label}`}
+                          </text>
+                        </g>
+                      );
+                    })}
+                  </svg>
+                )}
               </div>
+              {/* Lista de extracciones */}
+              {extractedPersons.length > 0 && (
+                <div className="mt-3 p-3 rounded-xl bg-emerald-500/[0.06] border border-emerald-500/30">
+                  <p className="text-[11px] font-bold text-emerald-300 mb-2">
+                    ✨ {extractedPersons.length} {extractedPersons.length === 1 ? "persona extraída" : "personas extraídas"}
+                  </p>
+                  <div className="flex gap-2 flex-wrap">
+                    {extractedPersons.map((ep, i) => (
+                      <div key={ep.id} className="relative w-16 h-16 rounded-lg overflow-hidden bg-white/[0.05] border border-emerald-500/30">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={ep.pngUrl} alt={`Extraída ${i + 1}`} className="w-full h-full object-cover"/>
+                        <button
+                          onClick={() => setExtractedPersons((prev) => prev.filter((p) => p.id !== ep.id))}
+                          className="absolute top-0 right-0 w-5 h-5 bg-red-500/80 text-white rounded-bl-md text-[10px] flex items-center justify-center hover:bg-red-500"
+                          aria-label="Quitar extracción"
+                          title="Quitar"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-[10px] text-emerald-200/70 mt-2">
+                    Se añadirán al editor como capas independientes encima del flyer
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Lista de textos editables */}
