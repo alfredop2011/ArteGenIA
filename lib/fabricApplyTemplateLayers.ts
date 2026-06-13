@@ -118,7 +118,38 @@ export async function applyTemplateLayers(
             try {
                 const img = await FabricImage.fromURL(layer.src, { crossOrigin: "anonymous" });
                 const isBg = layer.id === "bg-photo" || layer.id === "artist-photo";
-                if (isBg) {
+                // bg-magic (Capas Mágicas): la imagen viene con las dimensiones
+                // del canvas natural (canvas se creó desde sharp metadata).
+                // En el sistema fabric con zoom: las coords son "naturales"
+                // (1080×1350) y el zoom 0.5 hace el render visual a 540×675.
+                // Para que la imagen LLENE el canvas natural, scaleX debe
+                // ser tal que img.width * scaleX = canvas.width_natural.
+                // Si la imagen ya es del mismo tamaño que el canvas (1080×1350
+                // == 1080×1350), scaleX = 1. NO multiplicar por scale otra vez.
+                const isBgMagic = layer.id === "bg-magic";
+                if (isBgMagic) {
+                    const canvasNaturalW = canvas.width ? canvas.width / scale : (img.width ?? 1080);
+                    const canvasNaturalH = canvas.height ? canvas.height / scale : (img.height ?? 1350);
+                    const imgW = img.width ?? canvasNaturalW;
+                    const imgH = img.height ?? canvasNaturalH;
+                    // Fit cover: llena ambos ejes, recortando si ratios difieren.
+                    // Usamos MAX (no min) para garantizar que llena el canvas
+                    // — si el ratio difiere, se recorta un poco mejor que dejar
+                    // bandas vacías negras.
+                    const fitScale = Math.max(canvasNaturalW / imgW, canvasNaturalH / imgH);
+                    img.set({
+                        left: 0,
+                        top: 0,
+                        originX: "left",
+                        originY: "top",
+                        scaleX: fitScale,
+                        scaleY: fitScale,
+                        opacity: layer.opacity ?? 1,
+                        angle: layer.angle ?? 0,
+                        selectable: true,
+                        evented: true,
+                    });
+                } else if (isBg) {
                     const cw = canvas.width ?? 430;
                     const imgW = img.width ?? cw;
                     const scaleToFill = cw / imgW;
@@ -169,7 +200,9 @@ export async function applyTemplateLayers(
                 }
                 addWithId(canvas, img, layer.id);
             } catch (e) {
-                console.warn("Error cargando imagen:", e);
+                // Logging detallado: si bg-magic falla, queremos ver el src
+                // exacto + error en console para diagnosticar (CORS, 404, etc).
+                console.error(`[applyTemplateLayers] image FAIL — id=${layer.id} src=${layer.src}`, e);
             }
         }
     }
