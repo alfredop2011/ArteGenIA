@@ -525,6 +525,22 @@ REGLAS DE PRECISIÓN (críticas):
 10. fontCategory: "display" | "serif" | "sans" | "script" | "mono".
     Debe coincidir con la categoría de la fontFamily que elegiste.
 
+11. COLOR DEL TEXTO — CRÍTICO, sé MUY PRECISO:
+    Devuelve el color hex EXACTO del glyph (la letra), NO del fondo.
+    - Texto BLANCO puro: #FFFFFF (sin "blanquecino" ni "marfil")
+    - Texto NEGRO puro: #000000
+    - Amarillo dorado típico de "ENTRADA LIBRE" o destacados: #F4B400, #FFC107, #FFD700
+    - Si el texto tiene degradado, devuelve el color PREDOMINANTE
+      (el que cubre más del 60% del glyph). NO promedies con el fondo.
+    - Si el texto tiene outline/sombra, devuelve el color del RELLENO interior
+      (lo que ve el ojo como "el color del texto").
+    - Si dudas entre blanco y un blanco muy sutil amarillento → usa #FFFFFF.
+    - Si dudas entre amarillo intenso (#F4B400) y naranja (#F97316) → mira
+      la luminosidad: amarillos son MÁS claros, naranjas más cálidos/oscuros.
+    - NUNCA devuelvas marrones (#8B4513, #A0522D) ni grises tierra (#736357)
+      a no ser que el texto sea LITERALMENTE marrón o tierra — esos colores
+      suelen ser confusión con el fondo del flyer.
+
 Devuelve SOLO JSON, sin markdown, sin explicación:
 {
   "imageWidth": ancho aproximado original en píxeles,
@@ -638,20 +654,41 @@ async function detectAndSegmentPeople(imageUrl: string): Promise<SegmentedPerson
     });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const data = (res as any)?.data ?? {};
+    // Debug: ver el shape real del response en Vercel logs cuando algo falla.
+    console.log("[sam-3] response keys:", Object.keys(data));
+    console.log("[sam-3] masks:", (data.masks ?? []).length,
+      "boxes:", (data.boxes ?? []).length,
+      "scores:", (data.scores ?? []).length,
+      "metadata:", (data.metadata ?? []).length);
+
     const masks = (data.masks ?? []) as Array<{ url: string }>;
-    const boxes = (data.boxes ?? []) as Array<[number, number, number, number]>;
-    const scores = (data.scores ?? []) as Array<number>;
+    // El schema oficial de SAM-3 expone (score, box) tanto en arrays sueltos
+    // (data.boxes / data.scores) COMO dentro de data.metadata[].
+    // Algunos despliegues pueblan uno u otro — leemos de metadata primero
+    // (suele ser más fiable) con fallback a los arrays sueltos.
+    const metadata = (data.metadata ?? []) as Array<{
+      index?: number; score?: number; box?: number[];
+    }>;
+    const boxesFlat = (data.boxes ?? []) as Array<[number, number, number, number]>;
+    const scoresFlat = (data.scores ?? []) as Array<number>;
 
     const persons: SegmentedPerson[] = masks
       .map((m, i) => {
-        const b = boxes[i] ?? [0, 0, 0, 0];
+        const meta = metadata[i];
+        const box = (meta?.box && meta.box.length === 4 ? meta.box : boxesFlat[i]) as
+          | [number, number, number, number] | undefined;
+        const score = meta?.score ?? scoresFlat[i] ?? 0;
+        const b = box ?? [0, 0, 0, 0];
         return {
           pngUrl: m.url,
           bbox: { x: b[0], y: b[1], w: b[2] - b[0], h: b[3] - b[1] },
-          score: scores[i] ?? 0,
+          score,
         };
       })
-      .filter((p) => p.score >= 0.5 && p.bbox.w > 10 && p.bbox.h > 10);
+      // Threshold permisivo: 0.3 (era 0.5). En flyers densos / con poca luz
+      // SAM-3 suele dar scores entre 0.3-0.6 incluso para personas obvias.
+      .filter((p) => p.score >= 0.3 && p.bbox.w > 5 && p.bbox.h > 5);
+    console.log("[sam-3] persons después de filtro score>=0.3:", persons.length);
 
     // Dedup por IoU: SAM-3 a veces solapa body+face. Nos quedamos con la
     // máscara de mayor área (= persona completa, no solo cara).
@@ -663,9 +700,10 @@ async function detectAndSegmentPeople(imageUrl: string): Promise<SegmentedPerson
       const overlaps = deduped.some((kept) => iou(cand.bbox, kept.bbox) > 0.7);
       if (!overlaps) deduped.push(cand);
     }
+    console.log("[sam-3] personas finales tras dedup IoU:", deduped.length);
     return deduped;
   } catch (e) {
-    console.warn("[photo-to-template] SAM-3 failed:", e);
+    console.error("[photo-to-template] SAM-3 failed:", e);
     return [];
   }
 }
@@ -797,27 +835,22 @@ export async function POST(req: Request) {
     );
     const dedupedTextLayers = mergeOverlappingTextLayers(rawTextLayers);
 
-    // 2a. Color del FONDO alrededor de cada bbox (primero, lo necesitamos
-    //     para el sampling del texto por contraste).
+    // 2a. Color del FONDO alrededor de cada bbox — solo necesario para
+    //     los cover rectangles (fallback cuando inpainting falla).
     const sampledBgColors = await Promise.all(
       dedupedTextLayers.map((layer) =>
         sampleBackgroundAround(imgBuf, W, H, layer.x, layer.y, layer.w, layer.h, "#000000")
       )
     );
 
-    // 2b. Color del TEXTO por CONTRASTE: dentro del bbox, los píxeles más
-    //     diferentes del bgColor son el texto. Mucho más preciso que samplear
-    //     el centroide (que cae en el fondo si el bbox es grande).
-    const sampledColors = await Promise.all(
-      dedupedTextLayers.map((layer, i) =>
-        sampleTextColorByContrast(
-          imgBuf, W, H,
-          layer.x, layer.y, layer.w, layer.h,
-          sampledBgColors[i],
-          layer.color ?? "#ffffff",
-        )
-      )
-    );
+    // 2b. Color del TEXTO: Claude 4.6 con visión ve el flyer entero y entiende
+    //     contexto semántico (sabe que "ENTRADA LIBRE" es amarillo dorado por
+    //     diseño, no por análisis pixel-by-pixel). El sampling pixel-based
+    //     fallaba en backgrounds densos (luces concierto, gente bailando) —
+    //     promedio de bgColor era ruido y el contraste capturaba luces, no texto.
+    //     Confiamos en lo que devuelve Claude. Si se equivoca, usuario edita
+    //     color con picker en editor (1 click).
+    const sampledColors = dedupedTextLayers.map((l) => l.color ?? "#ffffff");
 
     // 2c. INPAINTING con Flux Fill: borrar los textos del fondo manteniendo
     //     el resto del diseño intacto. Esto es lo que hace Canva para que
