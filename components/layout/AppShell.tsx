@@ -55,13 +55,15 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     // ve landing teaser. Cuando esté ready: quitar el badge + el gate del
     // backend + el teaser de la página. Buscar "Fase V.9" en código.
     const userIsAdmin = isAdmin(user?.email);
+    // Z.15: "Mis flyers" + "Mis creaciones" se fusionaron en "Mis recursos"
+    // (página única con tabs Flyers / Imágenes). Los hrefs viejos siguen
+    // funcionando via redirect.
     const navLinks = [
         { href: "/create", label: t("nav.create") },
         { href: "/quitar-fondo", label: "Quitar fondo" },
         { href: "/capas-magicas", label: "Capas Mágicas", badge: userIsAdmin ? undefined : "Próximamente" },
         { href: "/templates", label: t("nav.templates") },
-        { href: "/projects", label: t("nav.projects") },
-        { href: "/mis-creaciones", label: "Mis creaciones" },
+        { href: "/mis-recursos", label: "Mis recursos" },
         { href: "/colaboradores", label: t("nav.collaborators") },
         { href: "/pricing", label: t("nav.pricing") },
         ...(userIsAdmin ? [{ href: "/admin/templates", label: t("nav.admin") }] : []),
@@ -72,7 +74,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     const mobileBottomNav = [
         { href: "/create", label: t("nav.create"), icon: Plus },
         { href: "/templates", label: t("nav.templates"), icon: LayoutGrid },
-        { href: "/projects", label: t("nav.flyersShort"), icon: FolderOpen },
+        // Z.15: hub unificado "Mis recursos" reemplaza el viejo "Mis flyers"
+        { href: "/mis-recursos", label: "Recursos", icon: FolderOpen },
         { href: "/colaboradores", label: t("nav.teamShort"), icon: Users },
     ];
 
@@ -194,10 +197,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                                                 </span>
                                             </div>
                                             <div className="p-2">
-                                                <Link href="/projects" onClick={() => setShowUserMenu(false)}
+                                                <Link href="/mis-recursos" onClick={() => setShowUserMenu(false)}
                                                     className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-gray-300 hover:bg-white/5 hover:text-white transition-colors">
                                                     <ImageIcon size={15} strokeWidth={1.8} />
-                                                    {t("nav.projects")}
+                                                    Mis recursos
                                                 </Link>
                                                 <Link href="/history" onClick={() => setShowUserMenu(false)}
                                                     className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-gray-300 hover:bg-white/5 hover:text-white transition-colors">

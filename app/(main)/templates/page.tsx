@@ -143,10 +143,10 @@ type SidebarNavItem = { href: string; i18nKey: TranslationKey; icon: LucideIcon 
 const SIDEBAR_NAV: SidebarNavItem[] = [
   { href: "/",              i18nKey: "templates.nav.home",       icon: HomeIcon },
   { href: "/templates",     i18nKey: "nav.templates",            icon: FileText },
-  { href: "/projects",      i18nKey: "nav.projects",             icon: FolderOpen },
+  { href: "/mis-recursos",  i18nKey: "nav.projects",             icon: FolderOpen },
   { href: "/colaboradores", i18nKey: "nav.collaborators",        icon: Users },
   { href: "/history",       i18nKey: "nav.history",              icon: HistoryIcon },
-  { href: "/projects?tab=favorites", i18nKey: "templates.nav.favorites", icon: Heart },
+  { href: "/mis-recursos?tab=flyers&filter=favorites", i18nKey: "templates.nav.favorites", icon: Heart },
 ];
 
 // Aspect ratios para mostrar bien cada formato en el grid
@@ -710,7 +710,7 @@ export default function TemplatesPage() {
               <div className="space-y-0.5">
                 <QuickAction icon={Maximize2} label={t("templates.quickActions.customSize")} />
                 <QuickAction icon={Upload}    label={t("templates.quickActions.uploadImage")} />
-                <QuickAction icon={FolderOpen} label={t("templates.quickActions.myResources")} href="/projects" />
+                <QuickAction icon={FolderOpen} label={t("templates.quickActions.myResources")} href="/mis-recursos" />
                 <QuickAction icon={Palette}   label={t("templates.quickActions.myColors")} />
                 <QuickAction icon={Type}      label={t("templates.quickActions.myFonts")} />
               </div>

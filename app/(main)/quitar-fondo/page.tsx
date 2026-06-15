@@ -289,7 +289,7 @@ export default function QuitarFondoPage() {
         toast.error(err.error || "No se pudo guardar");
         return;
       }
-      toast.success("Guardado en Mis creaciones");
+      toast.success("Guardado en Mis recursos");
     } catch (e) {
       console.error("[save-to-gallery]", e);
       toast.error("Error de conexión");

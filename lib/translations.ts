@@ -794,7 +794,7 @@ const es: Dict = {
   // Nav
   "nav.create": "Crear",
   "nav.templates": "Plantillas",
-  "nav.projects": "Mis flyers",
+  "nav.projects": "Mis recursos",
   "nav.collaborators": "Colaboradores",
   "nav.history": "Historial",
   "nav.pricing": "Precios",
@@ -1508,7 +1508,7 @@ const en: Dict = {
   // Nav
   "nav.create": "Create",
   "nav.templates": "Templates",
-  "nav.projects": "My flyers",
+  "nav.projects": "My resources",
   "nav.collaborators": "Collaborators",
   "nav.history": "History",
   "nav.pricing": "Pricing",
@@ -2209,7 +2209,7 @@ const fr: Dict = {
   // Nav
   "nav.create": "Créer",
   "nav.templates": "Modèles",
-  "nav.projects": "Mes flyers",
+  "nav.projects": "Mes ressources",
   "nav.collaborators": "Collaborateurs",
   "nav.history": "Historique",
   "nav.pricing": "Tarifs",
@@ -2910,7 +2910,7 @@ const pt: Dict = {
   // Nav
   "nav.create": "Criar",
   "nav.templates": "Modelos",
-  "nav.projects": "Meus flyers",
+  "nav.projects": "Meus recursos",
   "nav.collaborators": "Colaboradores",
   "nav.history": "Histórico",
   "nav.pricing": "Preços",
