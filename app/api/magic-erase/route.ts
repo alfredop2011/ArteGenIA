@@ -76,31 +76,50 @@ export async function POST(req: Request) {
     const falFile = new File([buffer], file.name || "input.png", { type: file.type || "image/png" });
     const uploadUrl = await fal.storage.upload(falFile);
 
-    // SAM-3 segmentación con point prompt. "label: 1" significa positive point
-    // → segmenta el objeto que CONTIENE este punto. apply_mask=false: queremos
-    // la máscara cruda (PNG blanco/negro), no la imagen recortada. El cliente
-    // aplica esa máscara como destination-out para borrar la zona.
-    const result = await fal.subscribe("fal-ai/sam-3/image", {
-      input: {
-        image_url: uploadUrl,
-        point_prompts: [{ x: Math.round(x), y: Math.round(y), label: "1" }],
-        apply_mask: false,
-        max_masks: 1,
-        return_multiple_masks: false,
-        output_format: "png",
-      },
-      logs: false,
-    });
+    // SAM-2 segmentación con point prompt. SAM-2 acepta `prompts` (array) —
+    // SAM-3 usa text "person/object" + box_prompts en lugar de point prompts.
+    // Para click-to-erase, SAM-2 es la opción correcta. apply_mask=false →
+    // queremos la máscara cruda, no la imagen recortada.
+    let samResult;
+    try {
+      samResult = await fal.subscribe("fal-ai/sam2/image", {
+        input: {
+          image_url: uploadUrl,
+          prompts: [{ x: Math.round(x), y: Math.round(y), label: "1" }],
+          apply_mask: false,
+          output_format: "png",
+        },
+        logs: false,
+      });
+    } catch (falErr) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const e = falErr as any;
+      const detail = e?.body?.detail ?? e?.body?.message ?? e?.body ?? e?.message ?? String(falErr);
+      console.error("[magic-erase] Fal.ai SAM-2 falló:", JSON.stringify({
+        status: e?.status,
+        body: e?.body,
+        message: e?.message,
+        x: Math.round(x), y: Math.round(y),
+      }, null, 2));
+      throw new Error(`Fal.ai SAM-2: ${typeof detail === "string" ? detail : JSON.stringify(detail)}`);
+    }
 
-    // SAM-3 devuelve { masks: Array<{url}>, image?: {url}, ... }.
-    // masks[0] es la máscara binaria. Fallback a image si masks viene vacío.
+    // SAM-2 devuelve { combined_mask: {url}, individual_masks: Array<{url}>, image: {url}, ... }
+    // Probamos todas las claves conocidas, fallback al image (el segmented).
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const data = (result as any)?.data;
-    const maskUrl = data?.masks?.[0]?.url ?? data?.image?.url;
+    const data = (samResult as any)?.data;
+    const maskUrl =
+      data?.combined_mask?.url ??
+      data?.individual_masks?.[0]?.url ??
+      data?.mask?.url ??
+      data?.masks?.[0]?.url ??
+      data?.image?.url;
 
     if (!maskUrl) {
-      console.error("[magic-erase] respuesta inesperada de SAM-3:", JSON.stringify(data).slice(0, 500));
-      throw new Error("SAM-3 no devolvió máscara");
+      const keys = data ? Object.keys(data).join(",") : "null";
+      console.error("[magic-erase] respuesta sin máscara, keys:", keys,
+        "sample:", JSON.stringify(data).slice(0, 300));
+      throw new Error(`SAM-2 no devolvió máscara — keys del response: ${keys}`);
     }
 
     return NextResponse.json({ maskUrl });
@@ -119,6 +138,7 @@ export async function POST(req: Request) {
         console.error("[magic-erase] refund FALLÓ — revisar manual:", refundErr);
       }
     }
-    return NextResponse.json({ error: "No se pudo aplicar el borrador mágico", detail: msg }, { status: 500 });
+    // Devolver el detail al cliente para que pueda mostrarlo en lugar de 500 genérico
+    return NextResponse.json({ error: msg, detail: msg }, { status: 500 });
   }
 }

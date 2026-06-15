@@ -96,9 +96,12 @@ export default function BrushEraserModal({
   }, []);
 
   // ─── Pintar 1 punto (erase = borra alpha, restore = pinta original) ───
+  // Restore usa un canvas temporal con destination-in para garantizar que
+  // solo se pinta dentro del círculo (clip() es frágil con transforms).
   const paintAt = useCallback((x: number, y: number) => {
-    const ctx = canvasRef.current?.getContext("2d");
-    if (!ctx) return;
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext("2d");
+    if (!canvas || !ctx) return;
     if (tool === "erase") {
       ctx.save();
       ctx.globalCompositeOperation = "destination-out";
@@ -109,13 +112,20 @@ export default function BrushEraserModal({
     } else if (tool === "restore") {
       const img = originalImgRef.current;
       if (!img) return;
-      ctx.save();
-      ctx.globalCompositeOperation = "source-over";
-      ctx.beginPath();
-      ctx.arc(x, y, brushSize, 0, Math.PI * 2);
-      ctx.clip();
-      ctx.drawImage(img, 0, 0);
-      ctx.restore();
+      // 1. Canvas temporal con la imagen original
+      const tmp = document.createElement("canvas");
+      tmp.width = canvas.width;
+      tmp.height = canvas.height;
+      const tctx = tmp.getContext("2d");
+      if (!tctx) return;
+      tctx.drawImage(img, 0, 0);
+      // 2. Recortar a círculo (destination-in deja solo lo que está bajo el círculo)
+      tctx.globalCompositeOperation = "destination-in";
+      tctx.beginPath();
+      tctx.arc(x, y, brushSize, 0, Math.PI * 2);
+      tctx.fill();
+      // 3. Pegar ese círculo de imagen original sobre el canvas principal
+      ctx.drawImage(tmp, 0, 0);
     }
   }, [tool, brushSize]);
 
@@ -155,7 +165,11 @@ export default function BrushEraserModal({
         return;
       }
       if (!res.ok || !data.maskUrl) {
-        throw new Error(data.error || "El borrador mágico falló");
+        // Z.17 — mostrar el detail real del error (no "El borrador mágico falló" genérico).
+        // El server loguea el error de Fal completo; el cliente recibe el msg accionable.
+        const fullErr = data.detail || data.error || `HTTP ${res.status}`;
+        console.error("[magic-erase] server error:", fullErr, data);
+        throw new Error(fullErr);
       }
 
       // 3. Cargar máscara y aplicar como destination-out
