@@ -34,10 +34,16 @@ export default function QuitarFondoPage() {
   const [originalUrl, setOriginalUrl] = useState<string | null>(null);
   const [removedUrl, setRemovedUrl] = useState<string | null>(null);
   const [showAuth, setShowAuth] = useState(false);
-  const [progress, setProgress] = useState<string>("");
   const [applying, setApplying] = useState(false);
   const [quota, setQuota] = useState<{ used: number; limit: number; unlimited: boolean } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // Estado del archivo para mostrar nombre/dims durante processing + preview
+  const [fileInfo, setFileInfo] = useState<{ name: string; width: number; height: number } | null>(null);
+  // Progress 0-100 animado (BiRefNet no expone progreso real, simulamos UX agradable).
+  // Avanza hasta 90% durante processing, salta a 100% cuando termina.
+  const [progressPct, setProgressPct] = useState(0);
+  // Paso activo del lateral derecho: 1 subiendo · 2 eliminando · 3 preparando.
+  const [currentStep, setCurrentStep] = useState<1|2|3>(1);
 
   // Cargar cuota disponible al montar
   useEffect(() => {
@@ -76,7 +82,8 @@ export default function QuitarFondoPage() {
     }
 
     setState("processing");
-    setProgress("Subiendo y procesando…");
+    setProgressPct(0);
+    setCurrentStep(1);
 
     try {
       // Generar preview local de la imagen original (dataURL) para mostrar mientras
@@ -88,10 +95,34 @@ export default function QuitarFondoPage() {
       });
       setOriginalUrl(dataUrl);
 
+      // Leer dimensiones reales para mostrar "1080 × 1350 px" en la card
+      const dims = await new Promise<{ w: number; h: number }>((resolve) => {
+        const img = new Image();
+        img.onload = () => resolve({ w: img.naturalWidth, h: img.naturalHeight });
+        img.onerror = () => resolve({ w: 0, h: 0 });
+        img.src = dataUrl;
+      });
+      setFileInfo({ name: file.name, width: dims.w, height: dims.h });
+
+      // Animación de progreso fake: sube de 0 a 90% en ~5s. El salto a 100%
+      // sucede cuando el endpoint responde. Esto da feedback continuo al
+      // usuario aunque BiRefNet no exponga progreso real.
+      // Step 1 (Subiendo): 0-30%. Step 2 (Eliminando fondo): 30-90%.
+      setCurrentStep(1);
+      const progressTimer = setInterval(() => {
+        setProgressPct((p) => {
+          if (p >= 90) return p;
+          const next = p + (p < 30 ? 4 : 2);
+          if (next >= 30 && p < 30) setCurrentStep(2);
+          return Math.min(next, 90);
+        });
+      }, 200);
+
       // Enviar a BiRefNet
       const form = new FormData();
       form.append("image_file", file);
       const res = await fetch("/api/remove-bg", { method: "POST", body: form });
+      clearInterval(progressTimer);
 
       if (res.status === 402 || res.status === 429) {
         toast.error("Sin cuota este mes. Sube a Pro para ilimitado.");
@@ -107,6 +138,10 @@ export default function QuitarFondoPage() {
 
       const { url } = (await res.json()) as { url: string; key?: string };
       setRemovedUrl(url);
+      setCurrentStep(3);
+      setProgressPct(100);
+      // Pequeño delay para que el usuario vea el 100% completarse
+      await new Promise((r) => setTimeout(r, 300));
       setState("preview");
       // Recargar cuota (consumimos uno)
       if (quota && !quota.unlimited) {
@@ -550,75 +585,240 @@ export default function QuitarFondoPage() {
         </div>
       )}
 
-      {/* ─── ESTADO: PROCESSING ──────────────────────────────────────────── */}
+      {/* ─── ESTADO: PROCESSING (diseño 3-cols, progreso circular, steps) ─ */}
       {state === "processing" && (
-        <div className="max-w-3xl mx-auto px-5 py-20 text-center">
-          <div className="inline-block w-16 h-16 rounded-full border-4 border-purple-500/30 border-t-purple-500 animate-spin mb-6" />
-          <p className="text-[18px] font-bold mb-1">{progress}</p>
-          <p className="text-[12px] text-gray-400">Esto tarda ~5 segundos</p>
+        <div className="max-w-6xl mx-auto px-5 py-10">
+          <div className="relative rounded-3xl bg-gradient-to-br from-purple-950/40 via-[#0d0d18] to-[#0a0a14] border border-purple-500/30 p-7 md:p-10 overflow-hidden">
+            {/* Glows decorativos */}
+            <div className="absolute top-0 right-0 w-80 h-80 rounded-full bg-purple-600/15 blur-[120px] pointer-events-none" />
+            <div className="absolute bottom-0 left-0 w-60 h-60 rounded-full bg-pink-500/10 blur-[100px] pointer-events-none" />
+
+            <div className="relative grid md:grid-cols-[280px_1fr_280px] gap-8 items-center">
+              {/* LEFT — preview de la imagen subida */}
+              <div className="text-center">
+                <div className="relative rounded-2xl overflow-hidden border-2 border-purple-500/40 shadow-2xl shadow-purple-500/20 bg-[#0a0a14]">
+                  {originalUrl ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img src={originalUrl} alt="Procesando" className="w-full h-auto block aspect-[4/5] object-cover" />
+                  ) : (
+                    <div className="aspect-[4/5] bg-white/[0.04]" />
+                  )}
+                </div>
+                {fileInfo && (
+                  <div className="mt-3 p-3 rounded-xl bg-white/[0.03] border border-white/[0.06] flex items-center gap-2.5 text-left">
+                    <div className="w-7 h-7 rounded-lg bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-purple-300 shrink-0">
+                      <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                        <circle cx="8.5" cy="8.5" r="1.5"/>
+                        <polyline points="21 15 16 10 5 21"/>
+                      </svg>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[12px] font-bold truncate">{fileInfo.name}</p>
+                      <p className="text-[10.5px] text-gray-400">
+                        {fileInfo.width > 0 ? `${fileInfo.width} × ${fileInfo.height} px` : "—"}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* CENTER — título + ring de progreso */}
+              <div className="text-center">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-purple-500/10 border border-purple-500/30 mb-5">
+                  <span className="text-purple-300 text-[11px]">✨</span>
+                  <span className="text-[10px] uppercase tracking-widest font-bold text-purple-300">Procesando tu imagen</span>
+                </div>
+                <h2 className="text-[26px] md:text-[34px] font-black leading-[1.1] mb-3">
+                  Estamos quitando<br/>el fondo de{" "}
+                  <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-amber-400 bg-clip-text text-transparent">tu imagen</span>
+                </h2>
+                <p className="text-[12.5px] text-gray-400 leading-relaxed mb-6 max-w-md mx-auto">
+                  Nuestro modelo de IA está trabajando para entregarte un resultado perfecto en solo unos segundos.
+                </p>
+
+                {/* Ring de progreso SVG (gradient stroke purple→pink→amber) */}
+                <div className="inline-flex relative items-center justify-center mb-3">
+                  <svg className="w-36 h-36 -rotate-90" viewBox="0 0 100 100">
+                    <defs>
+                      <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stopColor="#a855f7"/>
+                        <stop offset="50%" stopColor="#ec4899"/>
+                        <stop offset="100%" stopColor="#f59e0b"/>
+                      </linearGradient>
+                    </defs>
+                    <circle cx="50" cy="50" r="44" fill="none" stroke="rgba(168,85,247,0.15)" strokeWidth="6"/>
+                    <circle
+                      cx="50" cy="50" r="44" fill="none"
+                      stroke="url(#ringGrad)" strokeWidth="6" strokeLinecap="round"
+                      strokeDasharray={2 * Math.PI * 44}
+                      strokeDashoffset={2 * Math.PI * 44 * (1 - progressPct / 100)}
+                      style={{ transition: "stroke-dashoffset 0.4s ease" }}
+                    />
+                  </svg>
+                  <span className="absolute text-[28px] font-black">{progressPct}%</span>
+                </div>
+                <p className="text-[11px] text-gray-500">Esto tarda ~5 segundos</p>
+              </div>
+
+              {/* RIGHT — 3 steps verticales */}
+              <div className="space-y-1">
+                <ProcessingStep
+                  num={1} active={currentStep === 1} done={currentStep > 1}
+                  iconPath="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"
+                  title="Subiendo"
+                  desc="Tu imagen se está cargando de forma segura."
+                />
+                <div className="ml-7 h-3 border-l border-dashed border-purple-500/30"/>
+                <ProcessingStep
+                  num={2} active={currentStep === 2} done={currentStep > 2}
+                  iconPath="M15 4V2 M15 16v-2 M8 9h2 M20 9h2 M17.8 11.8l1.4 1.4 M17.8 6.2l1.4-1.4 M12 9a3 3 0 1 0 6 0 3 3 0 0 0-6 0z M3 21l9-9"
+                  title="Eliminando fondo"
+                  desc="La IA está detectando el sujeto y eliminando el fondo."
+                />
+                <div className="ml-7 h-3 border-l border-dashed border-purple-500/30"/>
+                <ProcessingStep
+                  num={3} active={currentStep === 3} done={false}
+                  iconPath="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6"
+                  title="Preparando PNG"
+                  desc="Generando tu imagen con fondo transparente."
+                />
+              </div>
+            </div>
+
+            {/* BOTTOM — 3 bullet cards */}
+            <div className="relative grid md:grid-cols-3 gap-3 mt-8 pt-6 border-t border-white/[0.06]">
+              <BulletCard
+                iconPath="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z M9 12l2 2 4-4"
+                title="100% Seguro y privado"
+                desc="Tus imágenes se procesan de forma segura y se eliminan automáticamente."
+              />
+              <BulletCard
+                iconPath="M5 8h14M12 3v18M5 16h14"
+                title="Solo toma unos segundos"
+                desc="En promedio, el proceso completa en menos de 5 segundos."
+              />
+              <BulletCard
+                iconPath="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"
+                title="Calidad profesional"
+                desc="Resultados precisos con bordes limpios y fondo 100% transparente."
+              />
+            </div>
+          </div>
+
+          {/* Tip al final */}
+          <p className="text-center text-[12px] text-gray-400 mt-6">
+            💡 <span className="font-bold">Tip:</span> No cierres esta pestaña mientras procesamos tu imagen.<br/>
+            <span className="text-gray-500">Puedes seguir usando ArteGenIA en otras pestañas.</span>
+          </p>
         </div>
       )}
 
-      {/* ─── ESTADO: PREVIEW ─────────────────────────────────────────────── */}
+      {/* ─── ESTADO: PREVIEW (diseño side-by-side cards + features + buttons) */}
       {state === "preview" && removedUrl && originalUrl && (
-        <div className="max-w-5xl mx-auto px-5 py-12">
+        <div className="max-w-6xl mx-auto px-5 py-10">
           <div className="text-center mb-8">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 mb-4">
-              <span className="text-[10px] uppercase tracking-widest font-bold text-emerald-300">✓ Fondo eliminado</span>
+              <span className="text-emerald-300 text-[11px]">✓</span>
+              <span className="text-[10px] uppercase tracking-widest font-bold text-emerald-300">Fondo eliminado</span>
             </div>
-            <h2 className="text-[24px] md:text-[32px] font-black mb-2">
-              ¡Listo! Tu imagen sin fondo
+            <h2 className="text-[28px] md:text-[40px] font-black mb-2 leading-tight">
+              ¡Listo! Tu imagen{" "}
+              <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-amber-400 bg-clip-text text-transparent">sin fondo</span>
             </h2>
-            <p className="text-[13px] text-gray-400">Descarga el PNG o úsala para crear un flyer nuevo</p>
+            <p className="text-[13px] text-gray-400">Descarga el PNG o úsala para crear un flyer nuevo.</p>
           </div>
 
-          {/* Side-by-side: original vs sin fondo */}
-          <div className="grid md:grid-cols-2 gap-4 mb-8">
-            <div>
-              <p className="text-[10px] uppercase tracking-widest text-gray-500 font-bold mb-2 text-center">
-                Original
-              </p>
-              <div className="rounded-2xl overflow-hidden bg-white/[0.03] border border-white/[0.06]">
+          {/* Side-by-side comparativa con cards bonitos */}
+          <div className="grid md:grid-cols-2 gap-5 mb-3">
+            {/* ORIGINAL */}
+            <div className="rounded-3xl border-2 border-purple-500/30 bg-purple-950/10 p-5">
+              <div className="text-center mb-3">
+                <span className="text-[10px] uppercase tracking-[0.2em] font-black text-purple-200">Original</span>
+              </div>
+              <div className="rounded-2xl overflow-hidden bg-white/[0.04] border border-white/[0.08]">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={originalUrl} alt="Original" className="w-full h-auto block" />
+                <img src={originalUrl} alt="Original" className="w-full h-auto block aspect-square object-cover" />
               </div>
             </div>
-            <div>
-              <p className="text-[10px] uppercase tracking-widest text-purple-300 font-bold mb-2 text-center">
-                Sin fondo
-              </p>
-              <div className="rounded-2xl overflow-hidden border border-purple-500/30" style={checkerboard}>
+            {/* SIN FONDO */}
+            <div className="rounded-3xl border-2 border-amber-500/30 bg-amber-950/10 p-5">
+              <div className="text-center mb-3">
+                <span className="text-[10px] uppercase tracking-[0.2em] font-black text-amber-200">Sin fondo</span>
+              </div>
+              <div className="rounded-2xl overflow-hidden border border-white/[0.08]" style={checkerboard}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={removedUrl}
                   alt="Sin fondo"
-                  className="w-full h-auto block"
+                  className="w-full h-auto block aspect-square object-contain"
                   crossOrigin="anonymous"
                 />
               </div>
             </div>
           </div>
 
-          {/* Acciones */}
-          <div className="flex flex-col md:flex-row gap-3 max-w-3xl mx-auto">
+          {/* Controles visuales (zoom/split) — placeholder, no funcionales aún */}
+          <div className="flex items-center justify-center gap-2 mb-8">
+            <ViewerControl iconPath="M11 8a3 3 0 0 1 6 0c0 4-6 4-6 8M11 19h.01" title="Zoom out" disabled/>
+            <ViewerControl iconPath="M3 3h6v6H3z M15 3h6v6h-6z M3 15h6v6H3z M15 15h6v6h-6z" title="Comparar split" disabled/>
+            <ViewerControl iconPath="M11 8a3 3 0 0 1 6 0c0 4-6 4-6 8M11 19h.01" title="Zoom in" disabled/>
+          </div>
+
+          {/* Features cards + info tabla en grid 3+1 */}
+          <div className="grid md:grid-cols-[1fr_1fr_1fr_280px] gap-3 mb-8">
+            <FeatureCardMini
+              iconPath="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z M9 12l2 2 4-4"
+              title="Bordes limpios"
+              desc="IA avanzada que detecta y conserva cada detalle con precisión."
+            />
+            <FeatureCardMini
+              iconPath="M3 3h7v7H3z M14 3h7v7h-7z M3 14h7v7H3z M14 14h7v7h-7z"
+              title="Fondo transparente"
+              desc="PNG con transparencia total, perfecto para cualquier diseño."
+            />
+            <FeatureCardMini
+              iconPath="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7 M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4z"
+              title="Listo para editar"
+              desc="Úsala en flyers, redes sociales y más sin perder calidad."
+            />
+            {/* Info table */}
+            <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/[0.06] flex flex-col justify-center gap-2">
+              <InfoRow label="Formato" value="PNG" iconPath="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6"/>
+              <InfoRow label="Fondo" value="Transparente" iconPath="M3 3h7v7H3z M14 3h7v7h-7z M3 14h7v7H3z M14 14h7v7h-7z"/>
+              <InfoRow label="Calidad" value="Alta (lista para impresión y web)" iconPath="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/>
+            </div>
+          </div>
+
+          {/* 3 botones de acción */}
+          <div className="grid md:grid-cols-3 gap-3 max-w-4xl mx-auto">
             <button
               onClick={reset}
-              className="md:flex-1 px-5 py-3.5 rounded-xl bg-white/[0.06] border border-white/[0.12] text-gray-200 font-bold text-[13px] hover:bg-white/[0.10] transition-colors"
+              className="px-5 py-3.5 rounded-xl bg-white/[0.06] border border-white/[0.12] text-gray-200 font-bold text-[13px] hover:bg-white/[0.10] transition-colors inline-flex items-center justify-center gap-2"
             >
-              ← Subir otra
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+              </svg>
+              Subir otra
             </button>
             <button
               onClick={handleDownload}
-              className="md:flex-1 px-5 py-3.5 rounded-xl bg-emerald-500 text-white font-bold text-[13px] hover:bg-emerald-600 transition-colors shadow-lg shadow-emerald-500/30"
+              className="px-5 py-3.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-bold text-[13px] hover:opacity-90 transition-opacity shadow-lg shadow-emerald-500/30 inline-flex items-center justify-center gap-2"
             >
-              ⬇ Descargar PNG
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+              </svg>
+              Descargar PNG
             </button>
             <button
               onClick={handleEditInEditor}
               disabled={applying}
-              className="md:flex-1 px-5 py-3.5 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold text-[13px] hover:opacity-90 transition-opacity shadow-lg shadow-purple-500/40 disabled:opacity-50"
+              className="px-5 py-3.5 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold text-[13px] hover:opacity-90 transition-opacity shadow-lg shadow-purple-500/40 disabled:opacity-50 inline-flex items-center justify-center gap-2"
             >
-              {applying ? "Creando flyer…" : "✏️ Editar en flyer nuevo →"}
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 19l7-7 3 3-7 7-3-3z M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z M2 2l7.586 7.586 M11 11a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/>
+              </svg>
+              {applying ? "Creando flyer…" : "Editar en flyer nuevo →"}
             </button>
           </div>
 
@@ -795,6 +995,121 @@ function Stat({ number, label }: { number: string; label: string }) {
         {number}
       </p>
       <p className="text-[10.5px] text-gray-400 leading-snug">{label}</p>
+    </div>
+  );
+}
+
+/** Paso vertical del estado processing.
+ *  active: el paso actual (icono gradient + dots ...).
+ *  done: ya completado (checkmark verde a la derecha).
+ *  pending (ni active ni done): gris. */
+function ProcessingStep({
+  num, active, done, iconPath, title, desc,
+}: {
+  num: number; active: boolean; done: boolean;
+  iconPath: string; title: string; desc: string;
+}) {
+  const visual = done
+    ? "from-emerald-500 to-teal-500 shadow-emerald-500/40"
+    : active
+      ? "from-purple-500 to-pink-500 shadow-purple-500/40"
+      : "from-gray-700 to-gray-800 shadow-none";
+  const textColor = done || active ? "text-white" : "text-gray-500";
+  return (
+    <div className="flex items-start gap-3">
+      <div className={`shrink-0 w-14 h-14 rounded-2xl bg-gradient-to-br ${visual} flex items-center justify-center text-white shadow-lg`}>
+        <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d={iconPath}/>
+        </svg>
+      </div>
+      <div className="flex-1 min-w-0 pt-1">
+        <p className={`text-[12.5px] font-bold ${textColor}`}>{`${num}. ${title}`}</p>
+        <p className="text-[10.5px] text-gray-400 leading-snug mt-0.5">{desc}</p>
+      </div>
+      {/* Indicador de estado */}
+      <div className="shrink-0 pt-3">
+        {done ? (
+          <div className="w-6 h-6 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-300">
+            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+          </div>
+        ) : active ? (
+          <div className="flex gap-1">
+            {[0, 0.15, 0.3].map((delay, i) => (
+              <span
+                key={i}
+                className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse"
+                style={{ animationDelay: `${delay}s` }}
+              />
+            ))}
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+/** Bullet card horizontal (bottom del processing). */
+function BulletCard({ iconPath, title, desc }: { iconPath: string; title: string; desc: string }) {
+  return (
+    <div className="flex items-start gap-3">
+      <div className="shrink-0 w-10 h-10 rounded-xl bg-purple-500/15 border border-purple-500/30 flex items-center justify-center text-purple-300">
+        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d={iconPath}/>
+        </svg>
+      </div>
+      <div>
+        <p className="text-[12.5px] font-bold mb-0.5">{title}</p>
+        <p className="text-[10.5px] text-gray-400 leading-snug">{desc}</p>
+      </div>
+    </div>
+  );
+}
+
+/** Botón redondo visual (zoom/split) — actualmente disabled (placeholder). */
+function ViewerControl({ iconPath, title, disabled }: { iconPath: string; title: string; disabled?: boolean }) {
+  return (
+    <button
+      disabled={disabled}
+      title={title}
+      className="w-11 h-11 rounded-xl bg-white/[0.04] border border-white/[0.08] hover:bg-white/[0.08] flex items-center justify-center text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+    >
+      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d={iconPath}/>
+      </svg>
+    </button>
+  );
+}
+
+/** Mini feature card del preview (grid 3 cols + info table). */
+function FeatureCardMini({ iconPath, title, desc }: { iconPath: string; title: string; desc: string }) {
+  return (
+    <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/[0.06] flex items-start gap-3">
+      <div className="shrink-0 w-9 h-9 rounded-xl bg-purple-500/15 border border-purple-500/30 flex items-center justify-center text-purple-300">
+        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d={iconPath}/>
+        </svg>
+      </div>
+      <div className="min-w-0">
+        <p className="text-[12px] font-bold mb-0.5">{title}</p>
+        <p className="text-[10.5px] text-gray-400 leading-snug">{desc}</p>
+      </div>
+    </div>
+  );
+}
+
+/** Fila de la info-table del preview: icono + label + value (alineado dere). */
+function InfoRow({ label, value, iconPath }: { label: string; value: string; iconPath: string }) {
+  return (
+    <div className="flex items-center justify-between gap-2 py-1.5 border-b border-white/[0.04] last:border-b-0">
+      <div className="flex items-center gap-2 text-gray-400">
+        <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d={iconPath}/>
+        </svg>
+        <span className="text-[11px]">{label}</span>
+      </div>
+      <span className="text-[11px] font-bold text-right truncate">{value}</span>
     </div>
   );
 }
