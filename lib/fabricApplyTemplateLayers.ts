@@ -141,11 +141,21 @@ export async function applyTemplateLayers(
                     const canvasNaturalH = canvas.height ? canvas.height / scale : (img.height ?? 1350);
                     const imgW = img.width ?? canvasNaturalW;
                     const imgH = img.height ?? canvasNaturalH;
-                    // Fit cover: llena ambos ejes, recortando si ratios difieren.
-                    // Usamos MAX (no min) para garantizar que llena el canvas
-                    // — si el ratio difiere, se recorta un poco mejor que dejar
-                    // bandas vacías negras.
                     const fitScale = Math.max(canvasNaturalW / imgW, canvasNaturalH / imgH);
+                    // Debug temporal: para diagnosticar bg-magic renderizándose
+                    // a 1/4 del canvas cuando dims matchean. Si fitScale != 1
+                    // significa que canvas.width o img.width no son lo esperado.
+                    console.log("[bg-magic] DEBUG render:", {
+                        canvasWidth: canvas.width,
+                        canvasHeight: canvas.height,
+                        scale,
+                        canvasNaturalW,
+                        canvasNaturalH,
+                        imgW,
+                        imgH,
+                        fitScale,
+                        src: layer.src.substring(0, 80),
+                    });
                     img.set({
                         left: 0,
                         top: 0,
