@@ -116,7 +116,16 @@ export async function applyTemplateLayers(
         // ── IMAGE ──────────────────────────────────────────────────────────
         if (layer.type === "image") {
             try {
-                const img = await FabricImage.fromURL(layer.src, { crossOrigin: "anonymous" });
+                // Cache buster para imágenes R2: si el navegador cacheó la
+                // respuesta SIN headers CORS (antes de configurar CORS en R2),
+                // un query param distinto fuerza al browser a re-pedir la
+                // imagen al server, esta vez con los headers correctos.
+                // Solo aplicamos al dominio R2 — no rompemos URLs externas.
+                const isR2 = layer.src.includes("r2.dev") || layer.src.includes("r2.cloudflarestorage");
+                const srcWithBuster = isR2 && !layer.src.includes("?")
+                    ? `${layer.src}?v=${layer.id ?? "cors"}`
+                    : layer.src;
+                const img = await FabricImage.fromURL(srcWithBuster, { crossOrigin: "anonymous" });
                 const isBg = layer.id === "bg-photo" || layer.id === "artist-photo";
                 // bg-magic (Capas Mágicas): la imagen viene con las dimensiones
                 // del canvas natural (canvas se creó desde sharp metadata).
