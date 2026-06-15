@@ -15,8 +15,8 @@ import AuthModal from "@/components/auth/AuthModal";
  * paleta morado/fucsia de ArteGenIA.
  *
  * Plans:
- * - FREE 0€: editor + watermark + 1 IA/día
- * - PRO 9,99€/mes: editor + sin watermark + Quitar fondo IA ilimitado + PDF imprenta
+ * - FREE 0€: editor sin watermark + 10 quitar-fondo IA/mes
+ * - PRO 9,99€/mes: editor + Quitar fondo IA ilimitado + PDF imprenta
  * - ENTERPRISE 34,99€/mes: Pro + acceso para equipos (early access)
  */
 
@@ -222,8 +222,8 @@ function PricingContent() {
             <span className="shimmer-text">Escala cuando crezcas.</span>
           </h1>
           <p className="text-[15px] md:text-[17px] text-gray-400 leading-relaxed">
-            Editor completo siempre gratis. Cuando vendas más, sube a Pro o Enterprise.
-            Sin permanencia, sin trucos.
+            Editor completo siempre gratis. <span className="text-emerald-300 font-bold">Sin watermark</span>, incluso en el plan Free.
+            Cuando vendas más, sube a Pro. Sin permanencia, sin trucos.
           </p>
         </div>
 
@@ -292,7 +292,7 @@ function PricingContent() {
         {success && (
           <div className="mb-8 max-w-md mx-auto p-5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-center">
             <p className="text-[14px] font-bold text-emerald-200 mb-3">
-              🎉 ¡Bienvenido! Ya puedes descargar sin watermark.
+              🎉 ¡Bienvenido! Ya tienes IA ilimitada y PDF imprenta.
             </p>
             <Link
               href="/templates"
@@ -325,13 +325,14 @@ function PricingContent() {
 
             <ul className="space-y-3 flex-1 mb-7">
               <Check text="Editor completo (texto + imagen + forma)"/>
-              <Check text="50+ plantillas profesionales"/>
+              <Check text="48+ plantillas profesionales"/>
+              <Check text="Sin watermark · descarga limpia"/>
               <Check text="Exportar PNG y JPG"/>
               <Check text="Multi-formato (Story, Post, Square)"/>
               <Check text="4 idiomas (ES/EN/FR/PT)"/>
               <Check text="Mis flyers (guardar proyectos)"/>
-              <Cross text="1 generación IA/día"/>
-              <Cross text='Watermark "Hecho con ArteGenIA"'/>
+              <Cross text="Quitar fondo IA: 10/mes"/>
+              <Cross text="Exportar PDF imprenta"/>
             </ul>
 
             <Link
@@ -384,9 +385,9 @@ function PricingContent() {
 
             <ul className="space-y-3 flex-1 mb-7">
               <Check strong text="Todo lo de Free"/>
-              <Check strong text="Sin watermark"/>
               <Check strong text="Quitar fondo IA ilimitado (asistente + remix)"/>
               <Check strong text="Exportar PDF imprenta de alta calidad"/>
+              <Check strong text="Generaciones IA premium ilimitadas"/>
               <Check strong text="Soporte prioritario por email"/>
               <Check strong text="Uso comercial sin restricciones"/>
               <Check strong text="Más herramientas IA próximamente"/>
@@ -475,7 +476,7 @@ function PricingContent() {
 
         {/* Sub-texto debajo */}
         <p className="text-center text-[12px] text-gray-500 mt-8 max-w-xl mx-auto leading-relaxed">
-          Todos los planes incluyen el editor completo. La diferencia está en límites de IA, watermark, exportación profesional y soporte. ¿Dudas? <a href="mailto:alfredop2011@gmail.com" className="text-purple-300 hover:text-purple-200 underline">Escríbenos</a>.
+          Todos los planes incluyen el editor completo SIN watermark. La diferencia está en límites de IA, exportación profesional y soporte. ¿Dudas? <a href="mailto:alfredop2011@gmail.com" className="text-purple-300 hover:text-purple-200 underline">Escríbenos</a>.
         </p>
 
         {/* Comparativa rápida — opcional, estilo shadcn */}
@@ -498,9 +499,9 @@ function PricingContent() {
             </div>
             {[
               { f: "Editor completo", free: "✓", pro: "✓", ent: "Próximamente" },
+              { f: "Sin watermark", free: "✓", pro: "✓", ent: "Próximamente" },
               { f: "Plantillas profesionales", free: "48+", pro: "48+", ent: "Próximamente" },
               { f: "Quitar fondo IA", free: "10/mes", pro: "Ilimitado", ent: "Próximamente" },
-              { f: "Watermark", free: "Sí", pro: "No", ent: "Próximamente" },
               { f: "Exportar PNG / JPG", free: "✓", pro: "✓", ent: "Próximamente" },
               { f: "Exportar PDF imprenta", free: "—", pro: "✓", ent: "Próximamente" },
               { f: "Equipo multi-usuario", free: "—", pro: "—", ent: "Próximamente" },
@@ -731,7 +732,7 @@ function PricingContent() {
             },
             {
               q: "¿Qué pasa con mis flyers si cancelo?",
-              a: "Tus flyers se quedan guardados en tu cuenta. Pero perderás IA ilimitada y volverá el watermark en nuevas descargas.",
+              a: "Tus flyers se quedan guardados en tu cuenta. Solo perderás las funciones premium (IA ilimitada, PDF imprenta) — sigues sin watermark.",
             },
             {
               q: "¿Cuándo me conviene Enterprise vs Pro?",

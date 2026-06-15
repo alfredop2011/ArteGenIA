@@ -189,7 +189,12 @@ function roundRect(
  */
 // V8.2: activado. Crea incentivo real para validar interes en plan Pro.
 // Sin diferencia visible entre free y pro, nadie se apunta a la waitlist.
-const WATERMARK_ENABLED = true;
+// Fase T.12 — Watermark desactivado para TODOS los planes (incluido Free).
+// Decisión de producto: "Sin watermark, siempre" es diferenciador fuerte vs
+// Canva. La conversión Pro ahora descansa en otros pillars: IA ilimitada,
+// PDF imprenta, soporte prioritario.
+// Para reactivar: cambiar a true. shouldWatermark() respetará por plan.
+const WATERMARK_ENABLED = false;
 
 /**
  * Helper booleano: ¿este perfil debe llevar watermark al descargar?
