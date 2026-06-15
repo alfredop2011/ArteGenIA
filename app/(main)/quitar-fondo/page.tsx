@@ -304,14 +304,14 @@ export default function QuitarFondoPage() {
               {/* Thumbnails de ejemplos: persona, zapato, perfume, coche */}
               <div className="flex items-center gap-4 mt-5">
                 <div className="flex gap-2">
-                  <ExampleThumb gradient="from-rose-400 to-pink-500" emoji="👤"/>
-                  <ExampleThumb gradient="from-red-500 to-orange-500" emoji="👟"/>
-                  <ExampleThumb gradient="from-amber-400 to-yellow-500" emoji="🧴"/>
-                  <ExampleThumb gradient="from-blue-500 to-cyan-500" emoji="🚗"/>
+                  <ExampleThumb gradient="from-rose-500 to-purple-600" emoji="💃"/>
+                  <ExampleThumb gradient="from-amber-500 to-red-600" emoji="🎤"/>
+                  <ExampleThumb gradient="from-emerald-500 to-teal-600" emoji="🎓"/>
+                  <ExampleThumb gradient="from-blue-500 to-purple-600" emoji="🎵"/>
                 </div>
                 <div className="flex-1">
                   <p className="text-[12px] font-bold mb-0.5">Sin fondo. Sin complicaciones.</p>
-                  <p className="text-[10.5px] text-gray-400">Personas, productos, objetos y más.</p>
+                  <p className="text-[10.5px] text-gray-400">Parejas de baile, artistas, logos y más.</p>
                 </div>
               </div>
             </div>
@@ -401,6 +401,150 @@ export default function QuitarFondoPage() {
               <UseCaseChip iconPath="M9 22a1 1 0 1 0 0-2 1 1 0 0 0 0 2zM20 22a1 1 0 1 0 0-2 1 1 0 0 0 0 2z M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" text="E-commerce"/>
               <UseCaseChip iconPath="M2 3h20v14H2z M8 21h8 M12 17v4" text="Presentaciones"/>
               <UseCaseChip iconPath="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z" text="Y mucho más"/>
+            </div>
+          </div>
+
+          {/* ─── ANTES Y DESPUÉS — 3 ejemplos del nicho real ────────────── */}
+          <div className="mt-20">
+            <div className="text-center mb-10">
+              <h3 className="text-[24px] md:text-[30px] font-black mb-2">Antes y después</h3>
+              <p className="text-[12.5px] text-gray-400">Resultados reales en segundos.</p>
+            </div>
+            <div className="grid md:grid-cols-3 gap-5">
+              <BeforeAfterCard
+                category="Pareja de baile"
+                desc="Salsa, bachata, tango, kizomba."
+                emoji="💃"
+                bgGradient="from-rose-500 via-pink-600 to-purple-700"
+                accentColor="rose"
+                iconPath="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2 M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"
+              />
+              <BeforeAfterCard
+                category="Artistas / DJ"
+                desc="Fotos para flyers de conciertos."
+                emoji="🎤"
+                bgGradient="from-amber-500 via-orange-600 to-red-700"
+                accentColor="amber"
+                iconPath="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z M19 10v2a7 7 0 0 1-14 0v-2 M12 19v4 M8 23h8"
+              />
+              <BeforeAfterCard
+                category="Logos / Escuelas"
+                desc="Marcas, promotoras, academias."
+                emoji="🎓"
+                bgGradient="from-emerald-500 via-teal-600 to-blue-700"
+                accentColor="emerald"
+                iconPath="M22 10v6 M2 10l10-5 10 5-10 5z M6 12v5c3 3 9 3 12 0v-5"
+              />
+            </div>
+            <p className="text-center text-[11px] text-gray-500 mt-6">
+              💡 Ilustraciones genéricas — cuando subas fotos reales del nicho, reemplaza estas tarjetas.
+            </p>
+          </div>
+
+          {/* ─── POR QUÉ ELEGIR ARTEGENIA — 4 features cards ────────────── */}
+          <div className="mt-20">
+            <div className="text-center mb-10">
+              <h3 className="text-[24px] md:text-[30px] font-black">Por qué elegir ArteGenIA</h3>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <WhyCard
+                iconPath="M13 2L3 14h9l-1 8 10-12h-9z"
+                title="Ultrarrápido"
+                desc="Resultados en solo 5 segundos gracias a nuestra IA avanzada."
+              />
+              <WhyCard
+                iconPath="M12 2a10 10 0 1 0 10 10 M22 12h-4 M12 8v8 M16 12l-4 4-4-4"
+                title="Precisión total"
+                desc="Detecta bordes finos como cabello, pelaje y detalles."
+              />
+              <WhyCard
+                iconPath="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4 M21 5H3 M3 9h18 M3 13h18"
+                title="PNG transparente"
+                desc="Descarga en alta calidad sin fondo y sin marcas."
+              />
+              <WhyCard
+                iconPath="M9.5 14.5l5-5 M12 2v3 M22 12h-3 M12 22v-3 M2 12h3 M19.07 4.93l-2.12 2.12 M19.07 19.07l-2.12-2.12 M4.93 19.07l2.12-2.12 M4.93 4.93l2.12 2.12"
+                title="Listo para tus flyers"
+                desc="Integra fácilmente en tus diseños y materiales de marketing."
+              />
+            </div>
+          </div>
+
+          {/* ─── TESTIMONIOS + STATS ────────────────────────────────────── */}
+          <div className="mt-20">
+            <div className="text-center mb-10">
+              <h3 className="text-[20px] md:text-[26px] font-black">Miles de creadores ya confían en ArteGenIA</h3>
+            </div>
+            <div className="grid md:grid-cols-2 lg:grid-cols-6 gap-3">
+              {/* 3 testimonios — placeholders, reemplazar con reales */}
+              <Testimonial
+                lgCols="lg:col-span-2"
+                quote='"Me ahorra horas de edición. La calidad es increíble."'
+                name="Javier R."
+                role="Dueño de tienda online"
+                gradient="from-blue-500 to-purple-600"
+              />
+              <Testimonial
+                lgCols="lg:col-span-2"
+                quote='"Perfecto para mis flyers y publicaciones en redes."'
+                name="Ana L."
+                role="Community Manager"
+                gradient="from-rose-500 to-orange-500"
+              />
+              <Testimonial
+                lgCols="lg:col-span-2"
+                quote='"Rápido, fácil y con resultados profesionales."'
+                name="Carlos M."
+                role="Diseñador gráfico"
+                gradient="from-emerald-500 to-teal-600"
+              />
+              {/* 3 stats */}
+              <Stat number="50k+" label="Imágenes procesadas"/>
+              <Stat number="98%" label="Satisfacción de usuarios"/>
+              <Stat number="5s" label="Tiempo promedio"/>
+            </div>
+            <p className="text-center text-[11px] text-amber-300/80 mt-6">
+              ⚠ Testimonios y estadísticas son ilustrativos. Reemplazar con datos reales antes de publicar.
+            </p>
+          </div>
+
+          {/* ─── CTA FINAL ──────────────────────────────────────────────── */}
+          <div className="mt-20 mb-8 relative overflow-hidden rounded-3xl bg-gradient-to-br from-purple-900/40 via-purple-950/30 to-[#0a0a14] border border-purple-500/40 p-8 md:p-10">
+            {/* Glow decorativo */}
+            <div className="absolute -bottom-20 -right-20 w-80 h-80 rounded-full bg-purple-600/30 blur-[100px] pointer-events-none" />
+            <div className="absolute -top-20 -left-20 w-60 h-60 rounded-full bg-pink-500/20 blur-[80px] pointer-events-none" />
+
+            <div className="relative grid md:grid-cols-[200px_1fr_auto] gap-6 items-center">
+              {/* Cohete ilustración */}
+              <div className="flex items-center justify-center">
+                <div className="w-32 h-32 rounded-full bg-gradient-to-br from-purple-500/30 to-pink-500/20 flex items-center justify-center text-[64px]">
+                  🚀
+                </div>
+              </div>
+
+              {/* Copy */}
+              <div className="text-center md:text-left">
+                <h3 className="text-[22px] md:text-[28px] font-black mb-2">¿Listo para crear sin límites?</h3>
+                <p className="text-[13px] text-gray-300 mb-4">
+                  Sube tu imagen ahora y obtén tu PNG transparente en 5 segundos.
+                </p>
+              </div>
+
+              {/* CTA + bullets */}
+              <div className="text-center md:text-right">
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl bg-gradient-to-r from-purple-500 via-pink-500 to-amber-500 text-white font-bold text-[14px] shadow-xl shadow-purple-500/40 hover:opacity-90 transition-opacity"
+                >
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+                  </svg>
+                  Subir mi imagen ahora
+                </button>
+                <p className="text-[10.5px] text-gray-400 mt-3">
+                  Gratis para empezar · Sin tarjeta · Resultados al instante
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -531,6 +675,126 @@ function UseCaseChip({ iconPath, text }: { iconPath: string; text: string }) {
         </svg>
       </div>
       <span className="text-[12px] font-semibold text-gray-200">{text}</span>
+    </div>
+  );
+}
+
+// Checkerboard CSS para mostrar transparencia (típico de editores).
+const CHECKERBOARD: React.CSSProperties = {
+  backgroundImage:
+    "linear-gradient(45deg, #2a2a3a 25%, transparent 25%), linear-gradient(-45deg, #2a2a3a 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #2a2a3a 75%), linear-gradient(-45deg, transparent 75%, #2a2a3a 75%)",
+  backgroundSize: "16px 16px",
+  backgroundPosition: "0 0, 0 8px, 8px -8px, -8px 0px",
+  backgroundColor: "#1a1a24",
+};
+
+/** Card "Antes y después" — ilustración SVG estilizada del nicho.
+ *  TODO cuando tengamos fotos reales: reemplazar SVG con <Image src=fotoReal/>.
+ *  Mantener las cajas "Antes" (con bgGradient) y "Después" (checkerboard) idénticas. */
+function BeforeAfterCard({
+  category, desc, emoji, bgGradient, accentColor, iconPath,
+}: {
+  category: string; desc: string; emoji: string;
+  bgGradient: string; accentColor: "rose"|"amber"|"emerald";
+  iconPath: string;
+}) {
+  const accent = {
+    rose: "from-rose-500 to-pink-500",
+    amber: "from-amber-500 to-orange-500",
+    emerald: "from-emerald-500 to-teal-500",
+  }[accentColor];
+  return (
+    <div className="rounded-3xl bg-white/[0.025] border border-white/[0.06] overflow-hidden">
+      <div className="grid grid-cols-2 gap-0.5 bg-white/[0.04] relative">
+        {/* ANTES — gradiente como fondo + silueta SVG blanca */}
+        <div className={`relative bg-gradient-to-br ${bgGradient} aspect-[4/5] flex items-center justify-center`}>
+          <span className="absolute top-3 left-3 text-[9.5px] uppercase tracking-widest font-black px-2 py-1 rounded bg-black/40 backdrop-blur-sm text-white">
+            Antes
+          </span>
+          <span className="text-[80px] drop-shadow-2xl">{emoji}</span>
+        </div>
+        {/* DESPUÉS — checkerboard + misma silueta */}
+        <div className="relative aspect-[4/5] flex items-center justify-center" style={CHECKERBOARD}>
+          <span className="absolute top-3 right-3 text-[9.5px] uppercase tracking-widest font-black px-2 py-1 rounded bg-black/40 backdrop-blur-sm text-white">
+            Después
+          </span>
+          <span className="text-[80px]">{emoji}</span>
+        </div>
+        {/* Flecha circular en el medio */}
+        <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-gradient-to-br ${accent} flex items-center justify-center shadow-lg`}>
+          <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="5" y1="12" x2="19" y2="12"/>
+            <polyline points="12 5 19 12 12 19"/>
+          </svg>
+        </div>
+      </div>
+      {/* Footer con icono + título + desc */}
+      <div className="p-4 flex items-center gap-3">
+        <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${accent} flex items-center justify-center text-white shrink-0`}>
+          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d={iconPath}/>
+          </svg>
+        </div>
+        <div>
+          <p className="text-[13px] font-bold">{category}</p>
+          <p className="text-[11px] text-gray-400">{desc}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Card de feature en "Por qué elegir ArteGenIA". */
+function WhyCard({ iconPath, title, desc }: { iconPath: string; title: string; desc: string }) {
+  return (
+    <div className="p-5 rounded-2xl bg-white/[0.025] border border-white/[0.06]">
+      <div className="w-10 h-10 mb-3 rounded-xl bg-purple-500/15 border border-purple-500/30 flex items-center justify-center text-purple-300">
+        <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d={iconPath}/>
+        </svg>
+      </div>
+      <p className="text-[13px] font-bold mb-1">{title}</p>
+      <p className="text-[11px] text-gray-400 leading-relaxed">{desc}</p>
+    </div>
+  );
+}
+
+/** Card de testimonio con avatar SVG (placeholder). */
+function Testimonial({
+  quote, name, role, gradient, lgCols,
+}: {
+  quote: string; name: string; role: string; gradient: string; lgCols: string;
+}) {
+  return (
+    <div className={`${lgCols} p-5 rounded-2xl bg-white/[0.025] border border-white/[0.06] flex gap-3`}>
+      {/* Avatar: círculo con gradiente + icono persona */}
+      <div className={`shrink-0 w-12 h-12 rounded-full bg-gradient-to-br ${gradient} flex items-center justify-center text-white border-2 border-white/10`}>
+        <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2 M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"/>
+        </svg>
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-[12px] text-gray-200 leading-snug mb-2 italic">{quote}</p>
+        <div className="flex gap-0.5 mb-2">
+          {[1,2,3,4,5].map(i => (
+            <span key={i} className="text-amber-400 text-[11px]">★</span>
+          ))}
+        </div>
+        <p className="text-[11px] font-bold">{name}</p>
+        <p className="text-[10px] text-gray-400">{role}</p>
+      </div>
+    </div>
+  );
+}
+
+/** Stat card: número grande gradient + label. */
+function Stat({ number, label }: { number: string; label: string }) {
+  return (
+    <div className="p-5 rounded-2xl bg-white/[0.025] border border-white/[0.06] text-center flex flex-col justify-center">
+      <p className="text-[32px] md:text-[36px] font-black bg-gradient-to-br from-purple-400 to-pink-400 bg-clip-text text-transparent leading-none mb-1">
+        {number}
+      </p>
+      <p className="text-[10.5px] text-gray-400 leading-snug">{label}</p>
     </div>
   );
 }
