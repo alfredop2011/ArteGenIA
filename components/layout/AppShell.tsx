@@ -61,9 +61,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         { href: "/capas-magicas", label: "Capas Mágicas", badge: userIsAdmin ? undefined : "Próximamente" },
         { href: "/templates", label: t("nav.templates") },
         { href: "/projects", label: t("nav.projects") },
+        { href: "/mis-creaciones", label: "Mis creaciones" },
         { href: "/colaboradores", label: t("nav.collaborators") },
         { href: "/pricing", label: t("nav.pricing") },
-        { href: "/history", label: t("nav.history") },
         ...(userIsAdmin ? [{ href: "/admin/templates", label: t("nav.admin") }] : []),
     ];
 

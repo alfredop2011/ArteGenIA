@@ -235,6 +235,42 @@ export default function QuitarFondoPage() {
     });
   }, [credits, doDownload, toast, planForAnalytics]);
 
+  /** Z.8 — Guarda el PNG sin fondo en /api/assets para reutilizar. */
+  const handleSaveToGallery = useCallback(async () => {
+    if (!removedUrl) return;
+    try {
+      // Estimar tamaño descargando blob (R2 no expone Content-Length por header always)
+      const blob = await fetch(removedUrl).then((r) => r.blob()).catch(() => null);
+      const sizeBytes = blob?.size ?? 0;
+      const res = await fetch("/api/assets", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "sin_fondo",
+          url: removedUrl,
+          name: fileInfo?.name?.replace(/\.[^.]+$/, "") ?? "Sin nombre",
+          size_bytes: sizeBytes,
+          width: fileInfo?.width,
+          height: fileInfo?.height,
+          source_module: "quitar_fondo",
+        }),
+      });
+      if (res.status === 402) {
+        toast.error("Almacenamiento lleno. Sube a Pro para más espacio.");
+        return;
+      }
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        toast.error(err.error || "No se pudo guardar");
+        return;
+      }
+      toast.success("Guardado en Mis creaciones");
+    } catch (e) {
+      console.error("[save-to-gallery]", e);
+      toast.error("Error de conexión");
+    }
+  }, [removedUrl, fileInfo, toast]);
+
   const handleEditInEditor = useCallback(async () => {
     if (!removedUrl) return;
     setApplying(true);
@@ -852,11 +888,11 @@ export default function QuitarFondoPage() {
             </div>
           </div>
 
-          {/* 3 botones de acción */}
-          <div className="grid md:grid-cols-3 gap-3 max-w-4xl mx-auto">
+          {/* 4 botones de acción */}
+          <div className="grid md:grid-cols-4 gap-3 max-w-5xl mx-auto">
             <button
               onClick={reset}
-              className="px-5 py-3.5 rounded-xl bg-white/[0.06] border border-white/[0.12] text-gray-200 font-bold text-[13px] hover:bg-white/[0.10] transition-colors inline-flex items-center justify-center gap-2"
+              className="px-4 py-3.5 rounded-xl bg-white/[0.06] border border-white/[0.12] text-gray-200 font-bold text-[12.5px] hover:bg-white/[0.10] transition-colors inline-flex items-center justify-center gap-2"
             >
               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
@@ -864,8 +900,17 @@ export default function QuitarFondoPage() {
               Subir otra
             </button>
             <button
+              onClick={handleSaveToGallery}
+              className="px-4 py-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold text-[12.5px] hover:opacity-90 transition-opacity shadow-lg shadow-amber-500/30 inline-flex items-center justify-center gap-2"
+            >
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+              </svg>
+              Guardar en galería
+            </button>
+            <button
               onClick={handleDownload}
-              className="px-5 py-3.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-bold text-[13px] hover:opacity-90 transition-opacity shadow-lg shadow-emerald-500/30 inline-flex items-center justify-center gap-2"
+              className="px-4 py-3.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-bold text-[12.5px] hover:opacity-90 transition-opacity shadow-lg shadow-emerald-500/30 inline-flex items-center justify-center gap-2"
             >
               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
@@ -875,7 +920,7 @@ export default function QuitarFondoPage() {
             <button
               onClick={handleEditInEditor}
               disabled={applying}
-              className="px-5 py-3.5 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold text-[13px] hover:opacity-90 transition-opacity shadow-lg shadow-purple-500/40 disabled:opacity-50 inline-flex items-center justify-center gap-2"
+              className="px-4 py-3.5 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold text-[12.5px] hover:opacity-90 transition-opacity shadow-lg shadow-purple-500/40 disabled:opacity-50 inline-flex items-center justify-center gap-2"
             >
               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M12 19l7-7 3 3-7 7-3-3z M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z M2 2l7.586 7.586 M11 11a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/>
