@@ -4,6 +4,7 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
+import { isAdmin } from "@/lib/admin";
 import { useToast } from "@/lib/toast";
 import AuthModal from "@/components/auth/AuthModal";
 import { UpgradeModal } from "@/components/upgrade/UpgradeModal";
@@ -68,9 +69,18 @@ type PhotoToTemplateResponse = {
 };
 
 export default function CapasMagicasPage() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
+  const userIsAdmin = isAdmin(user?.email);
+  // Fase V.9 — beta privada. Redirige a no-admins. La auth modal igual
+  // se mostraría sin estas líneas, pero queremos mensaje claro y redirect
+  // suave para evitar que un usuario loguee y reciba 403 del backend.
+  useEffect(() => {
+    if (!loading && user && !userIsAdmin) {
+      router.replace("/?capas_beta=1");
+    }
+  }, [loading, user, userIsAdmin, router]);
 
   const [state, setState] = useState<FlowState>("upload");
   const [imageUrl, setImageUrl] = useState<string | null>(null);

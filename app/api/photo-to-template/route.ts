@@ -6,6 +6,7 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { COST_PER_ACTION_USD, getQuota, isUnlimited } from "@/lib/quotas";
 import { FONT_CATALOG, matchFont } from "@/lib/fontCatalog";
 import { detectTextLinesWithSurya, refineSonnetBboxesWithSurya } from "@/lib/suryaOcr";
+import { isAdmin } from "@/lib/admin";
 
 /**
  * POST /api/photo-to-template
@@ -839,6 +840,16 @@ export async function POST(req: Request) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       return NextResponse.json({ error: "Inicia sesion para usar esta funcion" }, { status: 401 });
+    }
+
+    // Fase V.9 — Capas Mágicas en BETA solo para admins mientras pulimos
+    // calidad (bg-magic scaling, OCR precisión, font matching). Cuando esté
+    // ready para público general, quitar este check (ya está el quota gating).
+    if (!isAdmin(user.email)) {
+      return NextResponse.json(
+        { error: "Capas Mágicas está en beta privada. Disponible próximamente." },
+        { status: 403 }
+      );
     }
 
     // ─── 2. PARSE + VALIDAR ──────────────────────────────────────────────

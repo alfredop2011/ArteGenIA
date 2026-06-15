@@ -49,15 +49,19 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     }, [loading, user, profile, isTechnicalRoute, organizerAnswered, showOrganizerModal]);
 
     // Nav links — labels via t() para idiomatizar. href intacto.
+    // Fase V.9 — Capas Mágicas oculto a no-admins (beta privada mientras
+    // pulimos bg-magic scaling + OCR precisión). Cuando esté ready, quitar
+    // el filtro condicional.
+    const userIsAdmin = isAdmin(user?.email);
     const navLinks = [
         { href: "/create", label: t("nav.create") },
-        { href: "/capas-magicas", label: "Capas Mágicas" },
+        ...(userIsAdmin ? [{ href: "/capas-magicas", label: "Capas Mágicas" }] : []),
         { href: "/templates", label: t("nav.templates") },
         { href: "/projects", label: t("nav.projects") },
         { href: "/colaboradores", label: t("nav.collaborators") },
         { href: "/pricing", label: t("nav.pricing") },
         { href: "/history", label: t("nav.history") },
-        ...(isAdmin(user?.email) ? [{ href: "/admin/templates", label: t("nav.admin") }] : []),
+        ...(userIsAdmin ? [{ href: "/admin/templates", label: t("nav.admin") }] : []),
     ];
 
     // Bottom nav mobile: 4 iconos principales + boton Mas. Labels cortos
@@ -277,11 +281,14 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                          style={{ background: "var(--home-bg-soft)", borderColor: "var(--home-card-border)" }}>
                         <div className="w-12 h-1 bg-white/20 rounded-full mx-auto mt-3 mb-4" />
                         <div className="px-4 space-y-1">
-                            <Link href="/capas-magicas" onClick={() => setShowMobileMenu(false)}
-                                className="flex items-center gap-3 px-4 py-3 rounded-xl text-base text-purple-300 active:bg-purple-500/10">
-                                <Wand2 size={20} strokeWidth={1.8} />
-                                Capas Mágicas
-                            </Link>
+                            {/* Capas Mágicas oculto a no-admins (V.9) */}
+                            {userIsAdmin && (
+                                <Link href="/capas-magicas" onClick={() => setShowMobileMenu(false)}
+                                    className="flex items-center gap-3 px-4 py-3 rounded-xl text-base text-purple-300 active:bg-purple-500/10">
+                                    <Wand2 size={20} strokeWidth={1.8} />
+                                    Capas Mágicas
+                                </Link>
+                            )}
                             <Link href="/pricing" onClick={() => setShowMobileMenu(false)}
                                 className="flex items-center gap-3 px-4 py-3 rounded-xl text-base text-gray-300 active:bg-white/10">
                                 <CreditCard size={20} strokeWidth={1.8} />
