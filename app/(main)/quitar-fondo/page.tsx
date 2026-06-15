@@ -232,61 +232,95 @@ export default function QuitarFondoPage() {
         </div>
       </div>
 
-      {/* ─── ESTADO: UPLOAD ──────────────────────────────────────────────── */}
+      {/* ─── ESTADO: UPLOAD (diseño hero 2 columnas) ─────────────────────── */}
       {state === "upload" && (
-        <div className="max-w-3xl mx-auto px-5 py-12 md:py-20">
-          <div className="text-center mb-10">
-            <h2 className="text-[32px] md:text-[44px] font-black leading-[1.05] mb-4">
-              Quita el fondo de cualquier foto
-              <br />
-              <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-amber-400 bg-clip-text text-transparent">
-                en 5 segundos
-              </span>
-            </h2>
-            <p className="text-[14px] md:text-[16px] text-gray-400 leading-relaxed max-w-xl mx-auto">
-              Sube una foto y nuestra IA elimina el fondo dejando solo la persona o el objeto. Listo para usar en tus flyers o descargar como PNG transparente.
-            </p>
-          </div>
-
-          {/* Dropzone */}
-          <div
-            onClick={() => fileInputRef.current?.click()}
-            onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
-            onDrop={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              const f = e.dataTransfer.files?.[0];
-              if (f) void handleFile(f);
-            }}
-            className="relative cursor-pointer rounded-3xl border-2 border-dashed border-purple-500/40 bg-purple-500/[0.04] hover:bg-purple-500/[0.08] hover:border-purple-500/60 transition-all p-10 md:p-16 text-center"
-          >
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={(e) => {
-                const f = e.target.files?.[0];
-                if (f) void handleFile(f);
-              }}
-            />
-            <div className="inline-flex w-16 h-16 mx-auto mb-5 rounded-2xl bg-purple-500/15 border border-purple-500/30 items-center justify-center text-purple-300">
-              <svg className="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
-              </svg>
+        <div className="max-w-6xl mx-auto px-5 py-10 md:py-16">
+          {/* HERO grid 2 columnas */}
+          <div className="grid md:grid-cols-2 gap-10 md:gap-14 items-center mb-16">
+            {/* LEFT — texto y chips */}
+            <div>
+              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-purple-500/10 border border-purple-500/30 mb-6">
+                <span className="text-purple-300 text-[11px]">✨</span>
+                <span className="text-[10px] uppercase tracking-widest font-bold text-purple-300">IA Avanzada</span>
+              </div>
+              <h2 className="text-[40px] md:text-[56px] font-black leading-[1.02] mb-5 tracking-tight">
+                Quita el fondo<br/>de cualquier foto<br/>
+                <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-amber-400 bg-clip-text text-transparent">
+                  en 5 segundos
+                </span>
+              </h2>
+              <p className="text-[14px] md:text-[16px] text-gray-400 leading-relaxed mb-7 max-w-md">
+                Nuestra IA elimina el fondo dejando solo la persona o el objeto. Listo para usar en tus flyers o descargar como PNG transparente.
+              </p>
+              <div className="flex flex-wrap gap-3">
+                <FeatureChip icon="⚡" text="Resultados en 5s"/>
+                <FeatureChip icon="🛡️" text="Sin pérdida de calidad"/>
+                <FeatureChip icon="🖼️" text="PNG transparente"/>
+              </div>
             </div>
-            <p className="text-[16px] font-bold mb-1">Arrastra tu foto aquí</p>
-            <p className="text-[12px] text-gray-400 mb-5">o pulsa para elegir un archivo</p>
-            <span className="inline-block px-5 py-3 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold text-[13px]">
-              ✨ Elegir imagen
-            </span>
-            <p className="text-[10px] text-gray-500 mt-4">JPG o PNG · máx 10 MB</p>
+
+            {/* RIGHT — dropzone + thumbnails de ejemplos */}
+            <div>
+              <div
+                onClick={() => fileInputRef.current?.click()}
+                onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  const f = e.dataTransfer.files?.[0];
+                  if (f) void handleFile(f);
+                }}
+                className="relative cursor-pointer rounded-3xl border-2 border-dashed border-purple-500/40 bg-purple-500/[0.03] hover:bg-purple-500/[0.06] hover:border-purple-500/60 transition-all p-8 md:p-12 text-center"
+              >
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) void handleFile(f);
+                  }}
+                />
+                {/* Icono upload con gradiente purple→pink */}
+                <div className="inline-flex w-20 h-20 mx-auto mb-6 rounded-3xl bg-gradient-to-br from-purple-500 to-pink-500 items-center justify-center shadow-lg shadow-purple-500/40">
+                  <svg className="w-9 h-9 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+                  </svg>
+                </div>
+                <p className="text-[18px] font-bold mb-1">Arrastra tu foto aquí</p>
+                <p className="text-[12px] text-gray-400 mb-5">o pulsa para elegir un archivo</p>
+                <span className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold text-[13px] shadow-lg shadow-purple-500/30">
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                    <polyline points="21 15 16 10 5 21"/>
+                  </svg>
+                  Elegir imagen
+                </span>
+                <p className="text-[11px] text-gray-500 mt-5">JPG o PNG · Máx. 10 MB</p>
+              </div>
+
+              {/* Thumbnails de ejemplos: persona, zapato, perfume, coche */}
+              <div className="flex items-center gap-4 mt-5">
+                <div className="flex gap-2">
+                  <ExampleThumb gradient="from-rose-400 to-pink-500" emoji="👤"/>
+                  <ExampleThumb gradient="from-red-500 to-orange-500" emoji="👟"/>
+                  <ExampleThumb gradient="from-amber-400 to-yellow-500" emoji="🧴"/>
+                  <ExampleThumb gradient="from-blue-500 to-cyan-500" emoji="🚗"/>
+                </div>
+                <div className="flex-1">
+                  <p className="text-[12px] font-bold mb-0.5">Sin fondo. Sin complicaciones.</p>
+                  <p className="text-[10.5px] text-gray-400">Personas, productos, objetos y más.</p>
+                </div>
+              </div>
+            </div>
           </div>
 
-          {/* Aviso cuota agotada */}
+          {/* Aviso cuota agotada — visible si aplica */}
           {user && quota && !quota.unlimited && remaining === 0 && (
-            <div className="mt-6 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-center">
-              <p className="text-[13px] font-bold text-amber-200 mb-2">
+            <div className="mb-12 p-5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-center max-w-xl mx-auto">
+              <p className="text-[13px] font-bold text-amber-200 mb-3">
                 Has usado tus {quota.limit} imágenes este mes
               </p>
               <Link
@@ -298,11 +332,76 @@ export default function QuitarFondoPage() {
             </div>
           )}
 
-          {/* Features */}
-          <div className="grid md:grid-cols-3 gap-3 mt-10">
-            <Feature icon="⚡" title="Resultados en 5s" desc="BiRefNet IA, calidad pro" />
-            <Feature icon="🎨" title="PNG transparente" desc="Listo para cualquier diseño" />
-            <Feature icon="✏️" title="O editas un flyer" desc="Crea desde tu imagen al instante" />
+          {/* CÓMO FUNCIONA + TESTIMONIAL (3 columnas, 2+1) */}
+          <div className="grid md:grid-cols-3 gap-5 mb-14">
+            <div className="md:col-span-2 p-7 rounded-3xl bg-white/[0.025] border border-white/[0.06]">
+              <h3 className="text-[14px] font-black mb-6 border-b-2 border-purple-500/40 pb-2 inline-block">
+                Cómo funciona
+              </h3>
+              <div className="grid grid-cols-3 gap-2 items-start relative">
+                <Step
+                  num={1}
+                  iconPath="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"
+                  title="Sube tu imagen"
+                  desc="Arrastra o elige tu archivo."
+                />
+                <Step
+                  num={2}
+                  iconPath="M5 3v4M3 5h4M6 17v4M4 19h4M13 3l3 8 8 3-8 3-3 8-3-8-8-3 8-3z"
+                  title="IA hace su magia"
+                  desc="Eliminamos el fondo automáticamente."
+                />
+                <Step
+                  num={3}
+                  iconPath="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"
+                  title="Descarga tu PNG"
+                  desc="Fondo transparente, listo para usar."
+                />
+                {/* Flechas decorativas entre pasos (desktop) */}
+                <div className="hidden md:flex absolute top-[28px] left-[33%] -translate-x-1/2 text-purple-500/40">
+                  <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="5" y1="12" x2="19" y2="12"/>
+                    <polyline points="12 5 19 12 12 19"/>
+                  </svg>
+                </div>
+                <div className="hidden md:flex absolute top-[28px] left-[67%] -translate-x-1/2 text-purple-500/40">
+                  <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="5" y1="12" x2="19" y2="12"/>
+                    <polyline points="12 5 19 12 12 19"/>
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            {/* Testimonial */}
+            <div className="p-6 rounded-3xl bg-white/[0.025] border border-white/[0.06] flex flex-col">
+              <div className="text-purple-400/60 text-[36px] leading-none mb-2 font-serif">"</div>
+              <p className="text-[13px] text-gray-200 leading-relaxed mb-4 flex-1">
+                "Increíble! En segundos tengo imágenes listas para mis diseños."
+              </p>
+              <div className="flex gap-0.5 mb-3">
+                {[1,2,3,4,5].map(i => (
+                  <span key={i} className="text-amber-400 text-[14px]">★</span>
+                ))}
+              </div>
+              <div>
+                <p className="text-[12px] font-bold">María G.</p>
+                <p className="text-[10.5px] text-gray-400">Diseñadora gráfica</p>
+              </div>
+            </div>
+          </div>
+
+          {/* PERFECTO PARA CREAR */}
+          <div className="text-center">
+            <h3 className="text-[20px] md:text-[24px] font-black mb-7">Perfecto para crear</h3>
+            <div className="flex flex-wrap justify-center gap-3">
+              <UseCaseChip iconPath="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6 M16 13H8 M16 17H8 M10 9H8" text="Flyers"/>
+              <UseCaseChip iconPath="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2zM22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" text="Catálogos"/>
+              <UseCaseChip iconPath="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" text="Redes sociales"/>
+              <UseCaseChip iconPath="M9 22a1 1 0 1 0 0-2 1 1 0 0 0 0 2zM20 22a1 1 0 1 0 0-2 1 1 0 0 0 0 2z M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" text="E-commerce"/>
+              <UseCaseChip iconPath="M2 3h20v14H2z M8 21h8 M12 17v4" text="Presentaciones"/>
+              <UseCaseChip iconPath="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z" text="Y mucho más"/>
+            </div>
           </div>
         </div>
       )}
@@ -388,12 +487,50 @@ export default function QuitarFondoPage() {
   );
 }
 
-function Feature({ icon, title, desc }: { icon: string; title: string; desc: string }) {
+/** Chip pequeño con icono + texto, usado en el hero left bajo el párrafo. */
+function FeatureChip({ icon, text }: { icon: string; text: string }) {
   return (
-    <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/[0.08]">
-      <div className="text-[20px] mb-1">{icon}</div>
-      <p className="text-[12px] font-bold mb-0.5">{title}</p>
-      <p className="text-[10.5px] text-gray-400">{desc}</p>
+    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/[0.04] border border-white/[0.08]">
+      <span className="text-purple-300 text-[13px]">{icon}</span>
+      <span className="text-[11.5px] font-semibold text-gray-200">{text}</span>
+    </div>
+  );
+}
+
+/** Thumbnail decorativo (16×16) bajo la dropzone para ilustrar casos de uso. */
+function ExampleThumb({ gradient, emoji }: { gradient: string; emoji: string }) {
+  return (
+    <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center text-[20px] shadow-sm border border-white/10`}>
+      <span aria-hidden>{emoji}</span>
+    </div>
+  );
+}
+
+/** Paso numerado del "Cómo funciona" — icono circular gradient + título + desc. */
+function Step({ num, iconPath, title, desc }: { num: number; iconPath: string; title: string; desc: string }) {
+  return (
+    <div className="text-center px-2">
+      <div className="inline-flex w-14 h-14 mb-3 rounded-full bg-gradient-to-br from-purple-500/30 to-pink-500/20 border border-purple-500/30 items-center justify-center text-purple-300">
+        <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <path d={iconPath}/>
+        </svg>
+      </div>
+      <p className="text-[12.5px] font-bold mb-1">{`${num}. ${title}`}</p>
+      <p className="text-[10.5px] text-gray-400 leading-snug">{desc}</p>
+    </div>
+  );
+}
+
+/** Chip con icono SVG + label, usado en "Perfecto para crear". */
+function UseCaseChip({ iconPath, text }: { iconPath: string; text: string }) {
+  return (
+    <div className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white/[0.03] border border-white/[0.08] hover:bg-white/[0.06] transition-colors">
+      <div className="w-6 h-6 rounded-lg bg-purple-500/15 border border-purple-500/30 flex items-center justify-center text-purple-300">
+        <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d={iconPath}/>
+        </svg>
+      </div>
+      <span className="text-[12px] font-semibold text-gray-200">{text}</span>
     </div>
   );
 }
