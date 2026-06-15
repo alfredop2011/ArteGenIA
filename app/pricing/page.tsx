@@ -327,7 +327,7 @@ function PricingContent() {
               <Check text="Editor completo (texto + imagen + forma)"/>
               <Check text="48+ plantillas profesionales"/>
               <Check text="Sin watermark · descarga limpia"/>
-              <Check text="Quitar fondo IA: 10 imágenes/mes"/>
+              <Check text="10 créditos IA al mes (= 5 fotos sin fondo)"/>
               <Check text="Exportar PNG y JPG"/>
               <Check text="Multi-formato (Story, Post, Square)"/>
               <Check text="4 idiomas (ES/EN/FR/PT)"/>
@@ -385,9 +385,9 @@ function PricingContent() {
 
             <ul className="space-y-3 flex-1 mb-7">
               <Check strong text="Todo lo de Free"/>
-              <Check strong text="Quitar fondo IA ilimitado (asistente + remix)"/>
+              <Check strong text="250 créditos IA al mes (= 125 fotos sin fondo)"/>
               <Check strong text="Exportar PDF imprenta de alta calidad"/>
-              <Check strong text="Generaciones IA premium ilimitadas"/>
+              <Check strong text="Asistente IA · Capas Mágicas · Generador IA"/>
               <Check strong text="Soporte prioritario por email"/>
               <Check strong text="Uso comercial sin restricciones"/>
               <Check strong text="Más herramientas IA próximamente"/>
@@ -501,7 +501,8 @@ function PricingContent() {
               { f: "Editor completo", free: "✓", pro: "✓", ent: "Próximamente" },
               { f: "Sin watermark", free: "✓", pro: "✓", ent: "Próximamente" },
               { f: "Plantillas profesionales", free: "48+", pro: "48+", ent: "Próximamente" },
-              { f: "Quitar fondo IA", free: "10/mes", pro: "Ilimitado", ent: "Próximamente" },
+              { f: "Créditos IA al mes", free: "10", pro: "250", ent: "Próximamente" },
+              { f: "Fotos sin fondo equivalentes", free: "5/mes", pro: "125/mes", ent: "Próximamente" },
               { f: "Exportar PNG / JPG", free: "✓", pro: "✓", ent: "Próximamente" },
               { f: "Exportar PDF imprenta", free: "—", pro: "✓", ent: "Próximamente" },
               { f: "Equipo multi-usuario", free: "—", pro: "—", ent: "Próximamente" },

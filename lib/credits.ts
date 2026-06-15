@@ -45,8 +45,12 @@ export type CreditModule = keyof typeof CREDIT_COST;
 // Cuántos créditos se otorgan al inicio de cada mes según plan.
 // SINGLE SOURCE OF TRUTH del producto. Para cambiar política, edita
 // aquí + corre migration de UPDATE en producción.
+//
+// Free = 10 créditos = 5 fotos sin fondo completas (Z.2 — política user
+// "5 fotos gratis al mes"). 1 quitar-fondo + 1 descarga = 2 créditos.
+// Más estricto pero acelera conversión a Pro.
 export const MONTHLY_GRANT: Record<string, number> = {
-  free: 30,
+  free: 10,
   pro: 250,
   enterprise: 2000,
 };
