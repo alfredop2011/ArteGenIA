@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { stripe, planFromPriceId, type PlanKey } from "@/lib/stripe";
 import { createClient } from "@supabase/supabase-js";
 import type Stripe from "stripe";
+import { MONTHLY_GRANT } from "@/lib/credits";
 
 export const runtime = "nodejs";
 // Webhooks de Stripe pueden tener picos de carga — no cachear
@@ -44,6 +45,105 @@ async function updatePlan(userId: string, plan: "free" | PlanKey) {
     .eq("id", userId);
   if (error) console.error("[stripe-webhook] update plan failed:", error);
   else console.log(`[stripe-webhook] user ${userId} → plan=${plan}`);
+
+  // Fase Z.5 — sincronizar créditos al cambio de plan.
+  // Estrategia:
+  //   UPGRADE (free → pro|enterprise): subir balance al cap del nuevo plan
+  //     si tenía menos. monthly_grant = nuevo grant para próximos resets.
+  //   DOWNGRADE (pro|enterprise → free): bajar balance al cap del nuevo plan
+  //     (= 10). El user pierde el exceso. Es lo estándar SaaS (Stripe Billing).
+  //
+  // Idempotente: si el plan ya estaba aplicado, el UPDATE no hace nada.
+  await updateCreditsForPlan(userId, plan);
+}
+
+/** Sincroniza user_credits.monthly_grant + balance con el plan actual.
+ *
+ *  - Upgrade (free→pro): balance = max(balance, 100), grant = 100
+ *  - Downgrade (pro→free): balance = LEAST(balance, 10), grant = 10
+ *  - Si la row no existe (improbable, hay trigger en signup), la crea.
+ *
+ *  Errores se loguean pero NO bloquean el webhook — el plan ya quedó
+ *  actualizado en profiles, y un cron correctivo podría sincronizar
+ *  después (no implementado todavía, OK).
+ */
+async function updateCreditsForPlan(userId: string, plan: "free" | PlanKey) {
+  const sb = adminClient();
+  const newGrant = MONTHLY_GRANT[plan] ?? 10;
+
+  // Ensure existence (idempotente)
+  const { error: insertErr } = await sb
+    .from("user_credits")
+    .upsert({ user_id: userId, balance: newGrant, monthly_grant: newGrant }, {
+      onConflict: "user_id",
+      ignoreDuplicates: true,
+    });
+  if (insertErr) {
+    console.warn("[stripe-webhook] upsert user_credits failed:", insertErr);
+  }
+
+  // Estrategia por escenario:
+  //  - Upgrade: balance = GREATEST(balance, newGrant)
+  //  - Downgrade: balance = LEAST(balance, newGrant)
+  // SQL: para hacerlo atómico usamos un RAW filter. Aquí lo simplificamos
+  // leyendo + actualizando porque no hay race condition (webhook único).
+  const { data: currentRow } = await sb
+    .from("user_credits")
+    .select("balance, monthly_grant")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (!currentRow) {
+    console.warn("[stripe-webhook] user_credits row missing tras upsert:", userId);
+    return;
+  }
+
+  const currentBalance = currentRow.balance;
+  const currentGrant = currentRow.monthly_grant;
+  const isUpgrade = newGrant > currentGrant;
+  const isDowngrade = newGrant < currentGrant;
+
+  let newBalance = currentBalance;
+  if (isUpgrade) {
+    newBalance = Math.max(currentBalance, newGrant);
+  } else if (isDowngrade) {
+    newBalance = Math.min(currentBalance, newGrant);
+  }
+
+  const { error: updErr } = await sb
+    .from("user_credits")
+    .update({
+      monthly_grant: newGrant,
+      balance: newBalance,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("user_id", userId);
+
+  if (updErr) {
+    console.error("[stripe-webhook] update credits failed:", updErr);
+    return;
+  }
+
+  // Audit trail
+  await sb.from("credit_transactions").insert({
+    user_id: userId,
+    amount: newBalance - currentBalance,
+    reason: `plan_change:${plan}`,
+    module: null,
+    balance_after: newBalance,
+    meta: {
+      from_plan: currentGrant === MONTHLY_GRANT.free ? "free" :
+                 currentGrant === MONTHLY_GRANT.pro ? "pro" :
+                 currentGrant === MONTHLY_GRANT.enterprise ? "enterprise" : "unknown",
+      to_plan: plan,
+      from_grant: currentGrant,
+      to_grant: newGrant,
+    },
+  });
+
+  console.log(
+    `[stripe-webhook] credits sync: ${userId} ${currentGrant}→${newGrant} grant, ${currentBalance}→${newBalance} balance`,
+  );
 }
 
 /** Dada una subscription Stripe, devuelve qué plan (pro/enterprise/null)
