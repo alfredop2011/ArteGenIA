@@ -46,25 +46,25 @@ export type CreditModule = keyof typeof CREDIT_COST;
 // SINGLE SOURCE OF TRUTH del producto. Para cambiar política, edita
 // aquí + corre migration de UPDATE en producción.
 //
-// Política de margen (Z.3 — decisión user):
-//   "Garantizar 50% margen mínimo en peor caso de uso"
+// Política de margen (Z.4 — decisión user):
+//   "Precio crédito = 4× coste real (1 IA + 1 mantenimiento + 2 ganancia)"
 //
 // Matemática (1 crédito = $0.025 coste interno):
-//   Pro 9,99€   → $10.79 bruto → $10.46 neto Stripe → 50% = $5.23 cap
-//                 $5.23 / $0.025 = 209 → redondear a 200 (colchón)
-//   Enterprise 34,99€ → $37.79 bruto → $36.65 neto → 50% = $18.32
-//                       $18.32 / $0.025 = 733 → redondear a 700
+//   Pro 9,99€   → $10.46 neto Stripe → 4× coste = $0.025 × 4 = $0.10/cr
+//                 $10.46 / $0.10 = 105 → redondear a 100 (precio cr $0.105)
+//   Enterprise 34,99€ → $36.65 neto → $36.65 / $0.10 = 366 → 350 créditos
 //   Free → gratis, sin margen aplicable
 //
-// Peor caso verificado (variaciones IA = 6 cr = $0.16):
-//   Pro 200/6 = 33 paquetes × $0.16 = $5.28 coste vs $10.46 ingreso
-//   = 49.5% margen mínimo garantizado ✓ (redondea a 50% por seguridad)
+// Margen efectivo Pro (con 100 créditos):
+//   - Peor caso (variaciones IA 6cr = $0.16): 100/6 = 16 paquetes ×
+//     $0.16 = $2.56 coste vs $10.46 = 75% margen
+//   - Caso promedio (mix de uso): ~$1.50 coste = 86% margen
 //
 // Free = 10 créditos = 5 fotos sin fondo (decisión user previa Z.2).
 export const MONTHLY_GRANT: Record<string, number> = {
   free: 10,
-  pro: 200,
-  enterprise: 700,
+  pro: 100,
+  enterprise: 350,
 };
 
 // Rollover cap: cuántos créditos sin usar se mantienen al pasar al mes
