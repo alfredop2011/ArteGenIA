@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
-import { Zap, Bell, Crown, Image as ImageIcon, History, LogOut, Plus, LayoutGrid, FolderOpen, Menu, Users, CreditCard, Wand2 } from "lucide-react";
+import { Bell, Crown, Image as ImageIcon, History, LogOut, Plus, LayoutGrid, FolderOpen, Menu, Users, CreditCard, Wand2 } from "lucide-react";
+import { CreditsBadge } from "@/components/credits/CreditsBadge";
 import { useAuth } from "@/hooks/useAuth";
 import AuthModal from "@/components/auth/AuthModal";
 import { isAdmin } from "@/lib/admin";
@@ -145,14 +146,11 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                             <div className="w-20 h-6 bg-white/5 rounded-full animate-pulse" />
                         ) : user ? (
                             <>
-                                {/* Créditos - compacto en mobile */}
-                                <div className="flex items-center gap-1.5 sm:gap-2 border border-white/10 rounded-full px-2 sm:px-3 py-1 text-xs text-gray-300">
-                                    <Zap size={14} strokeWidth={2.2} className="text-yellow-400 fill-yellow-400" />
-                                    <span className="hidden sm:inline">{t("nav.credits")}</span>
-                                    <span className="font-bold text-white">
-                                        {profile?.credits ?? 0}<span className="hidden sm:inline">/{profile?.plan === "pro" || profile?.plan === "enterprise" ? "∞" : "20"}</span>
-                                    </span>
-                                </div>
+                                {/* Créditos — Fase Z.1 nuevo sistema unificado.
+                                    Lee balance de user_credits via /api/credits.
+                                    El campo legacy profile.credits queda intacto pero
+                                    sin usar (deprecado, pendiente borrar en Z.x). */}
+                                <CreditsBadge plan={profile?.plan} />
 
                                 {/* Notificaciones - SOLO desktop */}
                                 <button aria-label={t("nav.notifications")} className="hidden sm:flex w-8 h-8 rounded-full border border-white/10 items-center justify-center text-gray-400 hover:text-white hover:border-white/20 transition-colors">

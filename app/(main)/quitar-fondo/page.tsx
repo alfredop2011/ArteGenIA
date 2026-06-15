@@ -22,6 +22,9 @@ import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/lib/toast";
 import AuthModal from "@/components/auth/AuthModal";
+import { ConfirmCreditModal } from "@/components/credits/ConfirmCreditModal";
+import { useCredits } from "@/hooks/useCredits";
+import { CREDIT_COST } from "@/lib/credits";
 
 type FlowState = "upload" | "processing" | "preview";
 
@@ -39,6 +42,9 @@ export default function QuitarFondoPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   // Estado del archivo para mostrar nombre/dims durante processing + preview
   const [fileInfo, setFileInfo] = useState<{ name: string; width: number; height: number } | null>(null);
+  // Fase Z.1 — créditos + modal pre-descarga (1 crédito por PNG)
+  const credits = useCredits();
+  const [showDownloadConfirm, setShowDownloadConfirm] = useState(false);
   // Progress 0-100 animado (BiRefNet no expone progreso real, simulamos UX agradable).
   // Avanza hasta 90% durante processing, salta a 100% cuando termina.
   const [progressPct, setProgressPct] = useState(0);
@@ -154,7 +160,10 @@ export default function QuitarFondoPage() {
     }
   }, [user, quota, toast, router]);
 
-  const handleDownload = useCallback(async () => {
+  /** Descarga real del PNG. Llamada solo TRAS confirmar consumo de crédito
+   *  desde el modal. Si el blob fetch falla post-consumo, hacemos refund
+   *  (TODO próximo commit con /api/credits/refund). */
+  const doDownload = useCallback(async () => {
     if (!removedUrl) return;
     try {
       const res = await fetch(removedUrl);
@@ -172,6 +181,22 @@ export default function QuitarFondoPage() {
       toast.error("No se pudo descargar");
     }
   }, [removedUrl, toast]);
+
+  /** Click en el botón "Descargar PNG": abre modal de confirmación. */
+  const handleDownload = useCallback(() => {
+    if (!removedUrl) return;
+    setShowDownloadConfirm(true);
+  }, [removedUrl]);
+
+  /** Confirmación del modal: consume crédito server-side + descarga. */
+  const handleConfirmDownload = useCallback(async () => {
+    const result = await credits.consume("download_png");
+    if (!result.success) {
+      toast.error("Sin créditos suficientes");
+      return;
+    }
+    await doDownload();
+  }, [credits, doDownload, toast]);
 
   const handleEditInEditor = useCallback(async () => {
     if (!removedUrl) return;
@@ -827,6 +852,17 @@ export default function QuitarFondoPage() {
           </p>
         </div>
       )}
+
+      {/* Modal de confirmación de descarga (Fase Z.1 — consume 1 crédito) */}
+      <ConfirmCreditModal
+        open={showDownloadConfirm}
+        onClose={() => setShowDownloadConfirm(false)}
+        onConfirm={handleConfirmDownload}
+        actionLabel="Descargar PNG sin fondo"
+        amount={CREDIT_COST.download_png}
+        balance={credits.balance ?? 0}
+        daysUntilReset={credits.daysUntilReset ?? undefined}
+      />
     </main>
   );
 }
