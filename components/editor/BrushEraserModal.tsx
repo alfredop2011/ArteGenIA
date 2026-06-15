@@ -1,0 +1,448 @@
+"use client";
+
+/**
+ * BrushEraserModal — refinar manualmente el resultado de Quitar fondo o
+ * Recortar persona (Fase Z.17).
+ *
+ * 3 tools:
+ *   - Borrar (manual): pincel circular borra alpha al arrastrar. 0 créditos.
+ *   - Mágico (IA): click → SAM-2 segmenta el objeto bajo el punto y devuelve
+ *     máscara → la aplicamos como destination-out. 1 crédito por click.
+ *   - Restaurar (manual): pinta de vuelta la imagen original sobre zonas borradas.
+ *
+ * Modal full-screen sobre fondo translúcido. Mismo componente funciona en
+ * desktop y mobile — el layout se adapta con flex/breakpoints.
+ *
+ * Al Guardar, exporta el canvas como PNG transparente y llama onSave con
+ * el dataURL. El padre decide qué hacer (típico: reemplazar src de la
+ * imagen Fabric activa).
+ */
+
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Eraser, Brush, Sparkles, Check, X, Loader2 } from "lucide-react";
+
+type Tool = "erase" | "magic" | "restore";
+
+type Props = {
+  open: boolean;
+  imageUrl: string;
+  /** Coste de 1 click mágico en créditos. Se muestra en la UI. */
+  magicCost?: number;
+  /** Balance actual de créditos, para deshabilitar mágico si insuficiente. */
+  balance?: number | null;
+  onCancel: () => void;
+  onSave: (resultPngDataUrl: string) => void;
+  /** Callback opcional tras un click mágico exitoso para refrescar el badge. */
+  onCreditsConsumed?: () => void;
+  /** Toast opcional para errores. */
+  onError?: (msg: string) => void;
+};
+
+export default function BrushEraserModal({
+  open, imageUrl, magicCost = 1, balance, onCancel, onSave, onCreditsConsumed, onError,
+}: Props) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const originalImgRef = useRef<HTMLImageElement | null>(null);
+  const [tool, setTool] = useState<Tool>("erase");
+  const [brushSize, setBrushSize] = useState(40);
+  const [drawing, setDrawing] = useState(false);
+  const [magicLoading, setMagicLoading] = useState(false);
+  const [cursorPos, setCursorPos] = useState<{ x: number; y: number } | null>(null);
+  const lastPointRef = useRef<{ x: number; y: number } | null>(null);
+
+  // Cargar imagen original al canvas cuando se abre el modal.
+  useEffect(() => {
+    if (!open || !imageUrl) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0);
+      originalImgRef.current = img;
+    };
+    img.onerror = () => onError?.("No se pudo cargar la imagen");
+    img.src = imageUrl;
+  }, [open, imageUrl, onError]);
+
+  // Reset al cerrar
+  useEffect(() => {
+    if (!open) {
+      setDrawing(false);
+      setMagicLoading(false);
+      setCursorPos(null);
+      setTool("erase");
+      lastPointRef.current = null;
+    }
+  }, [open]);
+
+  // ─── Coordenadas: convierte clientX/Y a coords del canvas ─────────────
+  const getCoords = useCallback((clientX: number, clientY: number) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return null;
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    return {
+      x: (clientX - rect.left) * scaleX,
+      y: (clientY - rect.top) * scaleY,
+    };
+  }, []);
+
+  // ─── Pintar 1 punto (erase = borra alpha, restore = pinta original) ───
+  const paintAt = useCallback((x: number, y: number) => {
+    const ctx = canvasRef.current?.getContext("2d");
+    if (!ctx) return;
+    if (tool === "erase") {
+      ctx.save();
+      ctx.globalCompositeOperation = "destination-out";
+      ctx.beginPath();
+      ctx.arc(x, y, brushSize, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    } else if (tool === "restore") {
+      const img = originalImgRef.current;
+      if (!img) return;
+      ctx.save();
+      ctx.globalCompositeOperation = "source-over";
+      ctx.beginPath();
+      ctx.arc(x, y, brushSize, 0, Math.PI * 2);
+      ctx.clip();
+      ctx.drawImage(img, 0, 0);
+      ctx.restore();
+    }
+  }, [tool, brushSize]);
+
+  // Línea continua entre 2 puntos (para que arrastrar rápido no deje gaps)
+  const paintLine = useCallback((from: { x: number; y: number }, to: { x: number; y: number }) => {
+    const dist = Math.hypot(to.x - from.x, to.y - from.y);
+    const steps = Math.max(1, Math.ceil(dist / (brushSize / 4)));
+    for (let i = 0; i <= steps; i++) {
+      const t = i / steps;
+      paintAt(from.x + (to.x - from.x) * t, from.y + (to.y - from.y) * t);
+    }
+  }, [brushSize, paintAt]);
+
+  // ─── Magic erase: click → SAM → máscara → aplica destination-out ──────
+  const handleMagicClick = useCallback(async (x: number, y: number) => {
+    if (balance !== null && balance !== undefined && balance < magicCost) {
+      onError?.("Sin créditos suficientes para Borrador mágico");
+      return;
+    }
+    setMagicLoading(true);
+    try {
+      // 1. Convertir canvas a Blob → File
+      const blob = await new Promise<Blob | null>((resolve) => {
+        canvasRef.current?.toBlob(resolve, "image/png");
+      });
+      if (!blob) throw new Error("No se pudo serializar el canvas");
+
+      // 2. POST a /api/magic-erase con punto en coords del canvas
+      const form = new FormData();
+      form.append("image_file", new File([blob], "canvas.png", { type: "image/png" }));
+      form.append("point_x", String(Math.round(x)));
+      form.append("point_y", String(Math.round(y)));
+      const res = await fetch("/api/magic-erase", { method: "POST", body: form });
+      const data = await res.json().catch(() => ({}));
+      if (res.status === 402) {
+        onError?.("Sin créditos suficientes para Borrador mágico");
+        return;
+      }
+      if (!res.ok || !data.maskUrl) {
+        throw new Error(data.error || "El borrador mágico falló");
+      }
+
+      // 3. Cargar máscara y aplicar como destination-out
+      const mask = new Image();
+      mask.crossOrigin = "anonymous";
+      await new Promise<void>((resolve, reject) => {
+        mask.onload = () => resolve();
+        mask.onerror = () => reject(new Error("No se pudo cargar la máscara"));
+        // Cache-buster para evitar CORS R2 cacheado
+        const sep = data.maskUrl.includes("?") ? "&" : "?";
+        mask.src = `${data.maskUrl}${sep}v=${Date.now()}`;
+      });
+      const ctx = canvasRef.current?.getContext("2d");
+      if (!ctx) throw new Error("Canvas perdido");
+      ctx.save();
+      ctx.globalCompositeOperation = "destination-out";
+      ctx.drawImage(mask, 0, 0, canvasRef.current!.width, canvasRef.current!.height);
+      ctx.restore();
+      onCreditsConsumed?.();
+    } catch (e) {
+      console.error("[magic-erase client]", e);
+      onError?.(e instanceof Error ? e.message : "Error en borrador mágico");
+    } finally {
+      setMagicLoading(false);
+    }
+  }, [balance, magicCost, onError, onCreditsConsumed]);
+
+  // ─── Pointer handlers ──────────────────────────────────────────────────
+  const onPointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    const coords = getCoords(e.clientX, e.clientY);
+    if (!coords) return;
+    if (tool === "magic") {
+      void handleMagicClick(coords.x, coords.y);
+      return;
+    }
+    setDrawing(true);
+    lastPointRef.current = coords;
+    paintAt(coords.x, coords.y);
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+  const onPointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    const coords = getCoords(e.clientX, e.clientY);
+    if (coords) setCursorPos(coords);
+    if (!drawing || !coords || !lastPointRef.current) return;
+    paintLine(lastPointRef.current, coords);
+    lastPointRef.current = coords;
+  };
+  const onPointerUp = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    setDrawing(false);
+    lastPointRef.current = null;
+    try { e.currentTarget.releasePointerCapture(e.pointerId); } catch { /* ignore */ }
+  };
+  const onPointerLeave = () => setCursorPos(null);
+
+  // ─── Save: exporta canvas a PNG transparente ──────────────────────────
+  const handleSave = () => {
+    const dataUrl = canvasRef.current?.toDataURL("image/png");
+    if (dataUrl) onSave(dataUrl);
+  };
+
+  if (!open) return null;
+
+  const insufficient = balance !== null && balance !== undefined && balance < magicCost;
+  const magicDisabled = magicLoading || insufficient;
+
+  return (
+    <div className="fixed inset-0 z-[100] bg-black/85 backdrop-blur-md flex flex-col">
+      {/* Header */}
+      <div className="px-4 py-3 flex items-center justify-between border-b border-white/10 shrink-0">
+        <div>
+          <h2 className="text-white font-bold text-base">Refinar bordes</h2>
+          <p className="text-[11px] text-gray-400">
+            Borra zonas sobrantes manualmente o con IA
+          </p>
+        </div>
+        <button
+          onClick={onCancel}
+          className="w-9 h-9 rounded-xl bg-white/[0.06] hover:bg-white/10 text-gray-300 hover:text-white flex items-center justify-center transition-colors"
+          aria-label="Cerrar">
+          <X size={18}/>
+        </button>
+      </div>
+
+      {/* Toolbar */}
+      <div className="px-4 py-3 flex items-center gap-2 border-b border-white/10 shrink-0 overflow-x-auto">
+        <ToolBtn
+          icon={<Eraser size={16}/>}
+          label="Borrar"
+          active={tool === "erase"}
+          onClick={() => setTool("erase")}
+        />
+        <ToolBtn
+          icon={<Sparkles size={16}/>}
+          label={`Mágico (${magicCost}cr)`}
+          active={tool === "magic"}
+          onClick={() => setTool("magic")}
+          disabled={insufficient}
+          variant="magic"
+        />
+        <ToolBtn
+          icon={<Brush size={16}/>}
+          label="Restaurar"
+          active={tool === "restore"}
+          onClick={() => setTool("restore")}
+        />
+
+        {/* Slider tamaño pincel (solo para erase/restore) */}
+        {tool !== "magic" && (
+          <div className="hidden sm:flex items-center gap-2 ml-2 pl-3 border-l border-white/10">
+            <span className="text-[11px] text-gray-400">Tamaño</span>
+            <input
+              type="range"
+              min={5}
+              max={150}
+              value={brushSize}
+              onChange={e => setBrushSize(Number(e.target.value))}
+              className="w-32 accent-purple-500"
+            />
+            <span className="text-[11px] text-gray-400 w-8 tabular-nums">{brushSize}px</span>
+          </div>
+        )}
+
+        {/* Balance créditos */}
+        {balance !== null && balance !== undefined && (
+          <div className="ml-auto text-[11px] text-gray-400 hidden sm:block">
+            Tienes <span className="font-bold text-purple-200">{balance}</span> créditos
+          </div>
+        )}
+      </div>
+
+      {/* Slider mobile (debajo de toolbar) */}
+      {tool !== "magic" && (
+        <div className="sm:hidden px-4 py-2 flex items-center gap-2 border-b border-white/10 shrink-0">
+          <span className="text-[11px] text-gray-400">Tamaño</span>
+          <input
+            type="range"
+            min={5}
+            max={150}
+            value={brushSize}
+            onChange={e => setBrushSize(Number(e.target.value))}
+            className="flex-1 accent-purple-500"
+          />
+          <span className="text-[11px] text-gray-400 w-10 tabular-nums">{brushSize}px</span>
+        </div>
+      )}
+
+      {/* Canvas area */}
+      <div
+        className="flex-1 overflow-hidden relative flex items-center justify-center p-2 sm:p-4"
+        style={{
+          // Tablero ajedrez para hacer visible la transparencia
+          backgroundImage:
+            "linear-gradient(45deg, #2a2a3a 25%, transparent 25%), linear-gradient(-45deg, #2a2a3a 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #2a2a3a 75%), linear-gradient(-45deg, transparent 75%, #2a2a3a 75%)",
+          backgroundSize: "20px 20px",
+          backgroundPosition: "0 0, 0 10px, 10px -10px, -10px 0px",
+          backgroundColor: "#1a1a24",
+        }}>
+        {/* Loading overlay para magic */}
+        {magicLoading && (
+          <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+            <div className="flex flex-col items-center gap-3">
+              <Loader2 className="animate-spin text-purple-300" size={36}/>
+              <p className="text-white text-sm font-semibold">Borrando con IA…</p>
+              <p className="text-gray-400 text-[11px]">SAM-2 está segmentando el objeto</p>
+            </div>
+          </div>
+        )}
+
+        {/* Canvas + cursor preview */}
+        <div className="relative" style={{ maxWidth: "100%", maxHeight: "100%" }}>
+          <canvas
+            ref={canvasRef}
+            onPointerDown={onPointerDown}
+            onPointerMove={onPointerMove}
+            onPointerUp={onPointerUp}
+            onPointerLeave={onPointerLeave}
+            className="max-w-full max-h-[calc(100vh-260px)] object-contain block touch-none"
+            style={{
+              cursor: tool === "magic" ? "pointer" : "none",
+            }}
+          />
+          {/* Cursor preview circular (solo erase/restore, escala al display) */}
+          {cursorPos && tool !== "magic" && canvasRef.current && (
+            <CursorPreview
+              canvas={canvasRef.current}
+              canvasX={cursorPos.x}
+              canvasY={cursorPos.y}
+              brushSize={brushSize}
+              color={tool === "erase" ? "rgba(239, 68, 68, 0.4)" : "rgba(34, 197, 94, 0.4)"}
+            />
+          )}
+        </div>
+      </div>
+
+      {/* Footer con CTAs */}
+      <div className="px-4 py-3 flex items-center justify-between gap-2 border-t border-white/10 shrink-0">
+        <p className="text-[10px] text-gray-500 hidden sm:block">
+          {tool === "erase" && "Arrastra para borrar las zonas sobrantes"}
+          {tool === "magic" && (insufficient ? "Sin créditos suficientes" : "Toca el objeto que quieres borrar")}
+          {tool === "restore" && "Arrastra para recuperar zonas borradas por error"}
+        </p>
+        <div className="flex items-center gap-2 ml-auto">
+          <button
+            onClick={onCancel}
+            disabled={magicLoading}
+            className="px-4 py-2 rounded-xl bg-white/[0.08] hover:bg-white/[0.12] text-gray-300 font-bold text-[12.5px] disabled:opacity-50">
+            Cancelar
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={magicLoading}
+            className="px-5 py-2 rounded-xl bg-gradient-to-r from-purple-500 to-fuchsia-500 hover:from-purple-400 hover:to-fuchsia-400 text-white font-bold text-[12.5px] flex items-center gap-1.5 disabled:opacity-50">
+            <Check size={14} strokeWidth={2.5}/>
+            Aplicar
+          </button>
+        </div>
+      </div>
+
+      {/* Magic disabled hint */}
+      {tool === "magic" && magicDisabled && !magicLoading && (
+        <div className="absolute top-[100px] left-1/2 -translate-x-1/2 z-30 px-3 py-1.5 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-200 text-[11px] font-bold">
+          ⚠ Sin créditos — usa el pincel manual o sube de plan
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Helpers internos ───────────────────────────────────────────────────
+
+function ToolBtn({
+  icon, label, active, disabled, onClick, variant,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  active: boolean;
+  disabled?: boolean;
+  onClick: () => void;
+  variant?: "magic";
+}) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className={`shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-[12px] font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
+        active
+          ? variant === "magic"
+            ? "bg-fuchsia-500/20 border border-fuchsia-500/40 text-fuchsia-200"
+            : "bg-purple-500/20 border border-purple-500/40 text-purple-200"
+          : "bg-white/[0.04] border border-white/[0.08] text-gray-400 hover:text-white hover:bg-white/[0.08]"
+      }`}>
+      {icon}
+      <span>{label}</span>
+    </button>
+  );
+}
+
+/** Círculo overlay que sigue al cursor mostrando el tamaño del pincel. */
+function CursorPreview({
+  canvas, canvasX, canvasY, brushSize, color,
+}: {
+  canvas: HTMLCanvasElement;
+  canvasX: number;
+  canvasY: number;
+  brushSize: number;
+  color: string;
+}) {
+  // Convertir coords de canvas a coords de display (px relativos al div padre)
+  const rect = canvas.getBoundingClientRect();
+  const parentRect = canvas.parentElement?.getBoundingClientRect();
+  if (!parentRect) return null;
+  const scaleX = rect.width / canvas.width;
+  const scaleY = rect.height / canvas.height;
+  const displayX = (canvas.offsetLeft) + canvasX * scaleX;
+  const displayY = (canvas.offsetTop) + canvasY * scaleY;
+  const displaySize = brushSize * scaleX;
+  return (
+    <div
+      className="absolute pointer-events-none rounded-full border-2"
+      style={{
+        left: displayX - displaySize,
+        top: displayY - displaySize,
+        width: displaySize * 2,
+        height: displaySize * 2,
+        borderColor: color,
+        backgroundColor: color.replace("0.4", "0.15"),
+      }}
+    />
+  );
+}

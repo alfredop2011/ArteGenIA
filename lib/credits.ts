@@ -28,6 +28,9 @@ export const CREDIT_COST = {
   // Coste real: $0.008 normal, $0.015 HD. 4× margin = 1cr / 2cr.
   recortar_persona: 1,
   recortar_persona_hd: 2,
+  // Z.17 — Borrador mágico (SAM-2 point segmentation). Coste real $0.005.
+  // 1 crédito por click mágico.
+  borrador_magico: 1,
   asistente_ia: 1,            // por mensaje
   generar_imagen_ia: 2,       // Flux
   capas_magicas: 2,

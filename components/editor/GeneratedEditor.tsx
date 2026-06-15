@@ -33,6 +33,8 @@ import {
   Circle as CircleIconLuc,
   // Z.16 — Quitar fondo dentro del editor
   Eraser,
+  // Z.17 — Borrador mágico/manual
+  Brush,
 } from "lucide-react";
 import type { Canvas as FabricCanvas, FabricObject, IText } from "fabric";
 import {
@@ -66,6 +68,8 @@ import { FEATURES } from "@/lib/features";
 import { ConfirmCreditModal } from "@/components/credits/ConfirmCreditModal";
 import { useCredits } from "@/hooks/useCredits";
 import { CREDIT_COST, type CreditModule } from "@/lib/credits";
+// Z.17 — Borrador mágico/manual para refinar bordes tras Quitar fondo
+import BrushEraserModal from "@/components/editor/BrushEraserModal";
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
 
@@ -2155,6 +2159,39 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
   const [pendingRemoveBg, setPendingRemoveBg] = useState<FabricObject | null>(null);
   const [removingBgObjId, setRemovingBgObjId] = useState<string | null>(null);
 
+  // Z.17 — Borrador mágico/manual sobre la imagen seleccionada.
+  // brushEraserState contiene el URL de la imagen y el objeto Fabric para
+  // poder reemplazar su src tras guardar. null cuando el modal está cerrado.
+  const [brushEraserState, setBrushEraserState] = useState<{
+    url: string;
+    obj: FabricObject;
+  } | null>(null);
+
+  const openBrushEraser = useCallback(() => {
+    const obj = fabricRef.current?.getActiveObject();
+    if (!obj || obj.type !== "image") return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const srcUrl = (obj as any).getSrc?.() ?? (obj as any)._element?.src;
+    if (!srcUrl) { toast.error("No se pudo leer la imagen"); return; }
+    setBrushEraserState({ url: srcUrl, obj });
+  }, [toast]);
+
+  const handleBrushEraserSave = useCallback(async (resultDataUrl: string) => {
+    const state = brushEraserState;
+    setBrushEraserState(null);
+    if (!state) return;
+    await new Promise<void>((resolve) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (state.obj as any).setSrc?.(resultDataUrl, () => {
+        fabricRef.current?.renderAll();
+        resolve();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      }, { crossOrigin: "anonymous" } as any);
+    });
+    setSaveState("unsaved");
+    toast.success("Refinado aplicado");
+  }, [brushEraserState, toast]);
+
   /** Abre modal de confirmación. Si la imagen ya es transparente, no abre nada
    *  y avisa con toast. Si no hay sesión, dispara AuthModal. */
   const openRemoveBgFlow = useCallback(async () => {
@@ -3295,6 +3332,18 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
                       Elimina TODO el fondo, deja solo el sujeto principal con
                       transparencia. Cuesta {CREDIT_COST.quitar_fondo} crédito.
                     </p>
+
+                    {/* Z.17 — Refinar manualmente / borrador mágico */}
+                    <button
+                      onClick={openBrushEraser}
+                      className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.10] text-gray-200 text-xs font-semibold transition-all">
+                      <Brush size={14} strokeWidth={2}/>
+                      Refinar bordes (pincel + IA)
+                    </button>
+                    <p className="text-[10px] text-gray-600 mt-2 leading-snug">
+                      Borra manualmente lo que sobra, o toca con borrador mágico
+                      (IA, {CREDIT_COST.borrador_magico} cr por click) para borrados precisos.
+                    </p>
                   </CollapsibleSection>
                 );
               })()}
@@ -3988,6 +4037,18 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
         amount={CREDIT_COST.quitar_fondo}
         balance={credits.balance ?? 0}
         daysUntilReset={credits.daysUntilReset ?? undefined}
+      />
+
+      {/* Z.17 — Borrador mágico/manual full-screen */}
+      <BrushEraserModal
+        open={brushEraserState !== null}
+        imageUrl={brushEraserState?.url ?? ""}
+        magicCost={CREDIT_COST.borrador_magico}
+        balance={credits.balance}
+        onCancel={() => setBrushEraserState(null)}
+        onSave={handleBrushEraserSave}
+        onCreditsConsumed={() => void credits.refetch()}
+        onError={(msg) => toast.error(msg)}
       />
 
 

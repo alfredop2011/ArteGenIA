@@ -45,6 +45,8 @@ import {
   Wand2, ChevronUp, ChevronDown,
   Replace, Crop, Eraser, Sliders, Square,
   Pencil,
+  // Z.17 — Borrador mágico/manual
+  Brush,
 } from "lucide-react";
 import { templates, getVariant, type Template, type TemplateLayer } from "@/data/templates";
 import { FORMATS, PUBLIC_FORMATS, type FormatId } from "@/data/formats";
@@ -63,6 +65,8 @@ import { UpgradeModal, type UpgradeFeature } from "@/components/upgrade/UpgradeM
 import { ConfirmCreditModal } from "@/components/credits/ConfirmCreditModal";
 import { useCredits } from "@/hooks/useCredits";
 import { CREDIT_COST, type CreditModule } from "@/lib/credits";
+// Z.17 — Borrador mágico/manual full-screen reutilizable desktop+mobile
+import BrushEraserModal from "@/components/editor/BrushEraserModal";
 import { Save, FolderOpen, Share2, Link2, Mail, MessageCircle, Send, Plus, Layers, Lock, Unlock, Eye, EyeOff, Circle as CircleIcon, Square as SquareIcon, Triangle, Heart, Star, AlignHorizontalJustifyCenter } from "lucide-react";
 
 type Props = {
@@ -112,6 +116,14 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
   const { toast } = useToast();
   const { t } = useLocale();
 
+  // Z.17 — Estado del borrador mágico/manual. Cuando no es null, el modal
+  // BrushEraserModal está abierto editando esa imagen Fabric.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [brushEraserState, setBrushEraserState] = useState<{
+    url: string;
+    obj: import("fabric").FabricImage;
+  } | null>(null);
+
   // Upgrade gating — Free users tocan limitaciones → modal "Sube a Pro"
   const [upgradeFeature, setUpgradeFeature] = useState<UpgradeFeature | null>(null);
   const isPaid = authProfile?.plan === "pro" || authProfile?.plan === "enterprise";
@@ -148,7 +160,7 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
     | "editar" | "fuente" | "estilos" | "tamano" | "color"
     // Imagen
     | "reemplazar" | "recortar" | "quitar-fondo" | "filtros" | "opacidad-img"
-    | "capas-magicas"
+    | "capas-magicas" | "borrador"
     // Forma
     | "fill" | "borde" | "opacidad-shape" | "esquinas";
   const [activeSubTool, setActiveSubTool] = useState<SubTool>(null);
@@ -1041,6 +1053,44 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
       setRemovingBg(false);
     }
   }, [authUser, getActiveImage, fabricImageToDataUrl, pushHistory, toast, t, credits]);
+
+  // ─── Z.17 — Borrador mágico/manual ────────────────────────────────────
+  // Extrae src de la imagen activa y abre modal full-screen para refinar
+  // con pincel manual o IA. Al guardar, reemplaza src.
+  const openBrushEraser = useCallback(async () => {
+    if (!authUser) { toast.info(t("mobileEditor.toast.loginToUseAI")); return; }
+    const img = getActiveImage();
+    if (!img) { toast.error(t("mobileEditor.toast.selectImageFirst")); return; }
+    try {
+      const dataUrl = await fabricImageToDataUrl(img);
+      setBrushEraserState({ url: dataUrl, obj: img });
+    } catch (e) {
+      console.error("[brush-eraser open]", e);
+      toast.error("No se pudo abrir el editor de refinado");
+    }
+  }, [authUser, getActiveImage, fabricImageToDataUrl, toast, t]);
+
+  const handleBrushEraserSave = useCallback(async (resultDataUrl: string) => {
+    const state = brushEraserState;
+    setBrushEraserState(null);
+    if (!state) return;
+    const fc = fabricRef.current;
+    if (!fc) return;
+    try {
+      const newImg = await FabricImage.fromURL(resultDataUrl, { crossOrigin: "anonymous" });
+      state.obj.setElement(newImg.getElement() as HTMLImageElement);
+      state.obj.dirty = true;
+      state.obj.filters = [];
+      state.obj.applyFilters();
+      fc.requestRenderAll();
+      setSaveState("unsaved");
+      pushHistory();
+      toast.success("Refinado aplicado");
+    } catch (e) {
+      console.error("[brush-eraser save]", e);
+      toast.error("No se pudo aplicar el refinado");
+    }
+  }, [brushEraserState, pushHistory, toast]);
 
   // ─── Capas Mágicas (Fase V.1) ──────────────────────────────────────────
   // Convierte la imagen seleccionada en plantilla editable. El endpoint
@@ -2584,6 +2634,8 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
                 <SubToolBtnIcon node={<Crop size={18} strokeWidth={2.2}/>} label={t("mobileEditor.subtool.crop")} active={activeSubTool === "recortar"} onClick={() => setActiveSubTool(s => s === "recortar" ? null : "recortar")}/>
                 <SubToolBtnIcon node={<Sliders size={18} strokeWidth={2.2}/>} label={t("mobileEditor.subtool.filters")} active={activeSubTool === "filtros"} onClick={() => setActiveSubTool(s => s === "filtros" ? null : "filtros")}/>
                 <SubToolBtnIcon node={<Eraser size={18} strokeWidth={2.2}/>} label={t("mobileEditor.subtool.removeBg")} active={activeSubTool === "quitar-fondo"} onClick={() => setActiveSubTool(s => s === "quitar-fondo" ? null : "quitar-fondo")}/>
+                {/* Z.17 — Borrador mágico/manual full-screen */}
+                <SubToolBtnIcon node={<Brush size={18} strokeWidth={2.2}/>} label="Refinar" active={false} onClick={() => { void openBrushEraser(); }}/>
                 {/* Capas Mágicas (Fase V.1) — convierte foto en plantilla editable.
                     Badge muestra cuota restante para Free; nada para Pro/Enterprise. */}
                 <SubToolBtnIcon
@@ -3047,6 +3099,18 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
         }
         balance={credits.balance ?? 0}
         daysUntilReset={credits.daysUntilReset ?? undefined}
+      />
+
+      {/* Z.17 — Borrador mágico/manual mobile */}
+      <BrushEraserModal
+        open={brushEraserState !== null}
+        imageUrl={brushEraserState?.url ?? ""}
+        magicCost={CREDIT_COST.borrador_magico}
+        balance={credits.balance}
+        onCancel={() => setBrushEraserState(null)}
+        onSave={handleBrushEraserSave}
+        onCreditsConsumed={() => void credits.refetch()}
+        onError={(msg) => toast.error(msg)}
       />
 
 
