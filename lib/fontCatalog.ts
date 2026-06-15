@@ -131,6 +131,70 @@ export const FONT_CATALOG: FontEntry[] = [
     tags: ["geometric", "modern", "rounded", "playful", "fresh"],
     useFor: ["startups", "moderno fresco"],
   },
+  // ─── SANS añadidas desde fontpair.co (curado profesional) ────────────
+  {
+    family: "Roboto",
+    category: "sans",
+    weights: [400, 500, 700, 900],
+    tags: ["neutral", "modern", "clean", "ui", "versatile", "classic", "android"],
+    useFor: ["cuerpo texto", "UI", "neutral universal"],
+  },
+  {
+    family: "Open Sans",
+    category: "sans",
+    weights: [400, 600, 700, 800],
+    tags: ["humanist", "neutral", "clean", "readable", "modern", "warm", "popular"],
+    useFor: ["cuerpo largo", "warm neutral"],
+  },
+  {
+    family: "Lato",
+    category: "sans",
+    weights: [400, 700, 900],
+    tags: ["humanist", "warm", "friendly", "modern", "corporate"],
+    useFor: ["corporate friendly"],
+  },
+  {
+    family: "DM Sans",
+    category: "sans",
+    weights: [400, 500, 700],
+    tags: ["geometric", "modern", "minimal", "low-contrast", "tech", "premium"],
+    useFor: ["tech startup", "modern minimal"],
+  },
+  {
+    family: "Manrope",
+    category: "sans",
+    weights: [400, 600, 700, 800],
+    tags: ["geometric", "modern", "premium", "low-contrast", "sophisticated"],
+    useFor: ["premium tech", "luxury minimal"],
+  },
+  {
+    family: "Space Grotesk",
+    category: "sans",
+    weights: [400, 500, 700],
+    tags: ["display", "geometric", "modern", "tech", "futuristic", "quirky"],
+    useFor: ["tech display", "futurista"],
+  },
+  {
+    family: "Karla",
+    category: "sans",
+    weights: [400, 600, 700],
+    tags: ["grotesque", "modern", "humanist", "warm", "editorial"],
+    useFor: ["editorial modern"],
+  },
+  {
+    family: "Nunito",
+    category: "sans",
+    weights: [400, 600, 700, 800],
+    tags: ["rounded", "warm", "friendly", "soft", "humanist"],
+    useFor: ["infantil", "warm friendly"],
+  },
+  {
+    family: "Quicksand",
+    category: "sans",
+    weights: [400, 500, 700],
+    tags: ["rounded", "geometric", "friendly", "playful", "soft"],
+    useFor: ["amigable", "infantil"],
+  },
 
   // ─── SERIF (elegancia, clásico, formal) ──────────────────────────────
   {
@@ -174,6 +238,49 @@ export const FONT_CATALOG: FontEntry[] = [
     weights: [400, 700, 900],
     tags: ["uppercase", "elegant", "roman", "classical", "monumental", "stone", "vintage"],
     useFor: ["clásico", "boda", "lujo monumental"],
+  },
+  // ─── SERIF añadidas desde fontpair.co ────────────────────────────────
+  {
+    family: "Merriweather",
+    category: "serif",
+    weights: [400, 700, 900],
+    tags: ["readable", "warm", "literary", "screen", "classic", "newspaper"],
+    useFor: ["cuerpo largo", "blog", "editorial"],
+  },
+  {
+    family: "Fraunces",
+    category: "serif",
+    weights: [400, 600, 700, 900],
+    tags: ["modern", "expressive", "warm", "italian", "high-contrast", "soft", "variable"],
+    useFor: ["editorial moderno", "premium warm"],
+  },
+  {
+    family: "Crimson Text",
+    category: "serif",
+    weights: [400, 600, 700],
+    tags: ["classic", "book", "readable", "old style", "literary"],
+    useFor: ["libros", "literatura"],
+  },
+  {
+    family: "Libre Baskerville",
+    category: "serif",
+    weights: [400, 700],
+    tags: ["transitional", "elegant", "classic", "british", "editorial"],
+    useFor: ["editorial elegante", "british classic"],
+  },
+  {
+    family: "Bitter",
+    category: "serif",
+    weights: [400, 600, 700],
+    tags: ["slab", "modern", "readable", "warm", "robust"],
+    useFor: ["slab moderno", "robusto cálido"],
+  },
+  {
+    family: "Spectral",
+    category: "serif",
+    weights: [400, 600, 700],
+    tags: ["modern", "warm", "editorial", "screen", "humanist"],
+    useFor: ["editorial moderno"],
   },
 
   // ─── SCRIPT / HANDWRITTEN (festivo, casual, manuscrito) ──────────────

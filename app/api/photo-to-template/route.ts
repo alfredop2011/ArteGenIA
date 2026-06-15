@@ -499,6 +499,15 @@ REGLAS DE PRECISIÓN (críticas):
    - "Raleway" → thin elegante minimal sofisticada
    - "Work Sans" → industrial clean neutral
    - "Outfit" → geométrica moderna rounded fresh
+   - "Roboto" → neutral clásica universal Android
+   - "Open Sans" → humanista warm readable
+   - "Lato" → humanista warm corporate friendly
+   - "DM Sans" → geométrica moderna minimal tech
+   - "Manrope" → geométrica premium sophisticated luxury
+   - "Space Grotesk" → display geometric futurista quirky tech
+   - "Karla" → grotesque humanist editorial warm
+   - "Nunito" → rounded warm friendly soft
+   - "Quicksand" → rounded geometric playful soft amigable
 
    SERIF (elegante/clásica):
    - "Playfair Display" → high contrast modern serif editorial
@@ -507,6 +516,12 @@ REGLAS DE PRECISIÓN (críticas):
    - "EB Garamond" → renaissance vintage literaria
    - "DM Serif Display" → high contrast luxury fashion
    - "Cinzel" → roman classical monumental stone uppercase
+   - "Merriweather" → readable warm literary newspaper editorial
+   - "Fraunces" → modern expressive warm italian high-contrast soft
+   - "Crimson Text" → classic book readable old-style literaria
+   - "Libre Baskerville" → transitional elegant british editorial
+   - "Bitter" → slab modern readable warm robust
+   - "Spectral" → modern warm editorial screen humanist
 
    SCRIPT (manuscrita/cursiva):
    - "Great Vibes" → elegante calligraphy wedding formal
