@@ -3,6 +3,7 @@ import { fal } from "@fal-ai/client";
 import { uploadToR2, makeKey } from "@/lib/r2";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { checkRateLimit } from "@/lib/rateLimit";
+import { consumeCredits } from "@/lib/credits";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -42,6 +43,8 @@ export async function POST(req: NextRequest) {
     if (limitRes) return limitRes;
 
     // ─── PARSE + VALIDAR ────────────────────────────────────────────────
+    // Validamos ANTES de consumir créditos: si la imagen es inválida,
+    // el user no debería perder el crédito sin recibir el servicio.
     const inForm = await req.formData();
     const file = inForm.get("image_file");
     if (!file || !(file instanceof File)) {
@@ -54,6 +57,23 @@ export async function POST(req: NextRequest) {
     const fileErr = await validateImageFile(file);
     if (fileErr) {
       return NextResponse.json({ error: fileErr }, { status: 400 });
+    }
+
+    // ─── CRÉDITOS (Fase Z.10) ───────────────────────────────────────────
+    // Sistema unificado: 1 crédito por quitar-fondo (CREDIT_COST.quitar_fondo).
+    // Si insuficiente, 402 Payment Required con detalle del balance.
+    // Consumimos AHORA porque ya pasaron las validaciones de input — si
+    // BiRefNet falla más adelante, refund (TODO próximo commit).
+    const creditResult = await consumeCredits(supabase, user.id, "quitar_fondo");
+    if (!creditResult.success) {
+      return NextResponse.json(
+        {
+          error: "Sin créditos suficientes para Quitar fondo",
+          balance: creditResult.balance,
+          required: creditResult.required,
+        },
+        { status: 402 },
+      );
     }
 
     // ─── MOTOR PRINCIPAL: BiRefNet vía Fal.ai ───────────────────────────

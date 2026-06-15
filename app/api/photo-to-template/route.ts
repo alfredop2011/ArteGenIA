@@ -7,6 +7,7 @@ import { COST_PER_ACTION_USD, getQuota, isUnlimited } from "@/lib/quotas";
 import { FONT_CATALOG, matchFont } from "@/lib/fontCatalog";
 import { detectTextLinesWithSurya, refineSonnetBboxesWithSurya } from "@/lib/suryaOcr";
 import { isAdmin } from "@/lib/admin";
+import { consumeCredits } from "@/lib/credits";
 
 /**
  * POST /api/photo-to-template
@@ -867,36 +868,34 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: `URL no permitida: ${ssrfErr}` }, { status: 400 });
     }
 
-    // ─── 3. CUOTA ────────────────────────────────────────────────────────
-    const { data: profile } = await supabase
-      .from("profiles").select("plan").eq("id", user.id).maybeSingle();
-    const plan = (profile?.plan as string) ?? "free";
-    const limit = getQuota(plan, ACTION);
-
-    let used = 0;
-    if (!isUnlimited(plan, ACTION)) {
-      const { data: count } = await supabase.rpc("count_ai_usage_this_month", {
-        p_user_id: user.id,
-        p_action: ACTION,
-      });
-      used = typeof count === "number" ? count : 0;
-      if (used >= limit) {
-        return NextResponse.json(
-          {
-            error: "Has alcanzado tu cuota mensual de Capas Mágicas",
-            feature: "magic-layers",
-            used, limit, plan,
-            resetAt: nextMonthIso(),
-          },
-          { status: 402 },
-        );
-      }
-    }
-
-    // ─── 4. RATE LIMIT anti-burst ────────────────────────────────────────
+    // ─── 3. RATE LIMIT anti-burst ────────────────────────────────────────
+    // Importante: rate limit ANTES que créditos. Si está rate-limited, NO
+    // perdemos crédito por intentar muchas veces en poco tiempo.
     const { checkRateLimit } = await import("@/lib/rateLimit");
     const rl = await checkRateLimit(supabase, user.id, "photo-to-template");
     if (rl) return rl;
+
+    // ─── 4. CRÉDITOS (Fase Z.10 — sistema unificado) ─────────────────────
+    // Capas Mágicas = 2 créditos (CREDIT_COST.capas_magicas). Reemplaza el
+    // sistema legacy de cuotas por acción (ai_usage table).
+    const creditResult = await consumeCredits(supabase, user.id, "capas_magicas");
+    if (!creditResult.success) {
+      return NextResponse.json(
+        {
+          error: "Sin créditos suficientes para Capas Mágicas (cuesta 2)",
+          balance: creditResult.balance,
+          required: creditResult.required,
+          feature: "magic-layers",
+        },
+        { status: 402 },
+      );
+    }
+    // Variables que el resto del código sigue usando para meta del response
+    const { data: profile } = await supabase
+      .from("profiles").select("plan").eq("id", user.id).maybeSingle();
+    const plan = (profile?.plan as string) ?? "free";
+    const limit = -1; // ya no aplica cuota individual; quedan como compat para meta
+    const used = 0;
 
     // ─── 5. DESCARGAR IMAGEN (la necesitamos en base64 para Claude) ──────
     const imgRes = await fetch(body.imageUrl);
