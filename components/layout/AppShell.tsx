@@ -49,13 +49,14 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     }, [loading, user, profile, isTechnicalRoute, organizerAnswered, showOrganizerModal]);
 
     // Nav links — labels via t() para idiomatizar. href intacto.
-    // Fase V.9 — Capas Mágicas oculto a no-admins (beta privada mientras
-    // pulimos bg-magic scaling + OCR precisión). Cuando esté ready, quitar
-    // el filtro condicional.
+    // Fase V.9 — Capas Mágicas VISIBLE para todos como teaser "Próximamente"
+    // (genera expectativa de marketing). Solo admin puede usarla; no-admin
+    // ve landing teaser. Cuando esté ready: quitar el badge + el gate del
+    // backend + el teaser de la página. Buscar "Fase V.9" en código.
     const userIsAdmin = isAdmin(user?.email);
     const navLinks = [
         { href: "/create", label: t("nav.create") },
-        ...(userIsAdmin ? [{ href: "/capas-magicas", label: "Capas Mágicas" }] : []),
+        { href: "/capas-magicas", label: "Capas Mágicas", badge: userIsAdmin ? undefined : "Próximamente" },
         { href: "/templates", label: t("nav.templates") },
         { href: "/projects", label: t("nav.projects") },
         { href: "/colaboradores", label: t("nav.collaborators") },
@@ -116,12 +117,17 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                             const isActive = pathname === link.href;
                             return (
                                 <Link key={link.href} href={link.href}
-                                    className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                                    className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all flex items-center gap-1.5 ${
                                         isActive
                                             ? "text-yellow-400 border-b-2 border-yellow-400 rounded-none"
                                             : "text-gray-400 hover:text-white"
                                     }`}>
                                     {link.label}
+                                    {link.badge && (
+                                        <span className="text-[9px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded-full bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/40 text-purple-300">
+                                            {link.badge}
+                                        </span>
+                                    )}
                                 </Link>
                             );
                         })}
@@ -281,14 +287,19 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                          style={{ background: "var(--home-bg-soft)", borderColor: "var(--home-card-border)" }}>
                         <div className="w-12 h-1 bg-white/20 rounded-full mx-auto mt-3 mb-4" />
                         <div className="px-4 space-y-1">
-                            {/* Capas Mágicas oculto a no-admins (V.9) */}
-                            {userIsAdmin && (
-                                <Link href="/capas-magicas" onClick={() => setShowMobileMenu(false)}
-                                    className="flex items-center gap-3 px-4 py-3 rounded-xl text-base text-purple-300 active:bg-purple-500/10">
-                                    <Wand2 size={20} strokeWidth={1.8} />
-                                    Capas Mágicas
-                                </Link>
-                            )}
+                            {/* Capas Mágicas: visible para todos. Si no admin,
+                                badge "Próximamente". La página propia muestra
+                                teaser landing si no admin. */}
+                            <Link href="/capas-magicas" onClick={() => setShowMobileMenu(false)}
+                                className="flex items-center gap-3 px-4 py-3 rounded-xl text-base text-purple-300 active:bg-purple-500/10">
+                                <Wand2 size={20} strokeWidth={1.8} />
+                                <span className="flex-1">Capas Mágicas</span>
+                                {!userIsAdmin && (
+                                    <span className="text-[9px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded-full bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/40 text-purple-300">
+                                        Próximamente
+                                    </span>
+                                )}
+                            </Link>
                             <Link href="/pricing" onClick={() => setShowMobileMenu(false)}
                                 className="flex items-center gap-3 px-4 py-3 rounded-xl text-base text-gray-300 active:bg-white/10">
                                 <CreditCard size={20} strokeWidth={1.8} />

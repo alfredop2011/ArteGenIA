@@ -69,18 +69,13 @@ type PhotoToTemplateResponse = {
 };
 
 export default function CapasMagicasPage() {
-  const { user, loading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
   const userIsAdmin = isAdmin(user?.email);
-  // Fase V.9 — beta privada. Redirige a no-admins. La auth modal igual
-  // se mostraría sin estas líneas, pero queremos mensaje claro y redirect
-  // suave para evitar que un usuario loguee y reciba 403 del backend.
-  useEffect(() => {
-    if (!loading && user && !userIsAdmin) {
-      router.replace("/?capas_beta=1");
-    }
-  }, [loading, user, userIsAdmin, router]);
+  // Fase V.9 — Si no-admin, mostramos landing teaser (no redirigir). Build
+  // expectation, no esconder. Solo admin entra al flujo real.
+  const showTeaser = !authLoading && !userIsAdmin;
 
   const [state, setState] = useState<FlowState>("upload");
   const [imageUrl, setImageUrl] = useState<string | null>(null);
@@ -265,6 +260,69 @@ export default function CapasMagicasPage() {
   const remaining = quota && !quota.unlimited
     ? Math.max(0, quota.limit - quota.used)
     : null;
+
+  // Fase V.9 — Teaser landing para no-admins. Gen expectativa sin exponer
+  // los bugs del flujo real. Quitar este bloque cuando la feature esté ready.
+  if (showTeaser) {
+    return (
+      <main className="min-h-screen bg-[#0a0a14] text-white relative overflow-hidden">
+        {/* Glow decorativo */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[800px] rounded-full bg-purple-600/20 blur-[120px] pointer-events-none" />
+        <div className="absolute top-40 right-0 w-[400px] h-[400px] rounded-full bg-pink-500/15 blur-[100px] pointer-events-none" />
+        <div className="relative max-w-3xl mx-auto px-5 py-20 md:py-32 text-center">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-purple-500/10 border border-purple-500/30 mb-8">
+            <span className="text-[10px] uppercase tracking-widest font-bold text-purple-300">✨ PRÓXIMAMENTE · BETA PRIVADA</span>
+          </div>
+          <h1 className="text-[36px] md:text-[56px] font-black leading-[1.05] mb-6">
+            Convierte cualquier flyer
+            <br />
+            <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-amber-400 bg-clip-text text-transparent">en plantilla editable</span>
+          </h1>
+          <p className="text-[15px] md:text-[18px] text-gray-300 leading-relaxed max-w-2xl mx-auto mb-12">
+            Sube un flyer que ya tienes — el que hiciste con ChatGPT, Midjourney o un diseñador — y la IA detecta todos los textos, fuentes, colores y personas para convertirlo en un diseño editable en 30 segundos.
+          </p>
+
+          <div className="grid md:grid-cols-3 gap-4 mb-12 text-left">
+            <div className="p-5 rounded-2xl bg-white/[0.03] border border-white/[0.08]">
+              <div className="w-10 h-10 rounded-xl bg-purple-500/15 border border-purple-500/30 flex items-center justify-center mb-3 text-purple-300 text-xl">📝</div>
+              <h3 className="text-[13px] font-bold mb-1">Textos editables</h3>
+              <p className="text-[11.5px] text-gray-400 leading-relaxed">Cambia fechas, nombres, DJs sin perder el diseño original.</p>
+            </div>
+            <div className="p-5 rounded-2xl bg-white/[0.03] border border-white/[0.08]">
+              <div className="w-10 h-10 rounded-xl bg-pink-500/15 border border-pink-500/30 flex items-center justify-center mb-3 text-pink-300 text-xl">✂️</div>
+              <h3 className="text-[13px] font-bold mb-1">Personas como stickers</h3>
+              <p className="text-[11.5px] text-gray-400 leading-relaxed">Cada persona del flyer recortada con fondo transparente, lista para reusar.</p>
+            </div>
+            <div className="p-5 rounded-2xl bg-white/[0.03] border border-white/[0.08]">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center mb-3 text-amber-300 text-xl">🎨</div>
+              <h3 className="text-[13px] font-bold mb-1">Mantén el estilo</h3>
+              <p className="text-[11.5px] text-gray-400 leading-relaxed">Colores, fuentes y composición del original. Solo cambia lo que necesites.</p>
+            </div>
+          </div>
+
+          <div className="inline-flex flex-col sm:flex-row gap-3">
+            <Link
+              href="/templates"
+              className="px-6 py-3.5 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold text-[14px] hover:opacity-90 transition-opacity shadow-lg shadow-purple-500/30"
+            >
+              Mientras tanto, prueba las plantillas →
+            </Link>
+            <Link
+              href="/pricing"
+              className="px-6 py-3.5 rounded-xl bg-white/[0.06] border border-white/[0.12] text-gray-200 font-bold text-[14px] hover:bg-white/[0.10] transition-colors"
+            >
+              Ver planes
+            </Link>
+          </div>
+
+          <p className="text-[11px] text-gray-500 mt-12">
+            En beta privada mientras pulimos calidad. ¿Quieres acceso anticipado?{" "}
+            <a href="mailto:alfredop2011@gmail.com?subject=Acceso%20a%20Capas%20Mágicas" className="text-purple-300 hover:underline">Escríbenos</a>.
+          </p>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-[#0a0a14] text-white">
