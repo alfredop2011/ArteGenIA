@@ -5,6 +5,7 @@ import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { COST_PER_ACTION_USD, getQuota, isUnlimited } from "@/lib/quotas";
 import { FONT_CATALOG, matchFont } from "@/lib/fontCatalog";
+import { detectTextLinesWithSurya, refineSonnetBboxesWithSurya } from "@/lib/suryaOcr";
 
 /**
  * POST /api/photo-to-template
@@ -928,7 +929,53 @@ export async function POST(req: Request) {
     const rawTextLayers = (claudeOut.layers ?? []).filter(
       (l): l is Extract<typeof l, { type: "text" }> => l.type === "text"
     );
-    const dedupedTextLayers = mergeOverlappingTextLayers(rawTextLayers);
+    let dedupedTextLayers = mergeOverlappingTextLayers(rawTextLayers);
+
+    // ─── REFINAMIENTO BBOX CON SURYA (Fase V.8, opt-in) ────────────────
+    // Si OCR_PROVIDER=surya, llamamos a Surya OCR (Replicate) para obtener
+    // bboxes más precisos. Para cada layer de Sonnet, buscamos la línea
+    // Surya con texto más parecido (Levenshtein <= 0.3) y reemplazamos
+    // sus coords. Layers sin match en Surya conservan bbox de Sonnet.
+    //
+    // El caller decide activar via env var en Vercel:
+    //   OCR_PROVIDER=surya + REPLICATE_API_TOKEN=r8_...
+    // Sin esas vars, el flujo es idéntico al pre-V.8 (Sonnet-only).
+    let surya_used = false;
+    let surya_refined_count = 0;
+    let surya_lines_count = 0;
+    let surya_error: string | null = null;
+    if (process.env.OCR_PROVIDER === "surya" && dedupedTextLayers.length > 0) {
+      try {
+        const t0 = Date.now();
+        const suryaLines = await detectTextLinesWithSurya(body.imageUrl);
+        const elapsedSurya = Date.now() - t0;
+        surya_lines_count = suryaLines.length;
+        console.log(`[surya] ${suryaLines.length} líneas en ${elapsedSurya}ms`);
+
+        const refined = refineSonnetBboxesWithSurya(
+          dedupedTextLayers.map((l) => ({
+            content: l.content, x: l.x, y: l.y, w: l.w, h: l.h,
+          })),
+          suryaLines,
+          W,
+          H,
+        );
+        // Aplicar refinamientos solo donde hubo match (refined: true)
+        dedupedTextLayers = dedupedTextLayers.map((layer, i) => {
+          if (refined[i].refined) {
+            surya_refined_count++;
+            return { ...layer, x: refined[i].x, y: refined[i].y, w: refined[i].w, h: refined[i].h };
+          }
+          return layer;
+        });
+        surya_used = true;
+        console.log(`[surya] refinó ${surya_refined_count}/${dedupedTextLayers.length} bboxes`);
+      } catch (e) {
+        // No bloqueamos: si Surya falla, seguimos con bboxes de Sonnet.
+        surya_error = e instanceof Error ? e.message : String(e);
+        console.warn("[surya] error, fallback a Sonnet:", surya_error);
+      }
+    }
 
     // 2a. Color del FONDO alrededor de cada bbox — solo necesario para
     //     los cover rectangles (fallback cuando inpainting falla).
@@ -1107,6 +1154,14 @@ export async function POST(req: Request) {
         // Debug info de SAM-3 para diagnosticar "0 personas" en flyers obvios.
         // Si el usuario nos pasa esto, sabemos exactamente qué shape devolvió.
         samDebug,
+        // Fase V.8 — métricas del refinamiento con Surya (si está activado)
+        suryaDebug: process.env.OCR_PROVIDER === "surya" ? {
+          used: surya_used,
+          linesDetected: surya_lines_count,
+          bboxesRefined: surya_refined_count,
+          totalBboxes: dedupedTextLayers.length,
+          error: surya_error,
+        } : null,
         // Cuota actualizada (used+1 porque acabamos de consumir uno)
         quota: { used: used + 1, limit, plan, unlimited: limit === -1 },
       },
