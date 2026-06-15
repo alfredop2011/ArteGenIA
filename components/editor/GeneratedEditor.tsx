@@ -31,6 +31,8 @@ import {
   Triangle as TriangleIcon, Star, Hexagon, Minus, ArrowRight as ArrowRightIcon,
   SquareDashed, Scissors, X as XIconLuc,
   Circle as CircleIconLuc,
+  // Z.16 — Quitar fondo dentro del editor
+  Eraser,
 } from "lucide-react";
 import type { Canvas as FabricCanvas, FabricObject, IText } from "fabric";
 import {
@@ -2146,6 +2148,86 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
   const credits = useCredits();
   const [pendingExportFormat, setPendingExportFormat] = useState<"png" | "jpg" | null>(null);
 
+  // ─── Z.16 — Quitar fondo en imagen del canvas ──────────────────────────────
+  // Estado del objeto pendiente + objeto procesando (para overlay loading).
+  // No consumimos cliente-side: /api/remove-bg ya consume server-side + refund
+  // automático Z.13 si falla. El modal solo confirma el coste visualmente.
+  const [pendingRemoveBg, setPendingRemoveBg] = useState<FabricObject | null>(null);
+  const [removingBgObjId, setRemovingBgObjId] = useState<string | null>(null);
+
+  /** Abre modal de confirmación. Si la imagen ya es transparente, no abre nada
+   *  y avisa con toast. Si no hay sesión, dispara AuthModal. */
+  const openRemoveBgFlow = useCallback(async () => {
+    const obj = fabricRef.current?.getActiveObject();
+    if (!obj || obj.type !== "image") return;
+    // Pre-check rápido: si ya es PNG transparente, evita gastar crédito
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const srcUrl = (obj as any).getSrc?.() ?? (obj as any)._element?.src;
+    if (srcUrl) {
+      const already = await isImageTransparent(srcUrl).catch(() => false);
+      if (already) {
+        toast.info("Esta imagen ya tiene el fondo transparente");
+        return;
+      }
+    }
+    setPendingRemoveBg(obj);
+  }, [toast]);
+
+  /** Tras confirmar modal: descarga blob, manda a /api/remove-bg, reemplaza src
+   *  en Fabric. Si 402 → sin créditos. Si 5xx → refund automático server-side. */
+  const handleConfirmRemoveBg = useCallback(async () => {
+    const obj = pendingRemoveBg;
+    if (!obj) return;
+    setPendingRemoveBg(null);
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const objId = ((obj as any).customId as string | undefined) ?? String(obj.left ?? "") + ":" + String(obj.top ?? "");
+    setRemovingBgObjId(objId);
+
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const srcUrl = (obj as any).getSrc?.() ?? (obj as any)._element?.src;
+      if (!srcUrl) throw new Error("No se pudo leer la imagen del canvas");
+
+      const blobRes = await fetch(srcUrl);
+      if (!blobRes.ok) throw new Error("No se pudo descargar la imagen");
+      const blob = await blobRes.blob();
+      const file = new File([blob], "canvas-image.png", { type: blob.type || "image/png" });
+
+      const form = new FormData();
+      form.append("image_file", file);
+      const res = await fetch("/api/remove-bg", { method: "POST", body: form });
+      const json = await res.json().catch(() => ({}));
+
+      if (res.status === 402) {
+        toast.error("Sin créditos suficientes para Quitar fondo");
+        return;
+      }
+      if (!res.ok || !json.url) {
+        throw new Error(json.error || "No se pudo quitar el fondo");
+      }
+
+      // Reemplaza src en Fabric — añadimos ?v= para evitar caché R2 sin CORS
+      const newUrl = `${json.url}${json.url.includes("?") ? "&" : "?"}v=${Date.now()}`;
+      await new Promise<void>((resolve) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (obj as any).setSrc?.(newUrl, () => {
+          fabricRef.current?.renderAll();
+          resolve();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        }, { crossOrigin: "anonymous" } as any);
+      });
+      setSaveState("unsaved");
+      void credits.refetch();
+      toast.success("Fondo eliminado");
+    } catch (e) {
+      console.error("[quitar-fondo-editor]", e);
+      toast.error(e instanceof Error ? e.message : "Error al quitar fondo");
+    } finally {
+      setRemovingBgObjId(null);
+    }
+  }, [pendingRemoveBg, credits, toast]);
+
   /** Wrapper publico: pide sesion → muestra modal créditos → consume → exporta.
    *  Flow: requireAuth → setPendingExportFormat (abre modal) → handleConfirmExport
    *  → consume crédito server-side → doExport(format) → descarga real. */
@@ -3182,6 +3264,41 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
                 );
               })()}
 
+              {/* ─── Z.16: SECCIÓN QUITAR FONDO (cualquier foto del canvas) ── */}
+              {isImage && (() => {
+                const obj = fabricRef.current?.getActiveObject();
+                if (obj?.type !== "image") return null;
+                const isProcessing = removingBgObjId !== null;
+                return (
+                  <CollapsibleSection
+                    title="Fondo"
+                    sectionKey="remove-bg"
+                    openSections={openSections}
+                    setOpenSections={setOpenSections}>
+                    <button
+                      onClick={() => { void openRemoveBgFlow(); }}
+                      disabled={isProcessing}
+                      className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-gradient-to-br from-purple-600/20 to-fuchsia-600/15 hover:from-purple-600/30 hover:to-fuchsia-600/25 border border-purple-500/35 text-purple-200 text-xs font-semibold transition-all disabled:opacity-50 disabled:cursor-wait">
+                      {isProcessing ? (
+                        <>
+                          <Loader2 size={14} strokeWidth={2} className="animate-spin"/>
+                          Quitando fondo…
+                        </>
+                      ) : (
+                        <>
+                          <Eraser size={14} strokeWidth={2}/>
+                          Quitar fondo entero
+                        </>
+                      )}
+                    </button>
+                    <p className="text-[10px] text-gray-600 mt-2 leading-snug">
+                      Elimina TODO el fondo, deja solo el sujeto principal con
+                      transparencia. Cuesta {CREDIT_COST.quitar_fondo} crédito.
+                    </p>
+                  </CollapsibleSection>
+                );
+              })()}
+
               {/* ─── SECCIÓN RECORTAR PERSONA (cualquier foto del canvas) ── */}
               {isImage && (() => {
                 const obj = fabricRef.current?.getActiveObject();
@@ -3673,9 +3790,25 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
                   <span>Reemplazar</span>
                 </button>
 
+                {/* Z.16 — Quitar fondo: acceso rapido desde toolbar.
+                    Abre modal de confirmación de créditos (1 cr) + reemplaza
+                    src en Fabric tras llamada a /api/remove-bg. */}
+                <button
+                  onClick={() => { void openRemoveBgFlow(); }}
+                  disabled={removingBgObjId !== null}
+                  title={`Quitar fondo (${CREDIT_COST.quitar_fondo} crédito)`}
+                  className="ag-fab-btn bg-fuchsia-600/20 text-fuchsia-200 hover:bg-fuchsia-600/30 disabled:opacity-50 disabled:cursor-wait">
+                  {removingBgObjId !== null ? (
+                    <Loader2 className="w-4 h-4 animate-spin" strokeWidth={2.2} />
+                  ) : (
+                    <Eraser className="w-4 h-4" strokeWidth={2.2} />
+                  )}
+                  <span>Quitar fondo</span>
+                </button>
+
                 {/* Recortar a forma — abre seccion del panel */}
                 <button
-                  onClick={() => setOpenSections(p => ({ ...p, crop: true, style: true }))}
+                  onClick={() => setOpenSections(p => ({ ...p, crop: true, style: true, "remove-bg": true }))}
                   title="Recortar / efectos"
                   className="ag-fab-btn">
                   <SparklesIcon className="w-4 h-4" strokeWidth={2} />
@@ -3842,6 +3975,17 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
         onConfirm={handleConfirmExport}
         actionLabel={`Descargar flyer en ${pendingExportFormat?.toUpperCase() ?? "imagen"}`}
         amount={CREDIT_COST.download_png}
+        balance={credits.balance ?? 0}
+        daysUntilReset={credits.daysUntilReset ?? undefined}
+      />
+
+      {/* Z.16 — Modal de confirmación para Quitar fondo en editor */}
+      <ConfirmCreditModal
+        open={pendingRemoveBg !== null}
+        onClose={() => setPendingRemoveBg(null)}
+        onConfirm={handleConfirmRemoveBg}
+        actionLabel="Quitar el fondo de esta imagen"
+        amount={CREDIT_COST.quitar_fondo}
         balance={credits.balance ?? 0}
         daysUntilReset={credits.daysUntilReset ?? undefined}
       />
