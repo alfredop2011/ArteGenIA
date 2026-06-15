@@ -24,6 +24,10 @@ export const CREDIT_COST = {
   // IA — generación / segmentación
   quitar_fondo: 1,
   quitar_fondo_hd: 3,
+  // Z.16.2 — Recortar persona individual (Florence-2 + BRIA bg remove)
+  // Coste real: $0.008 normal, $0.015 HD. 4× margin = 1cr / 2cr.
+  recortar_persona: 1,
+  recortar_persona_hd: 2,
   asistente_ia: 1,            // por mensaje
   generar_imagen_ia: 2,       // Flux
   capas_magicas: 2,

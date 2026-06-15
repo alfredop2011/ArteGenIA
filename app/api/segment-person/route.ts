@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { fal } from "@fal-ai/client";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { consumeCredits, addCredits, CREDIT_COST, type CreditModule } from "@/lib/credits";
 import sharp from "sharp";
 
 if (!process.env.FAL_KEY) {
@@ -169,13 +170,21 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+  // Z.16.2 + Z.13 — variables outer-scope para refund automatico si falla
+  // post-consume. Sustituyen el QUOTA_PER_PLAN viejo (sistema deprecado).
+  let supabaseForRefund: Awaited<ReturnType<typeof createSupabaseServerClient>> | null = null;
+  let userIdForRefund: string | null = null;
+  let moduleConsumed: CreditModule | null = null;
+
   try {
     // ─── 1. AUTH: requiere sesion Supabase ───────────────────────────────
     const supabase = await createSupabaseServerClient();
+    supabaseForRefund = supabase;
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       return NextResponse.json({ error: "Inicia sesion para usar esta funcion" }, { status: 401 });
     }
+    userIdForRefund = user.id;
 
     // ─── 2. PARSE INPUT (para saber si es HD antes de chequear cuota) ────
     const body = (await req.json()) as Body;
@@ -210,36 +219,26 @@ export async function POST(req: Request) {
     const limitRes = await checkRateLimit(supabase, user.id, rlAction);
     if (limitRes) return limitRes;
 
-    // ─── 3. CUOTA: leer plan + contar uso del mes (segun normal/HD) ──────
-    const { data: profile } = await supabase
-      .from("profiles").select("plan").eq("id", user.id).maybeSingle();
-    const plan = (profile?.plan as string) ?? "free";
-    const quotas = QUOTA_PER_PLAN[plan] ?? QUOTA_PER_PLAN.free;
-    const limit = useHd ? quotas.hd : quotas.normal;
-
-    if (limit !== -1) {
-      const { data: countData, error: countErr } = await supabase
-        .rpc("count_ai_usage_this_month", { p_user_id: user.id, p_action: action });
-      const used = (typeof countData === "number" ? countData : 0);
-      if (countErr) {
-        console.warn("[segment-person] count_ai_usage error:", countErr.message);
-      }
-      if (used >= limit) {
-        return NextResponse.json(
-          {
-            error: useHd
-              ? `Has alcanzado el limite de ${limit} recortes HD este mes. Hazte Pro para ilimitado.`
-              : `Has alcanzado el limite de ${limit} recortes este mes. Hazte Pro para ilimitado.`,
-            code: "QUOTA_EXCEEDED",
-            used,
-            limit,
-            plan,
-            mode: useHd ? "hd" : "normal",
-          },
-          { status: 402 },
-        );
-      }
+    // ─── 3. CRÉDITOS (Z.16.2): consume según modo normal/HD ───────────────
+    // Reemplaza el sistema QUOTA_PER_PLAN viejo (deprecado). Si falla algo
+    // post-consume, el catch global hace refund automático Z.13.
+    const moduleKey: CreditModule = useHd ? "recortar_persona_hd" : "recortar_persona";
+    const creditResult = await consumeCredits(supabase, user.id, moduleKey);
+    if (!creditResult.success) {
+      return NextResponse.json(
+        {
+          error: useHd
+            ? "Sin créditos suficientes para Recortar persona HD"
+            : "Sin créditos suficientes para Recortar persona",
+          code: "INSUFFICIENT_CREDITS",
+          balance: creditResult.balance,
+          required: creditResult.required,
+          mode: useHd ? "hd" : "normal",
+        },
+        { status: 402 },
+      );
     }
+    moduleConsumed = moduleKey;
 
     const publicUrl = await ensurePublicUrl(body.imageUrl);
 
@@ -385,6 +384,20 @@ export async function POST(req: Request) {
   } catch (err) {
     console.error("[segment-person] error:", err);
     const msg = err instanceof Error ? err.message : "Error desconocido";
+    // Z.13 — refund automático si ya habíamos consumido créditos y algo falla
+    // post-consume. El user no debe pagar por servicio no recibido.
+    if (moduleConsumed && supabaseForRefund && userIdForRefund) {
+      try {
+        await addCredits(
+          supabaseForRefund, userIdForRefund, CREDIT_COST[moduleConsumed],
+          `refund:segment-person_error`,
+          { detail: msg.slice(0, 200), module: moduleConsumed },
+        );
+        console.log(`[segment-person] refund automático para user ${userIdForRefund} (${moduleConsumed})`);
+      } catch (refundErr) {
+        console.error("[segment-person] refund FALLÓ — revisar manual:", refundErr);
+      }
+    }
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
