@@ -450,16 +450,25 @@ function PricingContent() {
               <Check strong text="Más herramientas próximamente"/>
             </ul>
 
-            <a
-              href="mailto:alfredop2011@gmail.com?subject=Reserva%20Enterprise%20ArteGenIA&body=Hola%2C%20me%20interesa%20reservar%20una%20plaza%20para%20Enterprise%20cuando%20est%C3%A9%20disponible.%20Mi%20equipo%20es%20de%20___%20personas%20y%20hacemos%20___%20flyers%2Fmes."
-              className="w-full text-center py-3 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 text-white font-black text-[13px] active:scale-[0.97] transition-transform shadow-lg shadow-amber-500/30 block"
+            {/* Botón principal DESACTIVADO — visible para mantener layout
+                consistente con Pro pero sin permitir compra. Al activar
+                Enterprise: quitar disabled + cambiar onClick a startCheckout("enterprise"). */}
+            <button
+              disabled
+              aria-disabled="true"
+              className="w-full text-center py-3 rounded-xl bg-gradient-to-br from-amber-500/40 to-orange-600/40 text-white/70 font-black text-[13px] cursor-not-allowed border border-amber-500/20"
+              title="Próximamente disponible"
             >
-              Reservar plaza →
-            </a>
+              Próximamente
+            </button>
             <p className="text-[10px] text-gray-500 text-center mt-2">
-              {!user
-                ? "Crearás tu cuenta antes del pago · Cancela cuando quieras"
-                : "Plazas limitadas · Cancela cuando quieras"}
+              ¿Necesitas Enterprise ya?{" "}
+              <a
+                href="mailto:alfredop2011@gmail.com?subject=Reserva%20Enterprise%20ArteGenIA&body=Hola%2C%20me%20interesa%20reservar%20una%20plaza%20para%20Enterprise%20cuando%20est%C3%A9%20disponible.%20Mi%20equipo%20es%20de%20___%20personas%20y%20hacemos%20___%20flyers%2Fmes."
+                className="text-amber-300 hover:text-amber-200 underline"
+              >
+                Escríbenos
+              </a>
             </p>
           </div>
         </div>
