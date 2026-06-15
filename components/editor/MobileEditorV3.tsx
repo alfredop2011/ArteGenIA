@@ -105,6 +105,10 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   const { user: authUser, profile: authProfile } = useAuth();
+  // Z.16.1 — declarado early porque handleRemoveBackground (más arriba en el
+  // archivo que el useCredits original de Z.7) lo necesita en deps. El export
+  // de Z.7 también lo usa pero reutiliza esta misma referencia.
+  const credits = useCredits();
   const { toast } = useToast();
   const { t } = useLocale();
 
@@ -983,6 +987,10 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
     });
   }, []);
 
+  // Z.16.1 — Migrado a /api/remove-bg (BiRefNet) con sistema unificado de
+  // créditos. Antes usaba /api/refine-hd con JSON (path no fiable) y cuotas
+  // por plan (deprecadas). Ahora: FormData + consume server-side + refund
+  // automático Z.13 si falla.
   const handleRemoveBackground = useCallback(async () => {
     if (!authUser) { toast.info(t("mobileEditor.toast.loginToUseAI")); return; }
     const fc = fabricRef.current;
@@ -990,36 +998,41 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
     if (!fc || !img) { toast.error(t("mobileEditor.toast.selectImageFirst")); return; }
     setRemovingBg(true);
     try {
+      // 1. Convertir imagen del canvas a dataURL → blob → File
       const dataUrl = await fabricImageToDataUrl(img);
-      const res = await fetch("/api/refine-hd", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ imageUrl: dataUrl }),
-      });
-      if (!res.ok) {
-        if (res.status === 401) toast.error("Inicia sesión");
-        else if (res.status === 429 && !isPaid) setUpgradeFeature("remove-bg");
-        else if (res.status === 429) toast.error("Demasiadas peticiones, espera 1 min");
-        else toast.error("La IA falló — intenta de nuevo");
+      const blobRes = await fetch(dataUrl);
+      const blob = await blobRes.blob();
+      const file = new File([blob], "canvas-image.png", { type: blob.type || "image/png" });
+
+      // 2. POST a /api/remove-bg con FormData (consume crédito server-side)
+      const form = new FormData();
+      form.append("image_file", file);
+      const res = await fetch("/api/remove-bg", { method: "POST", body: form });
+      const data = await res.json().catch(() => ({}));
+
+      if (res.status === 401) { toast.error("Inicia sesión"); return; }
+      if (res.status === 402) {
+        toast.error(data.error || "Sin créditos suficientes");
         return;
       }
-      const data = await res.json() as { refinedUrl?: string };
-      if (!data.refinedUrl) {
-        toast.error("La IA no devolvió imagen");
+      if (res.status === 429) { toast.error("Demasiadas peticiones, espera 1 min"); return; }
+      if (!res.ok || !data.url) {
+        toast.error(data.error || "La IA falló — intenta de nuevo");
         return;
       }
-      // Cargar la imagen nueva. Reemplazamos el HTMLImageElement del Fabric
-      // preservando posicion + escala originales.
-      const newImg = await FabricImage.fromURL(data.refinedUrl, { crossOrigin: "anonymous" });
+
+      // 3. Cargar resultado en Fabric, cache-buster para evitar CORS R2
+      const newUrl = `${data.url}${data.url.includes("?") ? "&" : "?"}v=${Date.now()}`;
+      const newImg = await FabricImage.fromURL(newUrl, { crossOrigin: "anonymous" });
       img.setElement(newImg.getElement() as HTMLImageElement);
       img.dirty = true;
-      // Limpiar filtros previos y clipPath — el PNG transparente ya viene
-      // recortado por la IA; filtros antiguos podrian re-corromper alpha.
+      // PNG transparente ya viene recortado → reset filtros para no corromper alpha
       img.filters = [];
       img.applyFilters();
       fc.requestRenderAll();
       setSaveState("unsaved");
       pushHistory();
+      void credits.refetch();
       toast.success(t("mobileEditor.toast.bgRemoved"));
     } catch (e) {
       console.error("[remove-bg]", e);
@@ -1027,7 +1040,7 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
     } finally {
       setRemovingBg(false);
     }
-  }, [authUser, getActiveImage, fabricImageToDataUrl, pushHistory, toast]);
+  }, [authUser, getActiveImage, fabricImageToDataUrl, pushHistory, toast, t, credits]);
 
   // ─── Capas Mágicas (Fase V.1) ──────────────────────────────────────────
   // Convierte la imagen seleccionada en plantilla editable. El endpoint
@@ -1955,8 +1968,7 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
     a.click();
   }, []);
 
-  // Fase Z.7 — créditos export
-  const credits = useCredits();
+  // Fase Z.7 — créditos export (la const `credits` se declara más arriba en Z.16.1)
   const [pendingExportPayload, setPendingExportPayload] = useState<{
     fmtId: FormatId;
     fileFormat: "png" | "jpg" | "pdf" | "svg";
@@ -2506,6 +2518,8 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
             <RemoveBgInline
               loading={removingBg}
               onConfirm={handleRemoveBackground}
+              cost={CREDIT_COST.quitar_fondo}
+              balance={credits.balance}
             />
           )}
           {selectedType === "image" && activeSubTool === "capas-magicas" && (
@@ -3764,15 +3778,20 @@ function AdjustSlider({
   );
 }
 
-/** Quitar fondo — CTA real al endpoint /api/refine-hd. Muestra loading
- *  spinner mientras la IA procesa (~2-4s). */
+/** Quitar fondo — CTA real al endpoint /api/remove-bg (BiRefNet). Muestra
+ *  loading spinner mientras la IA procesa (~2-4s). Coste + balance visibles
+ *  antes de tocar el botón (Z.16.1).
+ */
 function RemoveBgInline({
-  loading, onConfirm,
+  loading, onConfirm, cost, balance,
 }: {
   loading: boolean;
   onConfirm: () => void;
+  cost: number;
+  balance: number | null;
 }) {
   const { t } = useLocale();
+  const insufficient = balance !== null && balance < cost;
   return (
     <div className="border-b border-white/[0.06] px-4 py-4 flex flex-col items-center gap-2.5 text-center">
       <div className="w-11 h-11 rounded-full bg-purple-500/15 flex items-center justify-center text-purple-300">
@@ -3791,13 +3810,31 @@ function RemoveBgInline({
           : t("mobileEditor.removeBg.desc")
         }
       </p>
+      {!loading && (
+        <div className="text-[10px] flex items-center gap-1.5">
+          <span className="text-gray-400">Coste:</span>
+          <span className="font-bold text-purple-200">{cost} crédito{cost !== 1 ? "s" : ""}</span>
+          {balance !== null && (
+            <>
+              <span className="text-gray-600">·</span>
+              <span className={`font-bold ${insufficient ? "text-red-300" : "text-gray-300"}`}>
+                Tienes {balance}
+              </span>
+            </>
+          )}
+        </div>
+      )}
       <button
         onClick={onConfirm}
-        disabled={loading}
+        disabled={loading || insufficient}
         className="mt-1 px-5 py-2 rounded-xl bg-purple-500 text-white text-[12px] font-bold active:scale-[0.97] transition-transform disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
       >
         <Sparkles size={13} strokeWidth={2.5}/>
-        {loading ? t("mobileEditor.removeBg.buttonLoading") : t("mobileEditor.removeBg.button")}
+        {loading
+          ? t("mobileEditor.removeBg.buttonLoading")
+          : insufficient
+            ? "Sin créditos"
+            : t("mobileEditor.removeBg.button")}
       </button>
     </div>
   );
