@@ -35,6 +35,12 @@ function PricingContent() {
   const successPlan = sp.get("plan"); // "pro" | "enterprise" | null
   // Distinguimos qué botón está cargando para mostrar spinner solo en el suyo.
   const [loadingPlan, setLoadingPlan] = useState<"pro" | "enterprise" | null>(null);
+  // Fase T.9 — toggle facturación. Anual = 20% off → 2 meses gratis al año.
+  // Persistimos en URL para que el toggle no se pierda en navegación interna.
+  const intervalParam = sp.get("interval");
+  const [billingInterval, setBillingInterval] = useState<"month" | "year">(
+    intervalParam === "year" ? "year" : "month"
+  );
   // Calculadora: cuántos flyers/mes — decide la recomendación Pro vs Enterprise.
   // 1 flyer hecho con freelance ~= 30€; con ArteGenIA ~= coste plan / N.
   const [flyersPerMonth, setFlyersPerMonth] = useState(20);
@@ -57,14 +63,14 @@ function PricingContent() {
       // del header y el banner "Gestionar suscripción" se actualizan solos
       // sin que el user tenga que cerrar sesión y volver a entrar.
       let attempts = 0;
-      const interval = setInterval(async () => {
+      const pollId = setInterval(async () => {
         attempts += 1;
         await refreshProfile();
-        if (attempts >= 5) clearInterval(interval);
+        if (attempts >= 5) clearInterval(pollId);
       }, 2000);
       // Primer refresh inmediato (por si el webhook ya completó)
       void refreshProfile();
-      return () => clearInterval(interval);
+      return () => clearInterval(pollId);
     }
     if (canceled) toast.info("Pago cancelado — sin cargo.");
   }, [success, canceled, successPlan, toast, refreshProfile]);
@@ -124,7 +130,7 @@ function PricingContent() {
       const res = await fetch("/api/stripe/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan }),
+        body: JSON.stringify({ plan, interval: billingInterval }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -221,6 +227,41 @@ function PricingContent() {
           </p>
         </div>
 
+        {/* Toggle Mensual / Anual — Fase T.9. Pasa el billingInterval al checkout
+            y cambia visualmente el precio mostrado. Anual = 20% off
+            (equivale a 2 meses gratis al año). */}
+        {!isPaid && (
+          <div className="flex justify-center mb-10">
+            <div className="inline-flex items-center gap-1 p-1 rounded-full bg-white/[0.04] border border-white/[0.08]">
+              <button
+                onClick={() => setBillingInterval("month")}
+                className={`px-5 py-2 rounded-full text-[12px] font-bold transition-all ${
+                  billingInterval === "month"
+                    ? "bg-white text-[#0a0a14] shadow-md"
+                    : "text-gray-400 hover:text-white"
+                }`}
+                aria-pressed={billingInterval === "month"}
+              >
+                Mensual
+              </button>
+              <button
+                onClick={() => setBillingInterval("year")}
+                className={`px-5 py-2 rounded-full text-[12px] font-bold transition-all flex items-center gap-2 ${
+                  billingInterval === "year"
+                    ? "bg-white text-[#0a0a14] shadow-md"
+                    : "text-gray-400 hover:text-white"
+                }`}
+                aria-pressed={billingInterval === "year"}
+              >
+                Anual
+                <span className="text-[9px] uppercase tracking-wider font-black px-1.5 py-0.5 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 text-white">
+                  -20%
+                </span>
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Banner usuario paid — botón gestionar suscripción */}
         {isPaid && !success && (
           <div className="mb-8 max-w-2xl mx-auto p-5 rounded-2xl bg-gradient-to-br from-purple-500/[0.08] via-fuchsia-500/[0.05] to-transparent border border-purple-500/30 flex items-center gap-4 flex-wrap justify-between">
@@ -314,13 +355,31 @@ function PricingContent() {
             <p className="text-[13px] text-purple-200 mb-6">Para profesionales</p>
 
             <div className="mb-6 pb-6 border-b border-white/[0.06]">
-              <div className="flex items-baseline gap-1">
-                <span className="text-[42px] font-black tracking-tight shimmer-text">9,99€</span>
-                <span className="text-[13px] text-gray-400">/mes</span>
-              </div>
-              <p className="text-[11px] text-emerald-300 font-semibold mt-1">
-                🎁 30 días gratis · Cancela cuando quieras
-              </p>
+              {billingInterval === "year" ? (
+                <>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-[42px] font-black tracking-tight shimmer-text">7,99€</span>
+                    <span className="text-[13px] text-gray-400">/mes</span>
+                  </div>
+                  <p className="text-[11px] text-gray-500 mt-1">
+                    Facturado 95,90€/año · <span className="line-through">119,88€</span>{" "}
+                    <span className="text-emerald-300 font-bold">Ahorras 23,98€</span>
+                  </p>
+                  <p className="text-[11px] text-emerald-300 font-semibold mt-1">
+                    🎁 30 días gratis · 2 meses gratis al año
+                  </p>
+                </>
+              ) : (
+                <>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-[42px] font-black tracking-tight shimmer-text">9,99€</span>
+                    <span className="text-[13px] text-gray-400">/mes</span>
+                  </div>
+                  <p className="text-[11px] text-emerald-300 font-semibold mt-1">
+                    🎁 30 días gratis · Cancela cuando quieras
+                  </p>
+                </>
+              )}
             </div>
 
             <ul className="space-y-3 flex-1 mb-7">

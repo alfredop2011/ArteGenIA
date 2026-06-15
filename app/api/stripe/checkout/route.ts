@@ -28,11 +28,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Inicia sesion" }, { status: 401 });
     }
 
-    // Acepta body { plan: "pro" | "enterprise" }. Default: "pro" (back-compat).
+    // Acepta body { plan: "pro" | "enterprise", interval: "month" | "year" }
+    // Default: pro + month (back-compat con clientes antiguos sin interval).
     let plan: PlanKey = "pro";
+    let interval: "month" | "year" = "month";
     try {
       const body = await req.json().catch(() => ({}));
       if (body?.plan === "enterprise") plan = "enterprise";
+      if (body?.interval === "year") interval = "year";
     } catch {}
 
     // Fase T.11 — Enterprise temporalmente bloqueado (mailto teaser en
@@ -46,7 +49,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const priceId = priceIdFor(plan);
+    const priceId = priceIdFor(plan, interval);
     if (!priceId) {
       return NextResponse.json(
         { error: `Plan ${plan} no configurado` },
@@ -72,12 +75,12 @@ export async function POST(req: NextRequest) {
       // saber qué profile actualizar. También pasamos el plan deseado en
       // metadata como backup (el webhook prefiere mirar el price_id real).
       client_reference_id: user.id,
-      metadata: { supabase_user_id: user.id, requested_plan: plan },
+      metadata: { supabase_user_id: user.id, requested_plan: plan, interval },
       subscription_data: {
-        metadata: { supabase_user_id: user.id, requested_plan: plan },
+        metadata: { supabase_user_id: user.id, requested_plan: plan, interval },
         ...(useTrial ? { trial_period_days: trialDays } : {}),
       },
-      success_url: `${baseUrl}/pricing?success=1&plan=${plan}&session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `${baseUrl}/pricing?success=1&plan=${plan}&interval=${interval}&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${baseUrl}/pricing?canceled=1`,
       allow_promotion_codes: true,
       billing_address_collection: "auto",

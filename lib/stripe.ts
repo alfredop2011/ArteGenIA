@@ -23,26 +23,38 @@ export const stripe = new Stripe(apiKey ?? "sk_test_dummy", {
   typescript: true,
 });
 
-/** Price IDs recurrentes mensuales por plan. Crear en Stripe Dashboard:
- *  Products → Add product → "ArteGenIA Pro" (9,99€/mes) o
- *  "ArteGenIA Enterprise" (34,99€/mes) → copiar Price ID. */
+/** Price IDs Stripe. Crear en Dashboard:
+ *  Products → Add product → "ArteGenIA Pro" con DOS prices:
+ *    - 9,99€/mes recurrente → STRIPE_PRO_PRICE_ID
+ *    - 95,90€/año recurrente (= 7,99€/mes × 12 con 20% off) → STRIPE_PRO_PRICE_ID_YEARLY
+ *  Mismo Product, DOS Prices (mensual y anual). Stripe permite varios prices
+ *  por product. */
 export const PRO_PRICE_ID = process.env.STRIPE_PRO_PRICE_ID ?? "";
+export const PRO_PRICE_ID_YEARLY = process.env.STRIPE_PRO_PRICE_ID_YEARLY ?? "";
 export const ENTERPRISE_PRICE_ID = process.env.STRIPE_ENTERPRISE_PRICE_ID ?? "";
+export const ENTERPRISE_PRICE_ID_YEARLY = process.env.STRIPE_ENTERPRISE_PRICE_ID_YEARLY ?? "";
 
 export type PlanKey = "pro" | "enterprise";
+export type BillingInterval = "month" | "year";
 
-/** Mapea plan key → price ID Stripe. Usado por checkout para saber qué
- *  product line item suscribir y por webhook para detectar qué plan se
- *  compró (comparando subscription.items[0].price.id). */
-export function priceIdFor(plan: PlanKey): string {
-  return plan === "enterprise" ? ENTERPRISE_PRICE_ID : PRO_PRICE_ID;
+/** Mapea (plan, interval) → price ID Stripe. Si el interval anual no está
+ *  configurado, cae al mensual (degradación segura — el user paga mensual
+ *  en vez de fallar el checkout). */
+export function priceIdFor(plan: PlanKey, interval: BillingInterval = "month"): string {
+  if (plan === "enterprise") {
+    return interval === "year" && ENTERPRISE_PRICE_ID_YEARLY
+      ? ENTERPRISE_PRICE_ID_YEARLY
+      : ENTERPRISE_PRICE_ID;
+  }
+  return interval === "year" && PRO_PRICE_ID_YEARLY ? PRO_PRICE_ID_YEARLY : PRO_PRICE_ID;
 }
 
 /** Reverse lookup: dado un price ID, ¿qué plan es? Devuelve null si
  *  el ID no coincide con ningún price configurado (puede pasar si el
  *  user tenía un plan legacy borrado). */
 export function planFromPriceId(priceId: string): PlanKey | null {
-  if (priceId && priceId === ENTERPRISE_PRICE_ID) return "enterprise";
-  if (priceId && priceId === PRO_PRICE_ID) return "pro";
+  if (!priceId) return null;
+  if (priceId === ENTERPRISE_PRICE_ID || priceId === ENTERPRISE_PRICE_ID_YEARLY) return "enterprise";
+  if (priceId === PRO_PRICE_ID || priceId === PRO_PRICE_ID_YEARLY) return "pro";
   return null;
 }
