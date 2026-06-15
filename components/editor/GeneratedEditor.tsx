@@ -61,6 +61,9 @@ import KeyboardShortcutsModal from "@/components/editor/KeyboardShortcutsModal";
 import FontPickerPopover from "@/components/editor/FontPickerPopover";
 import PostDownloadModal from "@/components/editor/PostDownloadModal";
 import { FEATURES } from "@/lib/features";
+import { ConfirmCreditModal } from "@/components/credits/ConfirmCreditModal";
+import { useCredits } from "@/hooks/useCredits";
+import { CREDIT_COST, type CreditModule } from "@/lib/credits";
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
 
@@ -2138,17 +2141,37 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
     );
   }, [canvasSize, authProfile?.plan, toast]);
 
-  // Wrapper publico: pide sesion antes de descargar. Si no hay, abre AuthModal
-  // y reintenta tras login. Si hay sesion, descarga directo.
+  // Fase Z.7 — modal de confirmación de crédito antes de export.
+  // PNG/JPG = 1 crédito (CREDIT_COST.download_png).
+  const credits = useCredits();
+  const [pendingExportFormat, setPendingExportFormat] = useState<"png" | "jpg" | null>(null);
+
+  /** Wrapper publico: pide sesion → muestra modal créditos → consume → exporta.
+   *  Flow: requireAuth → setPendingExportFormat (abre modal) → handleConfirmExport
+   *  → consume crédito server-side → doExport(format) → descarga real. */
   const exportFlyer = useCallback((format: "png" | "jpg" = "png") => {
     requireAuth(
-      () => doExport(format),
+      () => setPendingExportFormat(format),
       {
         title: "Descarga tu diseño",
         subtitle: "Inicia sesión para descargar. Es gratis.",
       },
     );
-  }, [requireAuth, doExport]);
+  }, [requireAuth]);
+
+  /** Tras confirmar modal: consume crédito y dispara descarga. */
+  const handleConfirmExport = useCallback(async () => {
+    if (!pendingExportFormat) return;
+    // Mismo CREDIT_COST.download_png para PNG/JPG (políticamente equivalente)
+    const moduleKey: CreditModule = "download_png";
+    const result = await credits.consume(moduleKey, { format: pendingExportFormat });
+    if (!result.success) {
+      toast.error("Sin créditos suficientes");
+      return;
+    }
+    await doExport(pendingExportFormat);
+    setPendingExportFormat(null);
+  }, [pendingExportFormat, credits, doExport, toast]);
 
   // ─── SAVE TO SUPABASE ─────────────────────────────────────────────────────
 
@@ -3811,6 +3834,18 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
           onClose={() => setPostDownload(null)}
         />
       )}
+
+      {/* Fase Z.7 — Modal de confirmación de crédito antes de export */}
+      <ConfirmCreditModal
+        open={pendingExportFormat !== null}
+        onClose={() => setPendingExportFormat(null)}
+        onConfirm={handleConfirmExport}
+        actionLabel={`Descargar flyer en ${pendingExportFormat?.toUpperCase() ?? "imagen"}`}
+        amount={CREDIT_COST.download_png}
+        balance={credits.balance ?? 0}
+        daysUntilReset={credits.daysUntilReset ?? undefined}
+      />
+
 
       {paletteOpen && (
         <CommandPalette

@@ -60,6 +60,9 @@ import { useProjectPages } from "@/hooks/useProjectPages";
 import { supabase } from "@/lib/supabase";
 import { useLocale } from "@/hooks/useLocale";
 import { UpgradeModal, type UpgradeFeature } from "@/components/upgrade/UpgradeModal";
+import { ConfirmCreditModal } from "@/components/credits/ConfirmCreditModal";
+import { useCredits } from "@/hooks/useCredits";
+import { CREDIT_COST, type CreditModule } from "@/lib/credits";
 import { Save, FolderOpen, Share2, Link2, Mail, MessageCircle, Send, Plus, Layers, Lock, Unlock, Eye, EyeOff, Circle as CircleIcon, Square as SquareIcon, Triangle, Heart, Star, AlignHorizontalJustifyCenter } from "lucide-react";
 
 type Props = {
@@ -1952,12 +1955,24 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
     a.click();
   }, []);
 
-  const exportSingleFormat = useCallback(async (fmtId: FormatId) => {
+  // Fase Z.7 — créditos export
+  const credits = useCredits();
+  const [pendingExportPayload, setPendingExportPayload] = useState<{
+    fmtId: FormatId;
+    fileFormat: "png" | "jpg" | "pdf" | "svg";
+  } | null>(null);
+
+  /** Mapea formato → módulo de créditos (CREDIT_COST). PNG/JPG=1cr, PDF/SVG=3cr. */
+  const formatToCreditModule = (fileFormat: "png"|"jpg"|"pdf"|"svg"): CreditModule => {
+    if (fileFormat === "pdf") return "download_pdf";
+    if (fileFormat === "svg") return "download_svg";
+    return "download_png"; // jpg también = 1 crédito (mismo CREDIT_COST.download_png)
+  };
+
+  /** Lógica REAL de export (renombrada para wrappear con modal créditos).
+   *  Llamada solo tras confirmar consumo en handleConfirmExport. */
+  const _executeExport = useCallback(async (fmtId: FormatId) => {
     if (!template) return;
-    // Gate PDF/SVG para Free users
-    if (exportFileFormat === "pdf" && !requirePro("pdf")) return;
-    if (exportFileFormat === "svg" && !requirePro("svg")) return;
-    if (!authUser) { toast.info(t("mobileEditor.toast.loginToDownload")); return; }
     setExporting(true);
     try {
       // Si es el formato actual, usar export directo del canvas vivo (preserva
@@ -2006,26 +2021,72 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
     }
   }, [template, formatId, doExport, renderVariantOffscreen, authProfile?.plan, toast, downloadDataUrl, exportFileFormat]);
 
+  /** Wrapper público que pasamos al sheet de export. Hace guards (auth,
+   *  pro/pdf/svg, plantilla) y abre modal de créditos. La descarga real
+   *  ocurre solo tras confirmar. */
+  const exportSingleFormat = useCallback(async (fmtId: FormatId) => {
+    if (!template) return;
+    if (exportFileFormat === "pdf" && !requirePro("pdf")) return;
+    if (exportFileFormat === "svg" && !requirePro("svg")) return;
+    if (!authUser) { toast.info(t("mobileEditor.toast.loginToDownload")); return; }
+    // Abrir modal de créditos. El user confirma → handleConfirmExport ejecuta.
+    setPendingExportPayload({ fmtId, fileFormat: exportFileFormat });
+  }, [template, exportFileFormat, requirePro, authUser, toast, t]);
+
+  /** Tras confirmar modal: consume crédito server-side + ejecuta export. */
+  const handleConfirmExport = useCallback(async () => {
+    if (!pendingExportPayload) return;
+    const moduleKey = formatToCreditModule(pendingExportPayload.fileFormat);
+    const result = await credits.consume(moduleKey, { format: pendingExportPayload.fileFormat });
+    if (!result.success) {
+      toast.error("Sin créditos suficientes");
+      return;
+    }
+    await _executeExport(pendingExportPayload.fmtId);
+    setPendingExportPayload(null);
+  }, [pendingExportPayload, credits, _executeExport, toast]);
+
   const exportAllFormats = useCallback(async () => {
     if (!template) return;
+    // Z.7 — Multi-formato consume N créditos (1 por formato). Usamos download_png
+    // como módulo para todos los formatos en este lote (simplifica el cobro).
+    // El user debería decidir formato base en el sheet antes de "exportar todos".
+    if (exportFileFormat === "pdf" && !requirePro("pdf")) return;
+    if (exportFileFormat === "svg" && !requirePro("svg")) return;
+    if (!authUser) { toast.info(t("mobileEditor.toast.loginToDownload")); return; }
+    const available = PUBLIC_FORMATS.filter(fmt => {
+      const v = template.variants.find(x => x.format === fmt);
+      return !!v;
+    });
+    if (available.length === 0) return;
+
+    // Coste = N formatos × CREDIT_COST.download_png
+    const moduleKey = formatToCreditModule(exportFileFormat);
+    const totalCost = CREDIT_COST[moduleKey] * available.length;
+    if ((credits.balance ?? 0) < totalCost) {
+      toast.error(`Necesitas ${totalCost} créditos para descargar ${available.length} formatos`);
+      return;
+    }
+
     setExporting(true);
     try {
-      const available = PUBLIC_FORMATS.filter(fmt => {
-        const v = template.variants.find(x => x.format === fmt);
-        return !!v;
-      });
       let done = 0;
       for (const fmt of available) {
-        await exportSingleFormat(fmt);
+        // Consumir crédito por formato + ejecutar export
+        const result = await credits.consume(moduleKey, { format: exportFileFormat, batch: true });
+        if (!result.success) {
+          toast.error(`Sin créditos a mitad del lote (${done}/${available.length} descargados)`);
+          break;
+        }
+        await _executeExport(fmt);
         done++;
-        // Pequeño delay para que el navegador no bloquee las descargas multiples
         await new Promise(r => setTimeout(r, 400));
       }
-      toast.success(`Descargados ${done} formatos`);
+      if (done > 0) toast.success(`Descargados ${done} formatos`);
     } finally {
       setExporting(false);
     }
-  }, [template, exportSingleFormat, toast]);
+  }, [template, exportFileFormat, requirePro, authUser, toast, t, credits, _executeExport]);
 
   // ─── Aplicar paleta ──────────────────────────────────────────────────────
   const applyPalette = useCallback((palette: Palette) => {
@@ -2954,6 +3015,26 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
           onClose={() => setUpgradeFeature(null)}
         />
       )}
+
+      {/* Fase Z.7 — Modal de confirmación de crédito antes de export */}
+      <ConfirmCreditModal
+        open={pendingExportPayload !== null}
+        onClose={() => setPendingExportPayload(null)}
+        onConfirm={handleConfirmExport}
+        actionLabel={
+          pendingExportPayload
+            ? `Descargar flyer en ${pendingExportPayload.fileFormat.toUpperCase()}`
+            : "Descargar flyer"
+        }
+        amount={
+          pendingExportPayload
+            ? CREDIT_COST[formatToCreditModule(pendingExportPayload.fileFormat)]
+            : 1
+        }
+        balance={credits.balance ?? 0}
+        daysUntilReset={credits.daysUntilReset ?? undefined}
+      />
+
 
       {/* PÁGINAS SHEET — Multi-página (Fase W.1) */}
       {showPagesSheet && (
