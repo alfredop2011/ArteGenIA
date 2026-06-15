@@ -327,11 +327,11 @@ function PricingContent() {
               <Check text="Editor completo (texto + imagen + forma)"/>
               <Check text="48+ plantillas profesionales"/>
               <Check text="Sin watermark · descarga limpia"/>
+              <Check text="Quitar fondo IA: 10 imágenes/mes"/>
               <Check text="Exportar PNG y JPG"/>
               <Check text="Multi-formato (Story, Post, Square)"/>
               <Check text="4 idiomas (ES/EN/FR/PT)"/>
               <Check text="Mis flyers (guardar proyectos)"/>
-              <Cross text="Quitar fondo IA: 10/mes"/>
               <Cross text="Exportar PDF imprenta"/>
             </ul>
 

@@ -56,6 +56,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     const userIsAdmin = isAdmin(user?.email);
     const navLinks = [
         { href: "/create", label: t("nav.create") },
+        { href: "/quitar-fondo", label: "Quitar fondo" },
         { href: "/capas-magicas", label: "Capas Mágicas", badge: userIsAdmin ? undefined : "Próximamente" },
         { href: "/templates", label: t("nav.templates") },
         { href: "/projects", label: t("nav.projects") },
@@ -287,6 +288,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                          style={{ background: "var(--home-bg-soft)", borderColor: "var(--home-card-border)" }}>
                         <div className="w-12 h-1 bg-white/20 rounded-full mx-auto mt-3 mb-4" />
                         <div className="px-4 space-y-1">
+                            {/* Quitar fondo: feature destacada, accesible a todos */}
+                            <Link href="/quitar-fondo" onClick={() => setShowMobileMenu(false)}
+                                className="flex items-center gap-3 px-4 py-3 rounded-xl text-base text-emerald-300 active:bg-emerald-500/10">
+                                <Wand2 size={20} strokeWidth={1.8} />
+                                Quitar fondo
+                            </Link>
                             {/* Capas Mágicas: visible para todos. Si no admin,
                                 badge "Próximamente". La página propia muestra
                                 teaser landing si no admin. */}
