@@ -16,7 +16,7 @@ import AuthModal from "@/components/auth/AuthModal";
  *
  * Plans:
  * - FREE 0€: editor + watermark + 1 IA/día
- * - PRO 9,99€/mes: editor + sin watermark + IA ilimitada + PDF/SVG
+ * - PRO 9,99€/mes: editor + sin watermark + Quitar fondo IA ilimitado + PDF imprenta
  * - ENTERPRISE 34,99€/mes: Pro + acceso para equipos (early access)
  */
 
@@ -326,11 +326,11 @@ function PricingContent() {
             <ul className="space-y-3 flex-1 mb-7">
               <Check strong text="Todo lo de Free"/>
               <Check strong text="Sin watermark"/>
-              <Check strong text="IA ilimitada (asistente + remix + quitar fondo)"/>
-              <Check strong text="Exportar PDF imprenta + SVG vectorial"/>
-              <Check strong text="Subir tus propias fuentes"/>
+              <Check strong text="Quitar fondo IA ilimitado (asistente + remix)"/>
+              <Check strong text="Exportar PDF imprenta de alta calidad"/>
               <Check strong text="Soporte prioritario por email"/>
               <Check strong text="Uso comercial sin restricciones"/>
+              <Check strong text="Más herramientas IA próximamente"/>
             </ul>
 
             <button
@@ -353,11 +353,14 @@ function PricingContent() {
             )}
           </div>
 
-          {/* ENTERPRISE */}
+          {/* ENTERPRISE — Próximamente (Fase V.9 honesto). Features Brand Kit,
+              multi-user, IVA aún no implementadas. Para evitar fraude legal,
+              quitamos checkout y exponemos como teaser con mailto para lista
+              de espera. Activar el checkout cuando esté implementado todo. */}
           <div className="relative flex flex-col p-7 rounded-2xl bg-[#13131f] border border-amber-500/40">
-            {/* Badge early access */}
+            {/* Badge próximamente */}
             <div className="absolute -top-3 right-5 px-3 py-1 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[10px] font-black uppercase tracking-widest shadow-lg shadow-amber-500/30">
-              🚀 Early access
+              ✨ Próximamente
             </div>
 
             <div className="flex items-baseline justify-between mb-1">
@@ -372,8 +375,8 @@ function PricingContent() {
                 </span>
                 <span className="text-[13px] text-gray-400">/mes</span>
               </div>
-              <p className="text-[11px] text-emerald-300 font-semibold mt-1">
-                🎁 30 días gratis · Acceso anticipado limitado
+              <p className="text-[11px] text-amber-300 font-semibold mt-1">
+                🔔 Reserva tu plaza · Acceso anticipado limitado
               </p>
             </div>
 
@@ -388,19 +391,12 @@ function PricingContent() {
               <Check strong text="Más herramientas próximamente"/>
             </ul>
 
-            <button
-              onClick={() => startCheckout("enterprise")}
-              disabled={loading || isEnterprise}
-              className="w-full text-center py-3 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 text-white font-black text-[13px] active:scale-[0.97] transition-transform shadow-lg shadow-amber-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
+            <a
+              href="mailto:alfredop2011@gmail.com?subject=Reserva%20Enterprise%20ArteGenIA&body=Hola%2C%20me%20interesa%20reservar%20una%20plaza%20para%20Enterprise%20cuando%20est%C3%A9%20disponible.%20Mi%20equipo%20es%20de%20___%20personas%20y%20hacemos%20___%20flyers%2Fmes."
+              className="w-full text-center py-3 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 text-white font-black text-[13px] active:scale-[0.97] transition-transform shadow-lg shadow-amber-500/30 block"
             >
-              {isEnterprise
-                ? "Ya tienes Enterprise ✓"
-                : loadingPlan === "enterprise"
-                  ? "Cargando…"
-                  : isPro
-                    ? "Subir a Enterprise →"
-                    : "Reservar early access →"}
-            </button>
+              Reservar plaza →
+            </a>
             <p className="text-[10px] text-gray-500 text-center mt-2">
               {!user
                 ? "Crearás tu cuenta antes del pago · Cancela cuando quieras"
@@ -433,15 +429,15 @@ function PricingContent() {
               <div className="text-[11px] text-amber-300 font-bold text-center">Enterprise</div>
             </div>
             {[
-              { f: "Editor completo", free: "✓", pro: "✓", ent: "✓" },
-              { f: "Plantillas", free: "50+", pro: "50+", ent: "50+ exclusivas" },
-              { f: "Generaciones IA", free: "1/día", pro: "Ilimitadas", ent: "Ilimitadas" },
-              { f: "Watermark", free: "Sí", pro: "No", ent: "No" },
-              { f: "Exportar PNG/JPG", free: "✓", pro: "✓", ent: "✓" },
-              { f: "Exportar PDF / SVG", free: "—", pro: "✓", ent: "✓" },
-              { f: "Equipo multi-usuario", free: "—", pro: "—", ent: "✓" },
-              { f: "Brand Kit", free: "—", pro: "—", ent: "✓" },
-              { f: "Soporte", free: "Comunidad", pro: "Email prioritario", ent: "WhatsApp dedicado" },
+              { f: "Editor completo", free: "✓", pro: "✓", ent: "Próximamente" },
+              { f: "Plantillas profesionales", free: "48+", pro: "48+", ent: "Próximamente" },
+              { f: "Quitar fondo IA", free: "10/mes", pro: "Ilimitado", ent: "Próximamente" },
+              { f: "Watermark", free: "Sí", pro: "No", ent: "Próximamente" },
+              { f: "Exportar PNG / JPG", free: "✓", pro: "✓", ent: "Próximamente" },
+              { f: "Exportar PDF imprenta", free: "—", pro: "✓", ent: "Próximamente" },
+              { f: "Equipo multi-usuario", free: "—", pro: "—", ent: "Próximamente" },
+              { f: "Brand Kit", free: "—", pro: "—", ent: "Próximamente" },
+              { f: "Soporte", free: "Comunidad", pro: "Email prioritario", ent: "Próximamente" },
             ].map((row, i) => (
               <div key={i} className="grid grid-cols-4 px-4 py-3 border-b border-white/[0.04] last:border-b-0">
                 <div className="text-[12px] text-gray-300 font-semibold">{row.f}</div>

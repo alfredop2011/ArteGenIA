@@ -35,6 +35,17 @@ export async function POST(req: NextRequest) {
       if (body?.plan === "enterprise") plan = "enterprise";
     } catch {}
 
+    // Fase T.11 — Enterprise temporalmente bloqueado (mailto teaser en
+    // /pricing) hasta tener: multi-user workspace, Brand Kit, plantillas
+    // exclusivas, factura con IVA. Vender hoy = riesgo de chargebacks +
+    // denuncia por publicidad engañosa. Reactivar quitando este bloque.
+    if (plan === "enterprise") {
+      return NextResponse.json(
+        { error: "Enterprise estará disponible próximamente. Reserva tu plaza en /pricing." },
+        { status: 403 },
+      );
+    }
+
     const priceId = priceIdFor(plan);
     if (!priceId) {
       return NextResponse.json(
