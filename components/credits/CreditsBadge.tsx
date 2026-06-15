@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Zap } from "lucide-react";
 import { useCredits } from "@/hooks/useCredits";
+import { trackUpgradeClicked, type UserPlan } from "@/lib/analytics";
 
 /**
  * Badge de créditos en el header (Fase Z.1).
@@ -24,9 +25,19 @@ export function CreditsBadge({ plan }: { plan?: string | null }) {
   const current = balance ?? grant;
   const low = current < grant * 0.2; // <20% restante
 
+  const handleClick = () => {
+    // Z.9 — track click en badge del header (puede ser conversion o consulta)
+    trackUpgradeClicked({
+      source: "header_badge",
+      current_plan: (plan ?? "free") as UserPlan,
+      current_balance: current,
+    });
+  };
+
   return (
     <Link
       href="/pricing"
+      onClick={handleClick}
       className={`flex items-center gap-1.5 sm:gap-2 border rounded-full px-2 sm:px-3 py-1 text-xs transition-colors ${
         low
           ? "border-amber-500/40 bg-amber-500/5 text-amber-200 hover:bg-amber-500/10"

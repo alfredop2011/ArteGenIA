@@ -25,11 +25,18 @@ import AuthModal from "@/components/auth/AuthModal";
 import { ConfirmCreditModal } from "@/components/credits/ConfirmCreditModal";
 import { useCredits } from "@/hooks/useCredits";
 import { CREDIT_COST } from "@/lib/credits";
+import {
+  trackModuleOpened,
+  trackModuleCompleted,
+  trackExportCompleted,
+  type UserPlan,
+} from "@/lib/analytics";
 
 type FlowState = "upload" | "processing" | "preview";
 
 export default function QuitarFondoPage() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, profile, loading: authLoading } = useAuth();
+  const planForAnalytics: UserPlan = profile?.plan ?? (user ? "free" : "anonymous");
   const { toast } = useToast();
   const router = useRouter();
 
@@ -67,6 +74,19 @@ export default function QuitarFondoPage() {
       })
       .catch(() => {});
   }, [user]);
+
+  // Fase Z.9 — track module_opened una vez al montar
+  const moduleStartRef = useRef<number>(0);
+  useEffect(() => {
+    if (authLoading) return;
+    moduleStartRef.current = Date.now();
+    trackModuleOpened({
+      module: "quitar_fondo",
+      source: "menu_nav",
+      plan: planForAnalytics,
+      credits_remaining: 0, // se actualiza al cargar creds, pero el evento ya capturó el momento de apertura
+    });
+  }, [authLoading, planForAnalytics]);
 
   const handleFile = useCallback(async (file: File) => {
     if (!user) {
@@ -149,6 +169,14 @@ export default function QuitarFondoPage() {
       // Pequeño delay para que el usuario vea el 100% completarse
       await new Promise((r) => setTimeout(r, 300));
       setState("preview");
+      // Z.9 — track éxito del módulo Quitar fondo
+      trackModuleCompleted({
+        module: "quitar_fondo",
+        credits_consumed: 1, // CREDIT_COST.quitar_fondo
+        duration_seconds: Math.round((Date.now() - moduleStartRef.current) / 1000),
+        result_size_mb: file.size / (1024 * 1024),
+        plan: planForAnalytics,
+      });
       // Recargar cuota (consumimos uno)
       if (quota && !quota.unlimited) {
         setQuota({ ...quota, used: quota.used + 1 });
@@ -196,7 +224,16 @@ export default function QuitarFondoPage() {
       return;
     }
     await doDownload();
-  }, [credits, doDownload, toast]);
+    // Z.9 — track descarga PNG sin fondo
+    trackExportCompleted({
+      format: "png",
+      credits_consumed: 1,
+      resolution: "standard",
+      has_ai_layers: true,
+      plan: planForAnalytics,
+      source: "quitar_fondo",
+    });
+  }, [credits, doDownload, toast, planForAnalytics]);
 
   const handleEditInEditor = useCallback(async () => {
     if (!removedUrl) return;

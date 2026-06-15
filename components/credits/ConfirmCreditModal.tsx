@@ -13,8 +13,9 @@
  *   - error: fallback genérico (raro)
  */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { trackCreditsExhausted, trackUpgradeClicked, type AnalyticsModule } from "@/lib/analytics";
 
 export type ConfirmCreditModalProps = {
   open: boolean;
@@ -34,9 +35,22 @@ export function ConfirmCreditModal({
   open, onClose, onConfirm, actionLabel, amount, balance, daysUntilReset,
 }: ConfirmCreditModalProps) {
   const [loading, setLoading] = useState(false);
-  if (!open) return null;
-
   const insufficient = balance < amount;
+
+  // Z.9 — track credits_exhausted cuando se abre el modal en estado insuficiente
+  useEffect(() => {
+    if (open && insufficient) {
+      trackCreditsExhausted({
+        attempted_module: "download_png" as AnalyticsModule,
+        attempted_amount: amount,
+        current_balance: balance,
+        days_until_reset: daysUntilReset ?? 0,
+        plan: "free", // si tiene insuficiente, prob es free; análisis posterior puede mejorar
+      });
+    }
+  }, [open, insufficient, amount, balance, daysUntilReset]);
+
+  if (!open) return null;
   const afterBalance = balance - amount;
 
   const handleConfirm = async () => {
@@ -81,10 +95,18 @@ export function ConfirmCreditModal({
               <div className="space-y-2">
                 <Link
                   href="/pricing"
-                  onClick={onClose}
+                  onClick={() => {
+                    // Z.9 — track click upgrade desde modal sin créditos
+                    trackUpgradeClicked({
+                      source: "credits_exhausted_modal",
+                      current_plan: "free",
+                      current_balance: balance,
+                    });
+                    onClose();
+                  }}
                   className="block w-full text-center py-3 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-black text-[13px] shadow-lg shadow-purple-500/30 hover:opacity-90"
                 >
-                  Sube a Pro · 250 créditos/mes →
+                  Sube a Pro · 100 créditos/mes →
                 </Link>
                 <button
                   onClick={onClose}
