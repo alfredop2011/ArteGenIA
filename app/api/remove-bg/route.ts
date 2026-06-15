@@ -3,7 +3,7 @@ import { fal } from "@fal-ai/client";
 import { uploadToR2, makeKey } from "@/lib/r2";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { checkRateLimit } from "@/lib/rateLimit";
-import { consumeCredits } from "@/lib/credits";
+import { consumeCredits, addCredits, CREDIT_COST } from "@/lib/credits";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -32,13 +32,22 @@ if (process.env.FAL_KEY) {
  *   Output: { url: string, key: string }
  */
 export async function POST(req: NextRequest) {
+  // Z.13 — bandera para saber si ya consumimos crédito (necesaria en
+  // catch global para hacer refund si algo falla post-consumo).
+  // Outer-scope para que el catch tenga acceso a supabase y user.id.
+  let supabaseForRefund: Awaited<ReturnType<typeof createSupabaseServerClient>> | null = null;
+  let userIdForRefund: string | null = null;
+  let creditConsumed = false;
+
   try {
     // ─── AUTH + RATE LIMIT ──────────────────────────────────────────────
     const supabase = await createSupabaseServerClient();
+    supabaseForRefund = supabase;
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       return NextResponse.json({ error: "Inicia sesion para usar esta funcion" }, { status: 401 });
     }
+    userIdForRefund = user.id;
     const limitRes = await checkRateLimit(supabase, user.id, "remove-bg");
     if (limitRes) return limitRes;
 
@@ -75,6 +84,7 @@ export async function POST(req: NextRequest) {
         { status: 402 },
       );
     }
+    creditConsumed = true; // Z.13: a partir de aquí, errores → refund
 
     // ─── MOTOR PRINCIPAL: BiRefNet vía Fal.ai ───────────────────────────
     // Buffer común para BiRefNet y fallback
@@ -148,19 +158,15 @@ export async function POST(req: NextRequest) {
       if (!removeBgRes.ok) {
         const errText = await removeBgRes.text();
         console.error("[remove-bg] fallback remove.bg también falló:", removeBgRes.status, errText);
-        return NextResponse.json(
-          { error: "No se pudo procesar la imagen (motor IA no disponible)", detail: errText },
-          { status: 502 },
-        );
+        // Lanzar para que el catch global haga refund + responda 500.
+        throw new Error(`remove.bg fallback failed: ${errText.slice(0, 200)}`);
       }
       resultBuf = Buffer.from(await removeBgRes.arrayBuffer());
     }
 
     if (!resultBuf) {
-      return NextResponse.json(
-        { error: "No hay motor de IA configurado (FAL_KEY o REMOVE_BG_API_KEY)" },
-        { status: 503 },
-      );
+      // Lanzar para que el catch global refund.
+      throw new Error("No hay motor de IA configurado (FAL_KEY o REMOVE_BG_API_KEY)");
     }
 
     // ─── SUBIR A R2 ─────────────────────────────────────────────────────
@@ -176,6 +182,20 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     console.error("[/api/remove-bg] error:", err);
     const message = err instanceof Error ? err.message : "Error desconocido";
+    // Z.13 — refund automático si ya habíamos consumido crédito y algo
+    // falla post-consume. El user no debería pagar por servicio no recibido.
+    if (creditConsumed && supabaseForRefund && userIdForRefund) {
+      try {
+        await addCredits(
+          supabaseForRefund, userIdForRefund, CREDIT_COST.quitar_fondo,
+          "refund:remove-bg_error",
+          { detail: message.slice(0, 200) },
+        );
+        console.log(`[remove-bg] refund automático para user ${userIdForRefund}`);
+      } catch (refundErr) {
+        console.error("[remove-bg] refund FALLÓ — revisar manual:", refundErr);
+      }
+    }
     return NextResponse.json(
       { error: "No se pudo procesar la imagen.", detail: message },
       { status: 500 },

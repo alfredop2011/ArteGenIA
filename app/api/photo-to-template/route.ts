@@ -7,7 +7,7 @@ import { COST_PER_ACTION_USD, getQuota, isUnlimited } from "@/lib/quotas";
 import { FONT_CATALOG, matchFont } from "@/lib/fontCatalog";
 import { detectTextLinesWithSurya, refineSonnetBboxesWithSurya } from "@/lib/suryaOcr";
 import { isAdmin } from "@/lib/admin";
-import { consumeCredits } from "@/lib/credits";
+import { consumeCredits, addCredits, CREDIT_COST } from "@/lib/credits";
 
 /**
  * POST /api/photo-to-template
@@ -835,13 +835,21 @@ function iou(
 }
 
 export async function POST(req: Request) {
+  // Z.13 — refund automático si Sonnet/SAM-3 fallan post-consume.
+  // Outer-scope para que el catch global tenga acceso a supabase + user.id.
+  let supabaseForRefund: Awaited<ReturnType<typeof createSupabaseServerClient>> | null = null;
+  let userIdForRefund: string | null = null;
+  let creditConsumed = false;
+
   try {
     // ─── 1. AUTH ─────────────────────────────────────────────────────────
     const supabase = await createSupabaseServerClient();
+    supabaseForRefund = supabase;
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       return NextResponse.json({ error: "Inicia sesion para usar esta funcion" }, { status: 401 });
     }
+    userIdForRefund = user.id;
 
     // Fase V.9 — Capas Mágicas en BETA solo para admins mientras pulimos
     // calidad (bg-magic scaling, OCR precisión, font matching). Cuando esté
@@ -890,6 +898,7 @@ export async function POST(req: Request) {
         { status: 402 },
       );
     }
+    creditConsumed = true; // Z.13: a partir de aquí, errores → refund
     // Variables que el resto del código sigue usando para meta del response
     const { data: profile } = await supabase
       .from("profiles").select("plan").eq("id", user.id).maybeSingle();
@@ -1193,8 +1202,23 @@ export async function POST(req: Request) {
     });
   } catch (e) {
     console.error("[photo-to-template] unhandled:", e);
+    const message = e instanceof Error ? e.message : "Error desconocido";
+    // Z.13 — refund automático si Sonnet/SAM-3 fallaron post-consume.
+    // Capas Mágicas cuesta 2 créditos → refund 2.
+    if (creditConsumed && supabaseForRefund && userIdForRefund) {
+      try {
+        await addCredits(
+          supabaseForRefund, userIdForRefund, CREDIT_COST.capas_magicas,
+          "refund:capas_magicas_error",
+          { detail: message.slice(0, 200) },
+        );
+        console.log(`[photo-to-template] refund automático para user ${userIdForRefund}`);
+      } catch (refundErr) {
+        console.error("[photo-to-template] refund FALLÓ — revisar manual:", refundErr);
+      }
+    }
     return NextResponse.json(
-      { error: e instanceof Error ? e.message : "Error desconocido" },
+      { error: message },
       { status: 500 },
     );
   }

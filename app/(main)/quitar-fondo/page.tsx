@@ -216,14 +216,39 @@ export default function QuitarFondoPage() {
     setShowDownloadConfirm(true);
   }, [removedUrl]);
 
-  /** Confirmación del modal: consume crédito server-side + descarga. */
+  /** Confirmación del modal: pre-fetch blob ANTES de consumir crédito.
+   *  Si la imagen no está disponible (R2 down, CORS, etc.), NO consumimos
+   *  el crédito y mostramos error. Esto elimina la necesidad de refund
+   *  client-side y protege al usuario de pagar sin recibir. */
   const handleConfirmDownload = useCallback(async () => {
+    if (!removedUrl) return;
+    // Z.13 — pre-validar antes de consumir
+    let blob: Blob;
+    try {
+      const res = await fetch(removedUrl);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      blob = await res.blob();
+    } catch (e) {
+      console.error("[handleConfirmDownload] blob fetch failed:", e);
+      toast.error("No se pudo cargar la imagen. Intenta de nuevo.");
+      return; // NO consumimos crédito si la imagen no carga
+    }
+    // Ahora sí: consumir crédito
     const result = await credits.consume("download_png");
     if (!result.success) {
       toast.error("Sin créditos suficientes");
       return;
     }
-    await doDownload();
+    // Descargar el blob que ya tenemos en memoria (no re-fetch)
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `sin-fondo-${Date.now()}.png`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    toast.success("Descargado");
     // Z.9 — track descarga PNG sin fondo
     trackExportCompleted({
       format: "png",
@@ -233,7 +258,7 @@ export default function QuitarFondoPage() {
       plan: planForAnalytics,
       source: "quitar_fondo",
     });
-  }, [credits, doDownload, toast, planForAnalytics]);
+  }, [removedUrl, credits, toast, planForAnalytics]);
 
   /** Z.8 — Guarda el PNG sin fondo en /api/assets para reutilizar. */
   const handleSaveToGallery = useCallback(async () => {
