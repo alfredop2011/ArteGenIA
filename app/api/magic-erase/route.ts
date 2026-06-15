@@ -76,28 +76,31 @@ export async function POST(req: Request) {
     const falFile = new File([buffer], file.name || "input.png", { type: file.type || "image/png" });
     const uploadUrl = await fal.storage.upload(falFile);
 
-    // SAM-2 segmentación con point prompt. "label: 1" significa positive point
-    // → segmenta el objeto que CONTIENE este punto. Devuelve combined_mask
-    // (PNG blanco/negro) + individual_masks (uno por objeto, aquí solo 1).
-    const result = await fal.subscribe("fal-ai/sam2/image", {
+    // SAM-3 segmentación con point prompt. "label: 1" significa positive point
+    // → segmenta el objeto que CONTIENE este punto. apply_mask=false: queremos
+    // la máscara cruda (PNG blanco/negro), no la imagen recortada. El cliente
+    // aplica esa máscara como destination-out para borrar la zona.
+    const result = await fal.subscribe("fal-ai/sam-3/image", {
       input: {
         image_url: uploadUrl,
-        prompts: [{ x: Math.round(x), y: Math.round(y), label: "1" }],
+        point_prompts: [{ x: Math.round(x), y: Math.round(y), label: "1" }],
+        apply_mask: false,
+        max_masks: 1,
+        return_multiple_masks: false,
+        output_format: "png",
       },
       logs: false,
     });
 
+    // SAM-3 devuelve { masks: Array<{url}>, image?: {url}, ... }.
+    // masks[0] es la máscara binaria. Fallback a image si masks viene vacío.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const data = (result as any)?.data;
-    const maskUrl =
-      data?.combined_mask?.url ??
-      data?.individual_masks?.[0]?.url ??
-      data?.mask?.url ??
-      data?.masks?.[0]?.url;
+    const maskUrl = data?.masks?.[0]?.url ?? data?.image?.url;
 
     if (!maskUrl) {
-      console.error("[magic-erase] respuesta inesperada de SAM:", JSON.stringify(data).slice(0, 500));
-      throw new Error("SAM-2 no devolvió máscara");
+      console.error("[magic-erase] respuesta inesperada de SAM-3:", JSON.stringify(data).slice(0, 500));
+      throw new Error("SAM-3 no devolvió máscara");
     }
 
     return NextResponse.json({ maskUrl });

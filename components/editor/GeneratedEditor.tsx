@@ -2180,16 +2180,24 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
     const state = brushEraserState;
     setBrushEraserState(null);
     if (!state) return;
-    await new Promise<void>((resolve) => {
+    try {
+      // Fabric v6 setSrc devuelve Promise (NO callback). dataURL no necesita
+      // crossOrigin pero lo dejamos por consistencia con URLs http.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (state.obj as any).setSrc?.(resultDataUrl, () => {
-        fabricRef.current?.renderAll();
-        resolve();
+      await (state.obj as any).setSrc(resultDataUrl);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      }, { crossOrigin: "anonymous" } as any);
-    });
-    setSaveState("unsaved");
-    toast.success("Refinado aplicado");
+      (state.obj as any).filters = [];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (state.obj as any).applyFilters?.();
+      // Mantener selección tras el reemplazo
+      fabricRef.current?.setActiveObject(state.obj);
+      fabricRef.current?.requestRenderAll();
+      setSaveState("unsaved");
+      toast.success("Refinado aplicado");
+    } catch (e) {
+      console.error("[brush-eraser save]", e);
+      toast.error("No se pudo aplicar el refinado");
+    }
   }, [brushEraserState, toast]);
 
   /** Abre modal de confirmación. Si la imagen ya es transparente, no abre nada
@@ -2244,16 +2252,19 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
         throw new Error(json.error || "No se pudo quitar el fondo");
       }
 
-      // Reemplaza src en Fabric — añadimos ?v= para evitar caché R2 sin CORS
+      // Reemplaza src en Fabric — añadimos ?v= para evitar caché R2 sin CORS.
+      // Fabric v6 setSrc(src, opts) devuelve Promise (NO acepta callback).
       const newUrl = `${json.url}${json.url.includes("?") ? "&" : "?"}v=${Date.now()}`;
-      await new Promise<void>((resolve) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (obj as any).setSrc?.(newUrl, () => {
-          fabricRef.current?.renderAll();
-          resolve();
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        }, { crossOrigin: "anonymous" } as any);
-      });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (obj as any).setSrc(newUrl, { crossOrigin: "anonymous" });
+      // Limpiar filtros — PNG transparente nuevo, filtros viejos corromperían alpha
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (obj as any).filters = [];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (obj as any).applyFilters?.();
+      // Mantener el objeto seleccionado tras el reemplazo (Fabric a veces lo deselecciona)
+      fabricRef.current?.setActiveObject(obj);
+      fabricRef.current?.requestRenderAll();
       setSaveState("unsaved");
       void credits.refetch();
       toast.success("Fondo eliminado");
