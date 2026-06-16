@@ -76,13 +76,12 @@ export async function POST(req: Request) {
     const falFile = new File([buffer], file.name || "input.png", { type: file.type || "image/png" });
     const uploadUrl = await fal.storage.upload(falFile);
 
-    // Z.18 — SAM-3 image: click-to-segment con point_prompts. SAM-2 image
-    // tendía a devolver la unión de TODOS los objetos visibles (cuando la
-    // imagen ya está pre-recortada sin fondo), no solo el objeto bajo el
-    // punto. SAM-3 respeta mejor el point prompt individual.
-    //
-    // apply_mask=false: queremos la máscara cruda (PNG B/N), no imagen recortada.
-    // max_masks=1 + return_multiple_masks=false: solo 1 mask del objeto tocado.
+    // Z.19.1 — SAM-3 image con apply_mask=true. SAM devuelve `data.image` ya
+    // procesada: la imagen original con alpha del objeto seleccionado (resto
+    // transparente). Esto es MEJOR que mask cruda porque:
+    //  1. Ya tiene canal alpha real → destination-out funciona directo
+    //  2. Bordes con anti-aliasing (suavizado del objeto)
+    //  3. `masks[]` del response a veces viene en shape inconsistente
     let samResult;
     try {
       samResult = await fal.subscribe("fal-ai/sam-3/image", {
@@ -90,7 +89,7 @@ export async function POST(req: Request) {
           image_url: uploadUrl,
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           point_prompts: [{ x: Math.round(x), y: Math.round(y), label: 1 } as any],
-          apply_mask: false,
+          apply_mask: true,
           max_masks: 1,
           return_multiple_masks: false,
           output_format: "png",
@@ -110,20 +109,25 @@ export async function POST(req: Request) {
       throw new Error(`Fal.ai SAM-3: ${typeof detail === "string" ? detail : JSON.stringify(detail)}`);
     }
 
-    // SAM-3 image output: { masks: Array<Image>, image?: Image, ... }
+    // SAM-3 image output con apply_mask=true: data.image es la imagen
+    // segmentada con alpha real del objeto. Fallback a masks[0] por si acaso.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const data = (samResult as any)?.data;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const m0: any = data?.masks?.[0];
     const maskUrl =
-      data?.masks?.[0]?.url ??
       data?.image?.url ??
-      data?.combined_mask?.url ??
-      data?.individual_masks?.[0]?.url;
+      (typeof m0 === "string" ? m0 : null) ??
+      m0?.url ??
+      m0?.image?.url;
 
-    // Log diagnóstico que SIEMPRE va a Vercel logs — útil si SAM devuelve
-    // shape distinta del esperado (clave para debug en prod sin re-deploy).
+    // Log diagnóstico que SIEMPRE va a Vercel logs
     console.log("[magic-erase] SAM-3 ok:", {
       keys: data ? Object.keys(data).join(",") : "null",
-      masksCount: data?.masks?.length ?? 0,
+      masksLen: data?.masks?.length ?? 0,
+      masks0Type: typeof m0,
+      masks0Keys: m0 && typeof m0 === "object" ? Object.keys(m0).join(",") : "—",
+      hasImageUrl: !!data?.image?.url,
       hasMaskUrl: !!maskUrl,
       point: { x: Math.round(x), y: Math.round(y) },
     });
@@ -131,7 +135,7 @@ export async function POST(req: Request) {
     if (!maskUrl) {
       const keys = data ? Object.keys(data).join(",") : "null";
       console.error("[magic-erase] respuesta sin máscara, sample:",
-        JSON.stringify(data).slice(0, 300));
+        JSON.stringify(data).slice(0, 400));
       throw new Error(`SAM-3 no devolvió máscara — keys del response: ${keys}`);
     }
 

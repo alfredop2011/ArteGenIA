@@ -68,18 +68,17 @@ export default function BrushEraserModal({
   }, [pendingMask]);
 
   // Aplicar selección magic: destination-out sobre el canvas principal.
-  // Z.19: usa maskToAlphaCanvas porque SAM devuelve mask RGB sin canal alpha,
-  // y destination-out usa alpha (no luminancia). Sin esta conversión borraría
-  // TODA la imagen (alpha=1 en todos los pixels de la mask).
+  // Z.19.1: SAM-3 con apply_mask=true devuelve la imagen YA con alpha real
+  // del objeto seleccionado. Podemos usarla directo en destination-out — su
+  // alpha define qué pixels se borran del canvas.
   const applyPendingMask = useCallback(() => {
     if (!pendingMask) return;
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext("2d");
     if (!canvas || !ctx) return;
-    const alphaCanvas = maskToAlphaCanvas(pendingMask.img, canvas.width, canvas.height);
     ctx.save();
     ctx.globalCompositeOperation = "destination-out";
-    ctx.drawImage(alphaCanvas, 0, 0);
+    ctx.drawImage(pendingMask.img, 0, 0, canvas.width, canvas.height);
     ctx.restore();
     URL.revokeObjectURL(pendingMask.blobUrl);
     setPendingMask(null);
@@ -131,9 +130,8 @@ export default function BrushEraserModal({
   }, [open]);
 
   // Render del overlay azul de la selección magic cada vez que cambia.
-  // Z.19: usa maskToAlphaCanvas porque SAM devuelve mask como RGB blanco/negro
-  // SIN canal alpha. Si usáramos destination-in con la mask directa, el alpha
-  // sería 1 en toda la imagen → toda la imagen quedaría azul (no útil).
+  // Z.19.1: SAM-3 con apply_mask=true devuelve imagen con alpha real del
+  // objeto. Pintamos esa imagen y luego "source-in" la tinta azul.
   useEffect(() => {
     const main = canvasRef.current;
     const overlay = overlayCanvasRef.current;
@@ -144,14 +142,11 @@ export default function BrushEraserModal({
     if (!octx) return;
     octx.clearRect(0, 0, overlay.width, overlay.height);
     if (pendingMask) {
-      // 1. Convertir mask RGB (blanco=objeto, negro=fondo) → canvas con
-      // alpha real (alpha=255 donde objeto, alpha=0 donde fondo)
-      const alphaCanvas = maskToAlphaCanvas(pendingMask.img, overlay.width, overlay.height);
-      // 2. Dibujar ese canvas (su alpha es correcto)
-      octx.drawImage(alphaCanvas, 0, 0);
-      // 3. Tintarlo de azul: source-in mantiene el alpha, cambia el color
+      // 1. Dibujar imagen del objeto (su alpha define qué área cubre)
+      octx.drawImage(pendingMask.img, 0, 0, overlay.width, overlay.height);
+      // 2. source-in: mantiene alpha existente, reemplaza color con azul
       octx.globalCompositeOperation = "source-in";
-      octx.fillStyle = "rgba(59, 130, 246, 0.55)";
+      octx.fillStyle = "rgba(59, 130, 246, 0.6)";
       octx.fillRect(0, 0, overlay.width, overlay.height);
       octx.globalCompositeOperation = "source-over";
     }
