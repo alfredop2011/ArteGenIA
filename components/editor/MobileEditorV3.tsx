@@ -124,6 +124,25 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
     obj: import("fabric").FabricImage;
   } | null>(null);
 
+  // Z.8.1 — Mis recursos en mobile: lazy fetch al abrir el sheet foto.
+  // Reusa /api/assets, igual que /mis-recursos y el panel desktop.
+  type MyAssetMobile = { id: string; type: string; url: string; name: string };
+  const [myAssets, setMyAssets] = useState<MyAssetMobile[]>([]);
+  const [myAssetsLoaded, setMyAssetsLoaded] = useState(false);
+  const fetchMyAssetsMobile = useCallback(async () => {
+    if (myAssetsLoaded) return;
+    try {
+      const res = await fetch("/api/assets", { cache: "no-store" });
+      const data = await res.json();
+      if (data.authenticated && Array.isArray(data.assets)) {
+        setMyAssets(data.assets);
+      }
+      setMyAssetsLoaded(true);
+    } catch (e) {
+      console.error("[my-assets mobile]", e);
+    }
+  }, [myAssetsLoaded]);
+
   // Upgrade gating — Free users tocan limitaciones → modal "Sube a Pro"
   const [upgradeFeature, setUpgradeFeature] = useState<UpgradeFeature | null>(null);
   const isPaid = authProfile?.plan === "pro" || authProfile?.plan === "enterprise";
@@ -148,6 +167,14 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
 
   // Sheet abierto (null = canvas limpio)
   const [openSheet, setOpenSheet] = useState<SheetId>(null);
+
+  // Z.8.1 — lazy fetch de Mis recursos al abrir el sheet foto por 1ª vez.
+  useEffect(() => {
+    if (openSheet === "foto") void fetchMyAssetsMobile();
+    // fetchMyAssetsMobile se declara más abajo pero React es lenient con
+    // forward refs por declaración hoisting en TS strict mode.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openSheet]);
 
   // Estilo state
   const [activePaletteId, setActivePaletteId] = useState<string | null>(null);
@@ -2765,6 +2792,43 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
               {openSheet === "foto" && (
                 <PhotoSheet
                   fc={fabricRef.current}
+                  myAssets={myAssets}
+                  onAddFromUrl={async (url) => {
+                    const fc = fabricRef.current;
+                    if (!fc) return;
+                    try {
+                      const img = await FabricImage.fromURL(url, { crossOrigin: "anonymous" });
+                      const maxDim = Math.min(canvasSize.w, canvasSize.h) * 0.4;
+                      const w = img.width ?? 1;
+                      const h = img.height ?? 1;
+                      const scale = Math.min(maxDim / w, maxDim / h, 1);
+                      img.set({
+                        left: canvasSize.w / 2 - (w * scale) / 2,
+                        top: canvasSize.h / 2 - (h * scale) / 2,
+                        scaleX: scale,
+                        scaleY: scale,
+                        cornerColor: "#a855f7",
+                        cornerStrokeColor: "#ffffff",
+                        cornerStyle: "circle",
+                        transparentCorners: false,
+                        borderColor: "#a855f7",
+                        borderScaleFactor: 1.5,
+                        cornerSize: 14,
+                        touchCornerSize: 44,
+                        padding: 4,
+                      });
+                      fc.add(img);
+                      fc.setActiveObject(img);
+                      fc.requestRenderAll();
+                      setSaveState("unsaved");
+                      pushHistory();
+                      setOpenSheet(null);
+                      toast.success("Añadido al canvas");
+                    } catch (e) {
+                      console.error("[my-asset add]", e);
+                      toast.error("No se pudo añadir el recurso");
+                    }
+                  }}
                   onSelectImage={(img) => {
                     const fc = fabricRef.current;
                     if (!fc) return;
@@ -4152,17 +4216,19 @@ function ExportMultiFormatSheet({
   );
 }
 
-/** Sheet Foto — lista thumbnails de imagenes del canvas + boton añadir. */
+/** Sheet Foto — lista thumbnails de imagenes del canvas + Mis recursos
+ *  guardados (Z.8.1) + boton añadir nueva. */
 function PhotoSheet({
-  fc, onSelectImage, onAddPhoto,
+  fc, onSelectImage, onAddPhoto, myAssets, onAddFromUrl,
 }: {
   fc: FabricCanvas | null;
   onSelectImage: (img: FabricImage) => void;
   onAddPhoto: (file: File) => void;
+  // Z.8.1 — props para la sección "Mis recursos"
+  myAssets: Array<{ id: string; url: string; name: string }>;
+  onAddFromUrl: (url: string) => void;
 }) {
   const { t } = useLocale();
-  // Snapshot de imagenes en render. Sin reactividad porque el sheet se
-  // monta/desmonta al abrir y siempre lee el state actual.
   const images = (fc?.getObjects().filter(o => o.type === "image") ?? []) as FabricImage[];
   return (
     <div className="flex flex-col gap-4">
@@ -4203,6 +4269,42 @@ function PhotoSheet({
           {t("mobileEditor.photo.tapToEdit")}
         </p>
       </div>
+
+      {/* Z.8.1 — Mis recursos guardados (assets del user para reusar) */}
+      {myAssets.length > 0 && (
+        <div className="pt-2 border-t border-white/[0.06]">
+          <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2.5">
+            Mis recursos ({myAssets.length})
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            {myAssets.map((a) => (
+              <button
+                key={a.id}
+                onClick={() => onAddFromUrl(a.url)}
+                title={a.name}
+                className="aspect-square rounded-xl overflow-hidden bg-[#0a0a14] border-2 border-white/[0.08] active:border-purple-500 transition-colors relative"
+                aria-label={`Añadir ${a.name} al canvas`}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={a.url}
+                  alt={a.name}
+                  crossOrigin="anonymous"
+                  className="w-full h-full object-contain p-1"
+                  style={{
+                    backgroundImage: "linear-gradient(45deg, #2a2a3a 25%, transparent 25%), linear-gradient(-45deg, #2a2a3a 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #2a2a3a 75%), linear-gradient(-45deg, transparent 75%, #2a2a3a 75%)",
+                    backgroundSize: "10px 10px",
+                    backgroundPosition: "0 0, 0 5px, 5px -5px, -5px 0px",
+                  }}
+                />
+              </button>
+            ))}
+          </div>
+          <p className="text-[10px] text-gray-500 mt-2 text-center">
+            Toca para añadir al canvas
+          </p>
+        </div>
+      )}
 
       <div className="pt-2 border-t border-white/[0.06]">
         <label className="block">
