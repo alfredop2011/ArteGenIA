@@ -3,6 +3,7 @@ import { fal } from "@fal-ai/client";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { checkRateLimit } from "@/lib/rateLimit";
 import { consumeCredits, addCredits, CREDIT_COST } from "@/lib/credits";
+import { uploadToR2, makeKey } from "@/lib/r2";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -126,25 +127,25 @@ export async function POST(req: Request) {
       throw new Error(`SAM-2 no devolvió máscara — keys del response: ${keys}`);
     }
 
-    // Z.18 — Descargar mask EN EL SERVER y devolver como dataURL base64.
-    // Evita problemas CORS al cargar la mask desde el navegador (R2/Fal
-    // a veces sirve sin Access-Control-Allow-Origin para imágenes generadas).
-    // ~50-200KB extra en la response, pero garantiza que la mask se carga.
-    let maskDataUrl = maskUrl;
+    // Z.18 — Re-subir mask a R2 (con CORS ya configurado) en lugar de dataURL.
+    // dataURLs grandes fallan en Safari ("Data URL decoding failed"), y la URL
+    // directa de Fal.ai/fal.media no siempre sirve con CORS. R2 nuestro sí.
+    let finalMaskUrl = maskUrl;
     try {
       const maskRes = await fetch(maskUrl);
       if (maskRes.ok) {
         const maskBuffer = Buffer.from(await maskRes.arrayBuffer());
-        const contentType = maskRes.headers.get("content-type") || "image/png";
-        maskDataUrl = `data:${contentType};base64,${maskBuffer.toString("base64")}`;
+        const key = makeKey("magic-mask", "png");
+        const r2 = await uploadToR2(maskBuffer, key, "image/png");
+        finalMaskUrl = r2.url;
       } else {
-        console.warn("[magic-erase] no se pudo descargar mask, devolviendo URL directa:", maskRes.status);
+        console.warn("[magic-erase] no se pudo descargar mask de Fal:", maskRes.status, "— devolviendo URL Fal directa");
       }
-    } catch (downloadErr) {
-      console.warn("[magic-erase] error descargando mask, fallback a URL:", downloadErr);
+    } catch (uploadErr) {
+      console.warn("[magic-erase] error re-subiendo mask a R2, fallback a URL Fal:", uploadErr);
     }
 
-    return NextResponse.json({ maskUrl: maskDataUrl });
+    return NextResponse.json({ maskUrl: finalMaskUrl });
   } catch (err) {
     console.error("[magic-erase] error:", err);
     const msg = err instanceof Error ? err.message : "Error desconocido";

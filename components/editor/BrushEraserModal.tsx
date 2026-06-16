@@ -172,19 +172,18 @@ export default function BrushEraserModal({
         throw new Error(fullErr);
       }
 
-      // 3. Cargar máscara y aplicar como destination-out.
-      // El servidor ahora devuelve dataURL inline (Z.18) — sin CORS issues.
-      // Mantenemos timeout 15s como safety por si algún día vuelve URL HTTP.
+      // 3. Cargar máscara desde R2 (CORS habilitado) y aplicar destination-out.
+      // Cache-buster para evitar caché de respuesta sin CORS de algún proxy
+      // intermedio. Timeout 15s como safety por si algo cuelga.
       const mask = new Image();
-      // dataURL no necesita crossOrigin; URLs http sí
-      if (!data.maskUrl.startsWith("data:")) {
-        mask.crossOrigin = "anonymous";
-      }
+      mask.crossOrigin = "anonymous";
+      const cacheBust = data.maskUrl.includes("?") ? "&" : "?";
+      const maskSrc = `${data.maskUrl}${cacheBust}v=${Date.now()}`;
       await Promise.race([
         new Promise<void>((resolve, reject) => {
           mask.onload = () => resolve();
           mask.onerror = () => reject(new Error("No se pudo cargar la máscara IA"));
-          mask.src = data.maskUrl;
+          mask.src = maskSrc;
         }),
         new Promise<never>((_, reject) =>
           setTimeout(() => reject(new Error("Timeout cargando máscara (15s)")), 15000),
