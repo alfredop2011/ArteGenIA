@@ -2207,15 +2207,27 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
     }
     setPostDownload({ dataUrl: finalDataUrl, format });
 
-    // Track event para analytics (no bloquea si posthog no esta configurado)
-    void import("@/components/analytics/PostHogProvider").then(m =>
-      m.trackEvent("flyer_downloaded", {
+    // Z.14 — Track export con schema unificado Z.9 (trackExportCompleted).
+    // Reemplaza el evento legacy "flyer_downloaded" que tenia campos
+    // distintos al resto del sistema analytics. Reuso el mismo helper
+    // tipado para que el dashboard PostHog compose bien las metricas.
+    void import("@/lib/analytics").then(m => {
+      // Detectar si hay capas IA (stickers magicos o assets de Mis recursos)
+      // mirando customId que típicamente empieza con "magic-" o "sticker-".
+      const objs = fabricRef.current?.getObjects() ?? [];
+      const hasAiLayers = objs.some(o => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const cid = ((o as any).customId as string | undefined) ?? "";
+        return cid.startsWith("magic-") || cid.startsWith("sticker-") || cid.startsWith("auto-");
+      });
+      m.trackExportCompleted({
         format,
-        plan: authProfile?.plan ?? "free",
-        watermarked: shouldWatermark(authProfile?.plan),
-        platform: "desktop",
-      })
-    );
+        credits_consumed: CREDIT_COST.download_png,
+        has_ai_layers: hasAiLayers,
+        plan: (authProfile?.plan as "free" | "pro" | "enterprise") ?? "free",
+        source: "editor_desktop",
+      });
+    });
   }, [canvasSize, authProfile?.plan, toast]);
 
   // Fase Z.7 — modal de confirmación de crédito antes de export.

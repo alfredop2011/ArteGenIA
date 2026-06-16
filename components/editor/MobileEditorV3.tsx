@@ -1984,6 +1984,25 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
         setOpenSheet(null);
         setShareOpen(true);
       }
+
+      // Z.14 — Track export (schema Z.9 unificado, igual que desktop)
+      void import("@/lib/analytics").then(m => {
+        const fc = fabricRef.current;
+        const objs = fc?.getObjects() ?? [];
+        const hasAiLayers = objs.some(o => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const cid = ((o as any).customId as string | undefined) ?? "";
+          return cid.startsWith("magic-") || cid.startsWith("sticker-") || cid.startsWith("auto-");
+        });
+        const creditCost = (["pdf", "svg"] as string[]).includes(format) ? 3 : 1;
+        m.trackExportCompleted({
+          format,
+          credits_consumed: creditCost,
+          has_ai_layers: hasAiLayers,
+          plan: (authProfile?.plan as "free" | "pro" | "enterprise") ?? "free",
+          source: "editor_mobile",
+        });
+      });
     } finally { setExporting(false); }
   }, [canvasSize, authProfile?.plan, toast, authUser]);
 
