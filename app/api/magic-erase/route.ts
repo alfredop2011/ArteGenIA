@@ -82,10 +82,14 @@ export async function POST(req: Request) {
     // queremos la máscara cruda, no la imagen recortada.
     let samResult;
     try {
+      // NOTA: el SDK Fal declara label como "0"|"1" (string), pero la API
+      // real espera NUMBER 0 o 1. Bug del SDK; usamos cast para evitar TS error
+      // pero mandar el number correcto al servidor.
       samResult = await fal.subscribe("fal-ai/sam2/image", {
         input: {
           image_url: uploadUrl,
-          prompts: [{ x: Math.round(x), y: Math.round(y), label: "1" }],
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          prompts: [{ x: Math.round(x), y: Math.round(y), label: 1 } as any],
           apply_mask: false,
           output_format: "png",
         },

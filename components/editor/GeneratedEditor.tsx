@@ -134,6 +134,35 @@ const SAFE_MARGIN = 72;
 
 function uid() { return Math.random().toString(36).slice(2, 8); }
 
+// Z.18 — sintetiza un LayerItem cuando el objeto Fabric activo NO está en
+// el array `layers` del state. Esto pasa con cualquier objeto añadido tras
+// la carga inicial (segment-person, capas mágicas, drag de Fotos, etc.):
+// el closure de los handlers selection:created tiene un array `newLayers`
+// frozen del primer load. Sin fallback, setSelectedLayer(null) y el sidebar
+// dice "Selecciona un elemento" aunque Fabric SÍ tenga activeObject.
+//
+// El helper también asigna customId al obj para que próximas búsquedas
+// encuentren el mismo layer (idempotente).
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function synthLayer(obj: any): LayerItem {
+  const isText = obj.type === "i-text" || obj.type === "text" || obj.type === "textbox";
+  const isImg = obj.type === "image";
+  const isBg = (obj.customId ?? "") === "bg" || (obj.customId ?? "") === "background";
+  const type: LayerType = isText ? "text" : isBg ? "background" : isImg ? "image" : "image";
+  const text = isText ? String(obj.text ?? "").trim() : "";
+  const name = isText
+    ? (text.slice(0, 22) || "Texto")
+    : isBg ? "Fondo"
+    : isImg ? "Imagen"
+    : "Forma";
+  let id = String(obj.customId ?? "");
+  if (!id) {
+    id = `auto-${Math.random().toString(36).slice(2, 10)}`;
+    obj.customId = id;
+  }
+  return { id, name, type, obj, visible: obj.visible !== false, locked: !obj.selectable };
+}
+
 /**
  * Detecta si una URL de imagen tiene canales transparentes muestreando píxeles.
  * Carga la imagen, la dibuja en un canvas 64x64 y comprueba alpha < 250
@@ -733,7 +762,9 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const handleSelProj = (obj: any) => {
             const id = (obj as FabricObject & { customId?: string }).customId ?? "";
-            const layer = newLayers.find(l => l.id === id) ?? null;
+            // Z.18 — fallback synthLayer si el customId no está en el array
+            // (puede pasar con objetos añadidos post-load).
+            const layer = newLayers.find(l => l.id === id) ?? synthLayer(obj);
             setSelectedLayer(layer);
             if (obj.type === "i-text" || obj.type === "text" || obj.type === "textbox") {
               const t = obj as IText;
@@ -812,7 +843,8 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
         // Selection handlers (mismo bloque que el modo generated; lo registramos también aquí)
         const handleSelTpl = (obj: FabricObject) => {
           const id = (obj as FabricObject & { customId?: string }).customId ?? "";
-          const layer = newLayers.find(l => l.id === id) ?? null;
+          // Z.18 — fallback synthLayer si customId no está mapeado.
+          const layer = newLayers.find(l => l.id === id) ?? synthLayer(obj);
           setSelectedLayer(layer);
           if (obj.type === "i-text" || obj.type === "text" || obj.type === "textbox") {
             const t = obj as IText;
@@ -999,7 +1031,8 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
       // ── SELECTION ─────────────────────────────────────────────────────────
       const handleSel = (obj: FabricObject) => {
         const id = (obj as FabricObject & { customId?: string }).customId ?? "";
-        const layer = newLayers.find(l => l.id === id) ?? null;
+        // Z.18 — fallback synthLayer si customId no está mapeado.
+        const layer = newLayers.find(l => l.id === id) ?? synthLayer(obj);
         setSelectedLayer(layer);
         if (obj.type === "i-text" || obj.type === "text") {
           const t = obj as IText;
