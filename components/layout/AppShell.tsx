@@ -14,6 +14,7 @@ import LocaleSwitcher from "@/components/layout/LocaleSwitcher";
 import { useLocale } from "@/hooks/useLocale";
 import OrganizerTypeModal from "@/components/onboarding/OrganizerTypeModal";
 import FeedbackWidget from "@/components/feedback/FeedbackWidget";
+import WelcomeChecklist from "@/components/onboarding/WelcomeChecklist";
 import { ToastProvider } from "@/lib/toast";
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
@@ -101,6 +102,11 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             {/* Widget flotante de feedback. Se oculta automaticamente en
                 rutas tecnicas (/editor, /upload, /auth). */}
             <FeedbackWidget />
+
+            {/* Z.22 — Onboarding checklist para usuarios nuevos (sin proyectos
+                aún). Floating bottom-right, dismissable. Solo aparece donde
+                NO sea ruta técnica (no en /editor donde estorbaría). */}
+            {!isTechnicalRoute && <WelcomeChecklist />}
 
             {/* Header */}
             <header className="sticky top-0 z-50 backdrop-blur-md border-b"
