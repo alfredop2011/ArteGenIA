@@ -76,22 +76,19 @@ export async function POST(req: Request) {
     const falFile = new File([buffer], file.name || "input.png", { type: file.type || "image/png" });
     const uploadUrl = await fal.storage.upload(falFile);
 
-    // Z.19.1 — SAM-3 image con apply_mask=true. SAM devuelve `data.image` ya
-    // procesada: la imagen original con alpha del objeto seleccionado (resto
-    // transparente). Esto es MEJOR que mask cruda porque:
-    //  1. Ya tiene canal alpha real → destination-out funciona directo
-    //  2. Bordes con anti-aliasing (suavizado del objeto)
-    //  3. `masks[]` del response a veces viene en shape inconsistente
+    // Z.19.2 — SAM-2 image con apply_mask=true. SAM-3 image devolvió todo
+    // null con point_prompts (parece requerir text prompt obligatorio).
+    // SAM-2 es el modelo ORIGINAL diseñado para click-to-segment puro:
+    // acepta `prompts: [{x, y, label}]` y devuelve la imagen con la mask
+    // aplicada en `data.image`.
     let samResult;
     try {
-      samResult = await fal.subscribe("fal-ai/sam-3/image", {
+      samResult = await fal.subscribe("fal-ai/sam2/image", {
         input: {
           image_url: uploadUrl,
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          point_prompts: [{ x: Math.round(x), y: Math.round(y), label: 1 } as any],
+          prompts: [{ x: Math.round(x), y: Math.round(y), label: 1 } as any],
           apply_mask: true,
-          max_masks: 1,
-          return_multiple_masks: false,
           output_format: "png",
         },
         logs: false,
@@ -100,13 +97,13 @@ export async function POST(req: Request) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const e = falErr as any;
       const detail = e?.body?.detail ?? e?.body?.message ?? e?.body ?? e?.message ?? String(falErr);
-      console.error("[magic-erase] Fal.ai SAM-3 falló:", JSON.stringify({
+      console.error("[magic-erase] Fal.ai SAM-2 falló:", JSON.stringify({
         status: e?.status,
         body: e?.body,
         message: e?.message,
         x: Math.round(x), y: Math.round(y),
       }, null, 2));
-      throw new Error(`Fal.ai SAM-3: ${typeof detail === "string" ? detail : JSON.stringify(detail)}`);
+      throw new Error(`Fal.ai SAM-2: ${typeof detail === "string" ? detail : JSON.stringify(detail)}`);
     }
 
     // SAM-3 output: el SDK Fal a veces wrappea en .data, otras devuelve
