@@ -4,7 +4,7 @@ import { useLocale } from "@/hooks/useLocale";
 import LegalTranslationPending from "@/components/layout/LegalTranslationPending";
 
 const LAST_UPDATED = "12 de junio de 2026";
-const CONTACT_EMAIL = "cuentas@peligroficial.com";
+const CONTACT_EMAIL = "hola@artegenia.com";
 
 /**
  * Términos y Condiciones — servicio comercial con planes de pago.

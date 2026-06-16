@@ -13,7 +13,7 @@
  *
  * Env vars requeridas:
  *   RESEND_API_KEY     - API key de Resend
- *   RESEND_FROM_EMAIL  - "ArteGenIA <hola@artegenia.app>" (dominio verificado)
+ *   RESEND_FROM_EMAIL  - "ArteGenIA <hola@artegenia.com>" (dominio verificado)
  *
  * Si las env vars no están configuradas, las funciones son NO-OP con warning
  * en logs (no rompen producción). Útil para dev local.
@@ -22,11 +22,11 @@
 import { Resend } from "resend";
 
 const apiKey = process.env.RESEND_API_KEY;
-const fromEmail = process.env.RESEND_FROM_EMAIL ?? "ArteGenIA <hola@artegenia.app>";
+const fromEmail = process.env.RESEND_FROM_EMAIL ?? "ArteGenIA <hola@artegenia.com>";
 
 const resend = apiKey ? new Resend(apiKey) : null;
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://artegenia.vercel.app";
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://artegenia.com";
 
 /** Wrapper safe: si Resend no configurado, log y continúa sin fallar */
 async function send(opts: { to: string; subject: string; html: string }): Promise<void> {

@@ -37,6 +37,23 @@ Tras guardar, esperar ~1 min de propagación y hacer hard refresh (Cmd+Shift+R) 
 - Google Cloud OAuth Client tiene como Authorized redirect URIs las 5 anteriores + `https://tbuszlffgtjnbvkxhkti.supabase.co/auth/v1/callback`.
 - **Custom SMTP (emails de Auth)**: Resend SMTP. Host `smtp.resend.com`, port 465, username `resend`, password = `RESEND_API_KEY`. Sender: `hola@artegenia.com` (ArteGenIA).
 
+# Infraestructura — Resend (email transactional)
+
+Dominio `artegenia.com` verificado en Resend (DKIM + SPF + DMARC publicados como DNS records en Vercel Domains).
+
+4 emails transactional implementados en [lib/email.ts](lib/email.ts):
+- Welcome (tras signup confirmado)
+- LowCredits (cron diario si balance < 20% del grant)
+- UpgradePro (tras `checkout.session.completed` de Stripe)
+- Cancel (tras `customer.subscription.deleted`)
+
+Env vars requeridas (en Vercel + `.env.local`):
+- `RESEND_API_KEY` — API key personal de Resend
+- `RESEND_FROM_EMAIL` — `ArteGenIA <hola@artegenia.com>` (dominio verificado)
+- `NEXT_PUBLIC_APP_URL` — `https://artegenia.com` (usado en CTAs de los emails)
+
+Si las env vars faltan, los emails son NO-OP con warning en logs (no rompen producción).
+
 # Variables de entorno requeridas
 
 En `.env.local` y en Vercel (Production + Preview + Development):
@@ -45,5 +62,9 @@ En `.env.local` y en Vercel (Production + Preview + Development):
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY` (server-only, NUNCA exponerla al cliente)
 - `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`, `R2_PUBLIC_URL`
+- `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, `NEXT_PUBLIC_APP_URL`
+- `CRON_SECRET` (auth Bearer para Vercel Cron endpoints)
+- `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRO_PRICE_ID`, `STRIPE_PRO_PRICE_ID_YEARLY`, etc.
+- `NEXT_PUBLIC_POSTHOG_KEY`, `NEXT_PUBLIC_POSTHOG_HOST`
 - Otras: Fal.ai, remove.bg, etc.
 

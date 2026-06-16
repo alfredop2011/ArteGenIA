@@ -260,8 +260,8 @@ export default function PlanesPage() {
         <div className="text-center" style={{ color: "var(--home-text-soft)" }}>
           <p className="text-xs sm:text-sm">
             ¿Dudas sobre qué plan elegir? Escríbenos a{" "}
-            <a href="mailto:cuentas@peligroficial.com" className="font-bold text-purple-400 hover:text-purple-300">
-              cuentas@peligroficial.com
+            <a href="mailto:hola@artegenia.com" className="font-bold text-purple-400 hover:text-purple-300">
+              hola@artegenia.com
             </a>
           </p>
         </div>

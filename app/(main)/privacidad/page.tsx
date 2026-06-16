@@ -7,7 +7,7 @@ import LegalTranslationPending from "@/components/layout/LegalTranslationPending
 // Si quieres SEO per-locale, se puede meter generateMetadata en un Server wrapper.
 
 const LAST_UPDATED = "12 de junio de 2026";
-const CONTACT_EMAIL = "cuentas@peligroficial.com";
+const CONTACT_EMAIL = "hola@artegenia.com";
 
 /**
  * Política de Privacidad — adaptada a Reglamento (UE) 2016/679 (GDPR)

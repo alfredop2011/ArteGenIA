@@ -4,7 +4,7 @@ import { useLocale } from "@/hooks/useLocale";
 import LegalTranslationPending from "@/components/layout/LegalTranslationPending";
 
 const LAST_UPDATED = "8 de junio de 2026";
-const CONTACT_EMAIL = "cuentas@peligroficial.com";
+const CONTACT_EMAIL = "hola@artegenia.com";
 
 /**
  * Política de Cookies — solo cookies técnicas (Supabase auth + sesión).
