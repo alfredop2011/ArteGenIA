@@ -98,7 +98,16 @@ type ImageProps = {
 };
 
 type SaveState = "saved" | "saving" | "unsaved";
-type LeftTool = "design" | "elements" | "text" | "photos" | "background" | "layers" | "ai" | "brand" | "favorites";
+type LeftTool = "design" | "elements" | "text" | "photos" | "background" | "layers" | "ai" | "brand" | "favorites" | "myAssets";
+
+// Z.8.1 — Asset de "Mis Recursos" cargado desde /api/assets para reusar
+// en el editor sin tener que subir el archivo otra vez.
+type MyAsset = {
+  id: string;
+  type: "sin_fondo" | "sticker_ia" | "generada_ia" | "subida";
+  url: string;
+  name: string;
+};
 type ViewMode = "sidebar" | "dock";
 
 type ArtistData = { name: string; photoUrl: string | null };
@@ -1905,6 +1914,35 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
 
   /** Fase V.7 — Añadir un sticker IA (persona extraída) al canvas. Se carga
    *  desde URL PNG transparente y se centra en el canvas a tamaño razonable. */
+  // Z.8.1 — Estado del panel "Mis recursos": carga assets del user desde
+  // /api/assets cuando se abre el panel. Lazy fetch para no impactar el load
+  // inicial del editor.
+  const [myAssets, setMyAssets] = useState<MyAsset[]>([]);
+  const [myAssetsLoading, setMyAssetsLoading] = useState(false);
+  const [myAssetsLoaded, setMyAssetsLoaded] = useState(false);
+
+  const fetchMyAssets = useCallback(async () => {
+    if (myAssetsLoaded || myAssetsLoading) return;
+    setMyAssetsLoading(true);
+    try {
+      const res = await fetch("/api/assets", { cache: "no-store" });
+      const data = await res.json();
+      if (data.authenticated && Array.isArray(data.assets)) {
+        setMyAssets(data.assets);
+      }
+      setMyAssetsLoaded(true);
+    } catch (e) {
+      console.error("[my-assets]", e);
+    } finally {
+      setMyAssetsLoading(false);
+    }
+  }, [myAssetsLoaded, myAssetsLoading]);
+
+  // Auto-fetch cuando se abre el tab por primera vez
+  useEffect(() => {
+    if (activeTool === "myAssets") void fetchMyAssets();
+  }, [activeTool, fetchMyAssets]);
+
   const addStickerToCanvas = useCallback(async (src: string) => {
     const fabric = await import("fabric");
     try {
@@ -2621,6 +2659,8 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
     { id: "background",label: t("editor.tool.background"), icon: <Mountain className="w-5 h-5" strokeWidth={1.5} />, hidden: !FEATURES.backgroundTab },
     { id: "layers",    label: t("editor.tool.layers"),     icon: <LayersIcon className="w-5 h-5" strokeWidth={1.5} />, hidden: !FEATURES.layersPanel },
     { id: "ai",        label: t("editor.tool.ai"),         icon: <Wand2 className="w-5 h-5" strokeWidth={1.5} /> },
+    // Z.8.1 — Panel de assets reutilizables de "Mis Recursos"
+    { id: "myAssets",  label: "Mis recursos",              icon: <FolderOpen className="w-5 h-5" strokeWidth={1.5} /> },
     { id: "brand",     label: t("editor.tool.brand"),      icon: <Tag className="w-5 h-5" strokeWidth={1.5} />, comingSoon: true, hidden: !FEATURES.brandKit },
     { id: "favorites", label: t("editor.tool.favorites"),  icon: <Heart className="w-5 h-5" strokeWidth={1.5} />, comingSoon: true, hidden: !FEATURES.favorites },
   ];
@@ -3017,6 +3057,65 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
                   </p>
                   <p className="text-[10px] text-gray-500 leading-snug">
                     Usa <span className="text-purple-300 font-medium">Capas Mágicas</span> para extraer personas de cualquier foto y reusarlas como stickers.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Z.8.1 — MIS RECURSOS PANEL: assets del user reutilizables.
+            Lazy fetch al abrir, grid de thumbnails, click añade al canvas. */}
+        {activeTool === "myAssets" && !isMobile && (
+          <div className="w-52 ag-glass border-r border-white/[0.06] flex flex-col shrink-0">
+            <div className="px-3 py-2.5 border-b border-white/[0.06]">
+              <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-widest">Mis recursos</p>
+            </div>
+            <div className="flex-1 overflow-y-auto p-2">
+              {myAssetsLoading ? (
+                <div className="grid grid-cols-2 gap-1.5">
+                  {[...Array(6)].map((_, i) => (
+                    <div key={i} className="aspect-square rounded-xl bg-white/[0.04] animate-pulse" />
+                  ))}
+                </div>
+              ) : myAssets.length > 0 ? (
+                <>
+                  <p className="text-[10px] text-gray-400 mb-2 px-1 leading-snug">
+                    {myAssets.length} {myAssets.length === 1 ? "imagen guardada" : "imágenes guardadas"}. Toca para añadirla al canvas.
+                  </p>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {myAssets.map((a) => (
+                      <button
+                        key={a.id}
+                        onClick={() => addStickerToCanvas(a.url)}
+                        title={a.name}
+                        className="aspect-square rounded-xl overflow-hidden bg-white/[0.04] hover:bg-white/[0.10] border border-white/[0.08] hover:border-purple-500/40 transition-all group relative"
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={a.url}
+                          alt={a.name}
+                          className="w-full h-full object-contain p-1 group-hover:scale-105 transition-transform"
+                          crossOrigin="anonymous"
+                        />
+                        <div className="absolute bottom-0 left-0 right-0 px-1.5 py-0.5 bg-black/60 backdrop-blur text-[9px] text-white opacity-0 group-hover:opacity-100 transition-opacity truncate">
+                          {a.name}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-[9.5px] text-gray-600 mt-3 px-1 leading-snug">
+                    💡 Estos son los assets que has guardado en /mis-recursos
+                  </p>
+                </>
+              ) : (
+                <div className="text-center py-8 px-2">
+                  <FolderOpen className="w-8 h-8 mx-auto mb-3 text-purple-300/60" strokeWidth={1.5} />
+                  <p className="text-[11px] text-gray-400 leading-relaxed mb-3">
+                    Aún no tienes recursos guardados.
+                  </p>
+                  <p className="text-[10px] text-gray-500 leading-snug">
+                    Cuando uses <span className="text-purple-300 font-medium">Quitar fondo</span> o <span className="text-purple-300 font-medium">Capas Mágicas</span>, guarda el resultado para reusarlo aquí.
                   </p>
                 </div>
               )}
