@@ -50,16 +50,6 @@ export async function POST(req: NextRequest) {
     }
 
     const priceId = priceIdFor(plan, interval);
-    // Z.23 — Log diagnóstico para detectar env var faltante o redeploy
-    // pendiente. Cuando el yearly esté funcionando, este log puede quitarse.
-    console.log("[stripe-checkout] resolved priceId:", {
-      plan,
-      interval,
-      priceId,
-      hasYearlyEnv: !!process.env.STRIPE_PRO_PRICE_ID_YEARLY,
-      yearlyEnvPrefix: (process.env.STRIPE_PRO_PRICE_ID_YEARLY ?? "").slice(0, 8) || "(empty)",
-      monthlyEnvPrefix: (process.env.STRIPE_PRO_PRICE_ID ?? "").slice(0, 8) || "(empty)",
-    });
     if (!priceId) {
       return NextResponse.json(
         { error: `Plan ${plan} no configurado` },
