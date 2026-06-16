@@ -14,7 +14,9 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "r2:cors": "node --env-file=.env.local scripts/r2-cors-apply.mjs",
-    "r2:cors:check": "node --env-file=.env.local scripts/r2-cors-apply.mjs --check"
+    "r2:cors:check": "node --env-file=.env.local scripts/r2-cors-apply.mjs --check",
+    "r2:cleanup": "node --env-file=.env.local scripts/r2-cleanup-orphans.mjs",
+    "r2:cleanup:apply": "node --env-file=.env.local scripts/r2-cleanup-orphans.mjs --apply"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1045.0",
