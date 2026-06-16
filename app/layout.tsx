@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { Suspense } from "react";
 import "./globals.css";
 import PostHogProvider from "@/components/analytics/PostHogProvider";
+import CookieBanner from "@/components/cookies/CookieBanner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -117,6 +118,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             {children}
           </PostHogProvider>
         </Suspense>
+        {/* Z.21 — Banner RGPD. Aparece solo si no hay consent guardado.
+            Visible sobre todo el contenido pero NO bloquea la app. */}
+        <CookieBanner />
       </body>
     </html>
   );

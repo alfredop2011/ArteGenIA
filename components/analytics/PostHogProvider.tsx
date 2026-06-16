@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import posthog from "posthog-js";
 import { useAuth } from "@/hooks/useAuth";
+import { hasAnalyticsConsent } from "@/lib/cookieConsent";
 
 /**
  * Wrapper de PostHog para Next.js App Router.
@@ -23,14 +24,23 @@ export default function PostHogProvider({ children }: { children: React.ReactNod
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { user } = useAuth();
+  // Z.21 — Tracking gateado por consent RGPD. Re-evaluamos cuando el user
+  // acepta/rechaza para inicializar diferido sin reload.
+  const [consented, setConsented] = useState(false);
 
-  // Init UNA vez al mount del componente cliente
   useEffect(() => {
+    setConsented(hasAnalyticsConsent());
+    const onChange = () => setConsented(hasAnalyticsConsent());
+    window.addEventListener("cookieConsentChanged", onChange);
+    return () => window.removeEventListener("cookieConsentChanged", onChange);
+  }, []);
+
+  // Init UNA vez tras consent + key configurada
+  useEffect(() => {
+    if (!consented) return;
     const key = process.env.NEXT_PUBLIC_POSTHOG_KEY;
     const host = process.env.NEXT_PUBLIC_POSTHOG_HOST ?? "https://eu.i.posthog.com";
     if (!key) {
-      // No bloquea — solo loguea en dev. Si esta en prod sin key, fallaron
-      // las env vars de Vercel.
       if (process.env.NODE_ENV === "development") {
         console.info("[posthog] sin NEXT_PUBLIC_POSTHOG_KEY, tracking desactivado");
       }
@@ -50,7 +60,7 @@ export default function PostHogProvider({ children }: { children: React.ReactNod
       ip: false,
       persistence: "localStorage+cookie",
     });
-  }, []);
+  }, [consented]);
 
   // Identify cuando hay usuario logueado (con su email + id de Supabase)
   useEffect(() => {
