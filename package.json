@@ -18,7 +18,8 @@
     "r2:cleanup": "node --env-file=.env.local scripts/r2-cleanup-orphans.mjs",
     "r2:cleanup:apply": "node --env-file=.env.local scripts/r2-cleanup-orphans.mjs --apply",
     "db:backup": "node --env-file=.env.local scripts/db-backup.mjs",
-    "db:backup:list": "node --env-file=.env.local scripts/db-backup.mjs --list"
+    "db:backup:list": "node --env-file=.env.local scripts/db-backup.mjs --list",
+    "brand:export": "node scripts/brand-export.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1045.0",

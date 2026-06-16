@@ -36,9 +36,9 @@ export default async function Image() {
           alignItems: "flex-start",
           justifyContent: "center",
           padding: "80px",
-          backgroundColor: "#05050b",
+          backgroundColor: "#0B0717",
           backgroundImage:
-            "radial-gradient(circle at 30% 50%, rgba(168,85,247,0.25) 0%, transparent 60%), radial-gradient(circle at 80% 30%, rgba(250,204,21,0.15) 0%, transparent 50%)",
+            "radial-gradient(circle at 30% 50%, rgba(126,43,255,0.30) 0%, transparent 60%), radial-gradient(circle at 80% 30%, rgba(255,30,168,0.20) 0%, transparent 50%)",
           fontFamily: "system-ui, -apple-system, sans-serif",
           position: "relative",
         }}
@@ -57,27 +57,37 @@ export default async function Image() {
               width: "72px",
               height: "72px",
               borderRadius: "16px",
-              background: "linear-gradient(135deg, #facc15 0%, #f97316 100%)",
+              background: "linear-gradient(135deg, #7E2BFF 0%, #c026d3 40%, #FF1EA8 70%, #FF8A00 100%)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              color: "#000",
-              fontSize: "32px",
+              color: "#fff",
+              fontSize: "44px",
               fontWeight: 900,
               letterSpacing: "-1px",
             }}
           >
-            AG
+            A
           </div>
           <div
             style={{
               color: "#ffffff",
-              fontSize: "32px",
-              fontWeight: 700,
-              letterSpacing: "-0.5px",
+              fontSize: "36px",
+              fontWeight: 800,
+              letterSpacing: "-1px",
+              display: "flex",
             }}
           >
-            ArteGenIA
+            Arte
+            <span
+              style={{
+                background: "linear-gradient(90deg, #FF1EA8 0%, #FF8A00 100%)",
+                backgroundClip: "text",
+                color: "transparent",
+              }}
+            >
+              GenIA
+            </span>
           </div>
         </div>
 
@@ -99,7 +109,7 @@ export default async function Image() {
           <span
             style={{
               background:
-                "linear-gradient(90deg, #c084fc 0%, #f472b6 50%, #facc15 100%)",
+                "linear-gradient(90deg, #c026d3 0%, #FF1EA8 50%, #FF8A00 100%)",
               backgroundClip: "text",
               color: "transparent",
               marginLeft: "16px",
@@ -133,14 +143,14 @@ export default async function Image() {
             gap: "12px",
             padding: "14px 24px",
             borderRadius: "999px",
-            backgroundColor: "rgba(168, 85, 247, 0.15)",
-            border: "2px solid rgba(168, 85, 247, 0.4)",
-            color: "#e9d5ff",
+            backgroundColor: "rgba(255, 30, 168, 0.15)",
+            border: "2px solid rgba(255, 30, 168, 0.4)",
+            color: "#fce7f3",
             fontSize: "22px",
             fontWeight: 600,
           }}
         >
-          artegenia.vercel.app
+          artegenia.com
         </div>
       </div>
     ),
