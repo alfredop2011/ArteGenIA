@@ -55,28 +55,29 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     // ve landing teaser. Cuando esté ready: quitar el badge + el gate del
     // backend + el teaser de la página. Buscar "Fase V.9" en código.
     const userIsAdmin = isAdmin(user?.email);
-    // Z.15: "Mis flyers" + "Mis creaciones" se fusionaron en "Mis recursos"
-    // (página única con tabs Flyers / Imágenes). Los hrefs viejos siguen
-    // funcionando via redirect.
+    // Z.15: "Mis flyers" + "Mis creaciones" se fusionaron en "Mis recursos".
+    // Z.15.1: "Colaboradores" también se movió a tab dentro de /mis-recursos
+    // para liberar espacio en el nav. Los hrefs viejos siguen via redirect.
     const navLinks = [
         { href: "/create", label: t("nav.create") },
         { href: "/quitar-fondo", label: "Quitar fondo" },
         { href: "/capas-magicas", label: "Capas Mágicas", badge: userIsAdmin ? undefined : "Próximamente" },
         { href: "/templates", label: t("nav.templates") },
         { href: "/mis-recursos", label: "Mis recursos" },
-        { href: "/colaboradores", label: t("nav.collaborators") },
         { href: "/pricing", label: t("nav.pricing") },
         ...(userIsAdmin ? [{ href: "/admin/templates", label: t("nav.admin") }] : []),
     ];
 
     // Bottom nav mobile: 4 iconos principales + boton Mas. Labels cortos
     // (nav.flyersShort / nav.teamShort) porque el espacio en mobile es justo.
+    // Z.15.1: bottom nav mobile — quitamos Colaboradores (ahora dentro de
+    // Mis recursos como tab). Añadimos Quitar fondo que era el siguiente
+    // candidato más útil (feature destacada accesible a todos).
     const mobileBottomNav = [
         { href: "/create", label: t("nav.create"), icon: Plus },
         { href: "/templates", label: t("nav.templates"), icon: LayoutGrid },
-        // Z.15: hub unificado "Mis recursos" reemplaza el viejo "Mis flyers"
         { href: "/mis-recursos", label: "Recursos", icon: FolderOpen },
-        { href: "/colaboradores", label: t("nav.teamShort"), icon: Users },
+        { href: "/quitar-fondo", label: "Sin fondo", icon: Wand2 },
     ];
 
     const initials = profile?.name

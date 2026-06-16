@@ -16,13 +16,14 @@
 import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
-import { Lock, FolderOpen, ImageIcon } from "lucide-react";
+import { Lock, FolderOpen, ImageIcon, Users } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useLocale } from "@/hooks/useLocale";
 import FlyersTab from "./_components/FlyersTab";
 import ImagenesTab from "./_components/ImagenesTab";
+import ColaboradoresTab from "./_components/ColaboradoresTab";
 
-type TabKey = "flyers" | "imagenes";
+type TabKey = "flyers" | "imagenes" | "colaboradores";
 
 function MisRecursosInner() {
     const searchParams = useSearchParams();
@@ -30,7 +31,12 @@ function MisRecursosInner() {
     const { user, loading: authLoading } = useAuth();
     const { t } = useLocale();
 
-    const initialTab: TabKey = searchParams.get("tab") === "imagenes" ? "imagenes" : "flyers";
+    const initialTab: TabKey = (() => {
+        const q = searchParams.get("tab");
+        if (q === "imagenes") return "imagenes";
+        if (q === "colaboradores") return "colaboradores";
+        return "flyers";
+    })();
     const [tab, setTab] = useState<TabKey>(initialTab);
 
     // Actualiza ?tab=... sin scroll para que back/forward funcione bien
@@ -83,10 +89,18 @@ function MisRecursosInner() {
                         active={tab === "imagenes"}
                         onClick={() => changeTab("imagenes")}
                     />
+                    <TabButton
+                        icon={<Users size={16} strokeWidth={2} />}
+                        label="Colaboradores"
+                        active={tab === "colaboradores"}
+                        onClick={() => changeTab("colaboradores")}
+                    />
                 </div>
 
                 {/* Contenido del tab */}
-                {tab === "flyers" ? <FlyersTab /> : <ImagenesTab />}
+                {tab === "flyers" && <FlyersTab />}
+                {tab === "imagenes" && <ImagenesTab />}
+                {tab === "colaboradores" && <ColaboradoresTab />}
             </div>
         </main>
     );
