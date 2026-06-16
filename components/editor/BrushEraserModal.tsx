@@ -51,6 +51,13 @@ export default function BrushEraserModal({
   const lastPointRef = useRef<{ x: number; y: number } | null>(null);
 
   // Cargar imagen original al canvas cuando se abre el modal.
+  // Z.18: NO incluir onError en deps — su referencia cambia cada render
+  // del padre y triggeraria recargar la imagen tras cada magic-erase,
+  // borrando el progreso del user. Usamos un ref para acceder a la callback
+  // sin invalidar el effect.
+  const onErrorRef = useRef(onError);
+  useEffect(() => { onErrorRef.current = onError; }, [onError]);
+
   useEffect(() => {
     if (!open || !imageUrl) return;
     const canvas = canvasRef.current;
@@ -67,9 +74,9 @@ export default function BrushEraserModal({
       ctx.drawImage(img, 0, 0);
       originalImgRef.current = img;
     };
-    img.onerror = () => onError?.("No se pudo cargar la imagen");
+    img.onerror = () => onErrorRef.current?.("No se pudo cargar la imagen");
     img.src = imageUrl;
-  }, [open, imageUrl, onError]);
+  }, [open, imageUrl]);
 
   // Reset al cerrar
   useEffect(() => {
