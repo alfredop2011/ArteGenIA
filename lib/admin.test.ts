@@ -4,6 +4,7 @@ import { isAdmin, ADMIN_EMAILS } from "./admin";
 describe("isAdmin (admin gating)", () => {
   it("admin email reconocido", () => {
     expect(isAdmin("alfredop2011@gmail.com")).toBe(true);
+    expect(isAdmin("hola@artegenia.com")).toBe(true);
   });
 
   it("case-insensitive", () => {

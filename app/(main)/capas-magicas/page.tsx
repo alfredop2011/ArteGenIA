@@ -317,7 +317,7 @@ export default function CapasMagicasPage() {
 
           <p className="text-[11px] text-gray-500 mt-12">
             En beta privada mientras pulimos calidad. ¿Quieres acceso anticipado?{" "}
-            <a href="mailto:alfredop2011@gmail.com?subject=Acceso%20a%20Capas%20Mágicas" className="text-purple-300 hover:underline">Escríbenos</a>.
+            <a href="mailto:hola@artegenia.com?subject=Acceso%20a%20Capas%20Mágicas" className="text-purple-300 hover:underline">Escríbenos</a>.
           </p>
         </div>
       </main>

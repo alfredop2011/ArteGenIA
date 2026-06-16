@@ -465,7 +465,7 @@ function PricingContent() {
             <p className="text-[10px] text-gray-500 text-center mt-2">
               ¿Necesitas Enterprise ya?{" "}
               <a
-                href="mailto:alfredop2011@gmail.com?subject=Reserva%20Enterprise%20ArteGenIA&body=Hola%2C%20me%20interesa%20reservar%20una%20plaza%20para%20Enterprise%20cuando%20est%C3%A9%20disponible.%20Mi%20equipo%20es%20de%20___%20personas%20y%20hacemos%20___%20flyers%2Fmes."
+                href="mailto:hola@artegenia.com?subject=Reserva%20Enterprise%20ArteGenIA&body=Hola%2C%20me%20interesa%20reservar%20una%20plaza%20para%20Enterprise%20cuando%20est%C3%A9%20disponible.%20Mi%20equipo%20es%20de%20___%20personas%20y%20hacemos%20___%20flyers%2Fmes."
                 className="text-amber-300 hover:text-amber-200 underline"
               >
                 Escríbenos
@@ -476,7 +476,7 @@ function PricingContent() {
 
         {/* Sub-texto debajo */}
         <p className="text-center text-[12px] text-gray-500 mt-8 max-w-xl mx-auto leading-relaxed">
-          Todos los planes incluyen el editor completo SIN watermark. La diferencia está en límites de IA, exportación profesional y soporte. ¿Dudas? <a href="mailto:alfredop2011@gmail.com" className="text-purple-300 hover:text-purple-200 underline">Escríbenos</a>.
+          Todos los planes incluyen el editor completo SIN watermark. La diferencia está en límites de IA, exportación profesional y soporte. ¿Dudas? <a href="mailto:hola@artegenia.com" className="text-purple-300 hover:text-purple-200 underline">Escríbenos</a>.
         </p>
 
         {/* Comparativa rápida — opcional, estilo shadcn */}

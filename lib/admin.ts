@@ -8,6 +8,7 @@
  */
 export const ADMIN_EMAILS = new Set<string>([
   "alfredop2011@gmail.com",
+  "hola@artegenia.com",
 ]);
 
 export function isAdmin(email: string | null | undefined): boolean {
