@@ -29,6 +29,8 @@ const CORS_POLICY = [
   {
     AllowedOrigins: [
       "http://localhost:3000",
+      "https://artegenia.com",
+      "https://www.artegenia.com",
       "https://artegenia.vercel.app",
       "https://*.vercel.app",
     ],
