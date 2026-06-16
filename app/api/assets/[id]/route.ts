@@ -1,16 +1,20 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
+import { deleteFromR2 } from "@/lib/r2";
 
 export const runtime = "nodejs";
 
 /**
  * DELETE /api/assets/[id] — borra un asset de la galería del usuario.
  *
- * También intenta borrar el archivo de R2 si tiene storage_key. Si falla
- * el borrado R2 (URL externa, key faltante, R2 indisponible), borramos
- * la row de DB igual — preferimos "huérfano en R2" a "fantasma en DB".
+ * 1. Lee la row para obtener storage_key (RLS filtra por user_id)
+ * 2. Borra el archivo de R2 si tiene storage_key (best effort)
+ * 3. Borra la row de DB
  *
- * RLS de Supabase asegura que solo el dueño puede borrar.
+ * Si falla R2 (key inválida, indisponible) borramos la row igual:
+ * preferimos huérfano en R2 a fantasma en DB. R2 cuesta $0.015/GB-mes
+ * así que un huérfano puntual no es problema; si pasa sistemáticamente,
+ * los logs lo revelan.
  */
 export async function DELETE(
   _req: Request,
@@ -24,12 +28,27 @@ export async function DELETE(
       return NextResponse.json({ error: "Inicia sesión" }, { status: 401 });
     }
 
-    // TODO Z.8.1: borrar archivo R2 cuando lib/r2 exporte deleteFromR2.
-    // Por ahora el archivo queda huérfano en R2. Es aceptable corto plazo:
-    // R2 cuesta $0.015/GB-mes, un archivo huérfano de 2MB cuesta $0.00003/mes.
-    // Cron de limpieza futuro puede recolectar huérfanos comparando con DB.
+    // 1. Leer storage_key antes de borrar (RLS asegura ownership)
+    const { data: asset } = await supabase
+      .from("user_assets")
+      .select("storage_key")
+      .eq("id", id)
+      .eq("user_id", user.id)
+      .maybeSingle();
 
-    // Borrar de DB
+    // 2. Borrar archivo R2 (best effort — no bloquea el DELETE de DB)
+    const storageKey: string | null = asset?.storage_key ?? null;
+    if (storageKey) {
+      try {
+        await deleteFromR2(storageKey);
+      } catch (r2Err) {
+        // R2 falló pero seguimos: huérfano > fantasma en DB.
+        // Log para detectar si es sistemático y poder limpiar con cron.
+        console.warn(`[assets DELETE] R2 fallo para key=${storageKey}:`, r2Err);
+      }
+    }
+
+    // 3. Borrar row de DB
     const { error } = await supabase
       .from("user_assets")
       .delete()

@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
 
 const accountId = process.env.R2_ACCOUNT_ID!;
 const accessKeyId = process.env.R2_ACCESS_KEY_ID!;
@@ -62,4 +62,18 @@ export function makeKey(folder: string, ext: string): string {
   const ts = Date.now();
   const rand = Math.random().toString(36).slice(2, 10);
   return `flyers/${folder}/${ts}-${rand}.${ext}`;
+}
+
+/**
+ * Borra un objeto de R2 por su key (Z.8.1 completing TODO).
+ * No falla si la key no existe — R2 es idempotente en delete.
+ * Llamar tras borrar la row de DB para evitar archivos huérfanos.
+ */
+export async function deleteFromR2(key: string): Promise<void> {
+  await s3.send(
+    new DeleteObjectCommand({
+      Bucket: bucket,
+      Key: key,
+    })
+  );
 }
