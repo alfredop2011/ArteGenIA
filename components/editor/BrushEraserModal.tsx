@@ -153,42 +153,47 @@ export default function BrushEraserModal({
       });
       if (!blob) throw new Error("No se pudo serializar el canvas");
 
-      // 2. POST a /api/magic-erase con punto en coords del canvas
+      // 2. POST a /api/magic-erase con punto en coords del canvas.
+      // El endpoint devuelve la mask DIRECTAMENTE como response binaria
+      // (Content-Type: image/png) o JSON con error si falla. Same-origin
+      // garantiza que no hay CORS issues con la imagen.
       const form = new FormData();
       form.append("image_file", new File([blob], "canvas.png", { type: "image/png" }));
       form.append("point_x", String(Math.round(x)));
       form.append("point_y", String(Math.round(y)));
       const res = await fetch("/api/magic-erase", { method: "POST", body: form });
-      const data = await res.json().catch(() => ({}));
+
       if (res.status === 402) {
         onError?.("Sin créditos suficientes para Borrador mágico");
         return;
       }
-      if (!res.ok || !data.maskUrl) {
-        // Z.17 — mostrar el detail real del error (no "El borrador mágico falló" genérico).
-        // El server loguea el error de Fal completo; el cliente recibe el msg accionable.
-        const fullErr = data.detail || data.error || `HTTP ${res.status}`;
-        console.error("[magic-erase] server error:", fullErr, data);
+      if (!res.ok) {
+        // Server falló — parsear como JSON para mostrar detalle.
+        const errJson = await res.json().catch(() => ({}));
+        const fullErr = errJson.detail || errJson.error || `HTTP ${res.status}`;
+        console.error("[magic-erase] server error:", fullErr, errJson);
         throw new Error(fullErr);
       }
 
-      // 3. Cargar máscara desde R2 (CORS habilitado) y aplicar destination-out.
-      // Cache-buster para evitar caché de respuesta sin CORS de algún proxy
-      // intermedio. Timeout 15s como safety por si algo cuelga.
+      // 3. Recibir mask como blob, crear Blob URL same-origin, aplicar.
+      const maskBlob = await res.blob();
+      const maskBlobUrl = URL.createObjectURL(maskBlob);
       const mask = new Image();
-      mask.crossOrigin = "anonymous";
-      const cacheBust = data.maskUrl.includes("?") ? "&" : "?";
-      const maskSrc = `${data.maskUrl}${cacheBust}v=${Date.now()}`;
-      await Promise.race([
-        new Promise<void>((resolve, reject) => {
-          mask.onload = () => resolve();
-          mask.onerror = () => reject(new Error("No se pudo cargar la máscara IA"));
-          mask.src = maskSrc;
-        }),
-        new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error("Timeout cargando máscara (15s)")), 15000),
-        ),
-      ]);
+      try {
+        await Promise.race([
+          new Promise<void>((resolve, reject) => {
+            mask.onload = () => resolve();
+            mask.onerror = () => reject(new Error("No se pudo decodificar la máscara"));
+            mask.src = maskBlobUrl;
+          }),
+          new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error("Timeout cargando máscara (15s)")), 15000),
+          ),
+        ]);
+      } finally {
+        // Liberar memoria del Blob URL tras el load (o aunque falle)
+        URL.revokeObjectURL(maskBlobUrl);
+      }
       const ctx = canvasRef.current?.getContext("2d");
       if (!ctx) throw new Error("Canvas perdido");
       ctx.save();

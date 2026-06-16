@@ -3,7 +3,6 @@ import { fal } from "@fal-ai/client";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { checkRateLimit } from "@/lib/rateLimit";
 import { consumeCredits, addCredits, CREDIT_COST } from "@/lib/credits";
-import { uploadToR2, makeKey } from "@/lib/r2";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -127,25 +126,22 @@ export async function POST(req: Request) {
       throw new Error(`SAM-2 no devolvió máscara — keys del response: ${keys}`);
     }
 
-    // Z.18 — Re-subir mask a R2 (con CORS ya configurado) en lugar de dataURL.
-    // dataURLs grandes fallan en Safari ("Data URL decoding failed"), y la URL
-    // directa de Fal.ai/fal.media no siempre sirve con CORS. R2 nuestro sí.
-    let finalMaskUrl = maskUrl;
-    try {
-      const maskRes = await fetch(maskUrl);
-      if (maskRes.ok) {
-        const maskBuffer = Buffer.from(await maskRes.arrayBuffer());
-        const key = makeKey("magic-mask", "png");
-        const r2 = await uploadToR2(maskBuffer, key, "image/png");
-        finalMaskUrl = r2.url;
-      } else {
-        console.warn("[magic-erase] no se pudo descargar mask de Fal:", maskRes.status, "— devolviendo URL Fal directa");
-      }
-    } catch (uploadErr) {
-      console.warn("[magic-erase] error re-subiendo mask a R2, fallback a URL Fal:", uploadErr);
+    // Z.18 — Descargar mask de Fal y devolverla como BINARY response.
+    // Same-origin (cliente.vercel.app → cliente.vercel.app/api/magic-erase),
+    // sin CORS issues, sin dependencia del CORS policy de R2, sin storage
+    // acumulado. El cliente hace blob() y URL.createObjectURL.
+    const maskRes = await fetch(maskUrl);
+    if (!maskRes.ok) {
+      throw new Error(`No se pudo descargar mask de Fal: HTTP ${maskRes.status}`);
     }
-
-    return NextResponse.json({ maskUrl: finalMaskUrl });
+    const maskArrayBuffer = await maskRes.arrayBuffer();
+    return new Response(maskArrayBuffer, {
+      status: 200,
+      headers: {
+        "Content-Type": "image/png",
+        "Cache-Control": "no-store",
+      },
+    });
   } catch (err) {
     console.error("[magic-erase] error:", err);
     const msg = err instanceof Error ? err.message : "Error desconocido";
