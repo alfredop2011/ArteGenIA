@@ -7,10 +7,16 @@ import type { MetadataRoute } from "next";
  * y solo gastarian budget de crawl de Google:
  *  - /api/* — endpoints internos
  *  - /admin/* — panel privado
- *  - /editor/* — editor de proyectos (requiere auth, contenido del usuario)
  *  - /editor-new — variante experimental
  *  - /projects, /history — vistas privadas del usuario
  *  - /auth/callback — callback OAuth, no debe indexarse
+ *  - /upload/* — flujo de upload de colaboradores via token
+ *
+ * NOTA: /editor/ NO se bloquea porque sirve dos usos mezclados:
+ *  - /editor/[id-numerico] -> plantilla publica (intencion SEO, en sitemap)
+ *  - /editor/[uuid] -> proyecto privado (requiere auth, redirige a login)
+ * Google indexara las publicas; las privadas no las indexa porque el
+ * server-redirect a /login impide acceso.
  *
  * Si en el futuro queremos bloquear bots de IA (Bytespider, GPTBot, etc.)
  * para que no scrapeen plantillas, añadir bloques especificos por User-agent.
@@ -28,7 +34,6 @@ export default function robots(): MetadataRoute.Robots {
         disallow: [
           "/api/",
           "/admin/",
-          "/editor/",
           "/editor-new",
           "/projects",
           "/history",
