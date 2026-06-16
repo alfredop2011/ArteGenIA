@@ -102,6 +102,7 @@ export type TranslationKey =
   | "auth.success.created"
   | "auth.error.generic"
   | "auth.error.terms"
+  | "auth.error.confirmationTimeout"
   | "auth.terms.iAccept"
   | "auth.terms.linkTerms"
   | "auth.terms.and"
@@ -826,6 +827,7 @@ const es: Dict = {
   "auth.success.created": "¡Cuenta creada! Revisa tu email para confirmar.",
   "auth.error.generic": "Error al autenticar",
   "auth.error.terms": "Debes aceptar los términos y la política de privacidad para registrarte.",
+  "auth.error.confirmationTimeout": "Tardamos en detectar tu confirmación. Inicia sesión manualmente con tu email y password.",
   "auth.terms.iAccept": "He leído y acepto los",
   "auth.terms.linkTerms": "Términos",
   "auth.terms.and": "y la",
@@ -1540,6 +1542,7 @@ const en: Dict = {
   "auth.success.created": "Account created! Check your email to confirm.",
   "auth.error.generic": "Authentication error",
   "auth.error.terms": "You must accept the terms and privacy policy to register.",
+  "auth.error.confirmationTimeout": "We couldn't detect your confirmation in time. Please sign in manually with your email and password.",
   "auth.terms.iAccept": "I have read and accept the",
   "auth.terms.linkTerms": "Terms",
   "auth.terms.and": "and",
@@ -2241,6 +2244,7 @@ const fr: Dict = {
   "auth.success.created": "Compte créé ! Vérifie ton email pour confirmer.",
   "auth.error.generic": "Erreur d'authentification",
   "auth.error.terms": "Tu dois accepter les conditions et la politique de confidentialité pour t'inscrire.",
+  "auth.error.confirmationTimeout": "Nous n'avons pas pu détecter ta confirmation à temps. Connecte-toi manuellement avec ton email et ton mot de passe.",
   "auth.terms.iAccept": "J'ai lu et j'accepte les",
   "auth.terms.linkTerms": "Conditions",
   "auth.terms.and": "et la",
@@ -2942,6 +2946,7 @@ const pt: Dict = {
   "auth.success.created": "Conta criada! Verifica o teu email para confirmar.",
   "auth.error.generic": "Erro de autenticação",
   "auth.error.terms": "Tens de aceitar os termos e a política de privacidade para te registares.",
+  "auth.error.confirmationTimeout": "Não conseguimos detetar a tua confirmação a tempo. Inicia sessão manualmente com o teu email e palavra-passe.",
   "auth.terms.iAccept": "Li e aceito os",
   "auth.terms.linkTerms": "Termos",
   "auth.terms.and": "e a",

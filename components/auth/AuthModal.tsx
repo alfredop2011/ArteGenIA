@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useLocale } from "@/hooks/useLocale";
 
@@ -30,6 +30,11 @@ export default function AuthModal({ onClose, title, subtitle, onAuthSuccess, nex
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
+    // Z.24 — Tras signup exitoso, modal queda esperando confirmación con
+    // polling. Cuando el user confirma en otro device, el polling detecta
+    // la cuenta activa y hace auto-login en este device.
+    const [awaitingConfirmation, setAwaitingConfirmation] = useState(false);
+    const pollStartRef = useRef<number>(0);
 
     const { signInWithEmail, signUpWithEmail, signInWithGoogle } = useAuth();
 
@@ -45,13 +50,14 @@ export default function AuthModal({ onClose, title, subtitle, onAuthSuccess, nex
             if (mode === "login") {
                 const { error } = await signInWithEmail(email, password);
                 if (error) throw error;
-                // Login OK: ejecutar callback (descarga, guardado, etc.) y cerrar
                 onAuthSuccess?.();
                 onClose();
             } else {
                 const { error } = await signUpWithEmail(email, password, name);
                 if (error) throw error;
-                setSuccess(t("auth.success.created"));
+                // Z.24: en vez de mostrar solo success, esperamos confirmación
+                setAwaitingConfirmation(true);
+                pollStartRef.current = Date.now();
             }
         } catch (e: any) {
             setError(e.message || t("auth.error.generic"));
@@ -59,6 +65,96 @@ export default function AuthModal({ onClose, title, subtitle, onAuthSuccess, nex
             setLoading(false);
         }
     };
+
+    // Z.24 — Polling cada 4s mientras awaitingConfirmation. Timeout 5 min
+    // para no hacer polling infinito si el user nunca confirma.
+    useEffect(() => {
+        if (!awaitingConfirmation) return;
+        let cancelled = false;
+        const TIMEOUT_MS = 5 * 60 * 1000;
+
+        const tick = async () => {
+            if (cancelled) return;
+            if (Date.now() - pollStartRef.current > TIMEOUT_MS) {
+                if (!cancelled) {
+                    setAwaitingConfirmation(false);
+                    setError(t("auth.error.confirmationTimeout"));
+                }
+                return;
+            }
+            try {
+                const { error: signInErr } = await signInWithEmail(email, password);
+                if (cancelled) return;
+                if (!signInErr) {
+                    // ¡Confirmado! Sesión activa, salimos del modal.
+                    onAuthSuccess?.();
+                    onClose();
+                    return;
+                }
+                // Error esperado mientras espera confirmación: "Email not confirmed"
+                // Cualquier otro error (password mal, rate limit) lo mostramos.
+                const msg = (signInErr as any)?.message ?? "";
+                const isNotConfirmed =
+                    msg.toLowerCase().includes("not confirmed") ||
+                    msg.toLowerCase().includes("no confirmado") ||
+                    msg.toLowerCase().includes("confirm");
+                if (!isNotConfirmed) {
+                    setAwaitingConfirmation(false);
+                    setError(msg || t("auth.error.generic"));
+                    return;
+                }
+            } catch {
+                // Network errors — seguimos polleando, el siguiente tick reintentará
+            }
+        };
+
+        // Primer tick inmediato + intervalo
+        void tick();
+        const id = window.setInterval(tick, 4000);
+        return () => { cancelled = true; window.clearInterval(id); };
+    }, [awaitingConfirmation, email, password, signInWithEmail, onAuthSuccess, onClose, t]);
+
+    const cancelWaiting = () => {
+        setAwaitingConfirmation(false);
+        setSuccess(t("auth.success.created"));
+    };
+
+    // Z.24 — Pantalla de espera tras signup: polling auto-login.
+    if (awaitingConfirmation) {
+        return (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
+                onClick={e => e.target === e.currentTarget && onClose()}>
+                <div className="w-full max-w-md mx-4 rounded-3xl p-8 text-center"
+                    style={{
+                        background: "var(--home-bg-soft)",
+                        border: "1px solid rgba(168,85,247,0.35)",
+                        boxShadow: "0 0 60px rgba(168,85,247,0.2)",
+                        color: "var(--home-text)",
+                    }}>
+                    <div className="w-16 h-16 mx-auto mb-5 rounded-2xl bg-purple-500/15 border border-purple-500/35 flex items-center justify-center text-purple-300">
+                        <svg className="w-7 h-7 animate-pulse" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                            <polyline points="22,6 12,13 2,6"/>
+                        </svg>
+                    </div>
+                    <h2 className="text-xl font-black mb-2">¡Cuenta creada!</h2>
+                    <p className="text-sm mb-3" style={{ color: "var(--home-text-muted)" }}>
+                        Te enviamos un email a <b>{email}</b>. Confírmalo desde donde sea (móvil, otro ordenador) y aquí entrarás automáticamente.
+                    </p>
+                    <div className="flex items-center justify-center gap-2 text-[11px] mb-6" style={{ color: "var(--home-text-soft)" }}>
+                        <div className="w-2 h-2 rounded-full bg-purple-400 animate-pulse"/>
+                        Esperando confirmación…
+                    </div>
+                    <button
+                        onClick={cancelWaiting}
+                        className="text-xs underline opacity-70 hover:opacity-100"
+                        style={{ color: "var(--home-text-soft)" }}>
+                        Cancelar y volver al login
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
