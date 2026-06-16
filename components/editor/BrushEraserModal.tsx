@@ -6,8 +6,10 @@
  *
  * 3 tools:
  *   - Borrar (manual): pincel circular borra alpha al arrastrar. 0 créditos.
- *   - Mágico (IA): click → SAM-2 segmenta el objeto bajo el punto y devuelve
- *     máscara → la aplicamos como destination-out. 1 crédito por click.
+ *   - Mágico (IA): click → SAM segmenta el objeto bajo el punto → muestra
+ *     SELECCIÓN en azul → user confirma o cancela. 1 crédito por click.
+ *     Z.19: flujo "select-then-erase" en vez de borrar inmediato. Permite
+ *     ver lo que se va a borrar antes (caso típico: zapatos individuales).
  *   - Restaurar (manual): pinta de vuelta la imagen original sobre zonas borradas.
  *
  * Modal full-screen sobre fondo translúcido. Mismo componente funciona en
@@ -19,7 +21,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Eraser, Brush, Sparkles, Check, X, Loader2 } from "lucide-react";
+import { Eraser, Brush, Sparkles, Check, X, Loader2, Trash2 } from "lucide-react";
 
 type Tool = "erase" | "magic" | "restore";
 
@@ -42,6 +44,7 @@ export default function BrushEraserModal({
   open, imageUrl, magicCost = 1, balance, onCancel, onSave, onCreditsConsumed, onError,
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const overlayCanvasRef = useRef<HTMLCanvasElement>(null);
   const originalImgRef = useRef<HTMLImageElement | null>(null);
   const [tool, setTool] = useState<Tool>("erase");
   const [brushSize, setBrushSize] = useState(40);
@@ -49,6 +52,34 @@ export default function BrushEraserModal({
   const [magicLoading, setMagicLoading] = useState(false);
   const [cursorPos, setCursorPos] = useState<{ x: number; y: number } | null>(null);
   const lastPointRef = useRef<{ x: number; y: number } | null>(null);
+
+  // Z.19 — selección pendiente del Borrador mágico: SAM devuelve mask,
+  // la mostramos como overlay azul translúcido. El user confirma con
+  // "Borrar selección" o descarta con "Cancelar selección".
+  const [pendingMask, setPendingMask] = useState<{
+    img: HTMLImageElement;
+    blobUrl: string;
+  } | null>(null);
+
+  // Cancelar selección magic: revoca blob URL + limpia state
+  const cancelPendingMask = useCallback(() => {
+    if (pendingMask) URL.revokeObjectURL(pendingMask.blobUrl);
+    setPendingMask(null);
+  }, [pendingMask]);
+
+  // Aplicar selección magic: destination-out sobre el canvas principal
+  const applyPendingMask = useCallback(() => {
+    if (!pendingMask) return;
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext("2d");
+    if (!canvas || !ctx) return;
+    ctx.save();
+    ctx.globalCompositeOperation = "destination-out";
+    ctx.drawImage(pendingMask.img, 0, 0, canvas.width, canvas.height);
+    ctx.restore();
+    URL.revokeObjectURL(pendingMask.blobUrl);
+    setPendingMask(null);
+  }, [pendingMask]);
 
   // Cargar imagen original al canvas cuando se abre el modal.
   // Z.18: NO incluir onError en deps — su referencia cambia cada render
@@ -86,8 +117,36 @@ export default function BrushEraserModal({
       setCursorPos(null);
       setTool("erase");
       lastPointRef.current = null;
+      if (pendingMask) {
+        URL.revokeObjectURL(pendingMask.blobUrl);
+        setPendingMask(null);
+      }
     }
+    // pendingMask intencionalmente fuera de deps — solo limpia al cerrar.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
+
+  // Render del overlay azul de la selección magic cada vez que cambia.
+  useEffect(() => {
+    const main = canvasRef.current;
+    const overlay = overlayCanvasRef.current;
+    if (!main || !overlay) return;
+    overlay.width = main.width;
+    overlay.height = main.height;
+    const octx = overlay.getContext("2d");
+    if (!octx) return;
+    octx.clearRect(0, 0, overlay.width, overlay.height);
+    if (pendingMask) {
+      // Pintar azul translúcido SOLO donde la mask es opaca.
+      // 1. Rellenar todo de azul
+      octx.fillStyle = "rgba(59, 130, 246, 0.55)";
+      octx.fillRect(0, 0, overlay.width, overlay.height);
+      // 2. destination-in con la mask → solo queda azul donde la mask es opaca
+      octx.globalCompositeOperation = "destination-in";
+      octx.drawImage(pendingMask.img, 0, 0, overlay.width, overlay.height);
+      octx.globalCompositeOperation = "source-over";
+    }
+  }, [pendingMask]);
 
   // ─── Coordenadas: convierte clientX/Y a coords del canvas ─────────────
   const getCoords = useCallback((clientX: number, clientY: number) => {
@@ -146,24 +205,25 @@ export default function BrushEraserModal({
     }
   }, [brushSize, paintAt]);
 
-  // ─── Magic erase: click → SAM → máscara → aplica destination-out ──────
+  // ─── Magic erase: click → SAM → guarda mask como pendingMask (overlay azul).
+  // El user confirma con "Borrar selección" o descarta con "Cancelar".
   const handleMagicClick = useCallback(async (x: number, y: number) => {
     if (balance !== null && balance !== undefined && balance < magicCost) {
       onError?.("Sin créditos suficientes para Borrador mágico");
       return;
     }
+    // Si ya hay una selección pendiente, la reemplazamos por la nueva.
+    if (pendingMask) {
+      URL.revokeObjectURL(pendingMask.blobUrl);
+      setPendingMask(null);
+    }
     setMagicLoading(true);
     try {
-      // 1. Convertir canvas a Blob → File
       const blob = await new Promise<Blob | null>((resolve) => {
         canvasRef.current?.toBlob(resolve, "image/png");
       });
       if (!blob) throw new Error("No se pudo serializar el canvas");
 
-      // 2. POST a /api/magic-erase con punto en coords del canvas.
-      // El endpoint devuelve la mask DIRECTAMENTE como response binaria
-      // (Content-Type: image/png) o JSON con error si falla. Same-origin
-      // garantiza que no hay CORS issues con la imagen.
       const form = new FormData();
       form.append("image_file", new File([blob], "canvas.png", { type: "image/png" }));
       form.append("point_x", String(Math.round(x)));
@@ -175,38 +235,27 @@ export default function BrushEraserModal({
         return;
       }
       if (!res.ok) {
-        // Server falló — parsear como JSON para mostrar detalle.
         const errJson = await res.json().catch(() => ({}));
         const fullErr = errJson.detail || errJson.error || `HTTP ${res.status}`;
         console.error("[magic-erase] server error:", fullErr, errJson);
         throw new Error(fullErr);
       }
 
-      // 3. Recibir mask como blob, crear Blob URL same-origin, aplicar.
+      // Z.19: mostrar la mask como overlay (no borrar todavía).
       const maskBlob = await res.blob();
       const maskBlobUrl = URL.createObjectURL(maskBlob);
       const mask = new Image();
-      try {
-        await Promise.race([
-          new Promise<void>((resolve, reject) => {
-            mask.onload = () => resolve();
-            mask.onerror = () => reject(new Error("No se pudo decodificar la máscara"));
-            mask.src = maskBlobUrl;
-          }),
-          new Promise<never>((_, reject) =>
-            setTimeout(() => reject(new Error("Timeout cargando máscara (15s)")), 15000),
-          ),
-        ]);
-      } finally {
-        // Liberar memoria del Blob URL tras el load (o aunque falle)
-        URL.revokeObjectURL(maskBlobUrl);
-      }
-      const ctx = canvasRef.current?.getContext("2d");
-      if (!ctx) throw new Error("Canvas perdido");
-      ctx.save();
-      ctx.globalCompositeOperation = "destination-out";
-      ctx.drawImage(mask, 0, 0, canvasRef.current!.width, canvasRef.current!.height);
-      ctx.restore();
+      await Promise.race([
+        new Promise<void>((resolve, reject) => {
+          mask.onload = () => resolve();
+          mask.onerror = () => reject(new Error("No se pudo decodificar la máscara"));
+          mask.src = maskBlobUrl;
+        }),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error("Timeout cargando máscara (15s)")), 15000),
+        ),
+      ]);
+      setPendingMask({ img: mask, blobUrl: maskBlobUrl });
       onCreditsConsumed?.();
     } catch (e) {
       console.error("[magic-erase client]", e);
@@ -214,7 +263,7 @@ export default function BrushEraserModal({
     } finally {
       setMagicLoading(false);
     }
-  }, [balance, magicCost, onError, onCreditsConsumed]);
+  }, [balance, magicCost, onError, onCreditsConsumed, pendingMask]);
 
   // ─── Pointer handlers ──────────────────────────────────────────────────
   const onPointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
@@ -278,7 +327,7 @@ export default function BrushEraserModal({
           icon={<Eraser size={16}/>}
           label="Borrar"
           active={tool === "erase"}
-          onClick={() => setTool("erase")}
+          onClick={() => { cancelPendingMask(); setTool("erase"); }}
         />
         <ToolBtn
           icon={<Sparkles size={16}/>}
@@ -292,7 +341,7 @@ export default function BrushEraserModal({
           icon={<Brush size={16}/>}
           label="Restaurar"
           active={tool === "restore"}
-          onClick={() => setTool("restore")}
+          onClick={() => { cancelPendingMask(); setTool("restore"); }}
         />
 
         {/* Slider tamaño pincel (solo para erase/restore) */}
@@ -357,7 +406,7 @@ export default function BrushEraserModal({
           </div>
         )}
 
-        {/* Canvas + cursor preview */}
+        {/* Canvas + overlay selección + cursor preview */}
         <div className="relative" style={{ maxWidth: "100%", maxHeight: "100%" }}>
           <canvas
             ref={canvasRef}
@@ -367,8 +416,14 @@ export default function BrushEraserModal({
             onPointerLeave={onPointerLeave}
             className="max-w-full max-h-[calc(100vh-260px)] object-contain block touch-none"
             style={{
-              cursor: tool === "magic" ? "pointer" : "none",
+              cursor: tool === "magic" ? "crosshair" : "none",
             }}
+          />
+          {/* Z.19: overlay canvas mostrando la selección mágica en azul */}
+          <canvas
+            ref={overlayCanvasRef}
+            className="absolute inset-0 w-full h-full pointer-events-none object-contain"
+            style={{ display: pendingMask ? "block" : "none" }}
           />
           {/* Cursor preview circular (solo erase/restore, escala al display) */}
           {cursorPos && tool !== "magic" && canvasRef.current && (
@@ -383,28 +438,54 @@ export default function BrushEraserModal({
         </div>
       </div>
 
-      {/* Footer con CTAs */}
+      {/* Footer con CTAs — cambia según haya o no selección pendiente magic */}
       <div className="px-4 py-3 flex items-center justify-between gap-2 border-t border-white/10 shrink-0">
-        <p className="text-[10px] text-gray-500 hidden sm:block">
-          {tool === "erase" && "Arrastra para borrar las zonas sobrantes"}
-          {tool === "magic" && (insufficient ? "Sin créditos suficientes" : "Toca el objeto que quieres borrar")}
-          {tool === "restore" && "Arrastra para recuperar zonas borradas por error"}
-        </p>
-        <div className="flex items-center gap-2 ml-auto">
-          <button
-            onClick={onCancel}
-            disabled={magicLoading}
-            className="px-4 py-2 rounded-xl bg-white/[0.08] hover:bg-white/[0.12] text-gray-300 font-bold text-[12.5px] disabled:opacity-50">
-            Cancelar
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={magicLoading}
-            className="px-5 py-2 rounded-xl bg-gradient-to-r from-purple-500 to-fuchsia-500 hover:from-purple-400 hover:to-fuchsia-400 text-white font-bold text-[12.5px] flex items-center gap-1.5 disabled:opacity-50">
-            <Check size={14} strokeWidth={2.5}/>
-            Aplicar
-          </button>
-        </div>
+        {pendingMask ? (
+          // Z.19: selección mágica pendiente → botones contextuales
+          <>
+            <p className="text-[11px] font-semibold text-blue-300 hidden sm:flex items-center gap-1.5">
+              <Sparkles size={12} className="text-blue-300"/>
+              Selección lista — ¿la borras o cancelas?
+            </p>
+            <div className="flex items-center gap-2 ml-auto">
+              <button
+                onClick={cancelPendingMask}
+                className="px-4 py-2 rounded-xl bg-white/[0.08] hover:bg-white/[0.12] text-gray-300 font-bold text-[12.5px]">
+                Cancelar selección
+              </button>
+              <button
+                onClick={applyPendingMask}
+                className="px-5 py-2 rounded-xl bg-gradient-to-r from-red-500 to-rose-500 hover:from-red-400 hover:to-rose-400 text-white font-bold text-[12.5px] flex items-center gap-1.5">
+                <Trash2 size={14} strokeWidth={2.5}/>
+                Borrar selección
+              </button>
+            </div>
+          </>
+        ) : (
+          // Estado normal: hint + Cancelar/Aplicar global
+          <>
+            <p className="text-[10px] text-gray-500 hidden sm:block">
+              {tool === "erase" && "Arrastra para borrar las zonas sobrantes"}
+              {tool === "magic" && (insufficient ? "Sin créditos suficientes" : "Toca el objeto que quieres borrar — verás la selección en azul antes de borrar")}
+              {tool === "restore" && "Arrastra para recuperar zonas borradas por error"}
+            </p>
+            <div className="flex items-center gap-2 ml-auto">
+              <button
+                onClick={onCancel}
+                disabled={magicLoading}
+                className="px-4 py-2 rounded-xl bg-white/[0.08] hover:bg-white/[0.12] text-gray-300 font-bold text-[12.5px] disabled:opacity-50">
+                Cancelar
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={magicLoading}
+                className="px-5 py-2 rounded-xl bg-gradient-to-r from-purple-500 to-fuchsia-500 hover:from-purple-400 hover:to-fuchsia-400 text-white font-bold text-[12.5px] flex items-center gap-1.5 disabled:opacity-50">
+                <Check size={14} strokeWidth={2.5}/>
+                Aplicar
+              </button>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Magic disabled hint */}
