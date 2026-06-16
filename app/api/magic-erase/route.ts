@@ -109,34 +109,45 @@ export async function POST(req: Request) {
       throw new Error(`Fal.ai SAM-3: ${typeof detail === "string" ? detail : JSON.stringify(detail)}`);
     }
 
-    // SAM-3 image output con apply_mask=true: data.image es la imagen
-    // segmentada con alpha real del objeto. Fallback a masks[0] por si acaso.
+    // SAM-3 image output: probamos TODAS las shapes posibles porque varía
+    // entre versiones del modelo y entre apply_mask=true/false.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const data = (samResult as any)?.data;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const m0: any = data?.masks?.[0];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const img: any = data?.image;
     const maskUrl =
-      data?.image?.url ??
+      // image puede ser objeto {url} o string directo
+      (typeof img === "string" ? img : null) ??
+      img?.url ??
+      img?.image?.url ??
+      // masks[0] puede ser objeto o string
       (typeof m0 === "string" ? m0 : null) ??
       m0?.url ??
-      m0?.image?.url;
+      m0?.image?.url ??
+      // Buscar cualquier campo URL en el primer nivel
+      (typeof data?.url === "string" ? data.url : null);
 
-    // Log diagnóstico que SIEMPRE va a Vercel logs
-    console.log("[magic-erase] SAM-3 ok:", {
+    // Log COMPLETO en caso de éxito o fallo — clave para diagnosticar shape
+    const shapeInfo = {
       keys: data ? Object.keys(data).join(",") : "null",
+      imgType: typeof img,
+      imgKeys: img && typeof img === "object" ? Object.keys(img).join(",") : "—",
+      imgSample: img ? JSON.stringify(img).slice(0, 200) : "—",
       masksLen: data?.masks?.length ?? 0,
       masks0Type: typeof m0,
-      masks0Keys: m0 && typeof m0 === "object" ? Object.keys(m0).join(",") : "—",
-      hasImageUrl: !!data?.image?.url,
+      masks0Sample: m0 ? JSON.stringify(m0).slice(0, 200) : "—",
       hasMaskUrl: !!maskUrl,
       point: { x: Math.round(x), y: Math.round(y) },
-    });
+    };
+    console.log("[magic-erase] SAM-3 result shape:", JSON.stringify(shapeInfo));
 
     if (!maskUrl) {
-      const keys = data ? Object.keys(data).join(",") : "null";
-      console.error("[magic-erase] respuesta sin máscara, sample:",
-        JSON.stringify(data).slice(0, 400));
-      throw new Error(`SAM-3 no devolvió máscara — keys del response: ${keys}`);
+      // Devolver el shape COMPLETO en el error para diagnosticar desde cliente
+      throw new Error(
+        `SAM-3 sin maskUrl. image=${shapeInfo.imgSample}, masks[0]=${shapeInfo.masks0Sample}`,
+      );
     }
 
     // Z.18 — Descargar mask de Fal y devolverla como BINARY response.
