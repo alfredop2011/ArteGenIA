@@ -67,15 +67,19 @@ export default function BrushEraserModal({
     setPendingMask(null);
   }, [pendingMask]);
 
-  // Aplicar selección magic: destination-out sobre el canvas principal
+  // Aplicar selección magic: destination-out sobre el canvas principal.
+  // Z.19: usa maskToAlphaCanvas porque SAM devuelve mask RGB sin canal alpha,
+  // y destination-out usa alpha (no luminancia). Sin esta conversión borraría
+  // TODA la imagen (alpha=1 en todos los pixels de la mask).
   const applyPendingMask = useCallback(() => {
     if (!pendingMask) return;
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext("2d");
     if (!canvas || !ctx) return;
+    const alphaCanvas = maskToAlphaCanvas(pendingMask.img, canvas.width, canvas.height);
     ctx.save();
     ctx.globalCompositeOperation = "destination-out";
-    ctx.drawImage(pendingMask.img, 0, 0, canvas.width, canvas.height);
+    ctx.drawImage(alphaCanvas, 0, 0);
     ctx.restore();
     URL.revokeObjectURL(pendingMask.blobUrl);
     setPendingMask(null);
@@ -127,6 +131,9 @@ export default function BrushEraserModal({
   }, [open]);
 
   // Render del overlay azul de la selección magic cada vez que cambia.
+  // Z.19: usa maskToAlphaCanvas porque SAM devuelve mask como RGB blanco/negro
+  // SIN canal alpha. Si usáramos destination-in con la mask directa, el alpha
+  // sería 1 en toda la imagen → toda la imagen quedaría azul (no útil).
   useEffect(() => {
     const main = canvasRef.current;
     const overlay = overlayCanvasRef.current;
@@ -137,13 +144,15 @@ export default function BrushEraserModal({
     if (!octx) return;
     octx.clearRect(0, 0, overlay.width, overlay.height);
     if (pendingMask) {
-      // Pintar azul translúcido SOLO donde la mask es opaca.
-      // 1. Rellenar todo de azul
+      // 1. Convertir mask RGB (blanco=objeto, negro=fondo) → canvas con
+      // alpha real (alpha=255 donde objeto, alpha=0 donde fondo)
+      const alphaCanvas = maskToAlphaCanvas(pendingMask.img, overlay.width, overlay.height);
+      // 2. Dibujar ese canvas (su alpha es correcto)
+      octx.drawImage(alphaCanvas, 0, 0);
+      // 3. Tintarlo de azul: source-in mantiene el alpha, cambia el color
+      octx.globalCompositeOperation = "source-in";
       octx.fillStyle = "rgba(59, 130, 246, 0.55)";
       octx.fillRect(0, 0, overlay.width, overlay.height);
-      // 2. destination-in con la mask → solo queda azul donde la mask es opaca
-      octx.globalCompositeOperation = "destination-in";
-      octx.drawImage(pendingMask.img, 0, 0, overlay.width, overlay.height);
       octx.globalCompositeOperation = "source-over";
     }
   }, [pendingMask]);
@@ -499,6 +508,37 @@ export default function BrushEraserModal({
 }
 
 // ─── Helpers internos ───────────────────────────────────────────────────
+
+/**
+ * Z.19: convierte una mask de SAM (PNG RGB donde blanco = objeto, negro = fondo)
+ * en un canvas con CANAL ALPHA correcto (alpha=255 donde objeto, alpha=0 donde
+ * fondo). Necesario porque destination-out/destination-in trabajan con alpha,
+ * no con luminancia. Sin esta conversión la mask se aplica como "todo opaco" y
+ * el composite operation borra/mantiene la imagen entera.
+ *
+ * También garantiza que la mask se escala a las dimensiones del canvas destino.
+ */
+function maskToAlphaCanvas(maskImg: HTMLImageElement, w: number, h: number): HTMLCanvasElement {
+  const tmp = document.createElement("canvas");
+  tmp.width = w;
+  tmp.height = h;
+  const tctx = tmp.getContext("2d");
+  if (!tctx) return tmp;
+  tctx.drawImage(maskImg, 0, 0, w, h);
+  const imgData = tctx.getImageData(0, 0, w, h);
+  const d = imgData.data;
+  for (let i = 0; i < d.length; i += 4) {
+    // Luminancia promedio. SAM devuelve blanco (255,255,255) para objeto
+    // y negro (0,0,0) para fondo. Threshold 128 separa los dos.
+    const lum = (d[i] + d[i + 1] + d[i + 2]) / 3;
+    const isObject = lum > 128;
+    // Color blanco fijo (no afecta a destination-out/in que solo usan alpha)
+    d[i] = 255; d[i + 1] = 255; d[i + 2] = 255;
+    d[i + 3] = isObject ? 255 : 0;
+  }
+  tctx.putImageData(imgData, 0, 0);
+  return tmp;
+}
 
 function ToolBtn({
   icon, label, active, disabled, onClick, variant,
