@@ -15,6 +15,8 @@ Si en consola aparece `Access-Control-Allow-Origin not allowed` o `fabric: Error
   {
     "AllowedOrigins": [
       "http://localhost:3000",
+      "https://artegenia.com",
+      "https://www.artegenia.com",
       "https://artegenia.vercel.app",
       "https://*.vercel.app"
     ],
@@ -30,9 +32,10 @@ Tras guardar, esperar ~1 min de propagación y hacer hard refresh (Cmd+Shift+R) 
 
 # Infraestructura — Supabase
 
-- **Auth/OAuth**: Site URL = `https://artegenia.vercel.app`. Redirect URLs permitidas en URL Configuration: `http://localhost:3000/auth/callback`, `https://artegenia.vercel.app/auth/callback`, `https://*.vercel.app/auth/callback`.
+- **Auth/OAuth**: Site URL = `https://artegenia.com` (dominio propio desde 2026-06-16). Redirect URLs permitidas en URL Configuration: `http://localhost:3000/auth/callback`, `https://artegenia.com/auth/callback`, `https://www.artegenia.com/auth/callback`, `https://artegenia.vercel.app/auth/callback` (legacy), `https://*.vercel.app/auth/callback`.
 - **Google provider** activado en Auth → Providers con el OAuth Client ID de Google Cloud.
-- Google Cloud OAuth Client tiene como Authorized redirect URIs las 3 anteriores + `https://tbuszlffgtjnbvkxhkti.supabase.co/auth/v1/callback`.
+- Google Cloud OAuth Client tiene como Authorized redirect URIs las 5 anteriores + `https://tbuszlffgtjnbvkxhkti.supabase.co/auth/v1/callback`.
+- **Custom SMTP (emails de Auth)**: Resend SMTP. Host `smtp.resend.com`, port 465, username `resend`, password = `RESEND_API_KEY`. Sender: `hola@artegenia.com` (ArteGenIA).
 
 # Variables de entorno requeridas
 
