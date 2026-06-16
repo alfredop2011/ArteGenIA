@@ -37,12 +37,30 @@ export async function GET(request: Request) {
   }
 
   const supabase = await createSupabaseServerClient();
-  const { error } = await supabase.auth.exchangeCodeForSession(code);
+  const { error, data } = await supabase.auth.exchangeCodeForSession(code);
 
   if (error) {
     return NextResponse.redirect(
       `${origin}/?auth_error=${encodeURIComponent(error.message)}`
     );
+  }
+
+  // Z.23 — Welcome email solo para usuarios NUEVOS (recién creados <60s).
+  // Fire-and-forget para no bloquear el redirect aunque Resend falle.
+  try {
+    const user = data?.user;
+    if (user?.email && user.created_at) {
+      const ageMs = Date.now() - new Date(user.created_at).getTime();
+      if (ageMs < 60_000) {
+        const { sendWelcomeEmail } = await import("@/lib/email");
+        const name = (user.user_metadata?.full_name as string | undefined)
+          ?? (user.user_metadata?.name as string | undefined)
+          ?? null;
+        void sendWelcomeEmail(user.email, name);
+      }
+    }
+  } catch (e) {
+    console.warn("[auth callback] welcome email skip:", e);
   }
 
   // Sesión creada y guardada en cookies. Redirigimos a la home.

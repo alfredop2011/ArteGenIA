@@ -193,6 +193,7 @@ export async function POST(req: NextRequest) {
         // En checkout.session.completed la subscription es solo un string ID,
         // hay que fetchearla expandida.
         let plan: PlanKey = "pro"; // default si no podemos detectar
+        let interval: "monthly" | "yearly" = "monthly";
         if (session.subscription) {
           try {
             const sub = await stripe.subscriptions.retrieve(
@@ -202,6 +203,10 @@ export async function POST(req: NextRequest) {
             );
             const detected = detectPlanFromSubscription(sub);
             if (detected) plan = detected;
+            // Z.23 — detectar interval del price para email upgrade
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const priceInterval = (sub.items?.data?.[0]?.price as any)?.recurring?.interval;
+            if (priceInterval === "year") interval = "yearly";
           } catch (e) {
             console.warn("[stripe-webhook] no pude leer subscription:", e);
           }
@@ -209,12 +214,38 @@ export async function POST(req: NextRequest) {
         // Si todo falla, mira el metadata.requested_plan que pusimos al crear
         if (session.metadata?.requested_plan === "enterprise") plan = "enterprise";
         await updatePlan(userId, plan);
+        // Z.23 — Email confirmación upgrade. Fire-and-forget.
+        try {
+          const email = session.customer_email ?? session.customer_details?.email;
+          if (email) {
+            const { sendUpgradeProEmail } = await import("@/lib/email");
+            void sendUpgradeProEmail(email, plan, interval);
+          }
+        } catch (e) {
+          console.warn("[stripe-webhook] upgrade email skip:", e);
+        }
         break;
       }
       case "customer.subscription.deleted": {
         const sub = event.data.object as Stripe.Subscription;
         const userId = sub.metadata?.supabase_user_id;
         if (userId) await updatePlan(userId, "free");
+        // Z.23 — Email cancel survey. Fire-and-forget. Necesitamos el email
+        // del customer; lo recuperamos vía API porque sub solo tiene el ID.
+        try {
+          const customerId = typeof sub.customer === "string" ? sub.customer : sub.customer?.id;
+          if (customerId) {
+            const customer = await stripe.customers.retrieve(customerId);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const email = (customer as any)?.email as string | undefined;
+            if (email) {
+              const { sendCancelSurveyEmail } = await import("@/lib/email");
+              void sendCancelSurveyEmail(email);
+            }
+          }
+        } catch (e) {
+          console.warn("[stripe-webhook] cancel email skip:", e);
+        }
         break;
       }
       case "customer.subscription.updated": {
