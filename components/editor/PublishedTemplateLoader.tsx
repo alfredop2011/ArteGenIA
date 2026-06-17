@@ -6,6 +6,7 @@ import { supabase, type TemplatePublished } from "@/lib/supabase";
 import type { Template, TemplateVariant, AudienceId } from "@/data/templates";
 import type { FormatId } from "@/data/formats";
 import GeneratedEditor from "@/components/editor/GeneratedEditor";
+import { useToast } from "@/lib/toast";
 
 /**
  * PublishedTemplateLoader
@@ -20,6 +21,7 @@ type Props = {
 
 export default function PublishedTemplateLoader({ publishedId, formatId }: Props) {
   const router = useRouter();
+  const { toast } = useToast();
   const [template, setTemplate] = useState<Template | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -34,14 +36,14 @@ export default function PublishedTemplateLoader({ publishedId, formatId }: Props
           .single();
         if (cancelled) return;
         if (error || !data) {
-          alert("Plantilla no encontrada.");
+          toast.error("Plantilla no encontrada.");
           router.push("/templates");
           return;
         }
         const pub = data as TemplatePublished;
         const variants = (pub.variants as TemplateVariant[]) ?? [];
         if (variants.length === 0) {
-          alert("La plantilla no tiene variantes.");
+          toast.error("La plantilla no tiene variantes.");
           router.push("/templates");
           return;
         }
@@ -61,7 +63,7 @@ export default function PublishedTemplateLoader({ publishedId, formatId }: Props
       } catch (e) {
         console.error("[published-loader]", e);
         if (!cancelled) {
-          alert("Error cargando la plantilla.");
+          toast.error("Error cargando la plantilla.");
           router.push("/templates");
         }
       } finally {

@@ -13,6 +13,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { isAdmin } from "@/lib/admin";
 import { useLocale } from "@/hooks/useLocale";
 import type { TranslationKey } from "@/lib/translations";
+import { useToast } from "@/lib/toast";
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
 
@@ -45,6 +46,7 @@ const CHIP_KEYS: TranslationKey[] = [
 export default function CreatePage() {
   const router = useRouter();
   const { t, locale } = useLocale();
+  const { toast } = useToast();
   // ─── ADMIN GATING ──────────────────────────────────────────────────────
   // La generacion con IA esta limitada al admin mientras pulimos coste y
   // calidad. Para el resto de usuarios el flujo se muestra como "Proximamente"
@@ -317,7 +319,7 @@ export default function CreatePage() {
     // El boton ya esta deshabilitado en la UI; este return es la segunda
     // barrera por si Enter llega aqui o si la verificacion del boton falla.
     if (!userIsAdmin) {
-      alert(t("create.soonNote"));
+      toast.info(t("create.soonNote"));
       return;
     }
     setIsGenerating(true);
@@ -447,7 +449,7 @@ export default function CreatePage() {
     } catch (err) {
       console.error("Error:", err);
       const errMsg = err instanceof Error ? err.message : t("create.gen.error.unknown");
-      alert(`${t("create.gen.error")}: ${errMsg}`);
+      toast.error(`${t("create.gen.error")}: ${errMsg}`);
       setIsGenerating(false);
       setGenStep("");
     }

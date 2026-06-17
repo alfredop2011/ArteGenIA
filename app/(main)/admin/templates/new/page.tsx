@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { useTemplateDrafts } from "@/hooks/useTemplateDrafts";
 import { useLocale } from "@/hooks/useLocale";
+import { useToast } from "@/lib/toast";
 import type { TemplateDraft, TemplatePublished } from "@/lib/supabase";
 
 /**
@@ -23,6 +24,7 @@ import type { TemplateDraft, TemplatePublished } from "@/lib/supabase";
 export default function AdminTemplateCreatorPage() {
   const router = useRouter();
   const { t } = useLocale();
+  const { toast } = useToast();
   const { loading, listDrafts, listPublished, deleteDraft, unpublish, saveDraft, createDraftFromPublished } = useTemplateDrafts();
   const [drafts, setDrafts] = useState<TemplateDraft[]>([]);
   const [published, setPublished] = useState<TemplatePublished[]>([]);
@@ -106,7 +108,7 @@ export default function AdminTemplateCreatorPage() {
     if (newDraftId) {
       router.push(`/editor/draft-${newDraftId}?mode=template-creator`);
     } else {
-      alert(t("admin.new.error.editPublished"));
+      toast.error(t("admin.new.error.editPublished"));
     }
   };
 

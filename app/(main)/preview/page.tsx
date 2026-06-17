@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/lib/toast";
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
 
@@ -287,6 +288,7 @@ function FlyerCanvas({
 
 export default function PreviewPage() {
   const router = useRouter();
+  const { toast } = useToast();
   const [data, setData] = useState<GeneratedData | null>(null);
   const [activePanel, setActivePanel] = useState<"bg" | "text" | "layout" | null>(null);
 
@@ -339,7 +341,7 @@ export default function PreviewPage() {
       localStorage.setItem("artegenia_generated", JSON.stringify(updated));
       setData(updated);
     } catch (err) {
-      alert(`Error: ${err instanceof Error ? err.message : "desconocido"}`);
+      toast.error(`Error: ${err instanceof Error ? err.message : "desconocido"}`);
     } finally {
       setIsRegenerating(false);
     }
