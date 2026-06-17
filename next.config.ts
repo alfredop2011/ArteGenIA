@@ -106,6 +106,15 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // UX#1 — /planes es la versión MVP-waitlist legacy. /pricing es la real
+  // con Stripe Checkout. Redirigimos 308 (permanente) para que cualquier
+  // link viejo guardado o compartido no caiga en una página confusa con
+  // mensaje "lanzamiento próximo".
+  async redirects() {
+    return [
+      { source: "/planes", destination: "/pricing", permanent: true },
+    ];
+  },
   async headers() {
     // V8.1: en DEVELOPMENT no aplicamos headers de seguridad. Razon: la CSP
     // estricta + headers que aplican a /:path* incluyen /_next/static/chunks/*

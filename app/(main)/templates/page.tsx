@@ -480,7 +480,7 @@ export default function TemplatesPage() {
               <p className="text-[10px] leading-snug mb-2.5" style={{ color: "var(--home-text-muted)" }}>
                 {t("templates.proCard.body")}
               </p>
-              <Link href="/planes"
+              <Link href="/pricing"
                     className="w-full inline-block text-center py-1.5 rounded-lg text-[11px] font-bold text-black transition-transform hover:scale-[1.02]"
                     style={{ background: "linear-gradient(135deg,#facc15,#f59e0b)" }}>
                 {t("templates.proCard.cta")}
