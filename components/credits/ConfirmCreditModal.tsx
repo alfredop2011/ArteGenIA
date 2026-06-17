@@ -29,10 +29,24 @@ export type ConfirmCreditModalProps = {
   balance: number;
   /** Días hasta el próximo reset (para mensaje sin créditos) */
   daysUntilReset?: number;
+  /** Z.25 — Detalles de lo que se descarga (solo en confirmaciones de export).
+   *  Si están presentes, el modal muestra un bloque de previsualización
+   *  con formato + dimensiones + tipo de archivo para que el user sepa
+   *  EXACTAMENTE qué obtendrá antes de gastar el crédito. */
+  exportDetails?: {
+    /** Nombre semántico del formato. Ej: "Post de Instagram" */
+    formatName?: string;
+    /** Subtítulo del formato. Ej: "Cuadrado, para feed" */
+    formatSubtitle?: string;
+    /** Dimensiones. Ej: "1080 × 1080 px" */
+    dimensions?: string;
+    /** Tipo de archivo final. Ej: "PNG" / "JPG" / "PDF" / "SVG" */
+    fileType?: string;
+  };
 };
 
 export function ConfirmCreditModal({
-  open, onClose, onConfirm, actionLabel, amount, balance, daysUntilReset,
+  open, onClose, onConfirm, actionLabel, amount, balance, daysUntilReset, exportDetails,
 }: ConfirmCreditModalProps) {
   const [loading, setLoading] = useState(false);
   const insufficient = balance < amount;
@@ -126,6 +140,40 @@ export function ConfirmCreditModal({
                 <h3 className="text-[17px] font-black mb-1">Confirmar acción</h3>
                 <p className="text-[12.5px] text-gray-400">{actionLabel}</p>
               </div>
+
+              {/* Z.25 — Bloque de detalles del export (solo en descargas).
+                  Muestra qué formato, qué dimensiones, qué tipo de archivo
+                  para que el user sepa exactamente qué va a obtener. */}
+              {exportDetails && (exportDetails.formatName || exportDetails.dimensions || exportDetails.fileType) && (
+                <div className="mb-4 p-3.5 rounded-xl bg-purple-500/[0.06] border border-purple-500/[0.18]">
+                  <p className="text-[9.5px] uppercase tracking-widest text-purple-300/70 font-bold mb-2">Vas a descargar</p>
+                  <div className="space-y-1.5 text-[12px]">
+                    {exportDetails.formatName && (
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-gray-400 shrink-0">Formato</span>
+                        <span className="text-white font-semibold truncate">{exportDetails.formatName}</span>
+                      </div>
+                    )}
+                    {exportDetails.dimensions && (
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-gray-400 shrink-0">Tamaño</span>
+                        <span className="text-white/90 font-mono text-[11.5px]">{exportDetails.dimensions}</span>
+                      </div>
+                    )}
+                    {exportDetails.fileType && (
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-gray-400 shrink-0">Archivo</span>
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-purple-500/[0.15] border border-purple-500/[0.25] text-purple-200 font-bold text-[10px] tracking-wider">
+                          {exportDetails.fileType.toUpperCase()}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  {exportDetails.formatSubtitle && (
+                    <p className="text-[10.5px] text-gray-500 mt-2 leading-tight">{exportDetails.formatSubtitle}</p>
+                  )}
+                </div>
+              )}
 
               {/* Balance before → after */}
               <div className="mb-5 p-4 rounded-xl bg-white/[0.03] border border-white/[0.06]">

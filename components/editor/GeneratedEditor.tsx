@@ -4257,7 +4257,9 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
         />
       )}
 
-      {/* Fase Z.7 — Modal de confirmación de crédito antes de export */}
+      {/* Fase Z.7 — Modal de confirmación de crédito antes de export.
+          Z.25 — anade bloque de detalles para que el user sepa formato +
+          dimensiones + tipo de archivo antes de gastar el credito. */}
       <ConfirmCreditModal
         open={pendingExportFormat !== null}
         onClose={() => setPendingExportFormat(null)}
@@ -4266,6 +4268,15 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
         amount={CREDIT_COST.download_png}
         balance={credits.balance ?? 0}
         daysUntilReset={credits.daysUntilReset ?? undefined}
+        exportDetails={(() => {
+          const fmt = getFormatByDimensions(canvasSize.w, canvasSize.h);
+          return {
+            formatName: fmt?.name,
+            formatSubtitle: fmt?.subtitle,
+            dimensions: `${canvasSize.w} × ${canvasSize.h} px`,
+            fileType: pendingExportFormat ?? undefined,
+          };
+        })()}
       />
 
       {/* Z.16 — Modal de confirmación para Quitar fondo en editor */}

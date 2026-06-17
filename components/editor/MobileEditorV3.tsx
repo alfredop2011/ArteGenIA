@@ -3171,7 +3171,8 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
         />
       )}
 
-      {/* Fase Z.7 — Modal de confirmación de crédito antes de export */}
+      {/* Fase Z.7 — Modal de confirmación de crédito antes de export.
+          Z.25 — anade bloque exportDetails con formato + dimensiones + tipo. */}
       <ConfirmCreditModal
         open={pendingExportPayload !== null}
         onClose={() => setPendingExportPayload(null)}
@@ -3188,6 +3189,16 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
         }
         balance={credits.balance ?? 0}
         daysUntilReset={credits.daysUntilReset ?? undefined}
+        exportDetails={(() => {
+          if (!pendingExportPayload) return undefined;
+          const fmt = getFormatByDimensions(canvasSize.w, canvasSize.h);
+          return {
+            formatName: fmt?.name,
+            formatSubtitle: fmt?.subtitle,
+            dimensions: `${canvasSize.w} × ${canvasSize.h} px`,
+            fileType: pendingExportPayload.fileFormat,
+          };
+        })()}
       />
 
       {/* Z.17 — Borrador mágico/manual mobile */}
