@@ -19,6 +19,8 @@
     "r2:cleanup:apply": "node --env-file=.env.local scripts/r2-cleanup-orphans.mjs --apply",
     "db:backup": "node --env-file=.env.local scripts/db-backup.mjs",
     "db:backup:list": "node --env-file=.env.local scripts/db-backup.mjs --list",
+    "stripe:backfill": "node --env-file=.env.local scripts/stripe-backfill-customer-id.mjs",
+    "stripe:backfill:apply": "node --env-file=.env.local scripts/stripe-backfill-customer-id.mjs --apply",
     "brand:export": "node scripts/brand-export.mjs"
   },
   "dependencies": {
