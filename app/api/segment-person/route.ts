@@ -75,7 +75,9 @@ async function cropAndUpload(
   box: DetectedBox,
   padding = 0.05,
 ): Promise<{ croppedUrl: string; cropBounds: { x: number; y: number; w: number; h: number } }> {
-  const res = await fetch(imageUrl);
+  // safeFetch: re-valida whitelist + bloquea DNS rebinding/redirects internos.
+  const { safeFetch } = await import("@/lib/inputValidation");
+  const res = await safeFetch(imageUrl);
   if (!res.ok) throw new Error(`No se pudo descargar la imagen original (${res.status})`);
   const buffer = Buffer.from(await res.arrayBuffer());
 
@@ -389,7 +391,7 @@ export async function POST(req: Request) {
     if (moduleConsumed && supabaseForRefund && userIdForRefund) {
       try {
         await addCredits(
-          supabaseForRefund, userIdForRefund, CREDIT_COST[moduleConsumed],
+          supabaseAdmin, userIdForRefund, CREDIT_COST[moduleConsumed],
           `refund:segment-person_error`,
           { detail: msg.slice(0, 200), module: moduleConsumed },
         );

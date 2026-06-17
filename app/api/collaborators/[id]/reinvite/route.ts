@@ -27,6 +27,7 @@ export async function POST(
     .from("collaborators")
     .select("id, kind, artist_name")
     .eq("id", id)
+    .eq("owner_id", user.id)
     .maybeSingle();
 
   if (getErr || !collab) {

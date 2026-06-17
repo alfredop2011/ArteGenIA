@@ -183,6 +183,28 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Firma invalida" }, { status: 400 });
   }
 
+  // ─── IDEMPOTENCIA ──────────────────────────────────────────────────────
+  // Stripe reintenta entregas y un atacante podría reenviar un evento firmado
+  // capturado. Registramos cada event.id en stripe_events (PK único). Si ya
+  // existe, es un replay → devolvemos 200 sin reprocesar (evita créditos/emails
+  // duplicados y corromper el audit trail de credit_transactions).
+  {
+    const sb = adminClient();
+    const { error: dedupErr } = await sb
+      .from("stripe_events")
+      .insert({ id: event.id, type: event.type });
+    if (dedupErr) {
+      // 23505 = unique_violation → ya procesado.
+      if (dedupErr.code === "23505") {
+        console.log(`[stripe-webhook] evento duplicado ignorado: ${event.id}`);
+        return NextResponse.json({ received: true, duplicate: true });
+      }
+      // Otro error de DB: NO procesar a ciegas (podríamos duplicar). Pedimos retry.
+      console.error("[stripe-webhook] error registrando idempotencia:", dedupErr);
+      return NextResponse.json({ error: "Idempotency store error" }, { status: 500 });
+    }
+  }
+
   try {
     switch (event.type) {
       case "checkout.session.completed": {

@@ -907,7 +907,9 @@ export async function POST(req: Request) {
     const used = 0;
 
     // ─── 5. DESCARGAR IMAGEN (la necesitamos en base64 para Claude) ──────
-    const imgRes = await fetch(body.imageUrl);
+    // safeFetch: re-valida whitelist + bloquea DNS rebinding/redirects internos.
+    const { safeFetch } = await import("@/lib/inputValidation");
+    const imgRes = await safeFetch(body.imageUrl);
     if (!imgRes.ok) {
       return NextResponse.json({ error: "No se pudo descargar la imagen" }, { status: 400 });
     }
@@ -1208,7 +1210,7 @@ export async function POST(req: Request) {
     if (creditConsumed && supabaseForRefund && userIdForRefund) {
       try {
         await addCredits(
-          supabaseForRefund, userIdForRefund, CREDIT_COST.capas_magicas,
+          supabaseAdmin, userIdForRefund, CREDIT_COST.capas_magicas,
           "refund:capas_magicas_error",
           { detail: message.slice(0, 200) },
         );
