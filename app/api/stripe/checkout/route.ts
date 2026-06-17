@@ -65,11 +65,13 @@ export async function POST(req: NextRequest) {
 
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || new URL(req.url).origin;
 
-    // Trial gratuito en días para nuevos suscriptores. Stripe requiere
-    // que el método de pago se valide al crear la suscripción (autorización
-    // sin cargo) — así nos aseguramos que al final del trial sí podemos
-    // cobrar sin perder al usuario. STRIPE_TRIAL_DAYS=0 desactiva el trial.
-    const trialDays = Number.parseInt(process.env.STRIPE_TRIAL_DAYS ?? "30", 10);
+    // UX#6 — Trial deshabilitado por defecto. El acta de estrategia detectó
+    // que 30 días con tarjeta requerida = fricción brutal de checkout + user
+    // que prueba, se olvida y se asusta del cargo a los 30 días. Ahora el
+    // "trial" es el Free plan (10 créditos siempre, sin tarjeta). El user que
+    // paga Pro lo hace porque quiere más créditos, no para "probar".
+    // STRIPE_TRIAL_DAYS=N para reactivar trial en experimentos puntuales.
+    const trialDays = Number.parseInt(process.env.STRIPE_TRIAL_DAYS ?? "0", 10);
     const useTrial = !Number.isNaN(trialDays) && trialDays > 0;
 
     const session = await stripe.checkout.sessions.create({

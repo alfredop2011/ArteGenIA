@@ -385,7 +385,7 @@ function PricingContent() {
                     <span className="text-emerald-300 font-bold">Ahorras 23,98€</span>
                   </p>
                   <p className="text-[11px] text-emerald-300 font-semibold mt-1">
-                    🎁 30 días gratis · 2 meses gratis al año
+                    💳 2 meses gratis al año · Cancela cuando quieras
                   </p>
                 </>
               ) : (
@@ -395,7 +395,7 @@ function PricingContent() {
                     <span className="text-[13px] text-gray-400">/mes</span>
                   </div>
                   <p className="text-[11px] text-emerald-300 font-semibold mt-1">
-                    🎁 30 días gratis · Cancela cuando quieras
+                    ⚡ 100 créditos · Sin permanencia · Cancela cuando quieras
                   </p>
                 </>
               )}
@@ -422,11 +422,11 @@ function PricingContent() {
                   ? "Ya tienes Enterprise"
                   : loadingPlan === "pro"
                     ? "Cargando…"
-                    : "Probar 30 días gratis →"}
+                    : "Suscribirme a Pro →"}
             </button>
             {!isPaid && (
               <p className="text-[10px] text-gray-400 text-center mt-2">
-                Sin cargo hoy · Te avisamos antes del primer cobro
+                Cobro mensual desde hoy · Cancela en 1 click
               </p>
             )}
           </div>
