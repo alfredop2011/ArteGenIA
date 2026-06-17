@@ -420,11 +420,21 @@ export default function QuitarFondoPage() {
             {/* RIGHT — dropzone + thumbnails de ejemplos */}
             <div>
               <div
-                onClick={() => fileInputRef.current?.click()}
+                onClick={() => {
+                  // UX#4 — Gate auth ANTES de abrir el file picker del SO.
+                  // Antes dejábamos subir y pedíamos login al final → fricción
+                  // alta: el user invierte tiempo eligiendo archivo y le frenamos
+                  // justo cuando espera el resultado.
+                  if (!user) { setShowAuth(true); return; }
+                  fileInputRef.current?.click();
+                }}
                 onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
                 onDrop={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
+                  // Mismo gate para drag&drop — sin esto un user sin sesión
+                  // podría soltar la imagen y caer en el AuthModal post-drop.
+                  if (!user) { setShowAuth(true); return; }
                   const f = e.dataTransfer.files?.[0];
                   if (f) void handleFile(f);
                 }}
