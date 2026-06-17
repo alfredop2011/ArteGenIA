@@ -42,6 +42,10 @@ export const RATE_LIMITS: Record<string, RateLimitConfig> = {
   "share-upload":       { max: 15, windowMinutes: 1 },
   // Asistente IA — Claude Haiku, barato
   "assistant-ai":       { max: 10, windowMinutes: 1 },
+  // Generar flyer — Flux schnell ($0.003), pero limita scraping/abuso
+  "generate-flyer":     { max: 10, windowMinutes: 1 },
+  // Capas mágicas — Claude Sonnet + SAM-3, caro ($0.04+)
+  "photo-to-template":  { max: 5,  windowMinutes: 1 },
 };
 
 /**

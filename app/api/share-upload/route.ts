@@ -50,6 +50,13 @@ export async function POST(req: NextRequest) {
     if (buffer.byteLength > MAX_BYTES) {
       return NextResponse.json({ error: "Imagen demasiado grande (max 8 MB)" }, { status: 413 });
     }
+    // Validar magic-numbers del contenido real (no confiar en el prefijo
+    // data: declarado por el cliente — podría subir HTML/SVG como "image/png").
+    const isPng = buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4e && buffer[3] === 0x47;
+    const isJpeg = buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff;
+    if (!isPng && !isJpeg) {
+      return NextResponse.json({ error: "El contenido no es un PNG/JPEG válido" }, { status: 400 });
+    }
     const contentType = ext === "jpg" ? "image/jpeg" : "image/png";
     const key = makeKey("share", ext);
     const { url: r2Url } = await uploadToR2(buffer, key, contentType);

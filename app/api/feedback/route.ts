@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { checkIpRateLimit, clientIp } from "@/lib/ipRateLimit";
 
 /**
  * POST /api/feedback
@@ -10,11 +11,16 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
  *
  * Body: { message: string, email?: string, page?: string }
  *
- * Sin rate limit explicito (el modal del cliente bloquea spam UI con
- * cooldown). Si recibimos abuso real, añadir rate limit por IP.
+ * Rate limit por IP (5/5min) además del cooldown UI del modal.
  */
 export async function POST(req: NextRequest) {
   try {
+    // Rate limit por IP (anti-spam): 5 envíos / 5 min.
+    const allowed = await checkIpRateLimit(supabaseAdmin, clientIp(req), "feedback", 5, 5);
+    if (!allowed) {
+      return NextResponse.json({ error: "Demasiadas peticiones, espera un momento" }, { status: 429 });
+    }
+
     const body = await req.json() as {
       message?: string;
       email?: string;

@@ -40,7 +40,8 @@ export async function POST(
     );
   }
 
-  const token = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+  // Token CSPRNG (122 bits) — no enumerable. Ver collaborator-invites.
+  const token = crypto.randomUUID();
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
   const { error } = await supabase
