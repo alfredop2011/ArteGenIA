@@ -37,6 +37,80 @@ function adminClient() {
   });
 }
 
+/** Resuelve user_id de Supabase a partir de una Subscription / Customer de
+ *  Stripe. Fallback chain (P0.2):
+ *
+ *    1. sub.metadata.supabase_user_id  (preferido — set en checkout)
+ *    2. profiles.stripe_customer_id    (persistido en checkout.session.completed)
+ *    3. customer.email → profiles.email  (último recurso)
+ *
+ *  Retorna null si ninguno funciona. El caller DEBE loguear el evento
+ *  para reconciliar manualmente — antes esto era un break silencioso
+ *  que dejaba Pro gratis tras cancelar.
+ */
+async function resolveUserIdFromSubscription(
+  sub: Stripe.Subscription,
+): Promise<string | null> {
+  // 1) Metadata directa
+  const metaUserId = sub.metadata?.supabase_user_id;
+  if (metaUserId) return metaUserId;
+
+  const sb = adminClient();
+  const customerId =
+    typeof sub.customer === "string" ? sub.customer : sub.customer?.id;
+
+  // 2) Lookup por stripe_customer_id en profiles
+  if (customerId) {
+    const { data: byCustomer } = await sb
+      .from("profiles")
+      .select("id")
+      .eq("stripe_customer_id", customerId)
+      .maybeSingle();
+    if (byCustomer?.id) return byCustomer.id;
+  }
+
+  // 3) Fetch customer.email → profiles.email
+  if (customerId) {
+    try {
+      const customer = await stripe.customers.retrieve(customerId);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const email = (customer as any)?.email as string | undefined;
+      if (email) {
+        const { data: byEmail } = await sb
+          .from("profiles")
+          .select("id")
+          .ilike("email", email)
+          .maybeSingle();
+        if (byEmail?.id) {
+          // Backfill stripe_customer_id para próximos webhooks O(1)
+          await sb
+            .from("profiles")
+            .update({ stripe_customer_id: customerId })
+            .eq("id", byEmail.id);
+          return byEmail.id;
+        }
+      }
+    } catch (e) {
+      console.warn("[stripe-webhook] no pude recuperar customer:", e);
+    }
+  }
+
+  return null;
+}
+
+/** Persiste el stripe_customer_id en profiles para que los siguientes
+ *  webhooks puedan resolver por columna en vez de depender de metadata. */
+async function persistCustomerId(userId: string, customerId: string) {
+  const sb = adminClient();
+  const { error } = await sb
+    .from("profiles")
+    .update({ stripe_customer_id: customerId })
+    .eq("id", userId);
+  if (error) {
+    console.warn("[stripe-webhook] persist customer_id failed:", error);
+  }
+}
+
 async function updatePlan(userId: string, plan: "free" | PlanKey) {
   const sb = adminClient();
   const { error } = await sb
@@ -211,6 +285,13 @@ export async function POST(req: NextRequest) {
         const session = event.data.object as Stripe.Checkout.Session;
         const userId = session.client_reference_id ?? session.metadata?.supabase_user_id;
         if (!userId) break;
+        // P0.2 — Persistir customer_id en profiles para que los siguientes
+        // webhooks puedan resolver por columna sin depender de metadata.
+        const customerId =
+          typeof session.customer === "string"
+            ? session.customer
+            : session.customer?.id;
+        if (customerId) await persistCustomerId(userId, customerId);
         // Recuperar la subscription para saber qué plan compró (price_id).
         // En checkout.session.completed la subscription es solo un string ID,
         // hay que fetchearla expandida.
@@ -250,8 +331,16 @@ export async function POST(req: NextRequest) {
       }
       case "customer.subscription.deleted": {
         const sub = event.data.object as Stripe.Subscription;
-        const userId = sub.metadata?.supabase_user_id;
-        if (userId) await updatePlan(userId, "free");
+        const userId = await resolveUserIdFromSubscription(sub);
+        if (userId) {
+          await updatePlan(userId, "free");
+        } else {
+          // P0.2 — antes esto era break silencioso → Pro gratis tras cancelar
+          console.error(
+            "[stripe-webhook] subscription.deleted SIN userId resoluble — revisar manualmente",
+            { sub_id: sub.id, customer: sub.customer },
+          );
+        }
         // Z.23 — Email cancel survey. Fire-and-forget. Necesitamos el email
         // del customer; lo recuperamos vía API porque sub solo tiene el ID.
         try {
@@ -272,8 +361,14 @@ export async function POST(req: NextRequest) {
       }
       case "customer.subscription.updated": {
         const sub = event.data.object as Stripe.Subscription;
-        const userId = sub.metadata?.supabase_user_id;
-        if (!userId) break;
+        const userId = await resolveUserIdFromSubscription(sub);
+        if (!userId) {
+          console.error(
+            "[stripe-webhook] subscription.updated SIN userId resoluble — revisar manualmente",
+            { sub_id: sub.id, customer: sub.customer, status: sub.status },
+          );
+          break;
+        }
         // Activa: plan según price_id (pro o enterprise). Cancelada: free.
         if (sub.status === "active" || sub.status === "trialing") {
           const detected = detectPlanFromSubscription(sub) ?? "pro";
