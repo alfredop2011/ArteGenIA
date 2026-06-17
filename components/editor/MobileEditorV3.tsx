@@ -1776,20 +1776,33 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
   // ─── Multi-página: switch + add (Fase W.1) ──────────────────────────────
   // Cambia la página activa: serializa la actual, carga la nueva en el canvas.
   // El hook ya hace el guardado interno; aquí solo aplicamos al Fabric Canvas.
-  /** Z.25 fix multipagina — aplicar dimensiones/background despues de
-   *  loadFromJSON. Sin esto, al volver a la pagina original tras añadir
-   *  paginas nuevas, los objetos se cargaban pero el canvas mantenia
-   *  las dimensiones de la pagina vacia, "perdiendo" visualmente la
-   *  plantilla. */
+  /** Z.25 fix multipagina — aplicar dimensiones LOGICAS + background +
+   *  fit-to-view despues de loadFromJSON. Sin esto, al volver a la pagina
+   *  original el canvas mantenia el zoom de la anterior (zoom imposible
+   *  donde la plantilla aparecia gigante e ilegible). Ahora replica la
+   *  logica de fitToView para que cada pagina se vea entera con el zoom
+   *  apropiado al wrapper. */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const applyPageDimensions = useCallback((fc: any, pageData: any) => {
-    if (pageData?.width && pageData?.height) {
-      fc.setDimensions({ width: pageData.width, height: pageData.height });
-      setCanvasSize({ w: pageData.width, h: pageData.height });
-    }
-    if (pageData?.background) {
+    if (!pageData?.width || !pageData?.height) return;
+    setCanvasSize({ w: pageData.width, h: pageData.height });
+    if (pageData.background) {
       fc.backgroundColor = pageData.background;
     }
+    const wrapper = wrapperRef.current;
+    if (!wrapper) return;
+    const r = wrapper.getBoundingClientRect();
+    if (r.width === 0 || r.height === 0) return;
+    // Fit-to-view: misma logica que fitToView() pero con las dims de
+    // la pagina destino (no canvasSize state que aun no se actualizo).
+    const zoomW = r.width / pageData.width;
+    const zoomH = r.height / pageData.height;
+    const fit = Math.min(zoomW, zoomH);
+    fc.setDimensions({ width: r.width, height: r.height });
+    fc.setZoom(fit);
+    const tx = (r.width - pageData.width * fit) / 2;
+    const ty = (r.height - pageData.height * fit) / 2;
+    fc.setViewportTransform([fit, 0, 0, fit, tx, ty]);
   }, []);
 
   const switchToPage = useCallback((index: number) => {
