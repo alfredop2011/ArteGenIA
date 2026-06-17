@@ -86,11 +86,11 @@ function template(opts: {
               <a href="${APP_URL}" style="text-decoration: none; color: inherit;">
                 <table border="0" cellpadding="0" cellspacing="0">
                   <tr>
-                    <td style="background: linear-gradient(135deg, #facc15, #f59e0b); border-radius: 8px; padding: 6px 10px; color: #000; font-weight: 900; font-size: 12px; font-family: -apple-system, BlinkMacSystemFont, sans-serif;">
-                      AG
+                    <td style="padding-right: 10px;">
+                      <img src="${APP_URL}/brand/exports/icon-180.png" alt="ArteGenIA" width="32" height="32" style="display: block; border: 0;"/>
                     </td>
-                    <td style="padding-left: 8px; font-weight: 700; font-size: 15px; color: #ffffff;">
-                      Arte<span style="color: #facc15;">Gen</span>IA
+                    <td style="font-weight: 800; font-size: 18px; color: #ffffff; letter-spacing: -0.5px; font-family: -apple-system, BlinkMacSystemFont, sans-serif;">
+                      Arte<span style="background: linear-gradient(90deg, #FF1EA8, #FF8A00); -webkit-background-clip: text; background-clip: text; color: #FF1EA8;">GenIA</span>
                     </td>
                   </tr>
                 </table>
