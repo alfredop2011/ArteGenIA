@@ -135,8 +135,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                                 <Link key={link.href} href={link.href}
                                     className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all flex items-center gap-1.5 ${
                                         isActive
-                                            ? "text-yellow-400 border-b-2 border-yellow-400 rounded-none"
-                                            : "text-gray-400 hover:text-white"
+                                            ? "text-ag-active border-b-2 border-ag-active rounded-none"
+                                            : "text-ag-muted hover:text-ag-primary"
                                     }`}>
                                     {link.label}
                                     {link.badge && (
@@ -167,7 +167,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                                 <CreditsBadge plan={profile?.plan} />
 
                                 {/* Notificaciones - SOLO desktop */}
-                                <button aria-label={t("nav.notifications")} className="hidden sm:flex w-8 h-8 rounded-full border border-white/10 items-center justify-center text-gray-400 hover:text-white hover:border-white/20 transition-colors">
+                                <button aria-label={t("nav.notifications")} className="hidden sm:flex w-8 h-8 rounded-full border border-ag items-center justify-center text-ag-muted hover:text-ag-primary transition-colors">
                                     <Bell size={15} strokeWidth={1.8} />
                                 </button>
 
@@ -182,26 +182,27 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                                     {showUserMenu && (
                                         <div className="absolute right-0 top-10 w-52 rounded-2xl border shadow-2xl overflow-hidden z-50"
                                              style={{ background: "var(--home-bg-soft)", borderColor: "var(--home-card-border)" }}>
-                                            <div className="px-4 py-3 border-b border-white/[0.06]">
-                                                <p className="text-white text-sm font-semibold truncate">{profile?.name ?? user.email}</p>
-                                                <p className="text-gray-500 text-xs truncate">{user.email}</p>
+                                            <div className="px-4 py-3 border-b border-ag">
+                                                <p className="text-ag-primary text-sm font-semibold truncate">{profile?.name ?? user.email}</p>
+                                                <p className="text-ag-soft text-xs truncate">{user.email}</p>
                                                 {/* Badge del plan: distingue 3 estados (free / pro / enterprise).
                                                     Antes solo distinguía pro vs el resto → enterprise mostraba "Free". */}
                                                 <span className={`inline-flex items-center gap-1 mt-1 text-xs px-2 py-0.5 rounded-full font-medium ${
                                                     profile?.plan === "enterprise"
-                                                        ? "bg-amber-500/20 text-amber-300"
+                                                        ? "bg-amber-500/15 text-amber-700"
                                                         : profile?.plan === "pro"
-                                                            ? "bg-yellow-400/20 text-yellow-400"
-                                                            : "bg-white/5 text-gray-400"
-                                                }`}>
+                                                            ? "bg-purple-500/15 text-purple-700"
+                                                            : "text-ag-muted"
+                                                }`}
+                                                style={profile?.plan === "free" || !profile?.plan ? { background: "var(--home-card-bg)" } : undefined}>
                                                     {profile?.plan === "enterprise" ? (
                                                         <>
-                                                            <Crown size={11} strokeWidth={2.2} className="fill-amber-300" />
+                                                            <Crown size={11} strokeWidth={2.2} />
                                                             Enterprise
                                                         </>
                                                     ) : profile?.plan === "pro" ? (
                                                         <>
-                                                            <Crown size={11} strokeWidth={2.2} className="fill-yellow-400" />
+                                                            <Crown size={11} strokeWidth={2.2} />
                                                             {t("nav.plan.pro")}
                                                         </>
                                                     ) : t("nav.plan.free")}
@@ -209,25 +210,25 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                                             </div>
                                             <div className="p-2">
                                                 <Link href="/mis-recursos" onClick={() => setShowUserMenu(false)}
-                                                    className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-gray-300 hover:bg-white/5 hover:text-white transition-colors">
+                                                    className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-ag-muted hover:bg-ag-card hover:text-ag-primary transition-colors">
                                                     <ImageIcon size={15} strokeWidth={1.8} />
                                                     Mis recursos
                                                 </Link>
                                                 <Link href="/history" onClick={() => setShowUserMenu(false)}
-                                                    className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-gray-300 hover:bg-white/5 hover:text-white transition-colors">
+                                                    className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-ag-muted hover:bg-ag-card hover:text-ag-primary transition-colors">
                                                     <History size={15} strokeWidth={1.8} />
                                                     {t("nav.history")}
                                                 </Link>
                                                 {isAdmin(user?.email) && (
                                                     <Link href="/admin/templates" onClick={() => setShowUserMenu(false)}
-                                                        className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-gray-300 hover:bg-white/5 hover:text-white transition-colors">
+                                                        className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-ag-muted hover:bg-ag-card hover:text-ag-primary transition-colors">
                                                         <Crown size={15} strokeWidth={1.8} />
                                                         {t("nav.admin")}
                                                     </Link>
                                                 )}
                                                 <button
                                                     onClick={() => { signOut(); setShowUserMenu(false); }}
-                                                    className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-red-400 hover:bg-red-500/10 transition-colors">
+                                                    className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-red-600 hover:bg-red-500/10 transition-colors">
                                                     <LogOut size={15} strokeWidth={1.8} />
                                                     {t("nav.signOut")}
                                                 </button>
@@ -240,12 +241,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                             /* Not logged in */
                             <div className="flex items-center gap-2">
                                 <button onClick={() => setShowAuth(true)}
-                                    className="hidden sm:block px-4 py-1.5 rounded-xl text-sm text-gray-300 hover:text-white transition-colors">
+                                    className="hidden sm:block px-4 py-1.5 rounded-xl text-sm text-ag-muted hover:text-ag-primary transition-colors">
                                     {t("nav.signIn")}
                                 </button>
                                 <button onClick={() => setShowAuth(true)}
-                                    className="px-3 sm:px-4 py-1.5 rounded-xl text-xs sm:text-sm font-semibold text-black transition-all hover:scale-105"
-                                    style={{ background: "linear-gradient(135deg,#facc15,#f59e0b)" }}>
+                                    className="px-3 sm:px-4 py-1.5 rounded-xl text-xs sm:text-sm font-semibold text-white transition-all hover:scale-105"
+                                    style={{ background: "linear-gradient(135deg, #7E2BFF 0%, #c026d3 50%, #FF1EA8 100%)" }}>
                                     <span className="sm:hidden">{t("nav.signUpShort")}</span>
                                     <span className="hidden sm:inline">{t("nav.signUp")}</span>
                                 </button>

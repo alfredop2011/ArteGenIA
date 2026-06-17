@@ -111,6 +111,25 @@ body {
   padding-bottom: env(safe-area-inset-bottom);
 }
 
+/* ─── UTILITY CLASSES ADAPTATIVAS (theme-light / theme-dark) ────────────
+   Para no tener 51 archivos con text-white hardcoded (invisible en
+   modo claro), estas clases leen var(--home-text*) y se adaptan solas.
+   Sustituye en componentes: text-white -> text-ag-primary, etc.
+   Pensadas para chrome de la app (headers, footers, navs, modales).
+   Para texto dentro del editor (que sigue siendo solo-dark) no usar. */
+.text-ag-primary { color: var(--home-text); }
+.text-ag-muted   { color: var(--home-text-muted); }
+.text-ag-soft    { color: var(--home-text-soft); }
+.bg-ag-soft      { background: var(--home-bg-soft); }
+.border-ag       { border-color: var(--home-card-border); }
+.hover\:text-ag-primary:hover { color: var(--home-text); }
+.hover\:bg-ag-card:hover      { background: var(--home-card-hover); }
+
+/* Active state — usa el morado de marca (legible en ambos temas) en lugar
+   del amarillo viejo que en modo claro queda con bajo contraste. */
+.text-ag-active  { color: var(--ag-brand); }
+.border-ag-active { border-color: var(--ag-brand); }
+
 /* Animacion slide-up del drawer mobile "Mas" */
 @keyframes slide-up {
   from { transform: translateY(100%); }
