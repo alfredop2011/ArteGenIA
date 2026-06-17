@@ -1844,33 +1844,37 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
   // ─── Multi-página: switch + add (Fase W.1) ──────────────────────────────
   // Cambia la página activa: serializa la actual, carga la nueva en el canvas.
   // El hook ya hace el guardado interno; aquí solo aplicamos al Fabric Canvas.
-  /** Z.25 fix multipagina — aplicar dimensiones LOGICAS + background +
-   *  fit-to-view despues de loadFromJSON. Sin esto, al volver a la pagina
-   *  original el canvas mantenia el zoom de la anterior (zoom imposible
-   *  donde la plantilla aparecia gigante e ilegible). Ahora replica la
-   *  logica de fitToView para que cada pagina se vea entera con el zoom
-   *  apropiado al wrapper. */
+  /** Z.25 fix multipagina — aplica background + sincroniza canvasSize +
+   *  hace fit-to-view tras 2 RAF para esperar a que el wrapper este
+   *  actualizado (el flash del cambio de pagina + el re-render). Sin
+   *  esperar, fitToView se ejecuta con dimensiones obsoletas y el
+   *  canvas se ve agrandado. */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const applyPageDimensions = useCallback((fc: any, pageData: any) => {
     if (!pageData?.width || !pageData?.height) return;
-    setCanvasSize({ w: pageData.width, h: pageData.height });
     if (pageData.background) {
       fc.backgroundColor = pageData.background;
     }
-    const wrapper = wrapperRef.current;
-    if (!wrapper) return;
-    const r = wrapper.getBoundingClientRect();
-    if (r.width === 0 || r.height === 0) return;
-    // Fit-to-view: misma logica que fitToView() pero con las dims de
-    // la pagina destino (no canvasSize state que aun no se actualizo).
-    const zoomW = r.width / pageData.width;
-    const zoomH = r.height / pageData.height;
-    const fit = Math.min(zoomW, zoomH);
-    fc.setDimensions({ width: r.width, height: r.height });
-    fc.setZoom(fit);
-    const tx = (r.width - pageData.width * fit) / 2;
-    const ty = (r.height - pageData.height * fit) / 2;
-    fc.setViewportTransform([fit, 0, 0, fit, tx, ty]);
+    setCanvasSize({ w: pageData.width, h: pageData.height });
+    // Doble RAF: primero espera al commit del setCanvasSize, segundo a
+    // que el browser pinte el wrapper con sus dims definitivas.
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const wrapper = wrapperRef.current;
+        if (!wrapper) return;
+        const r = wrapper.getBoundingClientRect();
+        if (r.width === 0 || r.height === 0) return;
+        const zoomW = r.width / pageData.width;
+        const zoomH = r.height / pageData.height;
+        const fit = Math.min(zoomW, zoomH);
+        fc.setDimensions({ width: r.width, height: r.height });
+        fc.setZoom(fit);
+        const tx = (r.width - pageData.width * fit) / 2;
+        const ty = (r.height - pageData.height * fit) / 2;
+        fc.setViewportTransform([fit, 0, 0, fit, tx, ty]);
+        fc.requestRenderAll();
+      });
+    });
   }, []);
 
   const switchToPage = useCallback((index: number) => {
@@ -2598,6 +2602,15 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
               icon={<Copy size={15} strokeWidth={2.2}/>}
               label="Duplicar"
             />
+            {/* Z.25 — Copiar al portapapeles interno para pegar en otra pagina.
+                Solo visible si hay >1 pagina (sino no tiene sentido). */}
+            {pages.pageCount > 1 && (
+              <ChipBtn
+                onClick={handleCopy}
+                icon={<Clipboard size={15} strokeWidth={2.2}/>}
+                label="Copiar"
+              />
+            )}
             <ChipBtn
               onClick={() => handleCenterActive("both")}
               icon={<AlignHorizontalJustifyCenter size={15} strokeWidth={2.2}/>}
@@ -2619,6 +2632,19 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
               danger
             />
           </div>
+        )}
+
+        {/* Z.25 — Boton flotante PEGAR. Visible cuando hay algo en el
+            clipboard Y NO hay seleccion activa Y hay >1 pagina. */}
+        {hasClipboard && !selectedLayerId && !openSheet && pages.pageCount > 1 && (
+          <button
+            onClick={handlePaste}
+            className="absolute top-3 right-3 z-20 flex items-center gap-1.5 bg-purple-500 text-white rounded-full shadow-2xl shadow-purple-500/40 px-3 py-2 active:scale-95 transition-transform"
+            aria-label="Pegar elementos copiados"
+          >
+            <ClipboardPaste size={14} strokeWidth={2.4}/>
+            <span className="text-[11px] font-bold tracking-tight">Pegar</span>
+          </button>
         )}
 
       </div>
