@@ -2260,8 +2260,14 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const srcUrl = (obj as any).getSrc?.() ?? (obj as any)._element?.src;
     if (!srcUrl) { toast.error("No se pudo leer la imagen"); return; }
-    setBrushEraserState({ url: srcUrl, obj });
-  }, [toast]);
+    requireAuth(
+      () => setBrushEraserState({ url: srcUrl, obj }),
+      {
+        title: "Inicia sesión para refinar la imagen",
+        subtitle: "El borrador mágico usa IA con créditos. Crea una cuenta gratis (10 créditos al registrarte) para probarlo.",
+      },
+    );
+  }, [toast, requireAuth]);
 
   const handleBrushEraserSave = useCallback(async (resultDataUrl: string) => {
     const state = brushEraserState;
@@ -2302,8 +2308,14 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
         return;
       }
     }
-    setPendingRemoveBg(obj);
-  }, [toast]);
+    requireAuth(
+      () => setPendingRemoveBg(obj),
+      {
+        title: "Inicia sesión para quitar el fondo",
+        subtitle: "Quitar fondo usa IA y consume 1 crédito. Crea una cuenta gratis (10 créditos al registrarte) para probarlo.",
+      },
+    );
+  }, [toast, requireAuth]);
 
   /** Tras confirmar modal: descarga blob, manda a /api/remove-bg, reemplaza src
    *  en Fabric. Si 402 → sin créditos. Si 5xx → refund automático server-side. */
