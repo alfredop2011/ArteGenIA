@@ -1470,6 +1470,22 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
       toast.error(`Esta plantilla no tiene formato ${FORMATS[newFormatId].name}`);
       return;
     }
+    // Z.25 — Si hay multipagina, advertir explicitamente que se perderan
+    // las paginas extra al cambiar formato. La opcion C completa (reescalar
+    // paginas al nuevo formato) requiere refactor de 2-3h con riesgo;
+    // post-launch cuando llegue feedback real.
+    if (pages.pageCount > 1) {
+      const fmtName = FORMATS[newFormatId].name;
+      const extraPages = pages.pageCount - 1;
+      const ok = window.confirm(
+        `Cambiar a "${fmtName}":\n\n` +
+        `Tienes ${pages.pageCount} páginas en tu flyer.\n` +
+        `Al cambiar de formato se recarga la plantilla y se perderán ` +
+        `las ${extraPages} ${extraPages === 1 ? "página adicional" : "páginas adicionales"}.\n\n` +
+        `¿Continuar?`,
+      );
+      if (!ok) return;
+    }
     if (saveState === "unsaved" && !authUser) {
       const ok = window.confirm(t("mobileEditor.confirm.changeFormatUnsaved"));
       if (!ok) return;
@@ -1481,7 +1497,7 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
     // Navegar al mismo proyecto (o template) con el formato nuevo
     const idForUrl = currentProjectId ?? template.id;
     router.push(`/editor/${idForUrl}?format=${newFormatId}`);
-  }, [template, saveState, authUser, currentProjectId, router, toast]);
+  }, [template, saveState, authUser, currentProjectId, router, toast, t, pages.pageCount]);
 
   // ─── Smart guides (Fase J) ─────────────────────────────────────────────
   // Líneas guía cyan al arrastrar objetos. Snap a:
