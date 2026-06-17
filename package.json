@@ -5,6 +5,8 @@
   "scripts": {
     "dev": "next dev",
     "dev:clean": "rm -rf .next && next dev",
+    "gen:templates-meta": "node scripts/gen-templates-meta.mjs",
+    "prebuild": "node scripts/gen-templates-meta.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",

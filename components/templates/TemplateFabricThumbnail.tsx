@@ -2,16 +2,36 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { StaticCanvas } from "fabric";
-import type { Template } from "@/data/templates";
-import { getVariant } from "@/data/templates";
+// NOTA: este componente se importa siempre vía next/dynamic (chunk lazy), así
+// que importar el catálogo pesado data/templates.ts aquí NO entra en el
+// first-load JS de las páginas de listado — se carga junto al thumbnail.
+import { templates, getVariant, type TemplateLayer } from "@/data/templates";
+import type { TemplateMeta } from "@/data/templatesMeta";
+import { getVariantMeta } from "@/data/templatesMeta";
 import type { FormatId } from "@/data/formats";
 import { applyTemplateLayers } from "@/lib/fabricApplyTemplateLayers";
 
 type TemplateFabricThumbnailProps = {
-    template: Template;
+    /** Metadata de la plantilla (sin layers). Las plantillas publicadas pueden
+     *  traer layers embebidas; las estáticas se resuelven por id (ver abajo). */
+    template: TemplateMeta;
     formatId?: FormatId;
     className?: string;
 };
+
+/**
+ * Resuelve las layers a renderizar:
+ *  - Si la variante ya trae layers (plantillas publicadas desde Supabase) → esas.
+ *  - Si no (catálogo estático = solo metadata) → busca la plantilla completa por
+ *    id en data/templates.ts y saca las layers de la variante correspondiente.
+ */
+function resolveLayers(template: TemplateMeta, format: FormatId): TemplateLayer[] {
+    const metaVariant = template.variants.find((v) => v.format === format);
+    if (metaVariant?.layers?.length) return metaVariant.layers;
+    const full = templates.find((t) => t.id === template.id);
+    if (!full) return [];
+    return getVariant(full, format).layers;
+}
 
 /**
  * Miniatura WYSIWYG: mismo modelo de capas que el editor (Fabric), escalado al hueco de la tarjeta.
@@ -22,7 +42,7 @@ export default function TemplateFabricThumbnail({ template, formatId, className 
     const canvasElRef = useRef<HTMLCanvasElement | null>(null);
     const [scale, setScale] = useState(0.2);
 
-    const variant = getVariant(template, formatId);
+    const variant = getVariantMeta(template, formatId);
 
     useLayoutEffect(() => {
         const node = containerRef.current;
@@ -58,7 +78,7 @@ export default function TemplateFabricThumbnail({ template, formatId, className 
         });
 
         const render = async () => {
-            await applyTemplateLayers(canvas, variant.layers);
+            await applyTemplateLayers(canvas, resolveLayers(template, variant.format));
             canvas.renderAll();
         };
 

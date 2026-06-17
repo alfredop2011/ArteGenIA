@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import {
   Search, SlidersHorizontal, Sparkles, ArrowRight,
@@ -10,11 +11,24 @@ import {
   Users, Building2, BookOpen, User, Landmark, Briefcase, School,
   Heart,
 } from "lucide-react";
-import { templates as catalogTemplates, type Template, type AudienceId } from "@/data/templates";
+// Solo metadata (sin layers) → no arrastra las ~383 KB del catálogo al
+// first-load. Las layers se resuelven dentro del thumbnail (chunk lazy).
+import { templatesMeta as catalogTemplates, type TemplateMeta } from "@/data/templatesMeta";
+import type { AudienceId } from "@/data/templates";
 import type { FormatId } from "@/data/formats";
-import TemplateFabricThumbnail from "@/components/templates/TemplateFabricThumbnail";
 import { useLocale } from "@/hooks/useLocale";
 import type { TranslationKey } from "@/lib/translations";
+
+// Lazy-load: TemplateFabricThumbnail arrastra Fabric.js (~320 KB). En la home
+// son thumbnails decorativos, así que se cargan en un chunk aparte (ssr:false)
+// y NO bloquean el first-load JS de la landing. Placeholder con el fondo del card.
+const TemplateFabricThumbnail = dynamic(
+  () => import("@/components/templates/TemplateFabricThumbnail"),
+  {
+    ssr: false,
+    loading: () => <div className="h-full w-full bg-[#0a0a12]" aria-hidden />,
+  },
+);
 
 // ════════════════════════════════════════════════════════════════════════════
 //  HOME — discovery con animacion de entrada, theme-aware (dark/light via
@@ -174,9 +188,9 @@ export default function Home() {
   const [search, setSearch] = useState("");
 
   // Catalogo curado: favoritas primero (en orden), luego el resto id desc.
-  const curatedTemplates = useMemo<Template[]>(() => {
+  const curatedTemplates = useMemo<TemplateMeta[]>(() => {
     const byId = new Map(catalogTemplates.map(t => [t.id, t] as const));
-    const favs = FAVORITE_IDS.map(id => byId.get(id)).filter((t): t is Template => !!t);
+    const favs = FAVORITE_IDS.map(id => byId.get(id)).filter((t): t is TemplateMeta => !!t);
     const favIds = new Set(favs.map(t => t.id));
     const recents = catalogTemplates
       .filter(t => !favIds.has(t.id))
@@ -186,7 +200,7 @@ export default function Home() {
 
   // HERO: stack de 3 flyers (3 primeros del catalogo curado con square).
   // El central es el "featured" — los laterales son acompañantes visuales.
-  const heroStack = useMemo<Template[]>(() => {
+  const heroStack = useMemo<TemplateMeta[]>(() => {
     const withSquare = curatedTemplates.filter(t => t.variants.some(v => v.format === "square"));
     return withSquare.slice(0, 3);
   }, [curatedTemplates]);
@@ -689,7 +703,7 @@ function HeroStackCard({
   animDelay,
   featuredLabel,
 }: {
-  template: Template;
+  template: TemplateMeta;
   position: "left" | "center" | "right";
   animDelay: number;
   featuredLabel?: string;
@@ -769,7 +783,7 @@ function TemplatePopularCard({
   template,
   formatId,
 }: {
-  template: Template;
+  template: TemplateMeta;
   formatId: FormatId;
 }) {
   const { t } = useLocale();

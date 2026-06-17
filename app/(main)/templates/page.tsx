@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -12,9 +13,11 @@ import {
   Home as HomeIcon, FileText, Users, History as HistoryIcon,
   type LucideIcon,
 } from "lucide-react";
-import { templates, type Template, type AudienceId, type TemplateVariant, type UseCase } from "@/data/templates";
+// Catálogo estático: solo metadata (sin layers) → no entra en el first-load JS.
+// Las plantillas publicadas (Supabase) sí traen layers en runtime (no bundle).
+import { templatesMeta, type TemplateMeta } from "@/data/templatesMeta";
+import type { Template, AudienceId, TemplateVariant, UseCase } from "@/data/templates";
 import { type FormatId } from "@/data/formats";
-import TemplateFabricThumbnail from "@/components/templates/TemplateFabricThumbnail";
 import FormatPickerModal from "@/components/templates/FormatPickerModal";
 import { supabase, type TemplatePublished } from "@/lib/supabase";
 import { useLocale } from "@/hooks/useLocale";
@@ -22,6 +25,16 @@ import { useAuth } from "@/hooks/useAuth";
 import { isAdmin } from "@/lib/admin";
 import type { TranslationKey } from "@/lib/translations";
 import { matchesUseCase } from "@/lib/useCases";
+
+// Lazy-load: arrastra Fabric.js (~320 KB). En la galería son thumbnails, así que
+// se cargan en un chunk aparte (ssr:false) y no bloquean el first-load JS.
+const TemplateFabricThumbnail = dynamic(
+  () => import("@/components/templates/TemplateFabricThumbnail"),
+  {
+    ssr: false,
+    loading: () => <div className="h-full w-full bg-[#0a0a12]" aria-hidden />,
+  },
+);
 
 // ════════════════════════════════════════════════════════════════════════════
 //  /templates — Discovery page rediseñada (mockup ChatGPT-like).
@@ -174,7 +187,7 @@ export default function TemplatesPage() {
   const [activeAudiences, setActiveAudiences] = useState<AudienceId[]>([]);
   const [activeUseCase, setActiveUseCase] = useState<UseCase | "all">("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [modalTemplate, setModalTemplate] = useState<Template | null>(null);
+  const [modalTemplate, setModalTemplate] = useState<TemplateMeta | null>(null);
   const [showSidebarMobile, setShowSidebarMobile] = useState(false);
   const [favorites, setFavorites] = useState<Set<number>>(new Set());
   // Vista grid (tarjetas) o list (filas horizontales). Persistido por sesion
@@ -222,11 +235,11 @@ export default function TemplatesPage() {
     })();
   }, []);
 
-  const allTemplates = useMemo(() => [...publishedTemplates, ...templates], [publishedTemplates]);
+  const allTemplates = useMemo(() => [...publishedTemplates, ...templatesMeta], [publishedTemplates]);
 
   // ─── Handler: usar plantilla ─────────────────────────────────────────
-  const handleUseTemplate = (template: Template) => {
-    const tpl = template as Template & { __publishedId?: string };
+  const handleUseTemplate = (template: TemplateMeta) => {
+    const tpl = template as TemplateMeta & { __publishedId?: string };
     const idForUrl = tpl.__publishedId ? `published-${tpl.__publishedId}` : String(template.id);
     const directVariant = template.variants.find(v => v.format === activeFormat);
     if (directVariant) { router.push(`/editor/${idForUrl}?format=${activeFormat}`); return; }
@@ -827,7 +840,7 @@ function QuickAction({ icon: Icon, label, href }: { icon: LucideIcon; label: str
 function TemplateCard({
   template, formatId, aspect, isFavorite, onToggleFavorite, onUse,
 }: {
-  template: Template;
+  template: TemplateMeta;
   formatId: FormatId;
   aspect: string;
   isFavorite: boolean;
@@ -906,7 +919,7 @@ function TemplateCard({
 function TemplateRow({
   template, formatId, aspect, isFavorite, onToggleFavorite, onUse,
 }: {
-  template: Template;
+  template: TemplateMeta;
   formatId: FormatId;
   aspect: string;
   isFavorite: boolean;

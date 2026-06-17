@@ -3,11 +3,11 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { X, ArrowRight } from "lucide-react";
-import type { Template } from "@/data/templates";
+import type { TemplateMeta } from "@/data/templatesMeta";
 import { FORMATS, type FormatId } from "@/data/formats";
 
 type Props = {
-    template: Template;
+    template: TemplateMeta;
     onClose: () => void;
 };
 

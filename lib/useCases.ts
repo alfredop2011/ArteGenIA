@@ -1,4 +1,5 @@
-import type { Template, UseCase } from "@/data/templates";
+import type { UseCase } from "@/data/templates";
+import type { TemplateMeta } from "@/data/templatesMeta";
 
 /**
  * Infiere los casos de uso de una plantilla a partir de su categoria y
@@ -17,7 +18,7 @@ import type { Template, UseCase } from "@/data/templates";
  * Si la plantilla declara `useCases` explicito en data/templates.ts, ese
  * override gana y no se aplica la inferencia.
  */
-export function inferUseCases(t: Template): UseCase[] {
+export function inferUseCases(t: TemplateMeta): UseCase[] {
   // Override manual gana sobre la inferencia
   if (t.useCases && t.useCases.length > 0) return t.useCases;
 
@@ -79,7 +80,7 @@ export function inferUseCases(t: Template): UseCase[] {
 }
 
 /** Helper: ¿esta plantilla matchea el use case seleccionado? */
-export function matchesUseCase(t: Template, useCase: UseCase | "all"): boolean {
+export function matchesUseCase(t: TemplateMeta, useCase: UseCase | "all"): boolean {
   if (useCase === "all") return true;
   return inferUseCases(t).includes(useCase);
 }
