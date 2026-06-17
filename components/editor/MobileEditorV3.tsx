@@ -67,7 +67,7 @@ import { useCredits } from "@/hooks/useCredits";
 import { CREDIT_COST, type CreditModule } from "@/lib/credits";
 // Z.17 — Borrador mágico/manual full-screen reutilizable desktop+mobile
 import BrushEraserModal from "@/components/editor/BrushEraserModal";
-import { Save, FolderOpen, Share2, Link2, Mail, MessageCircle, Send, Plus, Layers, Lock, Unlock, Eye, EyeOff, Circle as CircleIcon, Square as SquareIcon, Triangle, Heart, Star, AlignHorizontalJustifyCenter } from "lucide-react";
+import { Save, FolderOpen, Share2, Link2, Mail, MessageCircle, Send, Plus, Layers, Lock, Unlock, Eye, EyeOff, Circle as CircleIcon, Square as SquareIcon, Triangle, Heart, Star, AlignHorizontalJustifyCenter, Clipboard, ClipboardPaste } from "lucide-react";
 
 type Props = {
   templateId?: number;
@@ -776,6 +776,74 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
       setSaveState("unsaved");
     } catch (e) { console.error(e); }
   }, []);
+
+  // ─── Z.25 — Copy/paste entre paginas ─────────────────────────────────────
+  // clipboardRef guarda los fabric objects clonados. Sobrevive cambios de
+  // pagina porque es ref. Al pegar, clonamos OTRA vez para que pueda
+  // pegarse multiples veces.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const clipboardRef = useRef<any[]>([]);
+  const [hasClipboard, setHasClipboard] = useState(false);
+
+  const handleCopy = useCallback(async () => {
+    const fc = fabricRef.current;
+    const active = fc?.getActiveObject();
+    if (!fc || !active) return;
+    try {
+      // Si es ActiveSelection (multi-select), copiar todos sus children.
+      // Sino, solo el objeto activo.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const items: any[] = (active as any).type === "activeselection"
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ? (active as any).getObjects()
+        : [active];
+      const clones = await Promise.all(items.map((o) => o.clone()));
+      clipboardRef.current = clones;
+      setHasClipboard(true);
+      toast.success(`Copiado · ${clones.length} ${clones.length === 1 ? "elemento" : "elementos"}`);
+    } catch (e) {
+      console.error("Copy failed:", e);
+      toast.error("No se pudo copiar");
+    }
+  }, [toast]);
+
+  const handlePaste = useCallback(async () => {
+    const fc = fabricRef.current;
+    if (!fc || clipboardRef.current.length === 0) return;
+    try {
+      // Re-clonar para que pueda pegarse multiples veces sin compartir
+      // referencias con futuros pastes.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const fresh: any[] = await Promise.all(
+        clipboardRef.current.map((o) => o.clone()),
+      );
+      const OFFSET = 20;
+      fresh.forEach((o) => {
+        o.set({ left: (o.left ?? 0) + OFFSET, top: (o.top ?? 0) + OFFSET });
+        fc.add(o);
+      });
+      // Seleccionar todos los pegados — si es uno solo, seleccionarlo
+      // directamente; si son varios, crear ActiveSelection.
+      if (fresh.length === 1) {
+        fc.setActiveObject(fresh[0]);
+      } else {
+        // Necesitamos importar ActiveSelection — lo hacemos lazy via fabric module
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const fabric = await import("fabric") as any;
+        if (fabric.ActiveSelection) {
+          const sel = new fabric.ActiveSelection(fresh, { canvas: fc });
+          fc.setActiveObject(sel);
+        }
+      }
+      fc.requestRenderAll();
+      setSaveState("unsaved");
+      pushHistory();
+      toast.success(`Pegado · ${fresh.length} ${fresh.length === 1 ? "elemento" : "elementos"}`);
+    } catch (e) {
+      console.error("Paste failed:", e);
+      toast.error("No se pudo pegar");
+    }
+  }, [toast, pushHistory]);
 
   const handleDelete = useCallback(() => {
     const fc = fabricRef.current;
@@ -2530,6 +2598,14 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
               icon={<Copy size={15} strokeWidth={2.2}/>}
               label="Duplicar"
             />
+            {/* Z.25 — Copiar al portapapeles interno (para pegar en otra pagina) */}
+            {pages.pageCount > 1 && (
+              <ChipBtn
+                onClick={handleCopy}
+                icon={<Clipboard size={15} strokeWidth={2.2}/>}
+                label="Copiar"
+              />
+            )}
             <ChipBtn
               onClick={() => handleCenterActive("both")}
               icon={<AlignHorizontalJustifyCenter size={15} strokeWidth={2.2}/>}
@@ -2551,6 +2627,21 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
               danger
             />
           </div>
+        )}
+
+        {/* Z.25 — Boton flotante PEGAR. Solo visible si:
+            - Hay algo en el clipboard
+            - NO hay objeto seleccionado (sino chocaria con chip toolbar)
+            - Hay mas de una pagina (sino no tiene sentido) */}
+        {hasClipboard && !selectedLayerId && !openSheet && pages.pageCount > 1 && (
+          <button
+            onClick={handlePaste}
+            className="absolute top-3 right-3 z-20 flex items-center gap-1.5 bg-purple-500 text-white rounded-full shadow-2xl shadow-purple-500/40 px-3 py-2 active:scale-95 transition-transform"
+            aria-label="Pegar elementos copiados"
+          >
+            <ClipboardPaste size={14} strokeWidth={2.4}/>
+            <span className="text-[11px] font-bold tracking-tight">Pegar</span>
+          </button>
         )}
       </div>
 
