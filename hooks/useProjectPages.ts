@@ -117,9 +117,35 @@ export function useProjectPages() {
     [activeIndex, pages, serializeCanvasFull, captureThumbnail],
   );
 
-  /** Añade una página vacía al final con las dimensiones de la activa. */
+  /** Añade una página vacía al final con las dimensiones de la activa.
+   *  Z.25 lazy-init fix: si pages esta vacio (modo plantilla nueva sin
+   *  hydrate previo), primero crea la pagina INICIAL con el estado
+   *  actual del canvas. Sin esto, la plantilla original se perdia al
+   *  añadir la primera pagina nueva. */
   const addPage = useCallback(
     (canvas: Canvas | null, name?: string) => {
+      // Lazy init: la primera vez que se llama addPage en modo template
+      // nuevo (pages vacio), capturamos el state actual como "Pagina 1"
+      // ANTES de crear la nueva.
+      if (pages.length === 0 && canvas) {
+        const initialFabric = serializeCanvasFull(canvas);
+        const initialThumbnail = captureThumbnail(canvas);
+        const w = canvas.getWidth();
+        const h = canvas.getHeight();
+        const initialPage: PageData = {
+          name: "Página 1",
+          fabric: initialFabric,
+          thumbnail: initialThumbnail,
+          width: w,
+          height: h,
+        };
+        const newPage = newEmptyPage(w, h, name || "Página 2");
+        setPages([initialPage, newPage]);
+        pendingFabricRef.current = newPage.fabric;
+        setActiveIndex(1);
+        setInitialized(true);
+        return;
+      }
       const active = pages[activeIndex];
       const width = active?.width || 1080;
       const height = active?.height || 1350;
@@ -206,15 +232,33 @@ export function useProjectPages() {
   /** Z.25 — Actualiza el thumbnail de la pagina activa SIN cambiar de pagina.
    *  Util al abrir el PagesSheet: la pagina actual no tiene thumbnail hasta
    *  que cambias a otra. Llamar antes de mostrar el sheet para que el
-   *  usuario vea siempre la version mas reciente. */
+   *  usuario vea siempre la version mas reciente.
+   *
+   *  Lazy-init: si pages esta vacio (modo plantilla nueva), crea
+   *  Pagina 1 con el state actual en lugar de no hacer nada. Asi al
+   *  abrir el sheet por primera vez SIEMPRE se ve la plantilla original. */
   const refreshActiveThumbnail = useCallback(
     (canvas: Canvas | null) => {
       if (!canvas) return;
       const thumbnail = captureThumbnail(canvas);
       if (!thumbnail) return;
+      if (pages.length === 0) {
+        // Lazy init: crear Pagina 1 con state actual del canvas
+        const fabric = serializeCanvasFull(canvas);
+        setPages([{
+          name: "Página 1",
+          fabric,
+          thumbnail,
+          width: canvas.getWidth(),
+          height: canvas.getHeight(),
+        }]);
+        setActiveIndex(0);
+        setInitialized(true);
+        return;
+      }
       setPages((prev) => prev.map((p, i) => (i === activeIndex ? { ...p, thumbnail } : p)));
     },
-    [activeIndex, captureThumbnail],
+    [activeIndex, pages.length, captureThumbnail, serializeCanvasFull],
   );
 
   /** Devuelve el JSON listo para guardar en Supabase. Llamar antes de
