@@ -6,13 +6,13 @@ import MobileEditorV3 from "@/components/editor/MobileEditorV3";
 import type { FormatId } from "@/data/formats";
 
 /**
- * EditorRouter: decide MobileEditor (< 768px) vs GeneratedEditor (desktop).
+ * EditorRouter: decide MobileEditorV3 (< 768px) vs GeneratedEditor (desktop).
  *
- * No reusa logica del desktop. MobileEditor es un componente nuevo separado
- * pensado mobile-first (touch, paneles deslizables, bottom toolbar).
+ * V3 es mobile-first (touch, paneles deslizables, bottom toolbar) y no
+ * reusa lógica del desktop.
  *
- * Mientras detecta el viewport (1er render SSR), muestra splash para evitar
- * flickering entre ambos editores.
+ * Mientras detecta el viewport (1er render SSR), muestra splash para
+ * evitar flickering entre ambos editores.
  */
 type Props = {
   templateId?: number;

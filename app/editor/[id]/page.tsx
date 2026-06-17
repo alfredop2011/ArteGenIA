@@ -66,6 +66,6 @@ export default async function EditorPage({ params, searchParams }: EditorPagePro
         );
     }
 
-    // EditorRouter elige MobileEditor (< 768px) o GeneratedEditor (desktop)
+    // EditorRouter elige MobileEditorV3 (< 768px) o GeneratedEditor (desktop)
     return <EditorRouter templateId={templateId} formatId={formatId} />;
 }
