@@ -2598,14 +2598,6 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
               icon={<Copy size={15} strokeWidth={2.2}/>}
               label="Duplicar"
             />
-            {/* Z.25 — Copiar al portapapeles interno (para pegar en otra pagina) */}
-            {pages.pageCount > 1 && (
-              <ChipBtn
-                onClick={handleCopy}
-                icon={<Clipboard size={15} strokeWidth={2.2}/>}
-                label="Copiar"
-              />
-            )}
             <ChipBtn
               onClick={() => handleCenterActive("both")}
               icon={<AlignHorizontalJustifyCenter size={15} strokeWidth={2.2}/>}
@@ -2629,20 +2621,6 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
           </div>
         )}
 
-        {/* Z.25 — Boton flotante PEGAR. Solo visible si:
-            - Hay algo en el clipboard
-            - NO hay objeto seleccionado (sino chocaria con chip toolbar)
-            - Hay mas de una pagina (sino no tiene sentido) */}
-        {hasClipboard && !selectedLayerId && !openSheet && pages.pageCount > 1 && (
-          <button
-            onClick={handlePaste}
-            className="absolute top-3 right-3 z-20 flex items-center gap-1.5 bg-purple-500 text-white rounded-full shadow-2xl shadow-purple-500/40 px-3 py-2 active:scale-95 transition-transform"
-            aria-label="Pegar elementos copiados"
-          >
-            <ClipboardPaste size={14} strokeWidth={2.4}/>
-            <span className="text-[11px] font-bold tracking-tight">Pegar</span>
-          </button>
-        )}
       </div>
 
       {/* ═══ FOOTER — sub-tools bar (si seleccion) o bottom bar (si no) ═════
@@ -3278,6 +3256,26 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
                   onMutate={() => {
                     setSaveState("unsaved");
                     pushHistory();
+                  }}
+                  /* Z.25 — al confirmar varios elementos, crear ActiveSelection
+                     en el canvas para que el user pueda moverlos juntos. */
+                  onMultiSelect={async (objs) => {
+                    const fc = fabricRef.current;
+                    if (!fc || objs.length === 0) return;
+                    fc.discardActiveObject();
+                    if (objs.length === 1) {
+                      fc.setActiveObject(objs[0]);
+                    } else {
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                      const fabric = await import("fabric") as any;
+                      if (fabric.ActiveSelection) {
+                        const sel = new fabric.ActiveSelection(objs, { canvas: fc });
+                        fc.setActiveObject(sel);
+                      }
+                    }
+                    fc.requestRenderAll();
+                    setOpenSheet(null);
+                    toast.success(`${objs.length} ${objs.length === 1 ? "elemento seleccionado" : "elementos seleccionados"}`);
                   }}
                 />
               )}
@@ -5018,16 +5016,23 @@ function ShapeBtn({ icon, label, onClick }: { icon: React.ReactNode; label: stri
 /** Sheet con lista de todos los objetos del canvas, ordenados de superior
  *  a inferior. Permite seleccionar, mover capa, toggle visibility, lock. */
 function LayersSheet({
-  fc, onSelect, onMutate,
+  fc, onSelect, onMutate, onMultiSelect,
 }: {
   fc: FabricCanvas | null;
   onSelect: (obj: FabricObject) => void;
   onMutate: () => void;
+  /** Z.25 — al confirmar multi-seleccion, crea ActiveSelection en el canvas. */
+  onMultiSelect?: (objs: FabricObject[]) => void;
 }) {
   const { t } = useLocale();
   // Forzar re-render cuando el usuario hace cambios en la sheet
   const [tick, setTick] = useState(0);
   const refresh = useCallback(() => setTick(t => t + 1), []);
+
+  // Z.25 — modo seleccion multiple: cuando esta activo, cada tap añade/quita
+  // del Set en lugar de seleccionar directamente.
+  const [multiSelectMode, setMultiSelectMode] = useState(false);
+  const [selectedSet, setSelectedSet] = useState<Set<number>>(new Set());
 
   // Lista invertida (Fabric renderiza index 0 abajo, en UI mostramos arriba).
   // Dep en tick para invalidar el memo cuando se reordenan capas.
@@ -5054,11 +5059,57 @@ function LayersSheet({
     );
   }
 
+  const handleApplyMulti = () => {
+    if (!onMultiSelect || selectedSet.size === 0) return;
+    const picked: FabricObject[] = [];
+    selectedSet.forEach((idx) => {
+      if (visibleObjects[idx]) picked.push(visibleObjects[idx]);
+    });
+    onMultiSelect(picked);
+    setMultiSelectMode(false);
+    setSelectedSet(new Set());
+  };
+
+  const toggleSelection = (idx: number) => {
+    setSelectedSet((prev) => {
+      const next = new Set(prev);
+      if (next.has(idx)) next.delete(idx);
+      else next.add(idx);
+      return next;
+    });
+  };
+
   return (
     <div className="flex flex-col gap-2">
-      <p className="text-[11px] text-gray-400 leading-snug">
-        {t("mobileEditor.layers.intro")}
-      </p>
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-[11px] text-gray-400 leading-snug flex-1">
+          {multiSelectMode
+            ? "Marca los elementos que quieres seleccionar juntos."
+            : t("mobileEditor.layers.intro")}
+        </p>
+        <button
+          onClick={() => {
+            setMultiSelectMode((v) => !v);
+            setSelectedSet(new Set());
+          }}
+          className={`shrink-0 text-[10.5px] font-bold px-2.5 py-1 rounded-full border transition-colors ${
+            multiSelectMode
+              ? "bg-purple-500/20 border-purple-500/50 text-purple-200"
+              : "bg-white/[0.04] border-white/[0.10] text-gray-300 active:bg-white/[0.08]"
+          }`}
+        >
+          {multiSelectMode ? "Cancelar" : "Seleccionar varios"}
+        </button>
+      </div>
+
+      {multiSelectMode && selectedSet.size > 0 && (
+        <button
+          onClick={handleApplyMulti}
+          className="w-full py-2.5 rounded-xl bg-gradient-to-r from-purple-500 to-fuchsia-500 text-white font-bold text-[12.5px] active:scale-[0.98] transition-transform"
+        >
+          Seleccionar {selectedSet.size} {selectedSet.size === 1 ? "elemento" : "elementos"}
+        </button>
+      )}
       <div className="flex flex-col gap-1.5">
         {visibleObjects.map((obj, idx) => {
           const type = obj.type ?? "obj";
@@ -5080,19 +5131,34 @@ function LayersSheet({
           const isLocked = obj.lockMovementX === true;
           const isHidden = obj.visible === false;
           const isActive = fc?.getActiveObject() === obj;
+          const isInMultiSet = selectedSet.has(idx);
           return (
             <div
               key={idx}
               className={`flex items-center gap-2 px-2.5 py-2 rounded-xl border ${
-                isActive
-                  ? "border-purple-500 bg-purple-500/10"
-                  : "border-white/[0.06] bg-[#13131f]"
+                multiSelectMode
+                  ? isInMultiSet
+                    ? "border-purple-500 bg-purple-500/15"
+                    : "border-white/[0.06] bg-[#13131f]"
+                  : isActive
+                    ? "border-purple-500 bg-purple-500/10"
+                    : "border-white/[0.06] bg-[#13131f]"
               }`}
             >
               <button
-                onClick={() => onSelect(obj)}
+                onClick={() => multiSelectMode ? toggleSelection(idx) : onSelect(obj)}
                 className="flex-1 text-left min-w-0 flex items-center gap-2"
               >
+                {/* Checkbox solo en modo multi-seleccion */}
+                {multiSelectMode && (
+                  <span className={`shrink-0 w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${
+                    isInMultiSet
+                      ? "bg-purple-500 border-purple-500"
+                      : "border-white/30 bg-transparent"
+                  }`}>
+                    {isInMultiSet && <Check size={12} strokeWidth={3} className="text-white"/>}
+                  </span>
+                )}
                 <span className="text-[10px] uppercase tracking-wider text-purple-400 font-bold shrink-0">
                   {type === "textbox" || type === "text" || type === "i-text" ? "T" : type === "image" ? "📷" : "◆"}
                 </span>
