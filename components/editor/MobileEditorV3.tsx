@@ -3121,12 +3121,15 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
                 />
               )}
 
-              {/* SHEET CAMBIAR FORMATO ──────────────────────────────────── */}
+              {/* SHEET FORMATOS — Z.25: incluye accion "Añadir página"
+                  para consolidar las opciones de estructura del documento. */}
               {openSheet === "format" && template && (
                 <ChangeFormatSheet
                   template={template}
                   currentFormat={formatId}
                   onSelect={(fmt) => { setOpenSheet(null); void handleChangeFormat(fmt); }}
+                  pageCount={pages.pageCount}
+                  onAddPage={() => { setOpenSheet(null); handleAddPage(); }}
                 />
               )}
 
@@ -4670,17 +4673,21 @@ function AssistantSheet({
 /** Sheet con grid de formatos disponibles del template. Tap navega al
  *  mismo proyecto con el formato nuevo. Marca el actual con border. */
 function ChangeFormatSheet({
-  template, currentFormat, onSelect,
+  template, currentFormat, onSelect, pageCount, onAddPage,
 }: {
   template: Template;
   currentFormat: FormatId | undefined;
   onSelect: (f: FormatId) => void;
+  /** Z.25 — para mostrar bloque "Añadir página" dentro del sheet de formatos.
+   *  Si los props no se pasan, no se renderiza (compatibilidad atrás). */
+  pageCount?: number;
+  onAddPage?: () => void;
 }) {
   const available: FormatId[] = PUBLIC_FORMATS.filter(fmt =>
     !!template.variants.find(v => v.format === fmt)
   );
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-4">
       <p className="text-[12px] text-gray-400 leading-relaxed">
         Cambia el tamaño y proporción del flyer manteniendo el contenido.
         Si tienes cambios sin guardar se guardan antes de cambiar.
@@ -4725,6 +4732,32 @@ function ChangeFormatSheet({
           );
         })}
       </div>
+
+      {/* Z.25 — Bloque "Añadir página" debajo del grid de formatos.
+          Consolida en un solo sheet las acciones de estructura del documento
+          (formato + paginas). El boton dedicado en bottom bar sigue existiendo. */}
+      {onAddPage && (
+        <div className="flex flex-col gap-2 pt-2 border-t border-white/[0.06]">
+          <p className="text-[11px] uppercase tracking-widest text-gray-500 font-bold">Páginas</p>
+          <button
+            onClick={onAddPage}
+            className="flex items-center justify-between gap-3 rounded-xl p-3 border border-white/[0.08] bg-white/[0.03] active:bg-white/[0.06] transition-colors"
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              <span className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500/25 to-pink-500/25 flex items-center justify-center shrink-0">
+                <Copy size={18} strokeWidth={2.2} className="text-purple-200"/>
+              </span>
+              <div className="text-left">
+                <div className="text-[13px] font-bold leading-tight">Añadir página</div>
+                <div className="text-[10.5px] text-gray-500 leading-tight mt-0.5">
+                  {pageCount && pageCount > 1 ? `Tu flyer tiene ${pageCount} páginas` : "Crea una segunda página al mismo proyecto"}
+                </div>
+              </div>
+            </div>
+            <Plus size={18} strokeWidth={2.4} className="text-gray-400 shrink-0"/>
+          </button>
+        </div>
+      )}
     </div>
   );
 }

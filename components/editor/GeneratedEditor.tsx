@@ -2759,19 +2759,22 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
             <div className="hidden md:flex relative ml-1">
               <button
                 onClick={() => setShowFormatMenu((v) => !v)}
-                className="flex items-center gap-1.5 text-[11px] text-gray-200 border border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.06] rounded-lg px-2.5 py-1 transition-colors"
+                className="group flex items-center gap-2 border border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.06] hover:border-white/[0.14] rounded-xl pl-2 pr-2.5 py-1.5 transition-all"
                 title={fmt ? `${fmt.name} · ${fmt.subtitle} — Click para cambiar` : `${canvasSize.w} × ${canvasSize.h} px — Click para cambiar formato`}>
-                {FmtIcon && <FmtIcon size={12} strokeWidth={2} className="text-purple-300 shrink-0"/>}
-                {fmt ? (
-                  <>
-                    <span className="font-medium">{fmt.name}</span>
-                    <span className="text-gray-500">·</span>
-                    <span className="text-gray-500">{canvasSize.w} × {canvasSize.h}</span>
-                  </>
-                ) : (
-                  <span>{canvasSize.w} × {canvasSize.h} px</span>
+                {FmtIcon && (
+                  <span className="w-6 h-6 rounded-md bg-gradient-to-br from-purple-500/25 to-pink-500/25 flex items-center justify-center shrink-0">
+                    <FmtIcon size={13} strokeWidth={2.2} className="text-purple-200"/>
+                  </span>
                 )}
-                <ChevronDown size={11} strokeWidth={2.2} className={`text-gray-400 shrink-0 transition-transform ${showFormatMenu ? "rotate-180" : ""}`}/>
+                <span className="flex flex-col items-start leading-none gap-0.5">
+                  <span className="text-[11.5px] font-semibold text-white/90">
+                    {fmt ? fmt.name : "Personalizado"}
+                  </span>
+                  <span className="text-[9.5px] font-mono text-gray-500 tracking-tight">
+                    {canvasSize.w} × {canvasSize.h} px
+                  </span>
+                </span>
+                <ChevronDown size={12} strokeWidth={2.2} className={`text-gray-400 group-hover:text-gray-200 shrink-0 transition-all ${showFormatMenu ? "rotate-180" : ""}`}/>
               </button>
               {showFormatMenu && (
                 <>
