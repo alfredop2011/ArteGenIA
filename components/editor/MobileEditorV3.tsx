@@ -63,6 +63,7 @@ import { supabase } from "@/lib/supabase";
 import { useLocale } from "@/hooks/useLocale";
 import { UpgradeModal, type UpgradeFeature } from "@/components/upgrade/UpgradeModal";
 import { ConfirmCreditModal } from "@/components/credits/ConfirmCreditModal";
+import AuthModal from "@/components/auth/AuthModal";
 import { useCredits } from "@/hooks/useCredits";
 import { CREDIT_COST, type CreditModule } from "@/lib/credits";
 // Z.17 — Borrador mágico/manual full-screen reutilizable desktop+mobile
@@ -95,6 +96,14 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
   // bottom-nav cuando no hay objeto seleccionado.
   const pages = useProjectPages();
   const [showPagesSheet, setShowPagesSheet] = useState(false);
+  // Z.25 — AuthModal contextual. Si el usuario intenta una accion que
+  // requiere sesion (guardar, exportar, renombrar), abrir AuthModal con
+  // titulo + subtitulo contextual y ejecutar la accion tras login.
+  const [authModalConfig, setAuthModalConfig] = useState<{
+    title: string;
+    subtitle: string;
+    onSuccess: () => void;
+  } | null>(null);
   // JSON pendiente para hidratar canvas al crearse (load mode)
   const pendingFabricJsonRef = useRef<object | null>(null);
   const [pendingProjectMeta, setPendingProjectMeta] = useState<{
@@ -109,6 +118,19 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   const { user: authUser, profile: authProfile } = useAuth();
+  /** Z.25 — Si hay sesion, ejecuta action. Si no, abre AuthModal con
+   *  titulo/subtitulo contextual y deja la action en cola para correr
+   *  tras login exitoso. Patron copiado de GeneratedEditor (desktop). */
+  const requireAuth = useCallback((
+    action: () => void,
+    opts: { title: string; subtitle: string },
+  ) => {
+    if (authUser) {
+      action();
+    } else {
+      setAuthModalConfig({ ...opts, onSuccess: action });
+    }
+  }, [authUser]);
   // Z.16.1 — declarado early porque handleRemoveBackground (más arriba en el
   // archivo que el useCredits original de Z.7) lo necesita en deps. El export
   // de Z.7 también lo usa pero reutiliza esta misma referencia.
@@ -1931,9 +1953,14 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
   }, [pages, toast, applyPageDimensions, canvasSize.w, canvasSize.h]);
 
   const handleSave = useCallback(() => {
-    if (!authUser) { toast.info(t("mobileEditor.toast.loginToSave")); return; }
-    void doSave(false);
-  }, [authUser, doSave, toast, t]);
+    requireAuth(
+      () => void doSave(false),
+      {
+        title: "Inicia sesión para guardar",
+        subtitle: "Tu flyer se guardará en Mis recursos y podrás seguir editándolo desde cualquier dispositivo.",
+      },
+    );
+  }, [requireAuth, doSave]);
 
   // Sync ref para que callbacks declaradas antes de doSave (handleChangeFormat)
   // puedan invocar la version mas reciente sin closure stale.
@@ -2130,13 +2157,17 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
   }, [canvasSize, authProfile?.plan, toast, authUser]);
 
   const handleExport = useCallback(() => {
-    // Cambio Fase D.2: el boton Exportar abre el sheet multi-formato.
-    // El sheet incluye opcion "Descargar este" (formato actual rapido) y
-    // "Descargar todos" (variantes disponibles del template).
-    // Auth se valida DENTRO de los botones de descarga (mejor UX — el
-    // usuario puede explorar formatos antes de loguearse).
-    setOpenSheet("export");
-  }, []);
+    // Z.25 — Pedir sesion ANTES de abrir el sheet. La descarga consume
+    // creditos y requiere identificar al usuario; mejor avisar de una
+    // vez que dejar al user navegar el sheet y fallar al final.
+    requireAuth(
+      () => setOpenSheet("export"),
+      {
+        title: "Inicia sesión para descargar",
+        subtitle: "Para descargar tu flyer en alta calidad y guardarlo en tu cuenta, necesitas tener sesión iniciada.",
+      },
+    );
+  }, [requireAuth]);
 
   // ─── Multi-formato exportar ─────────────────────────────────────────────
   // Renderiza una variant del template off-screen con los blockValues
@@ -2493,12 +2524,21 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
         <button
           className="flex-1 min-w-0 px-1 text-left active:bg-white/[0.04] rounded-md py-0.5"
           onClick={() => {
-            const next = window.prompt(t("mobileEditor.header.renamePromptName"), docTitle || template?.title || "");
-            if (next === null) return;
-            const trimmed = next.trim();
-            if (!trimmed) return;
-            setDocTitle(trimmed);
-            setSaveState("unsaved");
+            // Z.25 — renombrar requiere sesion (sino el rename no se guarda
+            // y se pierde al recargar). Pedimos auth ANTES de mostrar el
+            // prompt; tras login se reabre automaticamente el prompt.
+            const doRename = () => {
+              const next = window.prompt(t("mobileEditor.header.renamePromptName"), docTitle || template?.title || "");
+              if (next === null) return;
+              const trimmed = next.trim();
+              if (!trimmed) return;
+              setDocTitle(trimmed);
+              setSaveState("unsaved");
+            };
+            requireAuth(doRename, {
+              title: "Inicia sesión para renombrar",
+              subtitle: "El nombre de tu flyer se guarda en tu cuenta. Inicia sesión para no perder el cambio.",
+            });
           }}
           aria-label={t("mobileEditor.header.renameLabel")}
           title={t("mobileEditor.header.renameTitle")}
@@ -3400,6 +3440,18 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
           onSwitch={(i) => { switchToPage(i); setShowPagesSheet(false); }}
           onAdd={() => { handleAddPage(); setShowPagesSheet(false); }}
           onClose={() => setShowPagesSheet(false)}
+        />
+      )}
+
+      {/* Z.25 — AuthModal contextual. Se abre cuando el usuario intenta
+          guardar, exportar o renombrar sin sesion. Tras login exitoso
+          ejecuta la accion pendiente (onSuccess) y se cierra. */}
+      {authModalConfig && (
+        <AuthModal
+          title={authModalConfig.title}
+          subtitle={authModalConfig.subtitle}
+          onAuthSuccess={authModalConfig.onSuccess}
+          onClose={() => setAuthModalConfig(null)}
         />
       )}
 
