@@ -36,8 +36,11 @@ export default function DesktopEditorTour({ enabled = true }: Props) {
     try {
       const seen = window.localStorage.getItem(STORAGE_KEY);
       if (!seen) {
-        // Delay 1s para que el editor termine de renderizar antes del overlay
-        const t = setTimeout(() => setShow(true), 1000);
+        // UX#11 — Antes 1000ms (se percibía lento). 250ms es suficiente
+        // para esperar al primer paint del editor evitando el flash del
+        // overlay sobre un canvas a medio montar, sin que el user sienta
+        // lentitud.
+        const t = setTimeout(() => setShow(true), 250);
         return () => clearTimeout(t);
       }
     } catch {
