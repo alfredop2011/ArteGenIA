@@ -16,6 +16,7 @@ import OrganizerTypeModal from "@/components/onboarding/OrganizerTypeModal";
 import FeedbackWidget from "@/components/feedback/FeedbackWidget";
 import WelcomeChecklist from "@/components/onboarding/WelcomeChecklist";
 import { ToastProvider } from "@/lib/toast";
+import { hasFirstVictory, onFirstVictory } from "@/lib/firstVictory";
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
@@ -33,22 +34,37 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     // Lo ocultamos en rutas tecnicas (editor, upload) donde el modal
     // interrumpiria un flujo activo. Solo aparece en paginas de "consumo".
     //
+    // Acta 2026-06-17: este modal era "valor 100% para nosotros". Lo
+    // condicionamos a la PRIMERA VICTORIA (primera descarga exitosa) —
+    // pedir feedback DESPUES de dar valor convierte mucho mejor que
+    // pedirlo al instante de login.
+    //
     // `organizerAnswered` evita re-abrir el modal mientras el profile
     // todavia tiene null (entre cerrar y refresh del profile).
     const [showOrganizerModal, setShowOrganizerModal] = useState(false);
     const [organizerAnswered, setOrganizerAnswered] = useState(false);
+    const [hasVictory, setHasVictory] = useState(false);
     const isTechnicalRoute = pathname.startsWith("/editor") || pathname.startsWith("/upload");
+
+    // Lee localStorage al montar + escucha el evento custom para
+    // re-renderizar cuando el user completa su primera descarga.
+    useEffect(() => {
+        setHasVictory(hasFirstVictory());
+        return onFirstVictory(() => setHasVictory(true));
+    }, []);
+
     useEffect(() => {
         if (organizerAnswered) return;
         if (showOrganizerModal) return;
         if (loading || !user || !profile) return;
         if (profile.organizer_type !== null) return;
         if (isTechnicalRoute) return;
-        // Pequeno delay para no abrir el modal al instante de login —
-        // que el user vea brevemente la pagina antes.
-        const id = setTimeout(() => setShowOrganizerModal(true), 800);
+        if (!hasVictory) return; // gate: solo tras 1ª descarga
+        // Pequeno delay para no abrir el modal al instante de la victoria —
+        // que el user respire entre descarga y modal.
+        const id = setTimeout(() => setShowOrganizerModal(true), 1500);
         return () => clearTimeout(id);
-    }, [loading, user, profile, isTechnicalRoute, organizerAnswered, showOrganizerModal]);
+    }, [loading, user, profile, isTechnicalRoute, organizerAnswered, showOrganizerModal, hasVictory]);
 
     // Nav links — labels via t() para idiomatizar. href intacto.
     // Fase V.9 — Capas Mágicas VISIBLE para todos como teaser "Próximamente"

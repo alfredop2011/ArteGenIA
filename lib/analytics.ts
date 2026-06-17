@@ -19,6 +19,7 @@
  */
 
 import { trackEvent } from "@/components/analytics/PostHogProvider";
+import { markFirstVictory } from "@/lib/firstVictory";
 
 /** Módulos trackeados (debe coincidir con CREDIT_COST modules). */
 export type AnalyticsModule =
@@ -88,6 +89,9 @@ export function trackExportCompleted(payload: {
   source: "editor_desktop" | "editor_mobile" | "quitar_fondo";
 }) {
   trackEvent("export_completed", payload);
+  // Primera descarga = primera victoria. Desbloquea modales que dependen
+  // de "user ya recibió valor" (encuesta organizador, etc).
+  markFirstVictory();
 }
 
 // ─── 5. CREDITS_EXHAUSTED ─────────────────────────────────────────────
