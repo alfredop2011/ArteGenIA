@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   Search, SlidersHorizontal, Sparkles, ArrowRight,
@@ -47,6 +47,45 @@ function FacebookIcon({ size = 12, className = "" }: SocialIconProps) {
     <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" className={className}>
       <path d="M22 12a10 10 0 1 0-11.56 9.88V14.9H7.9V12h2.54V9.8c0-2.5 1.49-3.89 3.78-3.89 1.09 0 2.24.2 2.24.2v2.46h-1.26c-1.24 0-1.63.77-1.63 1.56V12h2.77l-.44 2.9h-2.33v6.98A10 10 0 0 0 22 12z" />
     </svg>
+  );
+}
+
+// ─── ROTATING HIGHLIGHT ─────────────────────────────────────────────────
+// Palabra final del titulo del hero ("...para tu evento") que va cambiando
+// aleatoriamente entre tipos de evento, manteniendo el mismo gradiente.
+// El cambio usa un cross-fade vertical corto; el ancho se autoajusta (es el
+// ultimo elemento de la linea, asi que no provoca saltos de layout molestos).
+function RotatingHighlight({ words }: { words: string[] }) {
+  const [idx, setIdx] = useState(0);
+  const [visible, setVisible] = useState(true);
+
+  useEffect(() => {
+    if (words.length <= 1) return;
+    const interval = setInterval(() => {
+      setVisible(false);
+      // Tras el fade-out (300ms) elegir una palabra DISTINTA al azar y fade-in.
+      setTimeout(() => {
+        setIdx(prev => {
+          let next = prev;
+          while (next === prev) next = Math.floor(Math.random() * words.length);
+          return next;
+        });
+        setVisible(true);
+      }, 300);
+    }, 2200);
+    return () => clearInterval(interval);
+  }, [words.length]);
+
+  return (
+    <span
+      className="bg-gradient-to-r from-purple-400 via-pink-400 to-amber-300 bg-clip-text text-transparent inline-block transition-all duration-300 ease-out"
+      style={{
+        opacity: visible ? 1 : 0,
+        transform: visible ? "translateY(0)" : "translateY(0.25em)",
+      }}
+    >
+      {words[idx] ?? ""}
+    </span>
   );
 }
 
@@ -170,6 +209,16 @@ export default function Home() {
 
   const cardFormat: FormatId = selectedFormat === "all" ? "square" : selectedFormat;
 
+  // Palabras que rota el highlight del hero (lista separada por comas en i18n).
+  const rotatingWords = useMemo(
+    () =>
+      t("home.hero.title.rotating")
+        .split(",")
+        .map(w => w.trim())
+        .filter(Boolean),
+    [t],
+  );
+
   return (
     <div style={{ background: "var(--home-bg)", color: "var(--home-text)" }}>
       <div className="max-w-6xl mx-auto px-3 sm:px-6 lg:px-8 pt-3 sm:pt-4 pb-4">
@@ -181,9 +230,7 @@ export default function Home() {
             <h1 className="font-black leading-[1.05] tracking-tight animate-home-fade"
                 style={{ fontSize: "clamp(1.7rem, 4.2vw, 3rem)" }}>
               {t("home.hero.title.line1")} {t("home.hero.title.line2")}{" "}
-              <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-amber-300 bg-clip-text text-transparent">
-                {t("home.hero.title.highlight")}
-              </span>
+              <RotatingHighlight words={rotatingWords} />
             </h1>
             <p className="text-xs sm:text-sm mt-2 max-w-md animate-home-fade delay-100"
                style={{ color: "var(--home-text-muted)" }}>

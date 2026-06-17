@@ -22,6 +22,7 @@ export type TranslationKey =
   | "home.hero.title.line1"
   | "home.hero.title.line2"
   | "home.hero.title.highlight"
+  | "home.hero.title.rotating"
   | "home.hero.subtitle"
   | "home.hero.cta"
   | "home.hero.cta2"
@@ -748,6 +749,7 @@ const es: Dict = {
   "home.hero.title.line1": "Plantillas listas",
   "home.hero.title.line2": "para",
   "home.hero.title.highlight": "tu evento",
+  "home.hero.title.rotating": "tu evento, tu fiesta, tu concierto, tu festival, tu boda, tu cumpleaños, tu graduación, tu negocio, tu clase, tu discoteca",
   "home.hero.subtitle": "Elige un diseño, personalízalo y descárgalo en alta calidad.",
   "home.hero.cta": "Explorar plantillas",
   "home.hero.cta2": "Ver categorías",
@@ -1463,6 +1465,7 @@ const en: Dict = {
   "home.hero.title.line1": "Ready-made templates",
   "home.hero.title.line2": "for",
   "home.hero.title.highlight": "your event",
+  "home.hero.title.rotating": "your event, your party, your concert, your festival, your wedding, your birthday, your graduation, your business, your class, your club",
   "home.hero.subtitle": "Pick a design, customize it and download in high quality.",
   "home.hero.cta": "Explore templates",
   "home.hero.cta2": "View categories",
@@ -2165,6 +2168,7 @@ const fr: Dict = {
   "home.hero.title.line1": "Modèles prêts",
   "home.hero.title.line2": "pour",
   "home.hero.title.highlight": "votre événement",
+  "home.hero.title.rotating": "votre événement, votre fête, votre concert, votre festival, votre mariage, votre anniversaire, votre remise de diplôme, votre entreprise, votre cours, votre club",
   "home.hero.subtitle": "Choisis un design, personnalise-le et télécharge-le en haute qualité.",
   "home.hero.cta": "Explorer les modèles",
   "home.hero.cta2": "Voir catégories",
@@ -2867,6 +2871,7 @@ const pt: Dict = {
   "home.hero.title.line1": "Modelos prontos",
   "home.hero.title.line2": "para",
   "home.hero.title.highlight": "o teu evento",
+  "home.hero.title.rotating": "o teu evento, a tua festa, o teu concerto, o teu festival, o teu casamento, o teu aniversário, a tua formatura, o teu negócio, a tua aula, a tua discoteca",
   "home.hero.subtitle": "Escolhe um design, personaliza-o e descarrega em alta qualidade.",
   "home.hero.cta": "Explorar modelos",
   "home.hero.cta2": "Ver categorias",
