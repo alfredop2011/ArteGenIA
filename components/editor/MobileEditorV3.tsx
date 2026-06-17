@@ -3464,6 +3464,11 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
         <UpgradeModal
           feature={upgradeFeature}
           onClose={() => setUpgradeFeature(null)}
+          nextUrl={
+            (upgradeFeature === "pdf" || upgradeFeature === "svg") && typeof window !== "undefined"
+              ? `${window.location.pathname}?download=${upgradeFeature}`
+              : undefined
+          }
         />
       )}
 

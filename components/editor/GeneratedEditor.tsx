@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback, type ReactNode } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   // Sidebar / Dock (categorías)
   LayoutGrid, Type, Sparkles as SparklesIcon, Image as ImageIcon, Mountain,
@@ -368,6 +368,7 @@ type GeneratedEditorProps = {
 
 export default function GeneratedEditor({ templateId, formatId, projectId, publishedTemplate, draftId }: GeneratedEditorProps = {}) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricRef = useRef<FabricCanvas | null>(null);
 
@@ -2448,6 +2449,32 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
   /** Wrapper publico: pide sesion → muestra modal créditos → consume → exporta.
    *  Flow: requireAuth → setPendingExportFormat (abre modal) → handleConfirmExport
    *  → consume crédito server-side → doExport(format) → descarga real. */
+  /** Auto-trigger del download si el editor carga con `?download=pdf|svg`.
+   *  Pasa cuando el user volvió del checkout Stripe tras upgradear desde el
+   *  UpgradeModal. Espera al canvas listo + plan Pro confirmado, luego dispara
+   *  exportFlyer una vez y limpia el query param para no relanzar en refresh. */
+  const autoDownloadFiredRef = useRef(false);
+  useEffect(() => {
+    if (autoDownloadFiredRef.current) return;
+    const dl = searchParams?.get("download");
+    if (dl !== "pdf" && dl !== "svg") return;
+    if (!authUser) return;
+    if (authProfile?.plan !== "pro" && authProfile?.plan !== "enterprise") return;
+    if (!fabricRef.current || !canvasSize.w) return; // canvas no listo
+    autoDownloadFiredRef.current = true;
+    // Limpiar el query (history.replaceState evita un re-render del router)
+    if (typeof window !== "undefined") {
+      const u = new URL(window.location.href);
+      u.searchParams.delete("download");
+      window.history.replaceState({}, "", u.toString());
+    }
+    // Pequeno delay para que el canvas termine de hidratarse
+    const t = setTimeout(() => {
+      setPendingExportFormat(dl as "pdf" | "svg");
+    }, 500);
+    return () => clearTimeout(t);
+  }, [searchParams, authUser, authProfile?.plan, canvasSize.w]);
+
   const exportFlyer = useCallback((format: "png" | "jpg" | "pdf" | "svg" = "png") => {
     // P1.1 — PDF/SVG son Pro features. Si el user no es Pro, abre el
     // UpgradeModal en vez del flujo de descarga.
@@ -4361,11 +4388,19 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
         />
       )}
 
-      {/* P1.1 — Modal upgrade contextual cuando un Free intenta PDF/SVG */}
+      {/* P1.1 — Modal upgrade contextual cuando un Free intenta PDF/SVG.
+          Pasamos `nextUrl` con el pathname actual + intent del download para
+          que tras pagar Stripe el user vuelva al editor donde estaba y se
+          dispare automáticamente el flow de descarga del formato deseado. */}
       {upgradeFeature && (
         <UpgradeModal
           feature={upgradeFeature}
           onClose={() => setUpgradeFeature(null)}
+          nextUrl={
+            (upgradeFeature === "pdf" || upgradeFeature === "svg") && typeof window !== "undefined"
+              ? `${window.location.pathname}?download=${upgradeFeature}`
+              : undefined
+          }
         />
       )}
 

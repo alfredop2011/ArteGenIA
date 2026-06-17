@@ -102,11 +102,21 @@ const FEATURE_CONFIG: Record<UpgradeFeature, {
 export function UpgradeModal({
   feature,
   onClose,
+  nextUrl,
 }: {
   feature: UpgradeFeature;
   onClose: () => void;
+  /** URL a la que volver tras pagar (ej. "/editor/123?download=pdf"). Si se
+   *  pasa, /pricing redirigirá ahí tras success en vez de quedarse colgado.
+   *  El caller normalmente lo construye con la URL actual + intent. */
+  nextUrl?: string;
 }) {
   const cfg = FEATURE_CONFIG[feature];
+  // Propagamos `next` al /pricing como query param. Pricing lo pasa al
+  // checkout success_url y tras pagar redirige al editor original.
+  const pricingHref = nextUrl
+    ? `/pricing?next=${encodeURIComponent(nextUrl)}`
+    : "/pricing";
 
   return (
     <>
@@ -192,7 +202,7 @@ export function UpgradeModal({
             {/* CTAs */}
             <div className="flex flex-col gap-2.5">
               <Link
-                href="/pricing"
+                href={pricingHref}
                 className="w-full text-center py-3.5 rounded-2xl bg-gradient-to-br from-purple-600 to-fuchsia-600 text-white font-black text-[14px] active:scale-[0.97] transition-transform shadow-lg shadow-purple-500/40 flex items-center justify-center gap-2"
               >
                 <Sparkles size={15} strokeWidth={2.5}/>

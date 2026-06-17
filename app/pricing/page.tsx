@@ -70,10 +70,21 @@ function PricingContent() {
       }, 2000);
       // Primer refresh inmediato (por si el webhook ya completó)
       void refreshProfile();
+
+      // Si venimos del editor con `?next=/editor/<id>?download=pdf`, esperamos
+      // 3s a que el webhook propague el plan a Pro y volvemos al editor donde
+      // el user podrá descargar lo que quería. Sin esto el user se queda en
+      // /pricing y no entiende qué hacer (acta 2026-06-17).
+      const nextUrl = sp.get("next");
+      if (nextUrl && nextUrl.startsWith("/") && !nextUrl.startsWith("//")) {
+        const t = setTimeout(() => { window.location.href = nextUrl; }, 3000);
+        return () => { clearInterval(pollId); clearTimeout(t); };
+      }
+
       return () => clearInterval(pollId);
     }
     if (canceled) toast.info("Pago cancelado — sin cargo.");
-  }, [success, canceled, successPlan, toast, refreshProfile]);
+  }, [success, canceled, successPlan, sp, toast, refreshProfile]);
 
   const [portalLoading, setPortalLoading] = useState(false);
 
@@ -127,10 +138,17 @@ function PricingContent() {
     setLoading(true);
     setLoadingPlan(plan);
     try {
+      // `next` propaga el destino post-pago (típicamente /editor/<id>?download=pdf)
+      // hasta success_url para que /pricing pueda redirigir al editor original.
+      const nextUrl = sp.get("next");
       const res = await fetch("/api/stripe/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan, interval: billingInterval }),
+        body: JSON.stringify({
+          plan,
+          interval: billingInterval,
+          ...(nextUrl ? { next: nextUrl } : {}),
+        }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));

@@ -28,14 +28,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Inicia sesion" }, { status: 401 });
     }
 
-    // Acepta body { plan: "pro" | "enterprise", interval: "month" | "year" }
+    // Acepta body { plan: "pro" | "enterprise", interval: "month" | "year", next?: string }
     // Default: pro + month (back-compat con clientes antiguos sin interval).
     let plan: PlanKey = "pro";
     let interval: "month" | "year" = "month";
+    let next: string | null = null;
     try {
       const body = await req.json().catch(() => ({}));
       if (body?.plan === "enterprise") plan = "enterprise";
       if (body?.interval === "year") interval = "year";
+      // `next`: URL interna a la que volver tras pagar. Solo rutas relativas
+      // empezando por "/" para evitar open redirect.
+      if (typeof body?.next === "string" && body.next.startsWith("/") && !body.next.startsWith("//")) {
+        next = body.next;
+      }
     } catch {}
 
     // Fase T.11 — Enterprise temporalmente bloqueado (mailto teaser en
@@ -80,8 +86,8 @@ export async function POST(req: NextRequest) {
         metadata: { supabase_user_id: user.id, requested_plan: plan, interval },
         ...(useTrial ? { trial_period_days: trialDays } : {}),
       },
-      success_url: `${baseUrl}/pricing?success=1&plan=${plan}&interval=${interval}&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${baseUrl}/pricing?canceled=1`,
+      success_url: `${baseUrl}/pricing?success=1&plan=${plan}&interval=${interval}&session_id={CHECKOUT_SESSION_ID}${next ? `&next=${encodeURIComponent(next)}` : ""}`,
+      cancel_url: `${baseUrl}/pricing?canceled=1${next ? `&next=${encodeURIComponent(next)}` : ""}`,
       allow_promotion_codes: true,
       billing_address_collection: "auto",
     });
