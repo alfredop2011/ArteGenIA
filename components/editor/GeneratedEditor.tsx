@@ -66,6 +66,7 @@ import ColorPickerPopover from "@/components/editor/ColorPickerPopover";
 import KeyboardShortcutsModal from "@/components/editor/KeyboardShortcutsModal";
 import FontPickerPopover from "@/components/editor/FontPickerPopover";
 import PostDownloadModal from "@/components/editor/PostDownloadModal";
+import { UpgradeModal, type UpgradeFeature } from "@/components/upgrade/UpgradeModal";
 import { FEATURES } from "@/lib/features";
 import { ConfirmCreditModal } from "@/components/credits/ConfirmCreditModal";
 import { useCredits } from "@/hooks/useCredits";
@@ -385,6 +386,14 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   // PostDownload modal — guarda dataURL para reuso en compartir/copiar
   const [postDownload, setPostDownload] = useState<{ dataUrl: string; format: "png" | "jpg" } | null>(null);
+  /** P1.1 — Gate Pro para PDF/SVG. Mismo patrón que MobileEditorV3.
+   *  Devuelve false si el plan no es Pro/Enterprise y abre el UpgradeModal. */
+  const [upgradeFeature, setUpgradeFeature] = useState<UpgradeFeature | null>(null);
+  const requirePro = (feature: UpgradeFeature): boolean => {
+    if (authProfile?.plan === "pro" || authProfile?.plan === "enterprise") return true;
+    setUpgradeFeature(feature);
+    return false;
+  };
   const [docTitle, setDocTitle] = useState("Diseño sin título");
   const [viewMode, setViewMode] = useState<ViewMode>("sidebar");
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
@@ -2176,13 +2185,41 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
   // Logica pura de export: hace toDataURL, aplica marca de agua si el usuario
   // es free, y dispara la descarga. NO checkea sesion (eso lo hace el wrapper
   // publico `exportFlyer`).
-  const doExport = useCallback(async (format: "png" | "jpg" = "png") => {
+  const doExport = useCallback(async (format: "png" | "jpg" | "pdf" | "svg" = "png") => {
     const canvas = fabricRef.current;
     if (!canvas) return;
+
+    // P1.1 — SVG: Fabric escribe XML directo desde el grafo de objetos, sin
+    // rasterizar. No reseteamos zoom; toSVG() ignora el viewport del canvas.
+    if (format === "svg") {
+      const svg = canvas.toSVG();
+      const blob = new Blob([svg], { type: "image/svg+xml;charset=utf-8" });
+      const blobUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.download = "artegenia-flyer.svg";
+      link.href = blobUrl;
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
+      toast.success("SVG descargado");
+      void import("@/lib/analytics").then(m => {
+        m.trackExportCompleted({
+          format: "svg",
+          credits_consumed: CREDIT_COST.download_svg,
+          has_ai_layers: false,
+          plan: (authProfile?.plan as "free" | "pro" | "enterprise") ?? "free",
+          source: "editor_desktop",
+        });
+      });
+      return;
+    }
+
+    // PNG/JPG/PDF comparten el rasterizado base. Reseteamos zoom para que
+    // toDataURL no exporte la versión zoomed del viewport.
     const currentZoom = canvas.getZoom();
     canvas.setZoom(1);
     canvas.setDimensions({ width: canvasSize.w, height: canvasSize.h });
-    const rawDataUrl = canvas.toDataURL({ format: format === "jpg" ? "jpeg" : "png", quality: 0.95, multiplier: 1 });
+    const rasterFormat: "png" | "jpeg" = format === "jpg" ? "jpeg" : "png";
+    const rawDataUrl = canvas.toDataURL({ format: rasterFormat, quality: 0.95, multiplier: 1 });
     canvas.setZoom(currentZoom);
     canvas.setDimensions({ width: canvasSize.w * currentZoom, height: canvasSize.h * currentZoom });
     canvas.renderAll();
@@ -2197,6 +2234,29 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
       } catch (err) {
         console.warn("Watermark failed, fallback a imagen sin marca:", err);
       }
+    }
+
+    // P1.1 — PDF: jspdf con tamaño físico real del canvas (pixels → mm).
+    if (format === "pdf") {
+      const { jsPDF } = await import("jspdf");
+      const pxToMm = 25.4 / 96;
+      const wMm = canvasSize.w * pxToMm;
+      const hMm = canvasSize.h * pxToMm;
+      const orientation = wMm >= hMm ? "landscape" : "portrait";
+      const pdf = new jsPDF({ orientation, unit: "mm", format: [wMm, hMm] });
+      pdf.addImage(finalDataUrl, "PNG", 0, 0, wMm, hMm);
+      pdf.save("artegenia-flyer.pdf");
+      toast.success("PDF descargado");
+      void import("@/lib/analytics").then(m => {
+        m.trackExportCompleted({
+          format: "pdf",
+          credits_consumed: CREDIT_COST.download_pdf,
+          has_ai_layers: false,
+          plan: (authProfile?.plan as "free" | "pro" | "enterprise") ?? "free",
+          source: "editor_desktop",
+        });
+      });
+      return;
     }
 
     const link = document.createElement("a");
@@ -2237,7 +2297,7 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
   // Fase Z.7 — modal de confirmación de crédito antes de export.
   // PNG/JPG = 1 crédito (CREDIT_COST.download_png).
   const credits = useCredits();
-  const [pendingExportFormat, setPendingExportFormat] = useState<"png" | "jpg" | null>(null);
+  const [pendingExportFormat, setPendingExportFormat] = useState<"png" | "jpg" | "pdf" | "svg" | null>(null);
 
   // ─── Z.16 — Quitar fondo en imagen del canvas ──────────────────────────────
   // Estado del objeto pendiente + objeto procesando (para overlay loading).
@@ -2386,7 +2446,11 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
   /** Wrapper publico: pide sesion → muestra modal créditos → consume → exporta.
    *  Flow: requireAuth → setPendingExportFormat (abre modal) → handleConfirmExport
    *  → consume crédito server-side → doExport(format) → descarga real. */
-  const exportFlyer = useCallback((format: "png" | "jpg" = "png") => {
+  const exportFlyer = useCallback((format: "png" | "jpg" | "pdf" | "svg" = "png") => {
+    // P1.1 — PDF/SVG son Pro features. Si el user no es Pro, abre el
+    // UpgradeModal en vez del flujo de descarga.
+    if (format === "pdf" && !requirePro("pdf")) return;
+    if (format === "svg" && !requirePro("svg")) return;
     requireAuth(
       () => setPendingExportFormat(format),
       {
@@ -2394,13 +2458,17 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
         subtitle: "Inicia sesión para descargar. Es gratis.",
       },
     );
-  }, [requireAuth]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [requireAuth, authProfile?.plan]);
 
-  /** Tras confirmar modal: consume crédito y dispara descarga. */
+  /** Tras confirmar modal: consume crédito según formato y dispara descarga. */
   const handleConfirmExport = useCallback(async () => {
     if (!pendingExportFormat) return;
-    // Mismo CREDIT_COST.download_png para PNG/JPG (políticamente equivalente)
-    const moduleKey: CreditModule = "download_png";
+    // P1.1 — coste por formato. PDF/SVG = 3 créditos, PNG/JPG = 1.
+    const moduleKey: CreditModule =
+      pendingExportFormat === "pdf" ? "download_pdf" :
+      pendingExportFormat === "svg" ? "download_svg" :
+      "download_png";
     const result = await credits.consume(moduleKey, { format: pendingExportFormat });
     if (!result.success) {
       toast.error("Sin créditos suficientes");
@@ -2981,11 +3049,22 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
             <span className="hidden sm:inline">Exportar</span>
           </button>
           {/* Dropdown hover - SOLO DESKTOP */}
-          <div className="hidden md:block absolute right-0 top-full mt-1 w-36 ag-glass border border-white/10 rounded-xl shadow-2xl overflow-hidden opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-all z-50">
-            {[["PNG","png"],["JPG","jpg"]].map(([label, fmt]) => (
-              <button key={fmt} onClick={() => exportFlyer(fmt as "png"|"jpg")}
-                className="w-full px-4 py-2.5 text-left text-xs text-gray-300 hover:bg-white/8 hover:text-white transition-all">
-                Exportar {label}
+          <div className="hidden md:block absolute right-0 top-full mt-1 w-44 ag-glass border border-white/10 rounded-xl shadow-2xl overflow-hidden opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-all z-50">
+            {([
+              { label: "PNG", fmt: "png", sub: null, pro: false },
+              { label: "JPG", fmt: "jpg", sub: null, pro: false },
+              { label: "PDF imprenta", fmt: "pdf", sub: "Pro · alta resolución", pro: true },
+              { label: "SVG vectorial", fmt: "svg", sub: "Pro · escalable", pro: true },
+            ] as const).map(({ label, fmt, sub, pro }) => (
+              <button key={fmt} onClick={() => exportFlyer(fmt)}
+                className="w-full px-4 py-2.5 text-left hover:bg-white/8 transition-all flex items-center justify-between gap-2">
+                <span className="flex flex-col">
+                  <span className="text-xs text-gray-300 hover:text-white">Exportar {label}</span>
+                  {sub && <span className="text-[10px] text-gray-500">{sub}</span>}
+                </span>
+                {pro && authProfile?.plan !== "pro" && authProfile?.plan !== "enterprise" && (
+                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300">PRO</span>
+                )}
               </button>
             ))}
           </div>
@@ -4280,6 +4359,14 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
         />
       )}
 
+      {/* P1.1 — Modal upgrade contextual cuando un Free intenta PDF/SVG */}
+      {upgradeFeature && (
+        <UpgradeModal
+          feature={upgradeFeature}
+          onClose={() => setUpgradeFeature(null)}
+        />
+      )}
+
       {/* Fase Z.7 — Modal de confirmación de crédito antes de export.
           Z.25 — anade bloque de detalles para que el user sepa formato +
           dimensiones + tipo de archivo antes de gastar el credito. */}
@@ -4367,6 +4454,8 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
             // ── Exportar ────────────────────────────────────
             { id: "export-png", label: "Exportar como PNG", desc: "Descargar imagen PNG", group: "Exportar", icon: <Download className="w-4 h-4" strokeWidth={2} />, run: () => exportFlyer("png") },
             { id: "export-jpg", label: "Exportar como JPG", desc: "Descargar imagen JPG", group: "Exportar", icon: <Download className="w-4 h-4" strokeWidth={2} />, run: () => exportFlyer("jpg") },
+            { id: "export-pdf", label: "Exportar como PDF (Pro)", desc: "PDF imprenta · 3 créditos", group: "Exportar", icon: <Download className="w-4 h-4" strokeWidth={2} />, run: () => exportFlyer("pdf") },
+            { id: "export-svg", label: "Exportar como SVG (Pro)", desc: "Vectorial escalable · 3 créditos", group: "Exportar", icon: <Download className="w-4 h-4" strokeWidth={2} />, run: () => exportFlyer("svg") },
 
             // ── Navegación ────────────────────────────────────
             { id: "go-projects", label: "Mis diseños", desc: "Ver mis diseños guardados", group: "Navegación", icon: <FolderOpen className="w-4 h-4" strokeWidth={2} />, run: () => router.push("/projects") },
