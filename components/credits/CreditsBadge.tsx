@@ -40,19 +40,19 @@ export function CreditsBadge({ plan }: { plan?: string | null }) {
       onClick={handleClick}
       className={`flex items-center gap-1.5 sm:gap-2 border rounded-full px-2 sm:px-3 py-1 text-xs transition-colors ${
         low
-          ? "border-amber-500/40 bg-amber-500/5 text-amber-200 hover:bg-amber-500/10"
-          : "border-white/10 text-gray-300 hover:bg-white/[0.04]"
+          ? "border-amber-500/40 bg-amber-500/10 text-amber-700"
+          : "border-ag text-ag-muted hover:bg-ag-card"
       }`}
       title={low ? `Pocos créditos — sube a Pro para más` : `${current} créditos disponibles`}
     >
       <Zap
         size={14}
         strokeWidth={2.2}
-        className={low ? "text-amber-400 fill-amber-400" : "text-yellow-400 fill-yellow-400"}
+        className={low ? "text-amber-500 fill-amber-500" : "text-amber-500 fill-amber-500"}
       />
-      <span className="font-bold text-white">
+      <span className="font-bold text-ag-primary">
         {current}
-        <span className="hidden sm:inline text-gray-400 font-normal">/{grant}</span>
+        <span className="hidden sm:inline text-ag-soft font-normal">/{grant}</span>
       </span>
     </Link>
   );
