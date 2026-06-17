@@ -79,24 +79,42 @@ export function useProjectPages() {
     return json;
   }, []);
 
+  /** Z.25 — captura un thumbnail JPEG inline para mostrar en el
+   *  PagesSheet. Muy chico (max 200px en el lado mas largo) para no
+   *  inflar el state. Quality 0.6 es suficiente para una miniatura. */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const captureThumbnail = useCallback((canvas: any): string | undefined => {
+    try {
+      const w = canvas.getWidth();
+      const h = canvas.getHeight();
+      if (!w || !h) return undefined;
+      const maxSide = 200;
+      const scale = maxSide / Math.max(w, h);
+      return canvas.toDataURL({ format: "jpeg", quality: 0.6, multiplier: scale });
+    } catch {
+      return undefined;
+    }
+  }, []);
+
   /** Cambia a otra página. Serializa el canvas actual antes de cargar la
    *  nueva, así no se pierde el trabajo. */
   const switchTo = useCallback(
     (index: number, canvas: Canvas | null) => {
       if (index < 0 || index >= pages.length) return;
       if (index === activeIndex) return;
-      // Serializar la activa preservando width/height/background
+      // Serializar la activa preservando width/height/background + thumbnail
       if (canvas) {
         const fabricJson = serializeCanvasFull(canvas);
+        const thumbnail = captureThumbnail(canvas);
         setPages((prev) =>
-          prev.map((p, i) => (i === activeIndex ? { ...p, fabric: fabricJson } : p)),
+          prev.map((p, i) => (i === activeIndex ? { ...p, fabric: fabricJson, thumbnail } : p)),
         );
       }
       // Preparar la nueva para que el editor la cargue en su useEffect
       pendingFabricRef.current = pages[index]?.fabric ?? null;
       setActiveIndex(index);
     },
-    [activeIndex, pages, serializeCanvasFull],
+    [activeIndex, pages, serializeCanvasFull, captureThumbnail],
   );
 
   /** Añade una página vacía al final con las dimensiones de la activa. */
@@ -110,13 +128,14 @@ export function useProjectPages() {
         height,
         name || `Página ${pages.length + 1}`,
       );
-      // Serializar la activa antes de cambiar — usar serializeCanvasFull
-      // para preservar dimensiones y background.
+      // Serializar la activa antes de cambiar — preservar dimensiones,
+      // background y CAPTURAR thumbnail para que se vea en el PagesSheet.
       if (canvas) {
         const fabricJson = serializeCanvasFull(canvas);
+        const thumbnail = captureThumbnail(canvas);
         setPages((prev) => {
           const updated = prev.map((p, i) =>
-            i === activeIndex ? { ...p, fabric: fabricJson } : p,
+            i === activeIndex ? { ...p, fabric: fabricJson, thumbnail } : p,
           );
           return [...updated, newPage];
         });
@@ -126,7 +145,7 @@ export function useProjectPages() {
       pendingFabricRef.current = newPage.fabric;
       setActiveIndex(pages.length); // será el nuevo último índice
     },
-    [activeIndex, pages, serializeCanvasFull],
+    [activeIndex, pages, serializeCanvasFull, captureThumbnail],
   );
 
   /** Duplica la página dada (o la activa si no se especifica). */
@@ -184,6 +203,20 @@ export function useProjectPages() {
     setPages((prev) => prev.map((p, i) => (i === index ? { ...p, name: name.trim() || p.name } : p)));
   }, []);
 
+  /** Z.25 — Actualiza el thumbnail de la pagina activa SIN cambiar de pagina.
+   *  Util al abrir el PagesSheet: la pagina actual no tiene thumbnail hasta
+   *  que cambias a otra. Llamar antes de mostrar el sheet para que el
+   *  usuario vea siempre la version mas reciente. */
+  const refreshActiveThumbnail = useCallback(
+    (canvas: Canvas | null) => {
+      if (!canvas) return;
+      const thumbnail = captureThumbnail(canvas);
+      if (!thumbnail) return;
+      setPages((prev) => prev.map((p, i) => (i === activeIndex ? { ...p, thumbnail } : p)));
+    },
+    [activeIndex, captureThumbnail],
+  );
+
   /** Devuelve el JSON listo para guardar en Supabase. Llamar antes de
    *  cada save con el canvas activo para capturar las ediciones. */
   const serializeForSave = useCallback(
@@ -218,6 +251,7 @@ export function useProjectPages() {
     duplicate,
     remove,
     rename,
+    refreshActiveThumbnail,
     serializeForSave,
     consumePendingFabric,
   };

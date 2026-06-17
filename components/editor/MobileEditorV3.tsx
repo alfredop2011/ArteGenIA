@@ -2797,7 +2797,12 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
             }
             label="Páginas"
             active={showPagesSheet}
-            onClick={() => setShowPagesSheet(true)}
+            onClick={() => {
+              // Z.25 — capturar thumbnail de la pagina activa antes de abrir
+              // el sheet, para que el user vea la version mas reciente.
+              pages.refreshActiveThumbnail(fabricRef.current);
+              setShowPagesSheet(true);
+            }}
           />
         </nav>
       )}
@@ -3292,7 +3297,7 @@ function ChipBtn({
 function PagesSheet({
   pages, activeIndex, onSwitch, onAdd, onClose,
 }: {
-  pages: Array<{ name: string; width: number; height: number }>;
+  pages: Array<{ name: string; width: number; height: number; thumbnail?: string }>;
   activeIndex: number;
   onSwitch: (index: number) => void;
   onAdd: () => void;
@@ -3335,13 +3340,26 @@ function PagesSheet({
                     : "bg-white/[0.03] border-white/[0.06] active:bg-white/[0.08]"
                 }`}
               >
-                {/* Thumbnail placeholder (proporción real) */}
+                {/* Z.25 — Thumbnail real si esta disponible.
+                    El thumbnail se captura en switchTo/addPage del hook
+                    useProjectPages. La primera vez que abres una pagina
+                    nueva-no-visitada no hay thumbnail y se muestra placeholder. */}
                 <div
-                  className={`w-12 shrink-0 rounded-md border ${
+                  className={`w-12 shrink-0 rounded-md border overflow-hidden ${
                     isActive ? "border-purple-400/60 bg-purple-500/10" : "border-white/10 bg-white/[0.04]"
                   }`}
                   style={{ aspectRatio: `${p.width}/${p.height}` }}
-                />
+                >
+                  {p.thumbnail && (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img
+                      src={p.thumbnail}
+                      alt={p.name}
+                      className="w-full h-full object-contain"
+                      draggable={false}
+                    />
+                  )}
+                </div>
                 <div className="flex-1 min-w-0">
                   <p className={`text-[13px] font-bold truncate ${isActive ? "text-purple-200" : "text-gray-200"}`}>
                     {p.name || `Página ${i + 1}`}

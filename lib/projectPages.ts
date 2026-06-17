@@ -32,6 +32,11 @@ export type PageData = {
    *  comparten dimensiones; W.2 permitirá distintos formatos por página. */
   width: number;
   height: number;
+  /** Z.25 — Thumbnail JPEG inline (dataURL) capturado del canvas al
+   *  cambiar de pagina o guardar. Se renderiza en el PagesSheet para
+   *  que el user vea visualmente cada pagina antes de saltar a ella.
+   *  Optional: si no esta presente, se muestra placeholder vacio. */
+  thumbnail?: string;
 };
 
 export type ProjectPages = {
