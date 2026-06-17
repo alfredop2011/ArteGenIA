@@ -2924,7 +2924,17 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
                 <SubToolBtnIcon node={<Replace size={18} strokeWidth={2.2}/>} label={t("mobileEditor.subtool.replace")} active={activeSubTool === "reemplazar"} onClick={() => setActiveSubTool(s => s === "reemplazar" ? null : "reemplazar")}/>
                 <SubToolBtnIcon node={<Crop size={18} strokeWidth={2.2}/>} label={t("mobileEditor.subtool.crop")} active={activeSubTool === "recortar"} onClick={() => setActiveSubTool(s => s === "recortar" ? null : "recortar")}/>
                 <SubToolBtnIcon node={<Sliders size={18} strokeWidth={2.2}/>} label={t("mobileEditor.subtool.filters")} active={activeSubTool === "filtros"} onClick={() => setActiveSubTool(s => s === "filtros" ? null : "filtros")}/>
-                <SubToolBtnIcon node={<Eraser size={18} strokeWidth={2.2}/>} label={t("mobileEditor.subtool.removeBg")} active={activeSubTool === "quitar-fondo"} onClick={() => setActiveSubTool(s => s === "quitar-fondo" ? null : "quitar-fondo")}/>
+                <SubToolBtnIcon node={<Eraser size={18} strokeWidth={2.2}/>} label={t("mobileEditor.subtool.removeBg")} active={activeSubTool === "quitar-fondo"} onClick={() => {
+                  if (!authUser) {
+                    setAuthModalConfig({
+                      title: "Inicia sesión para Quitar fondo",
+                      subtitle: "Quitar fondo usa IA y consume 1 crédito. Crea una cuenta gratis (10 créditos al registrarte) para probarlo.",
+                      onSuccess: () => setActiveSubTool("quitar-fondo"),
+                    });
+                    return;
+                  }
+                  setActiveSubTool(s => s === "quitar-fondo" ? null : "quitar-fondo");
+                }}/>
                 {/* Z.17 — Borrador mágico/manual full-screen */}
                 <SubToolBtnIcon node={<Brush size={18} strokeWidth={2.2}/>} label="Refinar" active={false} onClick={() => { void openBrushEraser(); }}/>
                 {/* Capas Mágicas (Fase V.1) — convierte foto en plantilla editable.
