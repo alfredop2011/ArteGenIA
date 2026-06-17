@@ -1,13 +1,14 @@
 import { describe, it, expect } from "vitest";
 import { shouldWatermark } from "./applyWatermark";
 
-describe("shouldWatermark (V8.2 activado)", () => {
-  // WATERMARK_ENABLED esta en true desde V8.2.
-  // - free / null / undefined / desconocido → watermark (true)
-  // - pro / enterprise → sin watermark (false)
+describe("shouldWatermark (Fase T.12 — desactivado para todos los planes)", () => {
+  // WATERMARK_ENABLED esta en false desde Fase T.12.
+  // Decisión de producto: "Sin watermark, siempre" como diferenciador vs Canva.
+  // Por tanto shouldWatermark() devuelve false para CUALQUIER plan/input.
+  // Estos tests fijan ese contrato; al reactivar el flag habrá que revisarlos.
 
-  it("free → watermark (incentivo para upgrade)", () => {
-    expect(shouldWatermark("free")).toBe(true);
+  it("free → sin watermark (Fase T.12)", () => {
+    expect(shouldWatermark("free")).toBe(false);
   });
 
   it("pro → sin watermark", () => {
@@ -18,13 +19,13 @@ describe("shouldWatermark (V8.2 activado)", () => {
     expect(shouldWatermark("enterprise")).toBe(false);
   });
 
-  it("null/undefined → watermark por seguridad (asume free)", () => {
-    expect(shouldWatermark(null)).toBe(true);
-    expect(shouldWatermark(undefined)).toBe(true);
-    expect(shouldWatermark()).toBe(true);
+  it("null/undefined → sin watermark", () => {
+    expect(shouldWatermark(null)).toBe(false);
+    expect(shouldWatermark(undefined)).toBe(false);
+    expect(shouldWatermark()).toBe(false);
   });
 
-  it("string desconocida → watermark (no fallar a free)", () => {
-    expect(shouldWatermark("custom_plan_unknown")).toBe(true);
+  it("string desconocida → sin watermark", () => {
+    expect(shouldWatermark("custom_plan_unknown")).toBe(false);
   });
 });
