@@ -3,7 +3,7 @@
 import { useLocale } from "@/hooks/useLocale";
 import LegalTranslationPending from "@/components/layout/LegalTranslationPending";
 
-const LAST_UPDATED = "12 de junio de 2026";
+const LAST_UPDATED = "17 de junio de 2026";
 const CONTACT_EMAIL = "hola@artegenia.com";
 
 /**
@@ -231,7 +231,47 @@ function TermsContentES() {
         derechos como consumidor por defectos del servicio.
       </p>
 
-      <h2>13. Reembolsos</h2>
+      <h2>13. Créditos: consumo, caducidad y cambios de plan</h2>
+      <p>
+        ArteGenIA utiliza un sistema interno de <strong>créditos</strong> que
+        se consumen al ejecutar funciones IA (quitar fondo, capas mágicas,
+        generación, etc.) y descargas premium (PDF imprenta, SVG vectorial).
+        Los créditos:
+      </p>
+      <ul>
+        <li>
+          <strong>No son dinero ni canjeables por dinero.</strong> Tienen
+          valor exclusivamente dentro de ArteGenIA y no pueden transferirse
+          a otra cuenta ni reembolsarse en metálico.
+        </li>
+        <li>
+          <strong>Se renuevan cada mes natural</strong> al iniciar tu periodo
+          de facturación. Los créditos no usados del mes anterior caducan
+          con las siguientes excepciones de rollover:
+          <ul>
+            <li>Plan Free: sin rollover. Los créditos no usados se pierden cada mes.</li>
+            <li>Plan Pro y Enterprise: se conservan hasta un máximo de 50 créditos del mes anterior. El exceso caduca.</li>
+          </ul>
+        </li>
+        <li>
+          <strong>Al bajar de plan</strong> (cancelar Pro/Enterprise, o
+          cambiar a uno inferior), el saldo se ajusta al límite del nuevo
+          plan. Ejemplo: si tienes 80 créditos Pro y pasas a Free (cap 10),
+          conservas 10 créditos. El exceso no se reembolsa en dinero ni en
+          ninguna otra forma.
+        </li>
+        <li>
+          <strong>Al subir de plan</strong>, recibes el grant del nuevo plan
+          si tu saldo era inferior. No se duplican créditos.
+        </li>
+        <li>
+          Si una acción IA falla por causas atribuibles a ArteGenIA tras
+          haber consumido créditos, te los <strong>devolvemos automáticamente
+          al saldo</strong> (refund automático).
+        </li>
+      </ul>
+
+      <h2>14. Reembolsos</h2>
       <p>
         Por la naturaleza digital del servicio, <strong>no se realizan
         reembolsos por períodos parciales</strong> ni por funciones no
@@ -253,7 +293,7 @@ function TermsContentES() {
         motivo. Respondemos en un plazo máximo de 14 días naturales.
       </p>
 
-      <h2>14. Modificaciones del servicio</h2>
+      <h2>15. Modificaciones del servicio</h2>
       <p>
         Podemos añadir, modificar o eliminar funciones en cualquier momento.
         Si los cambios afectan sustancialmente tus derechos como usuario de
@@ -261,7 +301,7 @@ function TermsContentES() {
         cancelar sin penalización antes de que entren en vigor.
       </p>
 
-      <h2>15. Cancelación de cuenta por nosotros</h2>
+      <h2>16. Cancelación de cuenta por nosotros</h2>
       <p>
         Nos reservamos el derecho de suspender o cerrar tu cuenta sin previo
         aviso si incumples el uso aceptable (sección 4), abusas de funciones
@@ -276,14 +316,14 @@ function TermsContentES() {
         <a href="/privacidad">Política de Privacidad</a>.
       </p>
 
-      <h2>16. Cambios en estos términos</h2>
+      <h2>17. Cambios en estos términos</h2>
       <p>
         Podemos actualizar estos términos. La fecha de &quot;última
         actualización&quot; al inicio refleja la versión vigente. Cambios
         sustanciales se notificarán por email con 15 días de antelación.
       </p>
 
-      <h2>17. Ley aplicable y jurisdicción</h2>
+      <h2>18. Ley aplicable y jurisdicción</h2>
       <p>
         Estos términos se rigen por la legislación española. Cualquier
         controversia se someterá a los Juzgados y Tribunales del domicilio
@@ -295,7 +335,7 @@ function TermsContentES() {
         <a href="https://ec.europa.eu/consumers/odr/" target="_blank" rel="noopener noreferrer">ec.europa.eu/consumers/odr</a>.
       </p>
 
-      <h2>18. Contacto</h2>
+      <h2>19. Contacto</h2>
       <p>
         ¿Dudas sobre estos términos? Escríbenos a{" "}
         <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>.

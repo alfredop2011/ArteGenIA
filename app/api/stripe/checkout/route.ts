@@ -90,6 +90,14 @@ export async function POST(req: NextRequest) {
       cancel_url: `${baseUrl}/pricing?canceled=1${next ? `&next=${encodeURIComponent(next)}` : ""}`,
       allow_promotion_codes: true,
       billing_address_collection: "auto",
+      // Cumplimiento UE/España (Art. 102-103 TRLGDCU): el user debe aceptar
+      // expresamente los Términos antes de pagar. Sin este consentimiento
+      // explícito + el reconocimiento de pérdida del derecho de desistimiento
+      // (sección 12 de /terminos), nuestra excepción al desistimiento no
+      // sería oponible legalmente. Stripe muestra el checkbox automático
+      // con link a la política configurada en Dashboard → Settings →
+      // Branding → Public details → Terms of service URL.
+      consent_collection: { terms_of_service: "required" },
     });
 
     if (!session.url) {
