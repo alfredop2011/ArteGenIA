@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import sharp from "sharp";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
-import { uploadToR2 } from "@/lib/r2";
+import { uploadToR2, deleteFromR2 } from "@/lib/r2";
 
 /**
  * POST /api/collaborators/manual
@@ -85,6 +85,12 @@ export async function POST(req: NextRequest) {
 
     if (error || !data) {
       console.error("[manual POST]", error);
+      // Limpiar el archivo R2 que acabamos de subir — el INSERT falló y
+      // nadie va a referenciarlo. Best-effort: si el DELETE falla, log
+      // y seguimos (el cron de cleanup lo pescará luego).
+      try { await deleteFromR2(key); } catch (e) {
+        console.warn("[manual POST] huérfano R2 sin borrar:", key, e);
+      }
       return NextResponse.json({ error: "No se pudo guardar" }, { status: 500 });
     }
 
