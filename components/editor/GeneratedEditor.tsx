@@ -35,6 +35,8 @@ import {
   Eraser,
   // Z.17 — Borrador mágico/manual
   Brush,
+  // Z.25 — Dropdown cambiar formato (ChevronDown ya importado arriba)
+  Check,
 } from "lucide-react";
 import type { Canvas as FabricCanvas, FabricObject, IText } from "fabric";
 import {
@@ -47,7 +49,7 @@ import {
   Path as FabricPath,
 } from "fabric";
 import { templates, type Template, type TemplateVariant, type AudienceId, getVariant } from "@/data/templates";
-import { type FormatId, getFormatByDimensions } from "@/data/formats";
+import { type FormatId, getFormatByDimensions, FORMATS, PUBLIC_FORMATS } from "@/data/formats";
 import { applyTemplateLayers } from "@/lib/fabricApplyTemplateLayers";
 import { ArtistLibraryModal, type ArtistEntry } from "@/components/wizard/ArtistLibrary";
 import { useProjects } from "@/hooks/useProjects";
@@ -419,6 +421,8 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
   const { toast } = useToast();
   const [saveState, setSaveState] = useState<SaveState>("saved");
   const [canvasSize, setCanvasSize] = useState({ w: 1080, h: 1350 });
+  // Z.25 — dropdown para cambiar formato en vivo (desktop editor)
+  const [showFormatMenu, setShowFormatMenu] = useState(false);
   // Fase V.7 — Stickers IA (personas extraídas por SAM-3 al usar Capas
   // Mágicas). Se cargan desde fabric_json.__magicStickers del proyecto.
   // Se muestran en panel "IA" del sidebar — click añade al canvas.
@@ -2743,26 +2747,81 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
           </div>
         )}
 
-        {/* Size badge - oculto en admin (se ve en meta panel).
-            Z.25 — anade nombre semantico del formato (ej "Post de Instagram")
-            antes de las dimensiones tecnicas para que el usuario entienda
-            para que red social esta editando. Si las dimensiones no coinciden
-            con ningun formato conocido, cae al fallback de solo pixeles. */}
+        {/* Size badge clickable - oculto en admin (se ve en meta panel).
+            Z.25 — boton con dropdown para cambiar formato. Si la plantilla
+            tiene variantes para ese formato, navega al editor con el formato
+            nuevo (preserva trabajo guardando antes si hay cambios). Si no
+            tiene variante, muestra "no disponible" en el item del menu. */}
         {!isAdminMode && (() => {
           const fmt = getFormatByDimensions(canvasSize.w, canvasSize.h);
           const FmtIcon = fmt?.icon;
           return (
-            <div className="hidden md:flex items-center gap-1.5 text-[11px] text-gray-300 border border-white/[0.08] bg-white/[0.03] rounded-lg px-2.5 py-1 ml-1"
-                 title={fmt ? `${fmt.name} · ${fmt.subtitle}` : `${canvasSize.w} × ${canvasSize.h} px`}>
-              {FmtIcon && <FmtIcon size={12} strokeWidth={2} className="text-purple-300 shrink-0"/>}
-              {fmt ? (
+            <div className="hidden md:flex relative ml-1">
+              <button
+                onClick={() => setShowFormatMenu((v) => !v)}
+                className="flex items-center gap-1.5 text-[11px] text-gray-200 border border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.06] rounded-lg px-2.5 py-1 transition-colors"
+                title={fmt ? `${fmt.name} · ${fmt.subtitle} — Click para cambiar` : `${canvasSize.w} × ${canvasSize.h} px — Click para cambiar formato`}>
+                {FmtIcon && <FmtIcon size={12} strokeWidth={2} className="text-purple-300 shrink-0"/>}
+                {fmt ? (
+                  <>
+                    <span className="font-medium">{fmt.name}</span>
+                    <span className="text-gray-500">·</span>
+                    <span className="text-gray-500">{canvasSize.w} × {canvasSize.h}</span>
+                  </>
+                ) : (
+                  <span>{canvasSize.w} × {canvasSize.h} px</span>
+                )}
+                <ChevronDown size={11} strokeWidth={2.2} className={`text-gray-400 shrink-0 transition-transform ${showFormatMenu ? "rotate-180" : ""}`}/>
+              </button>
+              {showFormatMenu && (
                 <>
-                  <span className="font-medium">{fmt.name}</span>
-                  <span className="text-gray-500">·</span>
-                  <span className="text-gray-500">{canvasSize.w} × {canvasSize.h}</span>
+                  <div className="fixed inset-0 z-40" onClick={() => setShowFormatMenu(false)}/>
+                  <div className="absolute top-full mt-1 left-0 z-50 w-64 rounded-xl border border-white/10 bg-[#0f0f1a] shadow-2xl overflow-hidden">
+                    <div className="px-3 py-2 border-b border-white/[0.06]">
+                      <p className="text-[11px] font-medium text-white/90">Cambiar formato</p>
+                      <p className="text-[10px] text-gray-500 mt-0.5">El diseño se adapta al nuevo tamaño</p>
+                    </div>
+                    {PUBLIC_FORMATS.map((id) => {
+                      const f = FORMATS[id];
+                      const FIcon = f.icon;
+                      const isCurrent = fmt?.id === id;
+                      const hasVariant = template ? !!getVariant(template, id) : false;
+                      return (
+                        <button
+                          key={id}
+                          disabled={isCurrent || !hasVariant}
+                          onClick={async () => {
+                            if (isCurrent || !hasVariant || !template) return;
+                            setShowFormatMenu(false);
+                            if (saveState === "unsaved" && authUser) {
+                              await doSave();
+                            } else if (saveState === "unsaved" && !authUser) {
+                              const ok = window.confirm("Perderás los cambios no guardados. ¿Continuar?");
+                              if (!ok) return;
+                            }
+                            const idForUrl = currentProjectId ?? template.id;
+                            router.push(`/editor/${idForUrl}?format=${id}`);
+                          }}
+                          className={`w-full flex items-center gap-2.5 px-3 py-2 text-left text-[11px] transition-colors ${
+                            isCurrent
+                              ? "bg-purple-500/10 text-purple-300 cursor-default"
+                              : hasVariant
+                                ? "text-gray-200 hover:bg-white/[0.04]"
+                                : "text-gray-500 cursor-not-allowed opacity-50"
+                          }`}>
+                          <FIcon size={14} strokeWidth={2} className={isCurrent ? "text-purple-300" : "text-gray-400"}/>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium truncate">{f.name}</div>
+                            <div className="text-[10px] text-gray-500 truncate">
+                              {f.width} × {f.height} · {hasVariant ? f.subtitle : "no disponible"}
+                            </div>
+                          </div>
+                          {isCurrent && <Check size={12} strokeWidth={2.5} className="text-purple-300 shrink-0"/>}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </>
-              ) : (
-                <span>{canvasSize.w} × {canvasSize.h} px</span>
               )}
             </div>
           );
