@@ -34,9 +34,11 @@ const CSP = [
   // default: solo nosotros
   `default-src 'self'`,
   // scripts: nosotros + Vercel + unsafe-inline para Next hydration.
-  // 'unsafe-eval' SOLO para wasm de Fabric.js / IA cliente; cuando se
-  // pueda quitar, se quita.
-  `script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.vercel.app https://*.vercel-scripts.com ${POSTHOG_URL}`,
+  // 'unsafe-eval' ELIMINADO (2026-06-17): auditado que fabric.js, jspdf, gsap,
+  // swiper y el código propio NO usan eval/new Function/WebAssembly, así que no
+  // hacía falta. Esto bloquea XSS basado en eval(). 'unsafe-inline' sigue (lo
+  // requiere la hidratación de Next; quitarlo necesita CSP con nonce+middleware).
+  `script-src 'self' 'unsafe-inline' https://*.vercel.app https://*.vercel-scripts.com ${POSTHOG_URL}`,
   // styles: nosotros + Google Fonts + inline (Tailwind)
   `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com`,
   // fonts: Google Fonts CDN
