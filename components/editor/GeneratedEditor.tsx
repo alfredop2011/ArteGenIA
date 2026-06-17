@@ -47,7 +47,7 @@ import {
   Path as FabricPath,
 } from "fabric";
 import { templates, type Template, type TemplateVariant, type AudienceId, getVariant } from "@/data/templates";
-import type { FormatId } from "@/data/formats";
+import { type FormatId, getFormatByDimensions } from "@/data/formats";
 import { applyTemplateLayers } from "@/lib/fabricApplyTemplateLayers";
 import { ArtistLibraryModal, type ArtistEntry } from "@/components/wizard/ArtistLibrary";
 import { useProjects } from "@/hooks/useProjects";
@@ -2743,12 +2743,30 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
           </div>
         )}
 
-        {/* Size badge - oculto en admin (se ve en meta panel) */}
-        {!isAdminMode && (
-          <div className="hidden md:flex items-center text-[11px] text-gray-400 border border-white/[0.07] bg-white/[0.02] rounded-lg px-2.5 py-1 ml-1">
-            {canvasSize.w} × {canvasSize.h} px
-          </div>
-        )}
+        {/* Size badge - oculto en admin (se ve en meta panel).
+            Z.25 — anade nombre semantico del formato (ej "Post de Instagram")
+            antes de las dimensiones tecnicas para que el usuario entienda
+            para que red social esta editando. Si las dimensiones no coinciden
+            con ningun formato conocido, cae al fallback de solo pixeles. */}
+        {!isAdminMode && (() => {
+          const fmt = getFormatByDimensions(canvasSize.w, canvasSize.h);
+          const FmtIcon = fmt?.icon;
+          return (
+            <div className="hidden md:flex items-center gap-1.5 text-[11px] text-gray-300 border border-white/[0.08] bg-white/[0.03] rounded-lg px-2.5 py-1 ml-1"
+                 title={fmt ? `${fmt.name} · ${fmt.subtitle}` : `${canvasSize.w} × ${canvasSize.h} px`}>
+              {FmtIcon && <FmtIcon size={12} strokeWidth={2} className="text-purple-300 shrink-0"/>}
+              {fmt ? (
+                <>
+                  <span className="font-medium">{fmt.name}</span>
+                  <span className="text-gray-500">·</span>
+                  <span className="text-gray-500">{canvasSize.w} × {canvasSize.h}</span>
+                </>
+              ) : (
+                <span>{canvasSize.w} × {canvasSize.h} px</span>
+              )}
+            </div>
+          );
+        })()}
 
         <div className="flex-1"/>
 

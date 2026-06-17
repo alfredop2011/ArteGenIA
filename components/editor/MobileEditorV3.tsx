@@ -49,7 +49,7 @@ import {
   Brush,
 } from "lucide-react";
 import { templates, getVariant, type Template, type TemplateLayer } from "@/data/templates";
-import { FORMATS, PUBLIC_FORMATS, type FormatId } from "@/data/formats";
+import { FORMATS, PUBLIC_FORMATS, type FormatId, getFormatByDimensions } from "@/data/formats";
 import { applyTemplateLayers } from "@/lib/fabricApplyTemplateLayers";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/lib/toast";
@@ -2383,8 +2383,14 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
           <h1 className="text-[13px] font-bold leading-tight truncate">
             {docTitle || template?.title || t("mobileEditor.header.loading")}
           </h1>
-          <p className="text-[9px] text-gray-500 leading-tight">
-            {canvasSize.w}×{canvasSize.h} · {
+          {/* Z.25 — nombre semantico del formato + estado guardado.
+              "Post de Instagram · Guardado" comunica MUCHO mas que solo
+              "1080×1080" para el usuario no-tecnico. */}
+          <p className="text-[9px] text-gray-400 leading-tight truncate">
+            {(() => {
+              const fmt = getFormatByDimensions(canvasSize.w, canvasSize.h);
+              return fmt ? fmt.name : `${canvasSize.w}×${canvasSize.h}`;
+            })()} · {
               saveState === "saved" ? t("mobileEditor.state.saved")
               : saveState === "saving" ? t("mobileEditor.state.saving")
               : t("mobileEditor.state.unsaved")

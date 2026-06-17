@@ -38,3 +38,17 @@ export function getFormat(id: FormatId): FormatDef {
 export function isValidFormatId(id: string): id is FormatId {
     return id in FORMATS;
 }
+
+/**
+ * Detecta el formato semantico desde unas dimensiones (w x h).
+ * Necesario en el editor para mostrar "Post de Instagram" en lugar
+ * de solo "1080 × 1080 px". Si las dimensiones no coinciden con
+ * ningun formato conocido, devuelve null y el editor solo muestra
+ * los pixeles.
+ */
+export function getFormatByDimensions(w: number, h: number): FormatDef | null {
+    for (const fmt of Object.values(FORMATS)) {
+        if (fmt.width === w && fmt.height === h) return fmt;
+    }
+    return null;
+}
