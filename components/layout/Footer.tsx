@@ -20,9 +20,13 @@ export default function Footer() {
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
           {/* Marca + tag beta */}
           <div className="flex items-center gap-2 text-xs" style={{ color: "var(--home-text-soft)" }}>
-            <div className="w-5 h-5 rounded bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center text-black font-black text-[9px]">
-              AG
-            </div>
+            <img
+              src="/brand/exports/icon-180.png"
+              alt="ArteGenIA"
+              className="w-5 h-5 object-contain"
+              width={20}
+              height={20}
+            />
             <span>ArteGenIA</span>
             <span className="px-1.5 py-0.5 rounded text-[9px] font-bold tracking-wider"
                   style={{ background: "var(--ag-warning-bg)", color: "var(--ag-warning)", border: "1px solid var(--ag-warning-border)" }}>

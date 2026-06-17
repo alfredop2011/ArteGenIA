@@ -113,11 +113,15 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                     style={{ background: "var(--header-bg)", borderColor: "var(--header-border)" }}>
                 <div className="flex items-center justify-between px-4 sm:px-6 h-14">
 
-                    {/* Logo */}
+                    {/* Logo — isotipo real (PNG generado en public/brand/exports/) */}
                     <Link href="/" className="flex items-center gap-2 shrink-0">
-                        <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-purple-600 via-pink-500 to-orange-500 flex items-center justify-center text-white font-black text-xs">
-                            A
-                        </div>
+                        <img
+                            src="/brand/exports/icon-180.png"
+                            alt="ArteGenIA"
+                            className="w-8 h-8 object-contain"
+                            width={32}
+                            height={32}
+                        />
                         <span className="font-bold text-base tracking-tight">
                             Arte<span className="bg-gradient-to-r from-pink-500 to-orange-500 bg-clip-text text-transparent">GenIA</span>
                         </span>

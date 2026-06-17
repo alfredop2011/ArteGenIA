@@ -2698,8 +2698,16 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
 
         {/* Logo - oculto en mobile pequeno */}
         <div className="hidden sm:flex items-center gap-2">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-purple-500 via-fuchsia-500 to-indigo-600 flex items-center justify-center text-[11px] font-black shadow-lg shadow-purple-500/40">AG</div>
-          <span className="text-[13px] font-bold hidden lg:block text-white/90 tracking-tight">Arte Gen</span>
+          <img
+            src="/brand/exports/icon-180.png"
+            alt="ArteGenIA"
+            className="w-8 h-8 object-contain"
+            width={32}
+            height={32}
+          />
+          <span className="text-[13px] font-bold hidden lg:block text-white/90 tracking-tight">
+            Arte<span className="bg-gradient-to-r from-pink-500 to-orange-500 bg-clip-text text-transparent">GenIA</span>
+          </span>
         </div>
 
         {isAdminMode && (
