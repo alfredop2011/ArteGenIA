@@ -3396,6 +3396,17 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
                     <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"/>
                   </div>
                 )}
+                {/* UX#10 — Overlay loading IA sobre canvas. Antes solo
+                    deshabilitábamos el botón → user creía que se colgó y
+                    recargaba. Ahora overlay semi-transparente con spinner
+                    + texto contextual. Quitar fondo tarda ~2-4s. */}
+                {removingBgObjId !== null && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm rounded animate-in fade-in duration-200 z-20">
+                    <div className="w-14 h-14 rounded-full border-4 border-purple-500/30 border-t-purple-500 animate-spin mb-3"/>
+                    <p className="text-sm font-bold text-white mb-1">Procesando con IA…</p>
+                    <p className="text-xs text-gray-300">Quitando el fondo · ~3s</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
