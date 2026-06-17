@@ -329,6 +329,18 @@ export async function POST(req: NextRequest) {
         } catch (e) {
           console.warn("[stripe-webhook] upgrade email skip:", e);
         }
+        // P2 — PostHog server-side. Garantiza el evento aunque el browser
+        // se haya cerrado tras el redirect de Stripe.
+        try {
+          const { trackUpgradeCompleted } = await import("@/lib/analyticsServer");
+          await trackUpgradeCompleted(userId, {
+            plan,
+            interval,
+            amount_cents: session.amount_total ?? undefined,
+          });
+        } catch (e) {
+          console.warn("[stripe-webhook] posthog upgrade skip:", e);
+        }
         break;
       }
       case "customer.subscription.deleted": {
@@ -336,6 +348,18 @@ export async function POST(req: NextRequest) {
         const userId = await resolveUserIdFromSubscription(sub);
         if (userId) {
           await updatePlan(userId, "free");
+          // P2 — PostHog server-side. Embudo de cancelación independiente
+          // del browser.
+          try {
+            const { trackSubscriptionCanceled } = await import("@/lib/analyticsServer");
+            const detected = detectPlanFromSubscription(sub);
+            await trackSubscriptionCanceled(userId, {
+              plan: detected ?? undefined,
+              reason: sub.cancellation_details?.reason ?? undefined,
+            });
+          } catch (e) {
+            console.warn("[stripe-webhook] posthog cancel skip:", e);
+          }
         } else {
           // P0.2 — antes esto era break silencioso → Pro gratis tras cancelar
           console.error(
@@ -440,6 +464,29 @@ export async function POST(req: NextRequest) {
           }
         } catch (e) {
           console.warn("[stripe-webhook] payment_failed email skip:", e);
+        }
+        // P2 — PostHog server-side: detectar churn involuntario en el embudo.
+        // Resolvemos el userId vía customer_id en profiles (fast-path P0.2).
+        try {
+          const customerId =
+            typeof invoice.customer === "string" ? invoice.customer : invoice.customer?.id;
+          if (customerId) {
+            const sb = adminClient();
+            const { data: profile } = await sb
+              .from("profiles")
+              .select("id")
+              .eq("stripe_customer_id", customerId)
+              .maybeSingle();
+            if (profile?.id) {
+              const { trackPaymentFailed } = await import("@/lib/analyticsServer");
+              await trackPaymentFailed(profile.id, {
+                attempt_count: invoice.attempt_count ?? 1,
+                amount_cents: invoice.amount_due ?? undefined,
+              });
+            }
+          }
+        } catch (e) {
+          console.warn("[stripe-webhook] posthog payment_failed skip:", e);
         }
         break;
       }
