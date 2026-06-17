@@ -327,7 +327,7 @@ function TimelineCard({ entry, locale }: { entry: TimelineEntry; locale: string 
                 <div className="shrink-0 w-12 h-12 sm:w-14 sm:h-14 rounded-lg overflow-hidden"
                      style={{ background: "var(--home-card-bg)", border: "1px solid var(--home-card-border)" }}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={entry.thumbnail} alt="" className="w-full h-full object-cover" />
+                    <img src={entry.thumbnail} alt={entry.title} className="w-full h-full object-cover" />
                 </div>
             ) : (
                 <div className="shrink-0 w-12 h-12 sm:w-14 sm:h-14 rounded-lg flex items-center justify-center"

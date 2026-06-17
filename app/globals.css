@@ -192,6 +192,41 @@ body {
   }
 }
 
+/* UX#12 — Focus visible global accesible (WCAG 2.4.7).
+   Por defecto Next/Tailwind no muestra outline, así que los users que
+   navegan por teclado pierden track de dónde están. Añadimos un outline
+   morado que coincide con el brand y solo aparece con :focus-visible
+   (= teclado, no click del mouse). */
+:focus-visible {
+  outline: 2px solid var(--ag-brand, #a855f7);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+/* Botones e inputs ya tienen background propio — quitamos border-radius
+   del outline para que se adapte al shape del elemento. */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--ag-brand, #a855f7);
+  outline-offset: 2px;
+}
+
+/* prefers-reduced-motion (WCAG 2.3.3) — usuarios con vestibular disorders
+   pueden marearse con animaciones agresivas. Respetamos su preferencia
+   reduciendo animaciones a transitions cortas. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 /* ─── SLIDERS PERSONALIZADOS (input[type=range]) ──────────────────────────
    En iOS Safari el slider nativo es casi invisible (thumb diminuto, sin
    track destacado). Customizamos:

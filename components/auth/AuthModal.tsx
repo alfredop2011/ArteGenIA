@@ -176,7 +176,7 @@ export default function AuthModal({ onClose, title, subtitle, onAuthSuccess, nex
                             {subtitle ?? (mode === "login" ? t("auth.subtitle.login") : t("auth.subtitle.register"))}
                         </p>
                     </div>
-                    <button onClick={onClose} className="text-2xl transition-colors hover:opacity-70" style={{ color: "var(--home-text-soft)" }}>×</button>
+                    <button onClick={onClose} aria-label="Cerrar" className="text-2xl transition-colors hover:opacity-70" style={{ color: "var(--home-text-soft)" }}>×</button>
                 </div>
 
                 <button onClick={() => signInWithGoogle(nextUrl)}
