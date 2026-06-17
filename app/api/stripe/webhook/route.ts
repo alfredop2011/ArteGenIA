@@ -15,6 +15,8 @@ export const dynamic = "force-dynamic";
  * - checkout.session.completed: usuario pagó → marcar profile.plan = "pro"
  * - customer.subscription.deleted: cancelación → volver a "free"
  * - customer.subscription.updated: cambio de plan → actualizar
+ * - customer.subscription.trial_will_end: trial -3d → email aviso (reduce chargebacks)
+ * - invoice.payment_failed: tarjeta rechazada → email "actualiza tarjeta" (P1.2)
  *
  * SEGURIDAD: verificamos firma Stripe en cada request. Sin esto, cualquiera
  * podría enviar POST falsos a este endpoint y darse acceso Pro gratis.
@@ -35,6 +37,80 @@ function adminClient() {
   return createClient(url, serviceKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
+}
+
+/** Resuelve user_id de Supabase a partir de una Subscription / Customer de
+ *  Stripe. Fallback chain (P0.2):
+ *
+ *    1. sub.metadata.supabase_user_id  (preferido — set en checkout)
+ *    2. profiles.stripe_customer_id    (persistido en checkout.session.completed)
+ *    3. customer.email → profiles.email  (último recurso)
+ *
+ *  Retorna null si ninguno funciona. El caller DEBE loguear el evento
+ *  para reconciliar manualmente — antes esto era un break silencioso
+ *  que dejaba Pro gratis tras cancelar.
+ */
+async function resolveUserIdFromSubscription(
+  sub: Stripe.Subscription,
+): Promise<string | null> {
+  // 1) Metadata directa
+  const metaUserId = sub.metadata?.supabase_user_id;
+  if (metaUserId) return metaUserId;
+
+  const sb = adminClient();
+  const customerId =
+    typeof sub.customer === "string" ? sub.customer : sub.customer?.id;
+
+  // 2) Lookup por stripe_customer_id en profiles
+  if (customerId) {
+    const { data: byCustomer } = await sb
+      .from("profiles")
+      .select("id")
+      .eq("stripe_customer_id", customerId)
+      .maybeSingle();
+    if (byCustomer?.id) return byCustomer.id;
+  }
+
+  // 3) Fetch customer.email → profiles.email
+  if (customerId) {
+    try {
+      const customer = await stripe.customers.retrieve(customerId);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const email = (customer as any)?.email as string | undefined;
+      if (email) {
+        const { data: byEmail } = await sb
+          .from("profiles")
+          .select("id")
+          .ilike("email", email)
+          .maybeSingle();
+        if (byEmail?.id) {
+          // Backfill stripe_customer_id para próximos webhooks O(1)
+          await sb
+            .from("profiles")
+            .update({ stripe_customer_id: customerId })
+            .eq("id", byEmail.id);
+          return byEmail.id;
+        }
+      }
+    } catch (e) {
+      console.warn("[stripe-webhook] no pude recuperar customer:", e);
+    }
+  }
+
+  return null;
+}
+
+/** Persiste el stripe_customer_id en profiles para que los siguientes
+ *  webhooks puedan resolver por columna en vez de depender de metadata. */
+async function persistCustomerId(userId: string, customerId: string) {
+  const sb = adminClient();
+  const { error } = await sb
+    .from("profiles")
+    .update({ stripe_customer_id: customerId })
+    .eq("id", userId);
+  if (error) {
+    console.warn("[stripe-webhook] persist customer_id failed:", error);
+  }
 }
 
 async function updatePlan(userId: string, plan: "free" | PlanKey) {
@@ -183,12 +259,41 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Firma invalida" }, { status: 400 });
   }
 
+  // ─── IDEMPOTENCIA ──────────────────────────────────────────────────────
+  // Stripe reintenta entregas y un atacante podría reenviar un evento firmado
+  // capturado. Registramos cada event.id en stripe_events (PK único). Si ya
+  // existe, es un replay → devolvemos 200 sin reprocesar (evita créditos/emails
+  // duplicados y corromper el audit trail de credit_transactions).
+  {
+    const sb = adminClient();
+    const { error: dedupErr } = await sb
+      .from("stripe_events")
+      .insert({ id: event.id, type: event.type });
+    if (dedupErr) {
+      // 23505 = unique_violation → ya procesado.
+      if (dedupErr.code === "23505") {
+        console.log(`[stripe-webhook] evento duplicado ignorado: ${event.id}`);
+        return NextResponse.json({ received: true, duplicate: true });
+      }
+      // Otro error de DB: NO procesar a ciegas (podríamos duplicar). Pedimos retry.
+      console.error("[stripe-webhook] error registrando idempotencia:", dedupErr);
+      return NextResponse.json({ error: "Idempotency store error" }, { status: 500 });
+    }
+  }
+
   try {
     switch (event.type) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
         const userId = session.client_reference_id ?? session.metadata?.supabase_user_id;
         if (!userId) break;
+        // P0.2 — Persistir customer_id en profiles para que los siguientes
+        // webhooks puedan resolver por columna sin depender de metadata.
+        const customerId =
+          typeof session.customer === "string"
+            ? session.customer
+            : session.customer?.id;
+        if (customerId) await persistCustomerId(userId, customerId);
         // Recuperar la subscription para saber qué plan compró (price_id).
         // En checkout.session.completed la subscription es solo un string ID,
         // hay que fetchearla expandida.
@@ -224,12 +329,44 @@ export async function POST(req: NextRequest) {
         } catch (e) {
           console.warn("[stripe-webhook] upgrade email skip:", e);
         }
+        // P2 — PostHog server-side. Garantiza el evento aunque el browser
+        // se haya cerrado tras el redirect de Stripe.
+        try {
+          const { trackUpgradeCompleted } = await import("@/lib/analyticsServer");
+          await trackUpgradeCompleted(userId, {
+            plan,
+            interval,
+            amount_cents: session.amount_total ?? undefined,
+          });
+        } catch (e) {
+          console.warn("[stripe-webhook] posthog upgrade skip:", e);
+        }
         break;
       }
       case "customer.subscription.deleted": {
         const sub = event.data.object as Stripe.Subscription;
-        const userId = sub.metadata?.supabase_user_id;
-        if (userId) await updatePlan(userId, "free");
+        const userId = await resolveUserIdFromSubscription(sub);
+        if (userId) {
+          await updatePlan(userId, "free");
+          // P2 — PostHog server-side. Embudo de cancelación independiente
+          // del browser.
+          try {
+            const { trackSubscriptionCanceled } = await import("@/lib/analyticsServer");
+            const detected = detectPlanFromSubscription(sub);
+            await trackSubscriptionCanceled(userId, {
+              plan: detected ?? undefined,
+              reason: sub.cancellation_details?.reason ?? undefined,
+            });
+          } catch (e) {
+            console.warn("[stripe-webhook] posthog cancel skip:", e);
+          }
+        } else {
+          // P0.2 — antes esto era break silencioso → Pro gratis tras cancelar
+          console.error(
+            "[stripe-webhook] subscription.deleted SIN userId resoluble — revisar manualmente",
+            { sub_id: sub.id, customer: sub.customer },
+          );
+        }
         // Z.23 — Email cancel survey. Fire-and-forget. Necesitamos el email
         // del customer; lo recuperamos vía API porque sub solo tiene el ID.
         try {
@@ -250,14 +387,106 @@ export async function POST(req: NextRequest) {
       }
       case "customer.subscription.updated": {
         const sub = event.data.object as Stripe.Subscription;
-        const userId = sub.metadata?.supabase_user_id;
-        if (!userId) break;
+        const userId = await resolveUserIdFromSubscription(sub);
+        if (!userId) {
+          console.error(
+            "[stripe-webhook] subscription.updated SIN userId resoluble — revisar manualmente",
+            { sub_id: sub.id, customer: sub.customer, status: sub.status },
+          );
+          break;
+        }
         // Activa: plan según price_id (pro o enterprise). Cancelada: free.
         if (sub.status === "active" || sub.status === "trialing") {
           const detected = detectPlanFromSubscription(sub) ?? "pro";
           await updatePlan(userId, detected);
         } else if (sub.status === "canceled" || sub.status === "unpaid" || sub.status === "incomplete_expired") {
           await updatePlan(userId, "free");
+        }
+        break;
+      }
+      case "customer.subscription.trial_will_end": {
+        // Stripe dispara este evento ~3 días antes del primer cargo. Email
+        // al user para que NO se sorprenda con el cargo (reduce chargebacks
+        // y atención al cliente). Si quiere cancelar, lo hace desde el
+        // portal sin pasar por nosotros.
+        const sub = event.data.object as Stripe.Subscription;
+        if (!sub.trial_end) break;
+        try {
+          const customerId = typeof sub.customer === "string" ? sub.customer : sub.customer?.id;
+          if (customerId) {
+            const customer = await stripe.customers.retrieve(customerId);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const email = (customer as any)?.email as string | undefined;
+            if (email) {
+              const detected = detectPlanFromSubscription(sub);
+              const planLabel = detected === "enterprise" ? "Enterprise" : "Pro";
+              const { sendTrialEndingEmail } = await import("@/lib/email");
+              void sendTrialEndingEmail(email, {
+                trialEndDate: new Date(sub.trial_end * 1000),
+                planLabel,
+              });
+            }
+          }
+        } catch (e) {
+          console.warn("[stripe-webhook] trial_will_end email skip:", e);
+        }
+        break;
+      }
+      case "invoice.payment_failed": {
+        // P1.2 — Tarjeta caducada o rechazada. Stripe reintenta solo durante
+        // ~3 semanas (smart retries). Mientras, mandamos UN email al user
+        // invitándolo a actualizar el método de pago vía portal. Sin esto,
+        // Stripe acaba en subscription.deleted → free silencioso (churn
+        // involuntario). Solo en el PRIMER fallo (attempt_count === 1).
+        const invoice = event.data.object as Stripe.Invoice;
+        if ((invoice.attempt_count ?? 1) !== 1) {
+          // Ya mandamos el email en el primer fallo. Los reintentos no
+          // ameritan más correos — Stripe no manda spam y nosotros tampoco.
+          break;
+        }
+        try {
+          const email =
+            invoice.customer_email ??
+            (typeof invoice.customer === "string"
+              ? (await stripe.customers.retrieve(invoice.customer).then(
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  (c: any) => c?.email,
+                ).catch(() => null))
+              : null);
+          if (email) {
+            const { sendPaymentFailedEmail } = await import("@/lib/email");
+            const nextAttempt = invoice.next_payment_attempt
+              ? new Date(invoice.next_payment_attempt * 1000)
+              : null;
+            void sendPaymentFailedEmail(email, { nextAttemptDate: nextAttempt });
+          } else {
+            console.warn("[stripe-webhook] payment_failed sin email para customer", invoice.customer);
+          }
+        } catch (e) {
+          console.warn("[stripe-webhook] payment_failed email skip:", e);
+        }
+        // P2 — PostHog server-side: detectar churn involuntario en el embudo.
+        // Resolvemos el userId vía customer_id en profiles (fast-path P0.2).
+        try {
+          const customerId =
+            typeof invoice.customer === "string" ? invoice.customer : invoice.customer?.id;
+          if (customerId) {
+            const sb = adminClient();
+            const { data: profile } = await sb
+              .from("profiles")
+              .select("id")
+              .eq("stripe_customer_id", customerId)
+              .maybeSingle();
+            if (profile?.id) {
+              const { trackPaymentFailed } = await import("@/lib/analyticsServer");
+              await trackPaymentFailed(profile.id, {
+                attempt_count: invoice.attempt_count ?? 1,
+                amount_cents: invoice.amount_due ?? undefined,
+              });
+            }
+          }
+        } catch (e) {
+          console.warn("[stripe-webhook] posthog payment_failed skip:", e);
         }
         break;
       }

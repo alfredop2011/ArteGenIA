@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { fal } from "@fal-ai/client";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { checkRateLimit } from "@/lib/rateLimit";
 import { consumeCredits, addCredits, CREDIT_COST } from "@/lib/credits";
 
@@ -155,7 +156,7 @@ export async function POST(req: Request) {
     if (creditConsumed && supabaseForRefund && userIdForRefund) {
       try {
         await addCredits(
-          supabaseForRefund, userIdForRefund, CREDIT_COST.borrador_magico,
+          supabaseAdmin, userIdForRefund, CREDIT_COST.borrador_magico,
           "refund:magic-erase_error",
           { detail: msg.slice(0, 200) },
         );

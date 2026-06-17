@@ -12,7 +12,9 @@ export async function POST() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
 
-  const token = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+  // Token CSPRNG (122 bits) — no enumerable por fuerza bruta. Antes usábamos
+  // Date.now()+Math.random() (predecible y ~41 bits).
+  const token = crypto.randomUUID();
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
   const { error } = await supabase

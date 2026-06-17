@@ -4,10 +4,10 @@
  * Reemplaza el modelo de cuotas individuales por acción (10/mes de X, 50/mes
  * de Y) por un balance ÚNICO de créditos que cada acción IA o descarga consume.
  *
- * Por plan:
- *   Free       =  30 créditos/mes
- *   Pro        = 250 créditos/mes (rollover hasta 50)
- *   Enterprise = 2000 créditos/mes (fair use)
+ * Por plan (single source of truth en MONTHLY_GRANT abajo):
+ *   Free       =  10 créditos/mes (5 fotos sin fondo, decisión Z.2)
+ *   Pro        = 100 créditos/mes (rollover hasta 50, decisión Z.4)
+ *   Enterprise = 350 créditos/mes (decisión Z.4)
  *
  * Reset: día 1 cada mes UTC (cron).
  *

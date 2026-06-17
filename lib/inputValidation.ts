@@ -44,8 +44,23 @@ export function validateImageUrl(input: string): string | null {
     return "Solo HTTPS permitido";
   }
 
-  // Rechazar IPs literales (anti-SSRF bypass)
-  if (/^(\d{1,3}\.){3}\d{1,3}$/.test(url.hostname) || url.hostname.includes(":")) {
+  // Rechazar credenciales embebidas (https://trusted.com@169.254.169.254/) —
+  // el navegador/fetch usa el host tras la @, no el userinfo.
+  if (url.username || url.password) {
+    return "Credenciales en URL no permitidas";
+  }
+
+  // Rechazar IPs literales (anti-SSRF bypass): dotted-decimal, IPv6, y
+  // codificaciones alternativas (decimal/octal/hex sin puntos: 2130706433,
+  // 0x7f000001, 0177.0.0.1) que evaden la regex dotted-decimal.
+  const host = url.hostname;
+  if (
+    /^(\d{1,3}\.){3}\d{1,3}$/.test(host) ||      // 127.0.0.1
+    host.includes(":") ||                          // IPv6
+    /^\d+$/.test(host) ||                           // 2130706433 (entero)
+    /^0x[0-9a-f]+$/i.test(host) ||                  // 0x7f000001
+    /^0[0-7]+$/.test(host)                          // 0177...
+  ) {
     return "IPs literales no permitidas";
   }
 
@@ -114,4 +129,74 @@ export async function validateImageFile(file: File): Promise<string | null> {
   ) return null;
 
   return "Formato de imagen no válido (solo PNG/JPEG/GIF/WEBP)";
+}
+
+/**
+ * ¿Es esta IP una dirección privada, loopback o link-local? (anti-SSRF).
+ * Cubre los rangos que dan acceso a metadata de cloud (169.254.169.254),
+ * servicios internos (10/8, 172.16/12, 192.168/16) y loopback.
+ */
+function isPrivateIp(ip: string): boolean {
+  // IPv4
+  const m = ip.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+  if (m) {
+    const [a, b] = [Number(m[1]), Number(m[2])];
+    if (a === 10) return true;                       // 10.0.0.0/8
+    if (a === 127) return true;                      // loopback
+    if (a === 0) return true;                        // 0.0.0.0/8
+    if (a === 169 && b === 254) return true;         // link-local / cloud metadata
+    if (a === 172 && b >= 16 && b <= 31) return true;// 172.16.0.0/12
+    if (a === 192 && b === 168) return true;         // 192.168.0.0/16
+    if (a === 100 && b >= 64 && b <= 127) return true;// CGNAT 100.64.0.0/10
+    return false;
+  }
+  // IPv6
+  const lower = ip.toLowerCase();
+  if (lower === "::1" || lower === "::") return true;      // loopback / unspecified
+  if (lower.startsWith("fc") || lower.startsWith("fd")) return true; // ULA fc00::/7
+  if (lower.startsWith("fe80")) return true;                // link-local
+  if (lower.startsWith("::ffff:")) {                        // IPv4-mapped
+    return isPrivateIp(lower.slice(7));
+  }
+  return false;
+}
+
+/**
+ * fetch endurecido contra SSRF para descargar URLs (potencialmente) de usuario
+ * server-side. Defensa en profundidad sobre validateImageUrl:
+ *  1. Re-valida el whitelist con validateImageUrl.
+ *  2. Resuelve DNS y rechaza si alguna IP resuelta es privada/link-local
+ *     (mitiga DNS rebinding de un host whitelisted apuntando a interno).
+ *  3. redirect: "manual" — un 3xx desde un host permitido hacia una IP interna
+ *     NO se sigue (nuestros hosts de confianza devuelven 200 en GET de imagen).
+ *
+ * Lanza Error si la URL es rechazada o si la respuesta es un redirect.
+ */
+export async function safeFetch(input: string, init?: RequestInit): Promise<Response> {
+  const validationErr = validateImageUrl(input);
+  if (validationErr) {
+    throw new Error(`safeFetch rechazada: ${validationErr}`);
+  }
+
+  const url = new URL(input);
+  // Resolución DNS + chequeo de IP (solo en runtime nodejs).
+  try {
+    const dns = await import("node:dns");
+    const addrs = await dns.promises.lookup(url.hostname, { all: true });
+    for (const { address } of addrs) {
+      if (isPrivateIp(address)) {
+        throw new Error(`safeFetch rechazada: el host resuelve a IP interna (${address})`);
+      }
+    }
+  } catch (e) {
+    // Si la resolución falla por motivo de seguridad, propagar. Si falla por
+    // otra causa (DNS temporal), dejamos que el fetch lo maneje.
+    if (e instanceof Error && e.message.startsWith("safeFetch")) throw e;
+  }
+
+  const res = await fetch(input, { ...init, redirect: "manual" });
+  if (res.status >= 300 && res.status < 400) {
+    throw new Error(`safeFetch rechazada: redirect no permitido (${res.status} → ${res.headers.get("location") ?? "?"})`);
+  }
+  return res;
 }

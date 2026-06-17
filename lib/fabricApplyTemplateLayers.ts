@@ -2,7 +2,7 @@ import { Circle, FabricImage, type FabricObject, Rect, Shadow, Textbox, type Can
 import type { TemplateLayer } from "@/data/templates";
 
 /** Wrapper: añade el objeto al canvas asignando customId desde layer.id
- *  para identificarlo despues (usado por MobileEditorV2 y GeneratedEditor
+ *  para identificarlo despues (usado por MobileEditorV3 y GeneratedEditor
  *  para mapear bloques editables → objetos Fabric concretos). */
 function addWithId(canvas: Canvas | StaticCanvas, obj: FabricObject, id?: string) {
     if (id) {

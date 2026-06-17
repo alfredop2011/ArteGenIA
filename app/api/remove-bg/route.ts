@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { fal } from "@fal-ai/client";
 import { uploadToR2, makeKey } from "@/lib/r2";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { checkRateLimit } from "@/lib/rateLimit";
 import { consumeCredits, addCredits, CREDIT_COST } from "@/lib/credits";
 
@@ -187,7 +188,7 @@ export async function POST(req: NextRequest) {
     if (creditConsumed && supabaseForRefund && userIdForRefund) {
       try {
         await addCredits(
-          supabaseForRefund, userIdForRefund, CREDIT_COST.quitar_fondo,
+          supabaseAdmin, userIdForRefund, CREDIT_COST.quitar_fondo,
           "refund:remove-bg_error",
           { detail: message.slice(0, 200) },
         );

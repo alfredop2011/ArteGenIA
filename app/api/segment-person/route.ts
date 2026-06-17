@@ -9,6 +9,20 @@ if (!process.env.FAL_KEY) {
   console.warn("[segment-person] FAL_KEY no definida en .env.local");
 }
 
+/** Error tipado para que el catch global pueda devolver el status code
+ *  correcto Y a la vez disparar refund automático Z.13. Antes los errores
+ *  post-consume eran `return NextResponse.json(...)` y NO pasaban por el
+ *  catch → el user pagaba y no recibía servicio (P0.3). */
+class ServiceError extends Error {
+  status: number;
+  body: Record<string, unknown>;
+  constructor(status: number, body: Record<string, unknown>) {
+    super(typeof body.error === "string" ? body.error : "service_error");
+    this.status = status;
+    this.body = body;
+  }
+}
+
 // Configuracion global del cliente Fal.ai (idempotente, no pasa nada si se
 // llama varias veces).
 fal.config({ credentials: process.env.FAL_KEY });
@@ -75,7 +89,9 @@ async function cropAndUpload(
   box: DetectedBox,
   padding = 0.05,
 ): Promise<{ croppedUrl: string; cropBounds: { x: number; y: number; w: number; h: number } }> {
-  const res = await fetch(imageUrl);
+  // safeFetch: re-valida whitelist + bloquea DNS rebinding/redirects internos.
+  const { safeFetch } = await import("@/lib/inputValidation");
+  const res = await safeFetch(imageUrl);
   if (!res.ok) throw new Error(`No se pudo descargar la imagen original (${res.status})`);
   const buffer = Buffer.from(await res.arrayBuffer());
 
@@ -266,9 +282,9 @@ export async function POST(req: Request) {
     }
 
     if (!detectedBox) {
-      return NextResponse.json({
+      throw new ServiceError(422, {
         error: "No se detecto ninguna persona en el punto que tocaste. Prueba a tocar mas centrado sobre el cuerpo de la persona.",
-      }, { status: 422 });
+      });
     }
 
     // Si el bbox cubre casi toda la imagen, significa que Florence detecto
@@ -289,10 +305,10 @@ export async function POST(req: Request) {
     // Como las imagenes tipicas son 1080-1500 px, area > 1M significa
     // probablemente foto entera.
     if (detectedArea > 1_200_000) {
-      return NextResponse.json({
+      throw new ServiceError(422, {
         error: "El AI detecto las personas como una sola (estan muy juntas/abrazadas). En esta foto no se pueden separar automaticamente. Prueba con una foto donde las personas esten algo separadas, o recorta manualmente.",
         code: "PERSONS_TOO_CLOSE",
-      }, { status: 422 });
+      });
     }
 
     // ── 2. CROP del bbox con margen ──────────────────────────────────────
@@ -304,7 +320,7 @@ export async function POST(req: Request) {
       cropBounds = result.cropBounds;
     } catch (cropErr) {
       console.error("[segment-person] crop error:", cropErr);
-      return NextResponse.json({ error: "Error recortando la imagen" }, { status: 500 });
+      throw new ServiceError(500, { error: "Error recortando la imagen" });
     }
 
     // ── 3. BRIA quita fondo del crop → PNG transparente ─────────────────
@@ -337,7 +353,7 @@ export async function POST(req: Request) {
         stringify(e?.body) ||
         stringify(e?.message) ||
         "Fal.ai rechazo la peticion";
-      return NextResponse.json({ error: `Fal.ai: ${detail}` }, { status: 502 });
+      throw new ServiceError(502, { error: `Fal.ai: ${detail}` });
     }
 
     // BRIA bg remove devuelve { image: { url } } con PNG transparente real
@@ -346,7 +362,7 @@ export async function POST(req: Request) {
 
     if (!segmentedUrl) {
       console.error("[segment-person] respuesta inesperada de BRIA:", result);
-      return NextResponse.json({ error: "BRIA no devolvio imagen" }, { status: 502 });
+      throw new ServiceError(502, { error: "BRIA no devolvio imagen" });
     }
 
     // ─── 4. REGISTRAR uso (fire-and-forget) ──────────────────────────────
@@ -382,21 +398,28 @@ export async function POST(req: Request) {
       usedFlorence: true,
     });
   } catch (err) {
-    console.error("[segment-person] error:", err);
+    const isService = err instanceof ServiceError;
+    if (!isService) {
+      console.error("[segment-person] error:", err);
+    }
     const msg = err instanceof Error ? err.message : "Error desconocido";
-    // Z.13 — refund automático si ya habíamos consumido créditos y algo falla
-    // post-consume. El user no debe pagar por servicio no recibido.
+    // Z.13 + P0.3 — refund automático para CUALQUIER fallo post-consume,
+    // incluidos los ServiceError (422/502 de validación o downstream). El
+    // user no debe pagar por servicio no recibido.
     if (moduleConsumed && supabaseForRefund && userIdForRefund) {
       try {
         await addCredits(
-          supabaseForRefund, userIdForRefund, CREDIT_COST[moduleConsumed],
+          supabaseAdmin, userIdForRefund, CREDIT_COST[moduleConsumed],
           `refund:segment-person_error`,
-          { detail: msg.slice(0, 200), module: moduleConsumed },
+          { detail: msg.slice(0, 200), module: moduleConsumed, status: isService ? err.status : 500 },
         );
-        console.log(`[segment-person] refund automático para user ${userIdForRefund} (${moduleConsumed})`);
+        console.log(`[segment-person] refund automático para user ${userIdForRefund} (${moduleConsumed}, status ${isService ? err.status : 500})`);
       } catch (refundErr) {
         console.error("[segment-person] refund FALLÓ — revisar manual:", refundErr);
       }
+    }
+    if (isService) {
+      return NextResponse.json(err.body, { status: err.status });
     }
     return NextResponse.json({ error: msg }, { status: 500 });
   }

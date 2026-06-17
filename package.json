@@ -21,6 +21,8 @@
     "r2:cleanup:apply": "node --env-file=.env.local scripts/r2-cleanup-orphans.mjs --apply",
     "db:backup": "node --env-file=.env.local scripts/db-backup.mjs",
     "db:backup:list": "node --env-file=.env.local scripts/db-backup.mjs --list",
+    "stripe:backfill": "node --env-file=.env.local scripts/stripe-backfill-customer-id.mjs",
+    "stripe:backfill:apply": "node --env-file=.env.local scripts/stripe-backfill-customer-id.mjs --apply",
     "brand:export": "node scripts/brand-export.mjs"
   },
   "dependencies": {
@@ -38,6 +40,7 @@
     "lucide-react": "^1.14.0",
     "next": "16.2.6",
     "posthog-js": "^1.383.2",
+    "posthog-node": "^5.38.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "resend": "^6.12.4",

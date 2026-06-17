@@ -20,7 +20,14 @@ import { createSupabaseServerClient } from "@/lib/supabaseServer";
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/";
+  // Open-redirect guard: solo permitimos rutas internas. Rechazamos URLs
+  // absolutas (https://evil.com), protocol-relative (//evil.com),
+  // userinfo (@evil.com) y dominios pegados (.evil.com) → todo a "/".
+  const rawNext = searchParams.get("next") ?? "/";
+  const next =
+    rawNext.startsWith("/") && !rawNext.startsWith("//") && !rawNext.startsWith("/\\")
+      ? rawNext
+      : "/";
   const errorParam =
     searchParams.get("error_description") || searchParams.get("error");
 

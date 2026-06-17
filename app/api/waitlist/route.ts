@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { checkIpRateLimit, clientIp } from "@/lib/ipRateLimit";
 
 /**
  * POST /api/waitlist
@@ -17,6 +18,12 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
  */
 export async function POST(req: NextRequest) {
   try {
+    // Rate limit por IP (anti-spam): 10 envíos / 10 min.
+    const allowed = await checkIpRateLimit(supabaseAdmin, clientIp(req), "waitlist", 10, 10);
+    if (!allowed) {
+      return NextResponse.json({ error: "Demasiadas peticiones, espera un momento" }, { status: 429 });
+    }
+
     const body = await req.json() as {
       email?: string;
       plan?: string;

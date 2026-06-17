@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { getStorageLimitFor, formatBytes, type AssetType } from "@/lib/storage";
+import { validateImageUrl, safeFetch } from "@/lib/inputValidation";
 
 export const runtime = "nodejs";
 
@@ -49,7 +50,31 @@ export async function POST(req: Request) {
     if (!validTypes.includes(body.type)) {
       return NextResponse.json({ error: `type inválido: ${body.type}` }, { status: 400 });
     }
-    const sizeBytes = typeof body.size_bytes === "number" ? body.size_bytes : 0;
+
+    // La url debe apuntar a nuestro storage (R2/Supabase), no a un dominio
+    // arbitrario que luego se renderizaría en el editor.
+    const urlErr = validateImageUrl(body.url);
+    if (urlErr) {
+      return NextResponse.json({ error: `url no permitida: ${urlErr}` }, { status: 400 });
+    }
+    // storage_key: sin path traversal ni rutas absolutas.
+    if (body.storage_key && (body.storage_key.includes("..") || body.storage_key.startsWith("/"))) {
+      return NextResponse.json({ error: "storage_key inválida" }, { status: 400 });
+    }
+
+    // Tamaño AUTORITATIVO desde R2 (HEAD), no el size_bytes del cliente — que
+    // un atacante podría falsear (size_bytes: 0) para evadir el límite de plan.
+    let sizeBytes = typeof body.size_bytes === "number" && body.size_bytes >= 0 ? body.size_bytes : 0;
+    try {
+      const head = await safeFetch(body.url, { method: "HEAD" });
+      const realLen = Number.parseInt(head.headers.get("content-length") ?? "", 10);
+      if (Number.isFinite(realLen) && realLen >= 0) sizeBytes = realLen;
+      else console.warn("[assets POST] HEAD sin content-length, uso size del cliente:", body.url);
+    } catch (e) {
+      // Si el HEAD falla (propagación R2, etc.) caemos al valor del cliente
+      // pero lo dejamos registrado.
+      console.warn("[assets POST] HEAD falló, uso size del cliente:", e instanceof Error ? e.message : e);
+    }
 
     // ─── Storage limit check ────────────────────────────────────────────
     const { data: profile } = await supabase

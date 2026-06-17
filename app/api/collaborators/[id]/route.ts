@@ -36,11 +36,14 @@ export async function DELETE(
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
 
-  // Verificar que es del usuario y obtener photo_url para borrar de R2
+  // Verificar que es del usuario y obtener photo_url para borrar de R2.
+  // Defensa en profundidad: filtramos owner_id explícitamente (no confiamos
+  // solo en RLS, que no está versionada para esta tabla).
   const { data: collab, error: getErr } = await supabase
     .from("collaborators")
     .select("id, photo_url")
     .eq("id", id)
+    .eq("owner_id", user.id)
     .maybeSingle();
 
   if (getErr || !collab) {
@@ -63,7 +66,8 @@ export async function DELETE(
   const { error: delErr } = await supabase
     .from("collaborators")
     .delete()
-    .eq("id", id);
+    .eq("id", id)
+    .eq("owner_id", user.id);
 
   if (delErr) {
     console.error("[collab DELETE]", delErr);
@@ -90,6 +94,7 @@ export async function PATCH(
     .from("collaborators")
     .select("id, kind")
     .eq("id", id)
+    .eq("owner_id", user.id)
     .maybeSingle();
 
   if (getErr || !existing) {
@@ -129,12 +134,13 @@ export async function PATCH(
   updates.updated_by_owner_at = new Date().toISOString();
   updates.updated_at = new Date().toISOString();
 
-  // Usamos supabaseAdmin para saltarnos RLS (igual valida que es del user por el SELECT previo)
-  // pero como tenemos RLS UPDATE habilitada, también funciona con `supabase`. Mantenemos `supabase` por RLS.
+  // Filtramos owner_id en el UPDATE además del SELECT previo (defensa en
+  // profundidad, no dependemos solo de RLS).
   const { error: updErr } = await supabase
     .from("collaborators")
     .update(updates)
-    .eq("id", id);
+    .eq("id", id)
+    .eq("owner_id", user.id);
 
   if (updErr) {
     console.error("[collab PATCH]", updErr);

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import sharp from "sharp";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
-import { uploadToR2 } from "@/lib/r2";
+import { uploadToR2, deleteFromR2 } from "@/lib/r2";
 
 /**
  * POST /api/collaborators
@@ -129,6 +129,17 @@ export async function POST(req: NextRequest) {
     const key = `${prefix}/${invite.owner_id}/${token}-${safeName}.${outExt}`;
     const { url: photoUrl } = await uploadToR2(outBytes, key, outMime);
 
+    /** Limpia el archivo R2 que acabamos de subir si el INSERT/UPDATE
+     *  falla más abajo. Sin esto el archivo queda huérfano (el cron de
+     *  cleanup lo pesca eventualmente, pero mejor evitar la acumulación).
+     *  Best-effort: si el DELETE de R2 falla, log y seguimos — no rompe
+     *  la respuesta del cliente. */
+    const cleanupUpload = async () => {
+      try { await deleteFromR2(key); } catch (e) {
+        console.warn("[collaborators POST] huérfano R2 sin borrar:", key, e);
+      }
+    };
+
     const ip = kind === "person"
       ? (req.headers.get("x-forwarded-for")?.split(",")[0].trim()
          || req.headers.get("x-real-ip")
@@ -159,16 +170,19 @@ export async function POST(req: NextRequest) {
         .maybeSingle();
 
       if (tgtErr || !target) {
+        await cleanupUpload();
         return NextResponse.json(
           { error: "El colaborador a actualizar ya no existe" },
           { status: 410 }
         );
       }
       if (target.owner_id !== invite.owner_id) {
+        await cleanupUpload();
         return NextResponse.json({ error: "Token incoherente" }, { status: 403 });
       }
       // Solo permitimos re-invitación de personas (consistencia con reinvite endpoint)
       if (target.kind !== "person" || kind !== "person") {
+        await cleanupUpload();
         return NextResponse.json(
           { error: "La re-invitación solo aplica a personas" },
           { status: 400 }
@@ -185,6 +199,7 @@ export async function POST(req: NextRequest) {
 
       if (updErr) {
         console.error("[collaborators POST update]", updErr);
+        await cleanupUpload();
         return NextResponse.json({ error: "No se pudo actualizar" }, { status: 500 });
       }
 
@@ -199,6 +214,7 @@ export async function POST(req: NextRequest) {
 
       if (collabErr || !collab) {
         console.error("[collaborators POST insert]", collabErr);
+        await cleanupUpload();
         return NextResponse.json({ error: "No se pudo guardar" }, { status: 500 });
       }
 

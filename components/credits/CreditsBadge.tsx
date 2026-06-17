@@ -4,12 +4,13 @@ import Link from "next/link";
 import { Zap } from "lucide-react";
 import { useCredits } from "@/hooks/useCredits";
 import { trackUpgradeClicked, type UserPlan } from "@/lib/analytics";
+import { MONTHLY_GRANT } from "@/lib/credits";
 
 /**
  * Badge de créditos en el header (Fase Z.1).
  * - Muestra balance actual del nuevo sistema unificado.
- * - Plan free: "23 / 30" → user ve cuánto le queda del mensual.
- * - Plan pro/enterprise: "215 / 250" igual.
+ * - Plan free: "7 / 10" → user ve cuánto le queda del mensual.
+ * - Plan pro/enterprise: "85 / 100" igual.
  * - Tap → /pricing (CTA conversión).
  *
  * Se sincroniza vía useCredits() que polles al focus.
@@ -21,7 +22,10 @@ export function CreditsBadge({ plan }: { plan?: string | null }) {
     return <div className="w-20 h-6 bg-white/5 rounded-full animate-pulse" />;
   }
 
-  const grant = monthlyGrant ?? (plan === "pro" ? 250 : plan === "enterprise" ? 2000 : 30);
+  // Fallback durante el primer render del badge si useCredits aún no ha
+  // devuelto monthly_grant: usar la constante de lib/credits (single
+  // source of truth) en vez de literales stale.
+  const grant = monthlyGrant ?? MONTHLY_GRANT[plan ?? "free"] ?? MONTHLY_GRANT.free;
   const current = balance ?? grant;
   const low = current < grant * 0.2; // <20% restante
 

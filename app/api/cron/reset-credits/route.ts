@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { isAuthorizedCron } from "@/lib/cronAuth";
 
 export const runtime = "nodejs";
 // Cron jobs no deben cachearse
@@ -21,12 +22,10 @@ export const dynamic = "force-dynamic";
  * SEGURIDAD:
  *   1. Vercel cron añade automáticamente el header `Authorization: Bearer
  *      <CRON_SECRET>` cuando configuras CRON_SECRET en env vars de Vercel.
- *   2. Verificamos ese secret. Sin él, cualquiera podría triggerear resets
- *      gratis a usuarios desde Internet.
- *   3. Fallback: si CRON_SECRET no está configurado, aceptamos el header
- *      `x-vercel-cron: 1` que Vercel también envía (menos seguro pero mejor
- *      que nada — protege contra clientes externos pero no contra spoofing
- *      de header).
+ *   2. Verificamos ese secret (timing-safe). Sin él, cualquiera podría
+ *      triggerear resets gratis a usuarios desde Internet.
+ *   3. Sin fallback: exigimos siempre CRON_SECRET. El antiguo fallback al
+ *      header `x-vercel-cron` se eliminó por ser trivialmente falsificable.
  *
  * IDEMPOTENTE: la función SQL solo afecta a usuarios con reset_at <= now().
  * Si por error el cron se ejecuta 2 veces el mismo día, la 2ª no hace nada
@@ -45,19 +44,8 @@ function adminClient() {
   });
 }
 
-function isAuthorized(req: Request): boolean {
-  const secret = process.env.CRON_SECRET;
-  // Modo strict: si CRON_SECRET está configurado, exigir Bearer match
-  if (secret) {
-    const auth = req.headers.get("authorization");
-    return auth === `Bearer ${secret}`;
-  }
-  // Fallback: aceptar header Vercel-only
-  return req.headers.get("x-vercel-cron") === "1";
-}
-
 export async function GET(req: Request) {
-  if (!isAuthorized(req)) {
+  if (!isAuthorizedCron(req)) {
     console.warn("[cron/reset-credits] unauthorized request");
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

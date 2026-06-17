@@ -1096,6 +1096,9 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
   // el src del FabricImage por la version sin fondo (PNG transparente).
   // Auth + rate limit aplicados en el endpoint.
   const [removingBg, setRemovingBg] = useState(false);
+  /** Captura la imagen al abrir el subtool "Quitar fondo" para evitar
+   *  perderla si Fabric deselecciona por interacciones con la UI. */
+  const removeBgTargetRef = useRef<FabricImage | null>(null);
 
   /** Genera dataURL de una imagen Fabric. Si el src ya es data:/blob: lo
    *  retorna directo. Si es http, lo descargamos via fetch para evitar
@@ -1130,7 +1133,9 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
       return;
     }
     const fc = fabricRef.current;
-    const img = getActiveImage();
+    // Preferir el ref capturado al abrir el subtool — Fabric a veces
+    // deselecciona por taps en la UI inline mientras el panel está abierto.
+    const img = removeBgTargetRef.current ?? getActiveImage();
     if (!fc || !img) { toast.error(t("mobileEditor.toast.selectImageFirst")); return; }
     setRemovingBg(true);
     try {
@@ -1165,11 +1170,16 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
       // PNG transparente ya viene recortado → reset filtros para no corromper alpha
       img.filters = [];
       img.applyFilters();
+      // Mantener la imagen seleccionada tras el reemplazo
+      fc.setActiveObject(img);
       fc.requestRenderAll();
       setSaveState("unsaved");
       pushHistory();
       void credits.refetch();
       toast.success(t("mobileEditor.toast.bgRemoved"));
+      // Cerrar el subtool tras éxito
+      setActiveSubTool(null);
+      removeBgTargetRef.current = null;
     } catch (e) {
       console.error("[remove-bg]", e);
       toast.error(t("mobileEditor.toast.imageError"));
@@ -2924,7 +2934,22 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
                 <SubToolBtnIcon node={<Replace size={18} strokeWidth={2.2}/>} label={t("mobileEditor.subtool.replace")} active={activeSubTool === "reemplazar"} onClick={() => setActiveSubTool(s => s === "reemplazar" ? null : "reemplazar")}/>
                 <SubToolBtnIcon node={<Crop size={18} strokeWidth={2.2}/>} label={t("mobileEditor.subtool.crop")} active={activeSubTool === "recortar"} onClick={() => setActiveSubTool(s => s === "recortar" ? null : "recortar")}/>
                 <SubToolBtnIcon node={<Sliders size={18} strokeWidth={2.2}/>} label={t("mobileEditor.subtool.filters")} active={activeSubTool === "filtros"} onClick={() => setActiveSubTool(s => s === "filtros" ? null : "filtros")}/>
-                <SubToolBtnIcon node={<Eraser size={18} strokeWidth={2.2}/>} label={t("mobileEditor.subtool.removeBg")} active={activeSubTool === "quitar-fondo"} onClick={() => setActiveSubTool(s => s === "quitar-fondo" ? null : "quitar-fondo")}/>
+                <SubToolBtnIcon node={<Eraser size={18} strokeWidth={2.2}/>} label={t("mobileEditor.subtool.removeBg")} active={activeSubTool === "quitar-fondo"} onClick={() => {
+                  if (!authUser) {
+                    setAuthModalConfig({
+                      title: "Inicia sesión para Quitar fondo",
+                      subtitle: "Quitar fondo usa IA y consume 1 crédito. Crea una cuenta gratis (10 créditos al registrarte) para probarlo.",
+                      onSuccess: () => setActiveSubTool("quitar-fondo"),
+                    });
+                    return;
+                  }
+                  // Capturar la imagen activa AHORA — al confirmar el panel
+                  // inline, Fabric puede haber deseleccionado por taps en UI.
+                  const img = getActiveImage();
+                  if (!img) { toast.error(t("mobileEditor.toast.selectImageFirst")); return; }
+                  removeBgTargetRef.current = img;
+                  setActiveSubTool(s => s === "quitar-fondo" ? null : "quitar-fondo");
+                }}/>
                 {/* Z.17 — Borrador mágico/manual full-screen */}
                 <SubToolBtnIcon node={<Brush size={18} strokeWidth={2.2}/>} label="Refinar" active={false} onClick={() => { void openBrushEraser(); }}/>
                 {/* Capas Mágicas (Fase V.1) — convierte foto en plantilla editable.

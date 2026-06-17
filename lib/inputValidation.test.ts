@@ -76,6 +76,21 @@ describe("validateImageUrl (SSRF protection)", () => {
     // remoto; solo restringe el HOST. Path/query libres.
     expect(validateImageUrl("https://cdn.fal.media/../etc/passwd")).toBeNull();
   });
+
+  // ─── HARDENING 2026-06-17 ─────────────────────────────────────────────
+  it("rechaza credenciales embebidas (userinfo @host)", () => {
+    // El host efectivo es 169.254.169.254, no el host de confianza del userinfo
+    expect(validateImageUrl("https://cdn.fal.media@169.254.169.254/x"))
+      .toContain("Credenciales");
+  });
+
+  it.each([
+    "https://2130706433/x",        // 127.0.0.1 en entero decimal
+    "https://0x7f000001/x",        // 127.0.0.1 en hex
+    "https://017700000001/x",      // octal
+  ])("rechaza IP en codificacion alternativa: %s", (url) => {
+    expect(validateImageUrl(url)).toContain("IPs");
+  });
 });
 
 describe("validateContentLength", () => {

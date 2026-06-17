@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { sendLowCreditsEmail } from "@/lib/email";
 import { daysUntilReset } from "@/lib/credits";
+import { isAuthorizedCron } from "@/lib/cronAuth";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -19,12 +20,7 @@ export const maxDuration = 60;
  * low_credits_emailed_at para que en el próximo mes se pueda enviar otra vez.
  */
 export async function GET(req: NextRequest) {
-  const auth = req.headers.get("authorization");
-  const secret = process.env.CRON_SECRET;
-  if (!secret) {
-    return NextResponse.json({ error: "CRON_SECRET no configurado" }, { status: 500 });
-  }
-  if (auth !== `Bearer ${secret}`) {
+  if (!isAuthorizedCron(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
 

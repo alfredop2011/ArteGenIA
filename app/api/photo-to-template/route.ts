@@ -9,6 +9,19 @@ import { detectTextLinesWithSurya, refineSonnetBboxesWithSurya } from "@/lib/sur
 import { isAdmin } from "@/lib/admin";
 import { consumeCredits, addCredits, CREDIT_COST } from "@/lib/credits";
 
+/** Error tipado: deja que el catch global emita el status correcto Y
+ *  haga refund automático (P0.3). Antes los returns post-consume no
+ *  pasaban por el refund — el user pagaba y no recibía servicio. */
+class ServiceError extends Error {
+  status: number;
+  body: Record<string, unknown>;
+  constructor(status: number, body: Record<string, unknown>) {
+    super(typeof body.error === "string" ? body.error : "service_error");
+    this.status = status;
+    this.body = body;
+  }
+}
+
 /**
  * POST /api/photo-to-template
  *
@@ -907,14 +920,16 @@ export async function POST(req: Request) {
     const used = 0;
 
     // ─── 5. DESCARGAR IMAGEN (la necesitamos en base64 para Claude) ──────
-    const imgRes = await fetch(body.imageUrl);
+    // safeFetch: re-valida whitelist + bloquea DNS rebinding/redirects internos.
+    const { safeFetch } = await import("@/lib/inputValidation");
+    const imgRes = await safeFetch(body.imageUrl);
     if (!imgRes.ok) {
-      return NextResponse.json({ error: "No se pudo descargar la imagen" }, { status: 400 });
+      throw new ServiceError(400, { error: "No se pudo descargar la imagen" });
     }
     const imgBuf = Buffer.from(await imgRes.arrayBuffer());
     const mediaType = (imgRes.headers.get("content-type") ?? "image/jpeg").split(";")[0];
     if (!mediaType.startsWith("image/")) {
-      return NextResponse.json({ error: "El archivo no es una imagen válida" }, { status: 400 });
+      throw new ServiceError(400, { error: "El archivo no es una imagen válida" });
     }
     const imgBase64 = imgBuf.toString("base64");
 
@@ -932,10 +947,7 @@ export async function POST(req: Request) {
     const elapsed = Date.now() - t0;
 
     if (!claudeOut) {
-      return NextResponse.json(
-        { error: "El analizador IA no respondió correctamente. Inténtalo de nuevo." },
-        { status: 502 },
-      );
+      throw new ServiceError(502, { error: "El analizador IA no respondió correctamente. Inténtalo de nuevo." });
     }
 
     // ─── 7. ARMAR TemplateLayer[] ────────────────────────────────────────
@@ -1201,26 +1213,27 @@ export async function POST(req: Request) {
       },
     });
   } catch (e) {
-    console.error("[photo-to-template] unhandled:", e);
+    const isService = e instanceof ServiceError;
+    if (!isService) console.error("[photo-to-template] unhandled:", e);
     const message = e instanceof Error ? e.message : "Error desconocido";
-    // Z.13 — refund automático si Sonnet/SAM-3 fallaron post-consume.
-    // Capas Mágicas cuesta 2 créditos → refund 2.
+    // Z.13 + P0.3 — refund automático para CUALQUIER error post-consume
+    // (Sonnet/SAM-3 fall, descarga, validación). Capas Mágicas = 2 créditos.
     if (creditConsumed && supabaseForRefund && userIdForRefund) {
       try {
         await addCredits(
-          supabaseForRefund, userIdForRefund, CREDIT_COST.capas_magicas,
+          supabaseAdmin, userIdForRefund, CREDIT_COST.capas_magicas,
           "refund:capas_magicas_error",
-          { detail: message.slice(0, 200) },
+          { detail: message.slice(0, 200), status: isService ? e.status : 500 },
         );
-        console.log(`[photo-to-template] refund automático para user ${userIdForRefund}`);
+        console.log(`[photo-to-template] refund automático para user ${userIdForRefund} (status ${isService ? e.status : 500})`);
       } catch (refundErr) {
         console.error("[photo-to-template] refund FALLÓ — revisar manual:", refundErr);
       }
     }
-    return NextResponse.json(
-      { error: message },
-      { status: 500 },
-    );
+    if (isService) {
+      return NextResponse.json(e.body, { status: e.status });
+    }
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 
