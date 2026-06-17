@@ -1121,7 +1121,14 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
   // por plan (deprecadas). Ahora: FormData + consume server-side + refund
   // automático Z.13 si falla.
   const handleRemoveBackground = useCallback(async () => {
-    if (!authUser) { toast.info(t("mobileEditor.toast.loginToUseAI")); return; }
+    if (!authUser) {
+      setAuthModalConfig({
+        title: "Inicia sesión para Quitar fondo",
+        subtitle: "Esta función usa IA y necesita identificarte para descontar los créditos correctamente.",
+        onSuccess: () => { /* el user volvera a tap tras login */ },
+      });
+      return;
+    }
     const fc = fabricRef.current;
     const img = getActiveImage();
     if (!fc || !img) { toast.error(t("mobileEditor.toast.selectImageFirst")); return; }
@@ -1175,7 +1182,14 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
   // Extrae src de la imagen activa y abre modal full-screen para refinar
   // con pincel manual o IA. Al guardar, reemplaza src.
   const openBrushEraser = useCallback(async () => {
-    if (!authUser) { toast.info(t("mobileEditor.toast.loginToUseAI")); return; }
+    if (!authUser) {
+      setAuthModalConfig({
+        title: "Inicia sesión para Borrador mágico",
+        subtitle: "El borrador mágico usa IA y requiere sesión para descontar los créditos correctamente.",
+        onSuccess: () => { /* el user volvera a tap tras login */ },
+      });
+      return;
+    }
     const img = getActiveImage();
     if (!img) { toast.error(t("mobileEditor.toast.selectImageFirst")); return; }
     try {
@@ -1238,7 +1252,11 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
 
   const handleMagicLayers = useCallback(async () => {
     if (!authUser) {
-      toast.info(t("mobileEditor.toast.loginToUseAI"));
+      setAuthModalConfig({
+        title: "Inicia sesión para Capas Mágicas",
+        subtitle: "Capas Mágicas analiza tu imagen con IA. Necesitamos tu sesión para descontar los créditos.",
+        onSuccess: () => { /* el user volvera a tap tras login */ },
+      });
       return;
     }
     const fc = fabricRef.current;
@@ -1353,7 +1371,14 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
 
   const runAssistant = useCallback(async (prompt: string) => {
     if (!template) return;
-    if (!authUser) { toast.info(t("mobileEditor.toast.loginToUseAI")); return; }
+    if (!authUser) {
+      setAuthModalConfig({
+        title: "Inicia sesión para el Asistente IA",
+        subtitle: "El Asistente genera contenido con IA y necesita identificarte para descontar los créditos.",
+        onSuccess: () => { /* el user volvera a tap tras login */ },
+      });
+      return;
+    }
     if (!prompt.trim()) { toast.error("Escribe primero qué evento es"); return; }
     setAssistantLoading(true);
     setAssistantResult(null);
@@ -2019,7 +2044,14 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
   const ensureSharedUrl = useCallback(async (): Promise<string | null> => {
     if (shareUrl) return shareUrl;
     if (!lastExportedDataUrl) return null;
-    if (!authUser) { toast.info(t("mobileEditor.toast.loginToShare")); return null; }
+    if (!authUser) {
+      setAuthModalConfig({
+        title: "Inicia sesión para compartir",
+        subtitle: "Para generar el link compartible de tu flyer y subirlo a tu cuenta, necesitas tener sesión iniciada.",
+        onSuccess: () => { /* el user volvera a tap tras login */ },
+      });
+      return null;
+    }
     setShareUploading(true);
     try {
       const res = await fetch("/api/share-upload", {
@@ -2290,10 +2322,17 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
     if (!template) return;
     if (exportFileFormat === "pdf" && !requirePro("pdf")) return;
     if (exportFileFormat === "svg" && !requirePro("svg")) return;
-    if (!authUser) { toast.info(t("mobileEditor.toast.loginToDownload")); return; }
+    if (!authUser) {
+      setAuthModalConfig({
+        title: "Inicia sesión para descargar",
+        subtitle: "Necesitas una cuenta gratis para descargar tus flyers. Tienes 10 créditos al registrarte.",
+        onSuccess: () => setPendingExportPayload({ fmtId, fileFormat: exportFileFormat }),
+      });
+      return;
+    }
     // Abrir modal de créditos. El user confirma → handleConfirmExport ejecuta.
     setPendingExportPayload({ fmtId, fileFormat: exportFileFormat });
-  }, [template, exportFileFormat, requirePro, authUser, toast, t]);
+  }, [template, exportFileFormat, requirePro, authUser]);
 
   /** Tras confirmar modal: consume crédito server-side + ejecuta export. */
   const handleConfirmExport = useCallback(async () => {
@@ -2315,7 +2354,14 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
     // El user debería decidir formato base en el sheet antes de "exportar todos".
     if (exportFileFormat === "pdf" && !requirePro("pdf")) return;
     if (exportFileFormat === "svg" && !requirePro("svg")) return;
-    if (!authUser) { toast.info(t("mobileEditor.toast.loginToDownload")); return; }
+    if (!authUser) {
+      setAuthModalConfig({
+        title: "Inicia sesión para descargar",
+        subtitle: "Necesitas una cuenta gratis para descargar tus flyers en todos los formatos. 10 créditos al registrarte.",
+        onSuccess: () => {},
+      });
+      return;
+    }
     const available = PUBLIC_FORMATS.filter(fmt => {
       const v = template.variants.find(x => x.format === fmt);
       return !!v;
@@ -2348,7 +2394,7 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
     } finally {
       setExporting(false);
     }
-  }, [template, exportFileFormat, requirePro, authUser, toast, t, credits, _executeExport]);
+  }, [template, exportFileFormat, requirePro, authUser, toast, credits, _executeExport]);
 
   // ─── Aplicar paleta ──────────────────────────────────────────────────────
   const applyPalette = useCallback((palette: Palette) => {
@@ -2402,7 +2448,14 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
 
   const requestAIRemix = useCallback(async (mood?: string) => {
     if (!template) return;
-    if (!authUser) { toast.info(t("mobileEditor.toast.loginToUseAI")); return; }
+    if (!authUser) {
+      setAuthModalConfig({
+        title: "Inicia sesión para Remix IA",
+        subtitle: "Remix IA reinterpreta tu flyer con un estilo nuevo. Necesita sesión para descontar los créditos.",
+        onSuccess: () => { /* el user volvera a tap tras login */ },
+      });
+      return;
+    }
     setAiRemixing(true);
     try {
       const res = await fetch("/api/remix", {
