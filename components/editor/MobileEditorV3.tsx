@@ -2749,10 +2749,14 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
         </div>
       ) : (
         <nav className="h-[68px] border-t border-white/[0.08] bg-[#0a0a14] flex items-center justify-around shrink-0 safe-area-bottom">
+          {/* Z.25 — botón Formatos sustituye al de Plantillas (que sacaba
+              del editor). Ahora abre el sheet de formatos in-situ.
+              Para volver a plantillas, el usuario usa el back del header. */}
           <BarBtn
             icon={<LayoutGrid size={18} strokeWidth={2}/>}
-            label={t("mobileEditor.bottomBar.templates")}
-            onClick={() => confirmExit("/templates")}
+            label={t("mobileEditor.sheet.format")}
+            active={openSheet === "format"}
+            onClick={() => setOpenSheet(s => s === "format" ? null : "format")}
           />
           <BarBtn
             icon={<Plus size={20} strokeWidth={2.4}/>}

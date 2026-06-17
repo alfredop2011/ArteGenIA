@@ -51,12 +51,27 @@ export function useProjectPages() {
     [],
   );
 
-  /** Serializa el canvas preservando width/height/background — toJSON()
-   *  por defecto SOLO incluye objects, asi que al volver a esa pagina
-   *  se perdian las dimensiones y el fondo. Z.25 fix multipagina. */
+  /** Serializa el canvas preservando width/height/background + custom
+   *  properties — toJSON() por defecto SOLO incluye props standard de
+   *  Fabric. Si los objetos tienen propiedades custom (data, magicLayerInfo,
+   *  customType, etc.) NO se serializan a menos que se pasen explicitamente.
+   *
+   *  Sin esto, al volver a una pagina con plantilla, los objetos se
+   *  cargaban "vacios" o sin identificadores y aparecian descolocados o
+   *  invisibles. Z.25 fix multipagina. */
   const serializeCanvasFull = useCallback((canvas: Canvas) => {
+    // Lista de propiedades custom que el editor anade a objetos Fabric.
+    // Si en el futuro añades mas, anadelas aqui.
+    const customProps = [
+      "data", "name", "customType",
+      "magicLayerId", "magicLayerInfo", "magicLabel",
+      "lockMovementX", "lockMovementY", "lockScalingX", "lockScalingY",
+      "selectable", "evented", "perPixelTargetFind",
+      "crossOrigin", "src", "filters",
+      "originalSrc", "extractedFrom",
+    ];
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const json = canvas.toJSON() as any;
+    const json = (canvas.toJSON as any)(customProps);
     json.width = canvas.getWidth();
     json.height = canvas.getHeight();
     // backgroundColor puede ser string o pattern; tomar tal cual o blanco
