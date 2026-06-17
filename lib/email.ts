@@ -1,12 +1,13 @@
 /**
  * Email transactional con Resend (Fase Z.23).
  *
- * 5 emails implementados:
+ * 6 emails implementados:
  *   1. Welcome       — tras signup confirmado
  *   2. LowCredits    — cron diario detecta balance < 20% del grant
  *   3. UpgradePro    — tras checkout.session.completed de Stripe
  *   4. PaymentFailed — tras invoice.payment_failed (P1.2)
- *   5. Cancel        — tras customer.subscription.deleted
+ *   5. TrialEnding   — tras trial_will_end (3 días antes del primer cargo)
+ *   6. Cancel        — tras customer.subscription.deleted
  *
  * Templates HTML inline (no React Email) — son simples y compatibles con
  * todos los clientes (Gmail, Outlook, Apple Mail). Para emails complejos
@@ -232,6 +233,40 @@ export async function sendPaymentFailedEmail(
         <p style="margin-top: 16px;">Para evitarlo, actualiza tu método de pago desde Gestionar suscripción en el portal:</p>
       `,
       ctaText: "Actualizar método de pago",
+      ctaHref: portalUrl,
+    }),
+  });
+}
+
+/**
+ * Aviso de fin de prueba (Stripe dispara trial_will_end ~3 días antes).
+ * Reduce chargebacks por cargo sorpresa al final del trial: el user sabe
+ * cuándo se le cobra y puede cancelar a tiempo sin pasar por atención
+ * al cliente.
+ */
+export async function sendTrialEndingEmail(
+  to: string,
+  opts: { trialEndDate: Date; planLabel?: string },
+): Promise<void> {
+  const portalUrl = `${APP_URL}/pricing`;
+  const dateStr = new Intl.DateTimeFormat("es-ES", {
+    day: "numeric",
+    month: "long",
+  }).format(opts.trialEndDate);
+  const planLabel = opts.planLabel ?? "Pro";
+  await send({
+    to,
+    subject: `Tu prueba de ArteGenIA termina el ${dateStr}`,
+    html: template({
+      heading: `Tu prueba ${planLabel} termina pronto`,
+      preheader: `El ${dateStr} cobraremos automáticamente. Puedes cancelar antes si lo prefieres.`,
+      body: `
+        <p>Hola,</p>
+        <p>Solo un aviso amistoso: el <b>${dateStr}</b> termina tu prueba gratuita y se hará el primer cargo de tu plan <b>${planLabel}</b>.</p>
+        <p style="margin-top: 16px;">Si todo va bien, no tienes que hacer nada — seguirás teniendo todas las features Pro sin interrupción.</p>
+        <p style="margin-top: 16px;">Si prefieres no continuar, puedes cancelar desde Gestionar suscripción en cualquier momento antes de esa fecha. No te cobraremos.</p>
+      `,
+      ctaText: "Gestionar suscripción",
       ctaHref: portalUrl,
     }),
   });

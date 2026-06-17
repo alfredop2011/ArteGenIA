@@ -15,6 +15,7 @@ export const dynamic = "force-dynamic";
  * - checkout.session.completed: usuario pagó → marcar profile.plan = "pro"
  * - customer.subscription.deleted: cancelación → volver a "free"
  * - customer.subscription.updated: cambio de plan → actualizar
+ * - customer.subscription.trial_will_end: trial -3d → email aviso (reduce chargebacks)
  * - invoice.payment_failed: tarjeta rechazada → email "actualiza tarjeta" (P1.2)
  *
  * SEGURIDAD: verificamos firma Stripe en cada request. Sin esto, cualquiera
@@ -376,6 +377,34 @@ export async function POST(req: NextRequest) {
           await updatePlan(userId, detected);
         } else if (sub.status === "canceled" || sub.status === "unpaid" || sub.status === "incomplete_expired") {
           await updatePlan(userId, "free");
+        }
+        break;
+      }
+      case "customer.subscription.trial_will_end": {
+        // Stripe dispara este evento ~3 días antes del primer cargo. Email
+        // al user para que NO se sorprenda con el cargo (reduce chargebacks
+        // y atención al cliente). Si quiere cancelar, lo hace desde el
+        // portal sin pasar por nosotros.
+        const sub = event.data.object as Stripe.Subscription;
+        if (!sub.trial_end) break;
+        try {
+          const customerId = typeof sub.customer === "string" ? sub.customer : sub.customer?.id;
+          if (customerId) {
+            const customer = await stripe.customers.retrieve(customerId);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const email = (customer as any)?.email as string | undefined;
+            if (email) {
+              const detected = detectPlanFromSubscription(sub);
+              const planLabel = detected === "enterprise" ? "Enterprise" : "Pro";
+              const { sendTrialEndingEmail } = await import("@/lib/email");
+              void sendTrialEndingEmail(email, {
+                trialEndDate: new Date(sub.trial_end * 1000),
+                planLabel,
+              });
+            }
+          }
+        } catch (e) {
+          console.warn("[stripe-webhook] trial_will_end email skip:", e);
         }
         break;
       }
