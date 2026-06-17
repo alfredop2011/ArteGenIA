@@ -15,6 +15,7 @@ export const dynamic = "force-dynamic";
  * - checkout.session.completed: usuario pagó → marcar profile.plan = "pro"
  * - customer.subscription.deleted: cancelación → volver a "free"
  * - customer.subscription.updated: cambio de plan → actualizar
+ * - invoice.payment_failed: tarjeta rechazada → email "actualiza tarjeta" (P1.2)
  *
  * SEGURIDAD: verificamos firma Stripe en cada request. Sin esto, cualquiera
  * podría enviar POST falsos a este endpoint y darse acceso Pro gratis.
@@ -375,6 +376,41 @@ export async function POST(req: NextRequest) {
           await updatePlan(userId, detected);
         } else if (sub.status === "canceled" || sub.status === "unpaid" || sub.status === "incomplete_expired") {
           await updatePlan(userId, "free");
+        }
+        break;
+      }
+      case "invoice.payment_failed": {
+        // P1.2 — Tarjeta caducada o rechazada. Stripe reintenta solo durante
+        // ~3 semanas (smart retries). Mientras, mandamos UN email al user
+        // invitándolo a actualizar el método de pago vía portal. Sin esto,
+        // Stripe acaba en subscription.deleted → free silencioso (churn
+        // involuntario). Solo en el PRIMER fallo (attempt_count === 1).
+        const invoice = event.data.object as Stripe.Invoice;
+        if ((invoice.attempt_count ?? 1) !== 1) {
+          // Ya mandamos el email en el primer fallo. Los reintentos no
+          // ameritan más correos — Stripe no manda spam y nosotros tampoco.
+          break;
+        }
+        try {
+          const email =
+            invoice.customer_email ??
+            (typeof invoice.customer === "string"
+              ? (await stripe.customers.retrieve(invoice.customer).then(
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  (c: any) => c?.email,
+                ).catch(() => null))
+              : null);
+          if (email) {
+            const { sendPaymentFailedEmail } = await import("@/lib/email");
+            const nextAttempt = invoice.next_payment_attempt
+              ? new Date(invoice.next_payment_attempt * 1000)
+              : null;
+            void sendPaymentFailedEmail(email, { nextAttemptDate: nextAttempt });
+          } else {
+            console.warn("[stripe-webhook] payment_failed sin email para customer", invoice.customer);
+          }
+        } catch (e) {
+          console.warn("[stripe-webhook] payment_failed email skip:", e);
         }
         break;
       }
