@@ -1796,7 +1796,7 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
       // mantener backward compat con el resto del código.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const fabricJson: object = pages.pageCount > 1
-        ? (pages.serializeForSave(fc) as unknown as object)
+        ? (pages.serializeForSave(fc, canvasSize.w, canvasSize.h) as unknown as object)
         : ((fc.toJSON as any)(["customId"]) as object);
       // Thumbnail JPEG ~320px
       let thumbnailUrl: string | null = null;
@@ -1880,24 +1880,28 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
   const switchToPage = useCallback((index: number) => {
     const fc = fabricRef.current;
     if (!fc) return;
-    pages.switchTo(index, fc);
+    // Pasar dimensiones LOGICAS del canvas (canvasSize state) — no las
+    // CSS de canvas.getWidth() que son del wrapper.
+    pages.switchTo(index, fc, canvasSize.w, canvasSize.h);
     const next = pages.consumePendingFabric();
     if (!next) return;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (fc.loadFromJSON as any)(next).then(() => {
       applyPageDimensions(fc, next);
-      // Reset selección (cada página tiene sus propios objetos)
       fc.discardActiveObject();
       fc.requestRenderAll();
     });
     setSaveState("unsaved");
-  }, [pages, applyPageDimensions]);
+  }, [pages, applyPageDimensions, canvasSize.w, canvasSize.h]);
 
   // Añade una página vacía con las dimensiones de la activa y la activa.
   const handleAddPage = useCallback(() => {
     const fc = fabricRef.current;
     if (!fc) return;
-    pages.addPage(fc);
+    // CRITICO: pasar canvasSize (dimensiones LOGICAS del flyer), NO las
+    // CSS de canvas.getWidth(). Sin esto las paginas se guardan con dims
+    // del wrapper y al volver el canvas se ve con zoom imposible.
+    pages.addPage(fc, canvasSize.w, canvasSize.h);
     const next = pages.consumePendingFabric();
     if (!next) return;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -1908,7 +1912,7 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
     });
     setSaveState("unsaved");
     toast.success(`Página ${pages.pageCount + 1} añadida`);
-  }, [pages, toast, applyPageDimensions]);
+  }, [pages, toast, applyPageDimensions, canvasSize.w, canvasSize.h]);
 
   const handleSave = useCallback(() => {
     if (!authUser) { toast.info(t("mobileEditor.toast.loginToSave")); return; }
@@ -2906,9 +2910,9 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
             label="Páginas"
             active={showPagesSheet}
             onClick={() => {
-              // Z.25 — capturar thumbnail de la pagina activa antes de abrir
-              // el sheet, para que el user vea la version mas reciente.
-              pages.refreshActiveThumbnail(fabricRef.current);
+              // Z.25 — capturar thumbnail con dims logicas del flyer
+              // (no las CSS del canvas que son las del wrapper).
+              pages.refreshActiveThumbnail(fabricRef.current, canvasSize.w, canvasSize.h);
               setShowPagesSheet(true);
             }}
           />

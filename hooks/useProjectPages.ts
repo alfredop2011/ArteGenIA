@@ -52,32 +52,30 @@ export function useProjectPages() {
   );
 
   /** Serializa el canvas preservando width/height/background + custom
-   *  properties — toJSON() por defecto SOLO incluye props standard de
-   *  Fabric. Si los objetos tienen propiedades custom (data, magicLayerInfo,
-   *  customType, etc.) NO se serializan a menos que se pasen explicitamente.
-   *
-   *  Sin esto, al volver a una pagina con plantilla, los objetos se
-   *  cargaban "vacios" o sin identificadores y aparecian descolocados o
-   *  invisibles. Z.25 fix multipagina. */
-  const serializeCanvasFull = useCallback((canvas: Canvas) => {
-    // Lista de propiedades custom que el editor anade a objetos Fabric.
-    // Si en el futuro añades mas, anadelas aqui.
-    const customProps = [
-      "data", "name", "customType",
-      "magicLayerId", "magicLayerInfo", "magicLabel",
-      "lockMovementX", "lockMovementY", "lockScalingX", "lockScalingY",
-      "selectable", "evented", "perPixelTargetFind",
-      "crossOrigin", "src", "filters",
-      "originalSrc", "extractedFrom",
-    ];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const json = (canvas.toJSON as any)(customProps);
-    json.width = canvas.getWidth();
-    json.height = canvas.getHeight();
-    // backgroundColor puede ser string o pattern; tomar tal cual o blanco
-    json.background = canvas.backgroundColor ?? "#ffffff";
-    return json;
-  }, []);
+   *  properties. CRITICO: width/height NO se leen de canvas.getWidth()
+   *  porque eso devuelve el CSS width del canvas (que es el del wrapper
+   *  tras fitToView, no las dims logicas del flyer). Hay que pasarlas
+   *  como parametro explicito. */
+  const serializeCanvasFull = useCallback(
+    (canvas: Canvas, logicalWidth: number, logicalHeight: number) => {
+      // Lista de propiedades custom que el editor anade a objetos Fabric.
+      const customProps = [
+        "data", "name", "customType",
+        "magicLayerId", "magicLayerInfo", "magicLabel",
+        "lockMovementX", "lockMovementY", "lockScalingX", "lockScalingY",
+        "selectable", "evented", "perPixelTargetFind",
+        "crossOrigin", "src", "filters",
+        "originalSrc", "extractedFrom",
+      ];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const json = (canvas.toJSON as any)(customProps);
+      json.width = logicalWidth;
+      json.height = logicalHeight;
+      json.background = canvas.backgroundColor ?? "#ffffff";
+      return json;
+    },
+    [],
+  );
 
   /** Z.25 — captura un thumbnail JPEG inline para mostrar en el
    *  PagesSheet. Muy chico (max 200px en el lado mas largo) para no
@@ -97,41 +95,40 @@ export function useProjectPages() {
   }, []);
 
   /** Cambia a otra página. Serializa el canvas actual antes de cargar la
-   *  nueva, así no se pierde el trabajo. */
+   *  nueva, así no se pierde el trabajo. Recibe las dimensiones LOGICAS
+   *  del flyer activo (NO leer de canvas.getWidth() que es CSS). */
   const switchTo = useCallback(
-    (index: number, canvas: Canvas | null) => {
+    (index: number, canvas: Canvas | null, logicalWidth?: number, logicalHeight?: number) => {
       if (index < 0 || index >= pages.length) return;
       if (index === activeIndex) return;
+      const active = pages[activeIndex];
+      const w = logicalWidth ?? active?.width ?? 1080;
+      const h = logicalHeight ?? active?.height ?? 1350;
       // Serializar la activa preservando width/height/background + thumbnail
       if (canvas) {
-        const fabricJson = serializeCanvasFull(canvas);
+        const fabricJson = serializeCanvasFull(canvas, w, h);
         const thumbnail = captureThumbnail(canvas);
         setPages((prev) =>
-          prev.map((p, i) => (i === activeIndex ? { ...p, fabric: fabricJson, thumbnail } : p)),
+          prev.map((p, i) => (i === activeIndex ? { ...p, fabric: fabricJson, thumbnail, width: w, height: h } : p)),
         );
       }
-      // Preparar la nueva para que el editor la cargue en su useEffect
       pendingFabricRef.current = pages[index]?.fabric ?? null;
       setActiveIndex(index);
     },
     [activeIndex, pages, serializeCanvasFull, captureThumbnail],
   );
 
-  /** Añade una página vacía al final con las dimensiones de la activa.
-   *  Z.25 lazy-init fix: si pages esta vacio (modo plantilla nueva sin
-   *  hydrate previo), primero crea la pagina INICIAL con el estado
-   *  actual del canvas. Sin esto, la plantilla original se perdia al
-   *  añadir la primera pagina nueva. */
+  /** Añade una página vacía. Recibe dimensiones LOGICAS del flyer
+   *  (canvasSize del componente padre) — NO canvas.getWidth() porque
+   *  ese es el CSS width tras fitToView (= tamaño wrapper, no flyer). */
   const addPage = useCallback(
-    (canvas: Canvas | null, name?: string) => {
-      // Lazy init: la primera vez que se llama addPage en modo template
-      // nuevo (pages vacio), capturamos el state actual como "Pagina 1"
-      // ANTES de crear la nueva.
+    (canvas: Canvas | null, logicalWidth?: number, logicalHeight?: number, name?: string) => {
+      // Lazy init: la primera vez en modo template nuevo
       if (pages.length === 0 && canvas) {
-        const initialFabric = serializeCanvasFull(canvas);
+        const w = logicalWidth ?? 1080;
+        const h = logicalHeight ?? 1350;
+        const initialFabric = serializeCanvasFull(canvas, w, h);
         const initialThumbnail = captureThumbnail(canvas);
-        const w = canvas.getWidth();
-        const h = canvas.getHeight();
         const initialPage: PageData = {
           name: "Página 1",
           fabric: initialFabric,
@@ -147,21 +144,15 @@ export function useProjectPages() {
         return;
       }
       const active = pages[activeIndex];
-      const width = active?.width || 1080;
-      const height = active?.height || 1350;
-      const newPage = newEmptyPage(
-        width,
-        height,
-        name || `Página ${pages.length + 1}`,
-      );
-      // Serializar la activa antes de cambiar — preservar dimensiones,
-      // background y CAPTURAR thumbnail para que se vea en el PagesSheet.
+      const w = logicalWidth ?? active?.width ?? 1080;
+      const h = logicalHeight ?? active?.height ?? 1350;
+      const newPage = newEmptyPage(w, h, name || `Página ${pages.length + 1}`);
       if (canvas) {
-        const fabricJson = serializeCanvasFull(canvas);
+        const fabricJson = serializeCanvasFull(canvas, w, h);
         const thumbnail = captureThumbnail(canvas);
         setPages((prev) => {
           const updated = prev.map((p, i) =>
-            i === activeIndex ? { ...p, fabric: fabricJson, thumbnail } : p,
+            i === activeIndex ? { ...p, fabric: fabricJson, thumbnail, width: w, height: h } : p,
           );
           return [...updated, newPage];
         });
@@ -169,7 +160,7 @@ export function useProjectPages() {
         setPages((prev) => [...prev, newPage]);
       }
       pendingFabricRef.current = newPage.fabric;
-      setActiveIndex(pages.length); // será el nuevo último índice
+      setActiveIndex(pages.length);
     },
     [activeIndex, pages, serializeCanvasFull, captureThumbnail],
   );
@@ -230,27 +221,23 @@ export function useProjectPages() {
   }, []);
 
   /** Z.25 — Actualiza el thumbnail de la pagina activa SIN cambiar de pagina.
-   *  Util al abrir el PagesSheet: la pagina actual no tiene thumbnail hasta
-   *  que cambias a otra. Llamar antes de mostrar el sheet para que el
-   *  usuario vea siempre la version mas reciente.
-   *
-   *  Lazy-init: si pages esta vacio (modo plantilla nueva), crea
-   *  Pagina 1 con el state actual en lugar de no hacer nada. Asi al
-   *  abrir el sheet por primera vez SIEMPRE se ve la plantilla original. */
+   *  Tambien hace lazy-init si pages esta vacio.
+   *  Recibe dimensiones LOGICAS del flyer (no canvas.getWidth/Height). */
   const refreshActiveThumbnail = useCallback(
-    (canvas: Canvas | null) => {
+    (canvas: Canvas | null, logicalWidth?: number, logicalHeight?: number) => {
       if (!canvas) return;
       const thumbnail = captureThumbnail(canvas);
       if (!thumbnail) return;
       if (pages.length === 0) {
-        // Lazy init: crear Pagina 1 con state actual del canvas
-        const fabric = serializeCanvasFull(canvas);
+        const w = logicalWidth ?? 1080;
+        const h = logicalHeight ?? 1350;
+        const fabric = serializeCanvasFull(canvas, w, h);
         setPages([{
           name: "Página 1",
           fabric,
           thumbnail,
-          width: canvas.getWidth(),
-          height: canvas.getHeight(),
+          width: w,
+          height: h,
         }]);
         setActiveIndex(0);
         setInitialized(true);
@@ -264,11 +251,14 @@ export function useProjectPages() {
   /** Devuelve el JSON listo para guardar en Supabase. Llamar antes de
    *  cada save con el canvas activo para capturar las ediciones. */
   const serializeForSave = useCallback(
-    (canvas: Canvas | null): ProjectPages => {
+    (canvas: Canvas | null, logicalWidth?: number, logicalHeight?: number): ProjectPages => {
       let finalPages = pages;
       if (canvas) {
-        const fabricJson = serializeCanvasFull(canvas);
-        finalPages = pages.map((p, i) => (i === activeIndex ? { ...p, fabric: fabricJson } : p));
+        const active = pages[activeIndex];
+        const w = logicalWidth ?? active?.width ?? 1080;
+        const h = logicalHeight ?? active?.height ?? 1350;
+        const fabricJson = serializeCanvasFull(canvas, w, h);
+        finalPages = pages.map((p, i) => (i === activeIndex ? { ...p, fabric: fabricJson, width: w, height: h } : p));
       }
       return serializePages({ pages: finalPages, activeIndex });
     },
