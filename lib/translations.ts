@@ -746,13 +746,13 @@ export type TranslationKey =
 type Dict = Record<TranslationKey, string>;
 
 const es: Dict = {
-  "home.hero.title.line1": "Plantillas listas",
-  "home.hero.title.line2": "para",
+  "home.hero.title.line1": "Tu flyer profesional",
+  "home.hero.title.line2": "con IA en 2 min para",
   "home.hero.title.highlight": "tu evento",
   "home.hero.title.rotating": "tu fiesta, tus conciertos, tu festival, tus clases de baile, tu discoteca, tu evento corporativo, tu academia, tu institución, tu colegio, tu productora, profesores particulares",
-  "home.hero.subtitle": "Elige un diseño, personalízalo y descárgalo en alta calidad.",
-  "home.hero.cta": "Explorar plantillas",
-  "home.hero.cta2": "Ver categorías",
+  "home.hero.subtitle": "Quita fondos, recorta personas y monta el diseño entero con IA. Sin Photoshop, sin curva de aprendizaje. En español.",
+  "home.hero.cta": "Empezar gratis",
+  "home.hero.cta2": "Ver plantillas",
   "home.hero.featured": "DESTACADA",
   "home.search.placeholder": "Buscar plantillas...",
   "home.search.filters": "Filtros",
@@ -1462,13 +1462,13 @@ const es: Dict = {
 };
 
 const en: Dict = {
-  "home.hero.title.line1": "Ready-made templates",
-  "home.hero.title.line2": "for",
+  "home.hero.title.line1": "Your pro flyer",
+  "home.hero.title.line2": "with AI in 2 min for",
   "home.hero.title.highlight": "your event",
   "home.hero.title.rotating": "your party, your concerts, your festival, your dance classes, your club, your corporate event, your academy, your institution, your school, your production company, private tutors",
-  "home.hero.subtitle": "Pick a design, customize it and download in high quality.",
-  "home.hero.cta": "Explore templates",
-  "home.hero.cta2": "View categories",
+  "home.hero.subtitle": "Remove backgrounds, cut out people and design the whole flyer with AI. No Photoshop, no learning curve.",
+  "home.hero.cta": "Start free",
+  "home.hero.cta2": "Browse templates",
   "home.hero.featured": "FEATURED",
   "home.search.placeholder": "Search templates...",
   "home.search.filters": "Filters",
@@ -2165,13 +2165,13 @@ const en: Dict = {
 };
 
 const fr: Dict = {
-  "home.hero.title.line1": "Modèles prêts",
-  "home.hero.title.line2": "pour",
+  "home.hero.title.line1": "Ton flyer pro",
+  "home.hero.title.line2": "avec IA en 2 min pour",
   "home.hero.title.highlight": "votre événement",
   "home.hero.title.rotating": "votre fête, vos concerts, votre festival, vos cours de danse, votre discothèque, votre événement d'entreprise, votre académie, votre institution, votre école, votre maison de production, professeurs particuliers",
-  "home.hero.subtitle": "Choisis un design, personnalise-le et télécharge-le en haute qualité.",
-  "home.hero.cta": "Explorer les modèles",
-  "home.hero.cta2": "Voir catégories",
+  "home.hero.subtitle": "Détoure, recadre et conçois ton flyer entier avec l'IA. Sans Photoshop, sans courbe d'apprentissage.",
+  "home.hero.cta": "Commencer gratuitement",
+  "home.hero.cta2": "Voir les modèles",
   "home.hero.featured": "À LA UNE",
   "home.search.placeholder": "Rechercher des modèles...",
   "home.search.filters": "Filtres",
@@ -2868,13 +2868,13 @@ const fr: Dict = {
 };
 
 const pt: Dict = {
-  "home.hero.title.line1": "Modelos prontos",
-  "home.hero.title.line2": "para",
+  "home.hero.title.line1": "O teu flyer pro",
+  "home.hero.title.line2": "com IA em 2 min para",
   "home.hero.title.highlight": "o teu evento",
   "home.hero.title.rotating": "a tua festa, os teus concertos, o teu festival, as tuas aulas de dança, a tua discoteca, o teu evento corporativo, a tua academia, a tua instituição, o teu colégio, a tua produtora, professores particulares",
-  "home.hero.subtitle": "Escolhe um design, personaliza-o e descarrega em alta qualidade.",
-  "home.hero.cta": "Explorar modelos",
-  "home.hero.cta2": "Ver categorias",
+  "home.hero.subtitle": "Remove fundos, recorta pessoas e desenha o flyer inteiro com IA. Sem Photoshop, sem curva de aprendizagem.",
+  "home.hero.cta": "Começar grátis",
+  "home.hero.cta2": "Ver modelos",
   "home.hero.featured": "DESTAQUE",
   "home.search.placeholder": "Pesquisar modelos...",
   "home.search.filters": "Filtros",
