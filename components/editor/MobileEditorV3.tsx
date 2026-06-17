@@ -1776,6 +1776,22 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
   // ─── Multi-página: switch + add (Fase W.1) ──────────────────────────────
   // Cambia la página activa: serializa la actual, carga la nueva en el canvas.
   // El hook ya hace el guardado interno; aquí solo aplicamos al Fabric Canvas.
+  /** Z.25 fix multipagina — aplicar dimensiones/background despues de
+   *  loadFromJSON. Sin esto, al volver a la pagina original tras añadir
+   *  paginas nuevas, los objetos se cargaban pero el canvas mantenia
+   *  las dimensiones de la pagina vacia, "perdiendo" visualmente la
+   *  plantilla. */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const applyPageDimensions = useCallback((fc: any, pageData: any) => {
+    if (pageData?.width && pageData?.height) {
+      fc.setDimensions({ width: pageData.width, height: pageData.height });
+      setCanvasSize({ w: pageData.width, h: pageData.height });
+    }
+    if (pageData?.background) {
+      fc.backgroundColor = pageData.background;
+    }
+  }, []);
+
   const switchToPage = useCallback((index: number) => {
     const fc = fabricRef.current;
     if (!fc) return;
@@ -1784,12 +1800,13 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
     if (!next) return;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (fc.loadFromJSON as any)(next).then(() => {
-      fc.requestRenderAll();
+      applyPageDimensions(fc, next);
       // Reset selección (cada página tiene sus propios objetos)
       fc.discardActiveObject();
+      fc.requestRenderAll();
     });
     setSaveState("unsaved");
-  }, [pages]);
+  }, [pages, applyPageDimensions]);
 
   // Añade una página vacía con las dimensiones de la activa y la activa.
   const handleAddPage = useCallback(() => {
@@ -1800,12 +1817,13 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
     if (!next) return;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (fc.loadFromJSON as any)(next).then(() => {
-      fc.requestRenderAll();
+      applyPageDimensions(fc, next);
       fc.discardActiveObject();
+      fc.requestRenderAll();
     });
     setSaveState("unsaved");
     toast.success(`Página ${pages.pageCount + 1} añadida`);
-  }, [pages, toast]);
+  }, [pages, toast, applyPageDimensions]);
 
   const handleSave = useCallback(() => {
     if (!authUser) { toast.info(t("mobileEditor.toast.loginToSave")); return; }

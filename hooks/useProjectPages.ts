@@ -51,15 +51,28 @@ export function useProjectPages() {
     [],
   );
 
+  /** Serializa el canvas preservando width/height/background — toJSON()
+   *  por defecto SOLO incluye objects, asi que al volver a esa pagina
+   *  se perdian las dimensiones y el fondo. Z.25 fix multipagina. */
+  const serializeCanvasFull = useCallback((canvas: Canvas) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const json = canvas.toJSON() as any;
+    json.width = canvas.getWidth();
+    json.height = canvas.getHeight();
+    // backgroundColor puede ser string o pattern; tomar tal cual o blanco
+    json.background = canvas.backgroundColor ?? "#ffffff";
+    return json;
+  }, []);
+
   /** Cambia a otra página. Serializa el canvas actual antes de cargar la
    *  nueva, así no se pierde el trabajo. */
   const switchTo = useCallback(
     (index: number, canvas: Canvas | null) => {
       if (index < 0 || index >= pages.length) return;
       if (index === activeIndex) return;
-      // Serializar la activa
+      // Serializar la activa preservando width/height/background
       if (canvas) {
-        const fabricJson = canvas.toJSON();
+        const fabricJson = serializeCanvasFull(canvas);
         setPages((prev) =>
           prev.map((p, i) => (i === activeIndex ? { ...p, fabric: fabricJson } : p)),
         );
@@ -68,7 +81,7 @@ export function useProjectPages() {
       pendingFabricRef.current = pages[index]?.fabric ?? null;
       setActiveIndex(index);
     },
-    [activeIndex, pages],
+    [activeIndex, pages, serializeCanvasFull],
   );
 
   /** Añade una página vacía al final con las dimensiones de la activa. */
@@ -82,9 +95,10 @@ export function useProjectPages() {
         height,
         name || `Página ${pages.length + 1}`,
       );
-      // Serializar la activa antes de cambiar
+      // Serializar la activa antes de cambiar — usar serializeCanvasFull
+      // para preservar dimensiones y background.
       if (canvas) {
-        const fabricJson = canvas.toJSON();
+        const fabricJson = serializeCanvasFull(canvas);
         setPages((prev) => {
           const updated = prev.map((p, i) =>
             i === activeIndex ? { ...p, fabric: fabricJson } : p,
@@ -97,7 +111,7 @@ export function useProjectPages() {
       pendingFabricRef.current = newPage.fabric;
       setActiveIndex(pages.length); // será el nuevo último índice
     },
-    [activeIndex, pages],
+    [activeIndex, pages, serializeCanvasFull],
   );
 
   /** Duplica la página dada (o la activa si no se especifica). */
@@ -161,12 +175,12 @@ export function useProjectPages() {
     (canvas: Canvas | null): ProjectPages => {
       let finalPages = pages;
       if (canvas) {
-        const fabricJson = canvas.toJSON();
+        const fabricJson = serializeCanvasFull(canvas);
         finalPages = pages.map((p, i) => (i === activeIndex ? { ...p, fabric: fabricJson } : p));
       }
       return serializePages({ pages: finalPages, activeIndex });
     },
-    [pages, activeIndex],
+    [pages, activeIndex, serializeCanvasFull],
   );
 
   /** Consumido por el useEffect del editor: lee y limpia el "pending fabric"
