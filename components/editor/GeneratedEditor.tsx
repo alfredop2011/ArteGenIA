@@ -2297,7 +2297,21 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
    *  y avisa con toast. Si no hay sesión, dispara AuthModal. */
   const openRemoveBgFlow = useCallback(async () => {
     const obj = fabricRef.current?.getActiveObject();
-    if (!obj || obj.type !== "image") return;
+    if (!obj || obj.type !== "image") {
+      toast.info("Selecciona una imagen primero");
+      return;
+    }
+    // Auth check ANTES del pre-check de transparencia — isImageTransparent
+    // puede fallar silenciosamente con imágenes de R2 sin CORS y dejar
+    // al user sin feedback.
+    if (!authUser) {
+      setAuthModalConfig({
+        title: "Inicia sesión para quitar el fondo",
+        subtitle: "Quitar fondo usa IA y consume 1 crédito. Crea una cuenta gratis (10 créditos al registrarte) para probarlo.",
+        onSuccess: () => { void openRemoveBgFlow(); },
+      });
+      return;
+    }
     // Pre-check rápido: si ya es PNG transparente, evita gastar crédito
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const srcUrl = (obj as any).getSrc?.() ?? (obj as any)._element?.src;
@@ -2308,14 +2322,8 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
         return;
       }
     }
-    requireAuth(
-      () => setPendingRemoveBg(obj),
-      {
-        title: "Inicia sesión para quitar el fondo",
-        subtitle: "Quitar fondo usa IA y consume 1 crédito. Crea una cuenta gratis (10 créditos al registrarte) para probarlo.",
-      },
-    );
-  }, [toast, requireAuth]);
+    setPendingRemoveBg(obj);
+  }, [toast, authUser]);
 
   /** Tras confirmar modal: descarga blob, manda a /api/remove-bg, reemplaza src
    *  en Fabric. Si 402 → sin créditos. Si 5xx → refund automático server-side. */
