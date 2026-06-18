@@ -106,6 +106,12 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
   } | null>(null);
   // JSON pendiente para hidratar canvas al crearse (load mode)
   const pendingFabricJsonRef = useRef<object | null>(null);
+
+  // V.8 prep — tracking calidad bboxes Capas Mágicas. Si user edita
+  // cualquier objeto en plantilla generada por magic-layers, asumimos
+  // que el bbox no era perfecto y trackeamos 1 vez.
+  const isFromMagicLayersRef = useRef(false);
+  const magicLayersBboxEditTrackedRef = useRef(false);
   const [pendingProjectMeta, setPendingProjectMeta] = useState<{
     title: string;
     templateId: number | null;
@@ -509,6 +515,9 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const pending = pendingFabricJsonRef.current as any;
       if (pending && pending.__magicLayers === true && Array.isArray(pending.layers)) {
+        // V.8 prep — marcar para tracking de bbox edits
+        isFromMagicLayersRef.current = true;
+        magicLayersBboxEditTrackedRef.current = false;
         applyTemplateLayers(fc, pending.layers).then(() => {
           pendingFabricJsonRef.current = null;
           setupAfterLoad();
@@ -657,6 +666,23 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
     fc.on("object:modified", debouncedPush);
     fc.on("object:added", debouncedPush);
     fc.on("object:removed", debouncedPush);
+
+    // V.8 prep — track 1ª edición de bbox en plantilla Capas Mágicas
+    fc.on("object:modified", (e) => {
+      if (!isFromMagicLayersRef.current || magicLayersBboxEditTrackedRef.current) return;
+      magicLayersBboxEditTrackedRef.current = true;
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const target = (e.target as any);
+        import("@/components/analytics/PostHogProvider").then(({ trackEvent }) => {
+          trackEvent("magic_layers_bbox_edited", {
+            object_type: target?.type ?? "unknown",
+            object_id: target?.customId ?? null,
+            surface: "mobile",
+          });
+        });
+      } catch { /* analytics is fire-and-forget */ }
+    });
 
     // ─── Smart guides al arrastrar (Fase J — perf optimizada Fase N) ───
     // Cacheamos las refs (centros + bordes de los OTROS objetos) UNA VEZ al

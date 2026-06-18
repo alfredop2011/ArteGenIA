@@ -555,6 +555,13 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
   // events text:editing:entered/exited. Ref (no state) para que cambios
   // no causen re-render y porque updateFloatingToolbar lo lee sin deps.
   const isEditingTextRef = useRef(false);
+
+  // V.8 prep — Tracking de calidad de bboxes generados por Capas Mágicas.
+  // Si el user mueve/redimensiona cualquier objeto en una plantilla que vino
+  // de magic-layers, asumimos que el bbox no era perfecto y track 1 vez.
+  // Ratio (editados / generados) en PostHog → decide si V.8 (Surya OCR) vale.
+  const isFromMagicLayersRef = useRef(false);
+  const magicLayersBboxEditTrackedRef = useRef(false);
   useEffect(() => {
     const handler = () => updateToolbarRef.current();
     window.addEventListener("resize", handler);
@@ -754,6 +761,9 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const magic = pendingJson as any;
           if (magic.__magicLayers === true && Array.isArray(magic.layers)) {
+            // V.8 prep — marcar para tracking de bbox edits
+            isFromMagicLayersRef.current = true;
+            magicLayersBboxEditTrackedRef.current = false;
             await applyTemplateLayers(canvas, magic.layers);
             // Cargar stickers IA si vienen — el panel "IA" del sidebar los expone
             if (Array.isArray(magic.__magicStickers) && magic.__magicStickers.length > 0) {
@@ -826,7 +836,26 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
           canvas.on("selection:created", e => { const o = e.selected?.[0]; if (o) handleSelProj(o); updateFloatingToolbar(); });
           canvas.on("selection:updated", e => { const o = e.selected?.[0]; if (o) handleSelProj(o); updateFloatingToolbar(); });
           canvas.on("selection:cleared", () => { setSelectedLayer(null); setFloatingToolbar(p => ({ ...p, visible: false, alignOpen: false, moreOpen: false })); });
-          canvas.on("object:modified", () => { const o = canvas?.getActiveObject(); if (o) handleSelProj(o); setSaveState("unsaved"); updateFloatingToolbar(); pushSnapshot(); });
+          canvas.on("object:modified", () => {
+            const o = canvas?.getActiveObject();
+            if (o) handleSelProj(o);
+            setSaveState("unsaved");
+            updateFloatingToolbar();
+            pushSnapshot();
+            // V.8 prep — track 1ª edición de bbox en plantillas Capas Mágicas
+            if (isFromMagicLayersRef.current && !magicLayersBboxEditTrackedRef.current) {
+              magicLayersBboxEditTrackedRef.current = true;
+              try {
+                import("@/components/analytics/PostHogProvider").then(({ trackEvent }) => {
+                  trackEvent("magic_layers_bbox_edited", {
+                    object_type: o?.type ?? "unknown",
+                    object_id: (o as unknown as { customId?: string })?.customId ?? null,
+                    surface: "desktop",
+                  });
+                });
+              } catch { /* analytics is fire-and-forget */ }
+            }
+          });
           canvas.on("object:added",    () => { pushSnapshot(); });
           canvas.on("object:removed",  () => { pushSnapshot(); });
           canvas.on("text:changed",    () => { pushSnapshotDebounced(); });
