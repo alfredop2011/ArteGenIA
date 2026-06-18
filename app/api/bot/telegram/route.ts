@@ -3,6 +3,7 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { uploadToR2, makeKey } from "@/lib/r2";
 import { extractEventFromImage } from "@/lib/extractEvent";
 import { seriesKeyFromTitle } from "@/lib/eventSeries";
+import { converse, type BrainEvent } from "@/lib/botBrain";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -115,6 +116,56 @@ async function fillLatestMissingPrice(ref: string, price: number, info: string |
   return ev.title as string;
 }
 
+// Eventos del remitente, para dar contexto al "cerebro".
+async function loadBrainEvents(ref: string): Promise<BrainEvent[]> {
+  const { data } = await supabaseAdmin
+    .from("events")
+    .select("id,title,event_date,event_time,venue,price,status")
+    .eq("submitter_channel", "telegram")
+    .eq("submitter_ref", ref)
+    .order("event_date", { ascending: true })
+    .limit(40);
+  return (data as BrainEvent[]) ?? [];
+}
+
+// Ejecutor de acciones del cerebro — SIEMPRE limitado a los eventos de `ref`.
+function makeRunTool(ref: string) {
+  return async (name: string, input: Record<string, unknown>): Promise<string> => {
+    const id = typeof input.id === "string" ? input.id : "";
+    if (!id) return "Falta el id del evento.";
+    const { data: ev } = await supabaseAdmin
+      .from("events")
+      .select("id,title")
+      .eq("id", id)
+      .eq("submitter_channel", "telegram")
+      .eq("submitter_ref", ref)
+      .maybeSingle();
+    if (!ev) return "No encontré ese evento entre los tuyos.";
+
+    if (name === "cancelar_evento") {
+      await supabaseAdmin.from("events").update({ status: "cancelled" }).eq("id", id);
+      return `Cancelado: "${ev.title}".`;
+    }
+    if (name === "reactivar_evento") {
+      await supabaseAdmin.from("events").update({ status: "published" }).eq("id", id);
+      return `Reactivado: "${ev.title}".`;
+    }
+    if (name === "actualizar_evento") {
+      const patch: Record<string, unknown> = {};
+      if (typeof input.event_time === "string") patch.event_time = input.event_time;
+      if (typeof input.event_date === "string") patch.event_date = input.event_date;
+      if (typeof input.venue === "string") patch.venue = input.venue;
+      if (typeof input.title === "string") { patch.title = input.title; patch.series_key = seriesKeyFromTitle(input.title); }
+      if (typeof input.price === "number") patch.price = input.price;
+      if (typeof input.price_info === "string") patch.price_info = input.price_info;
+      if (Object.keys(patch).length === 0) return "No indicaste qué cambiar.";
+      await supabaseAdmin.from("events").update(patch).eq("id", id);
+      return `Actualizado: "${ev.title}".`;
+    }
+    return "No sé hacer eso.";
+  };
+}
+
 export async function POST(req: NextRequest) {
   // Verificación del secreto del webhook (si está configurado).
   if (WEBHOOK_SECRET && req.headers.get("x-telegram-bot-api-secret-token") !== WEBHOOK_SECRET) {
@@ -146,8 +197,9 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ ok: true });
       }
 
-      // 2) Precio → completa el último evento sin precio.
-      const pp = parsePriceText(text);
+      // 2) Atajo gratis: mensaje CORTO solo-precio → completa el último evento sin precio.
+      const shortMsg = text.split(/\s+/).length <= 4;
+      const pp = shortMsg ? parsePriceText(text) : null;
       if (pp) {
         const title = await fillLatestMissingPrice(String(chatId), pp.price, pp.info);
         if (title) {
@@ -157,12 +209,16 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      // 3) Instrucciones / invitación.
-      await tgSend(
-        chatId,
-        `👋 ¡Hola${fromName ? " " + fromName : ""}! Envíame el <b>flyer</b> de tu evento (como foto) y lo publico solo en la agenda — leo fecha, lugar y precio automáticamente.\n\n` +
-          `✨ <b>Totalmente gratis</b>: planifica todo el año y mira lo que publican otros organizadores.`
-      );
+      // 3) Cerebro conversacional (Claude): entiende y ejecuta acciones.
+      const today = new Date().toISOString().slice(0, 10);
+      const reply = await converse({
+        events: await loadBrainEvents(String(chatId)),
+        userName: fromName,
+        text,
+        today,
+        runTool: makeRunTool(String(chatId)),
+      });
+      await tgSend(chatId, reply);
       return NextResponse.json({ ok: true });
     }
 
