@@ -5,11 +5,14 @@
  * de Y) por un balance ÚNICO de créditos que cada acción IA o descarga consume.
  *
  * Por plan (single source of truth en MONTHLY_GRANT abajo):
- *   Free       =  10 créditos/mes (5 fotos sin fondo, decisión Z.2)
- *   Pro        = 100 créditos/mes (rollover hasta 50, decisión Z.4)
- *   Enterprise = 350 créditos/mes (decisión Z.4)
+ *   Free       =  10 créditos/mes — sin rollover (use it or lose it)
+ *                  → recibe 10 frescos cada mes para probar el producto
+ *   Pro        = 100 créditos/mes — rollover hasta 50 acumulados
+ *   Enterprise = 350 créditos/mes — rollover hasta 50 acumulados
  *
- * Reset: día 1 cada mes UTC (cron).
+ * Reset: día 1 cada mes UTC (cron). La función SQL reset_monthly_credits()
+ * aplica los caps por plan via CASE WHEN (ver migración
+ * 2026_06_18_credits_rollover_by_plan.sql).
  *
  * Mapeo módulo → créditos: ver CREDIT_COST abajo. Es la SINGLE SOURCE OF
  * TRUTH para todos los componentes y endpoints.
