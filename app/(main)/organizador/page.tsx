@@ -48,6 +48,7 @@ const CATEGORIES: { id: EventCategory; label: string }[] = [
   { id: "clases", label: "Clases de baile" },
   { id: "club", label: "Club / Discoteca" },
   { id: "corporativo", label: "Corporativo" },
+  { id: "social", label: "Bailes sociales" },
 ];
 
 const AUDIENCES: { id: EventAudience; label: string }[] = [

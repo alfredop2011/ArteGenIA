@@ -63,6 +63,7 @@ const CATEGORIES: Record<Category, { label: string; icon: typeof Music; grad: st
   clases: { label: "Clases de baile", icon: Footprints, grad: CATEGORY_GRAD.clases },
   club: { label: "Club / Discoteca", icon: Disc3, grad: CATEGORY_GRAD.club },
   corporativo: { label: "Corporativo", icon: Briefcase, grad: CATEGORY_GRAD.corporativo },
+  social: { label: "Bailes sociales", icon: Users, grad: CATEGORY_GRAD.social },
 };
 
 const AUDIENCES: { id: Audience; label: string }[] = [
