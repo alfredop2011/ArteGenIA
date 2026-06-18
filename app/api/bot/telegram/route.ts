@@ -193,6 +193,10 @@ function makeRunTool(ref: string) {
       await supabaseAdmin.from("events").update({ status: "published" }).eq("id", id);
       return `Reactivado: "${ev.title}".`;
     }
+    if (name === "borrar_evento") {
+      await supabaseAdmin.from("events").delete().eq("id", id).eq("submitter_ref", ref);
+      return `Borrado: "${ev.title}".`;
+    }
     if (name === "actualizar_evento") {
       const patch: Record<string, unknown> = {};
       if (typeof input.event_time === "string") patch.event_time = input.event_time;
