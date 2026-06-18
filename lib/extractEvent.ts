@@ -30,7 +30,7 @@ const VALID_CATS: EventCategory[] = ["fiesta", "conciertos", "festival", "clases
 const SYSTEM = `Eres un extractor de datos de flyers de eventos. Recibes la imagen de un flyer y devuelves SOLO un objeto JSON (sin texto extra, sin markdown) con esta forma exacta:
 {
   "title": string,                 // nombre del evento, conciso
-  "event_date": string|null,       // "YYYY-MM-DD". Si el flyer no pone año, usa el año en curso. null si no hay fecha clara
+  "event_date": string|null,       // "YYYY-MM-DD". REGLA DE AÑO abajo. null si no hay fecha clara
   "event_time": string,            // "HH:mm" 24h. "20:00" si no aparece
   "city": string,                  // ciudad en minúsculas sin tildes: "madrid","barcelona","valencia","sevilla". "madrid" si no aparece
   "venue": string,                 // sala/lugar. "" si no aparece
@@ -44,6 +44,11 @@ const SYSTEM = `Eres un extractor de datos de flyers de eventos. Recibes la imag
 }
 Mapea la categoría: clases/talleres/masterclass de baile -> "clases"; fiesta/social -> "fiesta"; discoteca/club night -> "club"; festival -> "festival"; concierto/directo/música en vivo -> "conciertos"; evento de empresa/networking -> "corporativo".`;
 
+// Regla de año: el modelo no sabe en qué año estamos, así que se la inyectamos.
+function dateRule(today: string): string {
+  return `Hoy es ${today}. Si el flyer NO indica el año, elige el año que haga que la fecha sea HOY o futura (nunca una fecha pasada). Solo devuelve una fecha pasada si el flyer la escribe explícitamente con ese año.`;
+}
+
 export async function extractEventFromImage(
   base64: string,
   mediaType: string
@@ -53,6 +58,7 @@ export async function extractEventFromImage(
     console.warn("[extractEvent] Falta ANTHROPIC_API_KEY — no se puede leer el flyer");
     return null;
   }
+  const today = new Date().toISOString().slice(0, 10);
 
   try {
     const res = await fetch("https://api.anthropic.com/v1/messages", {
@@ -71,7 +77,7 @@ export async function extractEventFromImage(
             role: "user",
             content: [
               { type: "image", source: { type: "base64", media_type: mediaType, data: base64 } },
-              { type: "text", text: "Extrae los datos de este flyer en el JSON indicado." },
+              { type: "text", text: `${dateRule(today)}\nExtrae los datos de este flyer en el JSON indicado.` },
             ],
           },
         ],
@@ -89,9 +95,19 @@ export async function extractEventFromImage(
     const raw = JSON.parse(jsonStr);
 
     const category: EventCategory = VALID_CATS.includes(raw.category) ? raw.category : "fiesta";
+    // Red de seguridad: si la fecha quedó en el pasado (típico: el flyer no
+    // ponía año y el modelo adivinó mal), adelanta el año hasta que sea futura.
+    let eventDate = typeof raw.event_date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(raw.event_date) ? raw.event_date : null;
+    if (eventDate && eventDate < today) {
+      const [y0, m, d] = eventDate.split("-").map(Number);
+      let y = y0;
+      const md = `-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+      while (`${y}${md}` < today) y += 1;
+      eventDate = `${y}${md}`;
+    }
     return {
       title: String(raw.title || "Evento").slice(0, 120),
-      event_date: typeof raw.event_date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(raw.event_date) ? raw.event_date : null,
+      event_date: eventDate,
       event_time: typeof raw.event_time === "string" && /^\d{1,2}:\d{2}$/.test(raw.event_time) ? raw.event_time : "20:00",
       city: String(raw.city || "madrid").toLowerCase().trim(),
       venue: String(raw.venue || "").slice(0, 120),
