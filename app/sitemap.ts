@@ -58,6 +58,15 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.95,
     },
     {
+      // EST#17 — landing SEO high-intent "cómo hacer un flyer de fiesta".
+      // HowTo + FAQPage JSON-LD para rich results. Captura tráfico orgánico
+      // de DJs/promotoras buscando solución rápida.
+      url: `${SITE_URL}/flyer-fiesta-5-minutos`,
+      lastModified: LAST_MODIFIED,
+      changeFrequency: "monthly",
+      priority: 0.9,
+    },
+    {
       url: `${SITE_URL}/colaboradores`,
       lastModified: LAST_MODIFIED,
       changeFrequency: "monthly",

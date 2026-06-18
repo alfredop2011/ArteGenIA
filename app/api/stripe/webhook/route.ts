@@ -402,6 +402,41 @@ export async function POST(req: NextRequest) {
         } else if (sub.status === "canceled" || sub.status === "unpaid" || sub.status === "incomplete_expired") {
           await updatePlan(userId, "free");
         }
+
+        // T.10 — Detectar cupón de retención recién aplicado.
+        // Stripe envía previous_attributes con los campos que cambiaron.
+        // En Stripe v22+ el campo es `discounts` (array), no `discount`.
+        // Si el array estaba vacío antes y ahora tiene elementos → user acaba
+        // de aceptar el descuento en el flow de cancelación del Portal.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const previousAttrs = (event.data as any).previous_attributes;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const prevDiscounts = (previousAttrs?.discounts as any[] | undefined) ?? [];
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const currDiscounts = ((sub as any).discounts as any[] | undefined) ?? [];
+        const hadDiscount = prevDiscounts.length > 0;
+        const hasDiscount = currDiscounts.length > 0;
+        if (!hadDiscount && hasDiscount) {
+          try {
+            const { trackRetentionCouponRedeemed } = await import("@/lib/analyticsServer");
+            // Discount object → { coupon: {...}, promotion_code?: '...' }
+            // o solo el ID string (depende de expand). Resolvemos defensivo.
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const discount = currDiscounts[0] as any;
+            const couponObj = typeof discount === "string" ? null : discount?.coupon;
+            await trackRetentionCouponRedeemed(userId, {
+              coupon_id: couponObj?.id ?? (typeof discount === "string" ? discount : "unknown"),
+              percent_off: couponObj?.percent_off ?? undefined,
+              duration_months: couponObj?.duration_in_months ?? undefined,
+              plan: detectPlanFromSubscription(sub) ?? undefined,
+            });
+            console.log(
+              `[stripe-webhook] retention coupon redeemed — user=${userId} coupon=${couponObj?.id} pct=${couponObj?.percent_off}% months=${couponObj?.duration_in_months}`,
+            );
+          } catch (e) {
+            console.warn("[stripe-webhook] retention coupon tracking skip:", e);
+          }
+        }
         break;
       }
       case "customer.subscription.trial_will_end": {

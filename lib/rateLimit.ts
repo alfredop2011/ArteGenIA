@@ -48,6 +48,10 @@ export const RATE_LIMITS: Record<string, RateLimitConfig> = {
   "generate-flyer":     { max: 10, windowMinutes: 1 },
   // Capas mágicas — Claude Sonnet + SAM-3, caro ($0.04+)
   "photo-to-template":  { max: 5,  windowMinutes: 1 },
+  // Refund por fallo client-side (post-200 server pero render falla).
+  // Caso típico: setSrc CORS R2. Max 3/min: cubre reintentos legítimos
+  // y detecta abuso obvio (cualquier patrón mayor = sospecha).
+  "refund-client-failure": { max: 3, windowMinutes: 1 },
 };
 
 /**

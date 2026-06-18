@@ -106,6 +106,12 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
   } | null>(null);
   // JSON pendiente para hidratar canvas al crearse (load mode)
   const pendingFabricJsonRef = useRef<object | null>(null);
+
+  // V.8 prep — tracking calidad bboxes Capas Mágicas. Si user edita
+  // cualquier objeto en plantilla generada por magic-layers, asumimos
+  // que el bbox no era perfecto y trackeamos 1 vez.
+  const isFromMagicLayersRef = useRef(false);
+  const magicLayersBboxEditTrackedRef = useRef(false);
   const [pendingProjectMeta, setPendingProjectMeta] = useState<{
     title: string;
     templateId: number | null;
@@ -509,6 +515,9 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const pending = pendingFabricJsonRef.current as any;
       if (pending && pending.__magicLayers === true && Array.isArray(pending.layers)) {
+        // V.8 prep — marcar para tracking de bbox edits
+        isFromMagicLayersRef.current = true;
+        magicLayersBboxEditTrackedRef.current = false;
         applyTemplateLayers(fc, pending.layers).then(() => {
           pendingFabricJsonRef.current = null;
           setupAfterLoad();
@@ -657,6 +666,23 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
     fc.on("object:modified", debouncedPush);
     fc.on("object:added", debouncedPush);
     fc.on("object:removed", debouncedPush);
+
+    // V.8 prep — track 1ª edición de bbox en plantilla Capas Mágicas
+    fc.on("object:modified", (e) => {
+      if (!isFromMagicLayersRef.current || magicLayersBboxEditTrackedRef.current) return;
+      magicLayersBboxEditTrackedRef.current = true;
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const target = (e.target as any);
+        import("@/components/analytics/PostHogProvider").then(({ trackEvent }) => {
+          trackEvent("magic_layers_bbox_edited", {
+            object_type: target?.type ?? "unknown",
+            object_id: target?.customId ?? null,
+            surface: "mobile",
+          });
+        });
+      } catch { /* analytics is fire-and-forget */ }
+    });
 
     // ─── Smart guides al arrastrar (Fase J — perf optimizada Fase N) ───
     // Cacheamos las refs (centros + bordes de los OTROS objetos) UNA VEZ al
@@ -2670,7 +2696,14 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
       </header>
 
       {/* ═══ CANVAS — protagonista (~70% pantalla) ═══════════════════════ */}
-      <div className="flex-1 min-h-0 px-3 py-3 flex items-center justify-center relative">
+      {/* UX#21 — cuando hay sheet abierto, padding-bottom dinámico empuja
+          el canvas hacia arriba (flex centra dentro del área reducida) →
+          la capa seleccionada queda visible sobre el sheet en lugar de
+          taparse. Transition suave para que no salte. */}
+      <div
+        className="flex-1 min-h-0 px-3 py-3 flex items-center justify-center relative transition-[padding] duration-200 ease-out"
+        style={{ paddingBottom: openSheet ? "calc(45vh + 12px)" : undefined }}
+      >
         <div
           ref={wrapperRef}
           className="h-full w-full max-w-full max-h-full rounded-xl overflow-hidden bg-[#111] shadow-2xl shadow-black/40 relative flex items-center justify-center"
@@ -3061,7 +3094,7 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
             className="fixed inset-0 z-30 bg-black/40 backdrop-blur-[2px]"
             onClick={() => setOpenSheet(null)}
           />
-          <div className="fixed bottom-0 left-0 right-0 z-40 bg-[#1c1c2a] rounded-t-3xl border-t border-white/[0.12] shadow-2xl max-h-[55vh] flex flex-col safe-area-bottom animate-in slide-in-from-bottom duration-200">
+          <div className="fixed bottom-0 left-0 right-0 z-40 bg-[#1c1c2a] rounded-t-3xl border-t border-white/[0.12] shadow-2xl max-h-[45vh] flex flex-col safe-area-bottom animate-in slide-in-from-bottom duration-200">
             <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mt-2.5 mb-1 shrink-0"/>
             <div className="px-4 py-3 flex items-center justify-between shrink-0 border-b border-white/[0.06]">
               <h2 className="text-[15px] font-bold">
@@ -3490,6 +3523,7 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
         }
         balance={credits.balance ?? 0}
         daysUntilReset={credits.daysUntilReset ?? undefined}
+        plan={authProfile?.plan}
         exportDetails={(() => {
           if (!pendingExportPayload) return undefined;
           const fmt = getFormatByDimensions(canvasSize.w, canvasSize.h);

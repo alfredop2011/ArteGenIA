@@ -555,6 +555,13 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
   // events text:editing:entered/exited. Ref (no state) para que cambios
   // no causen re-render y porque updateFloatingToolbar lo lee sin deps.
   const isEditingTextRef = useRef(false);
+
+  // V.8 prep — Tracking de calidad de bboxes generados por Capas Mágicas.
+  // Si el user mueve/redimensiona cualquier objeto en una plantilla que vino
+  // de magic-layers, asumimos que el bbox no era perfecto y track 1 vez.
+  // Ratio (editados / generados) en PostHog → decide si V.8 (Surya OCR) vale.
+  const isFromMagicLayersRef = useRef(false);
+  const magicLayersBboxEditTrackedRef = useRef(false);
   useEffect(() => {
     const handler = () => updateToolbarRef.current();
     window.addEventListener("resize", handler);
@@ -754,6 +761,9 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const magic = pendingJson as any;
           if (magic.__magicLayers === true && Array.isArray(magic.layers)) {
+            // V.8 prep — marcar para tracking de bbox edits
+            isFromMagicLayersRef.current = true;
+            magicLayersBboxEditTrackedRef.current = false;
             await applyTemplateLayers(canvas, magic.layers);
             // Cargar stickers IA si vienen — el panel "IA" del sidebar los expone
             if (Array.isArray(magic.__magicStickers) && magic.__magicStickers.length > 0) {
@@ -826,7 +836,26 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
           canvas.on("selection:created", e => { const o = e.selected?.[0]; if (o) handleSelProj(o); updateFloatingToolbar(); });
           canvas.on("selection:updated", e => { const o = e.selected?.[0]; if (o) handleSelProj(o); updateFloatingToolbar(); });
           canvas.on("selection:cleared", () => { setSelectedLayer(null); setFloatingToolbar(p => ({ ...p, visible: false, alignOpen: false, moreOpen: false })); });
-          canvas.on("object:modified", () => { const o = canvas?.getActiveObject(); if (o) handleSelProj(o); setSaveState("unsaved"); updateFloatingToolbar(); pushSnapshot(); });
+          canvas.on("object:modified", () => {
+            const o = canvas?.getActiveObject();
+            if (o) handleSelProj(o);
+            setSaveState("unsaved");
+            updateFloatingToolbar();
+            pushSnapshot();
+            // V.8 prep — track 1ª edición de bbox en plantillas Capas Mágicas
+            if (isFromMagicLayersRef.current && !magicLayersBboxEditTrackedRef.current) {
+              magicLayersBboxEditTrackedRef.current = true;
+              try {
+                import("@/components/analytics/PostHogProvider").then(({ trackEvent }) => {
+                  trackEvent("magic_layers_bbox_edited", {
+                    object_type: o?.type ?? "unknown",
+                    object_id: (o as unknown as { customId?: string })?.customId ?? null,
+                    surface: "desktop",
+                  });
+                });
+              } catch { /* analytics is fire-and-forget */ }
+            }
+          });
           canvas.on("object:added",    () => { pushSnapshot(); });
           canvas.on("object:removed",  () => { pushSnapshot(); });
           canvas.on("text:changed",    () => { pushSnapshotDebounced(); });
@@ -2389,7 +2418,10 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
   }, [toast, authUser]);
 
   /** Tras confirmar modal: descarga blob, manda a /api/remove-bg, reemplaza src
-   *  en Fabric. Si 402 → sin créditos. Si 5xx → refund automático server-side. */
+   *  en Fabric. Si 402 → sin créditos. Si 5xx → refund automático server-side.
+   *  Si server 200 pero setSrc falla en cliente (típico: CORS R2 mal
+   *  configurado, ver AGENTS.md) → refund vía /api/credits/refund-client-failure
+   *  porque el server ya cobró pero el user nunca verá el resultado. */
   const handleConfirmRemoveBg = useCallback(async () => {
     const obj = pendingRemoveBg;
     if (!obj) return;
@@ -2398,6 +2430,10 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const objId = ((obj as any).customId as string | undefined) ?? String(obj.left ?? "") + ":" + String(obj.top ?? "");
     setRemovingBgObjId(objId);
+
+    // Flag: tras 200 del server, el crédito se ha cobrado. Si algo falla
+    // después (típicamente setSrc CORS), debemos pedir refund client-side.
+    let serverCharged = false;
 
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -2419,8 +2455,12 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
         return;
       }
       if (!res.ok || !json.url) {
+        // Server falló post-cobro → su catch global hace refund. No marcamos
+        // serverCharged porque ya está cubierto server-side.
         throw new Error(json.error || "No se pudo quitar el fondo");
       }
+      // A partir de aquí, server cobró 1 crédito (res.ok && json.url).
+      serverCharged = true;
 
       // Reemplaza src en Fabric — añadimos ?v= para evitar caché R2 sin CORS.
       // Fabric v6 setSrc(src, opts) devuelve Promise (NO acepta callback).
@@ -2438,9 +2478,31 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
       setSaveState("unsaved");
       void credits.refetch();
       toast.success("Fondo eliminado");
+      serverCharged = false; // todo OK, no necesita refund
     } catch (e) {
       console.error("[quitar-fondo-editor]", e);
       toast.error(e instanceof Error ? e.message : "Error al quitar fondo");
+
+      // Si el server cobró pero el render client falló (típico: CORS R2),
+      // pedir refund. Endpoint dedicado: rate-limited y loggeado para
+      // detectar abuso (revisable en credit_transactions con
+      // reason='refund:client_quitar_fondo').
+      if (serverCharged) {
+        try {
+          await fetch("/api/credits/refund-client-failure", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              module: "quitar_fondo",
+              reason: e instanceof Error ? e.message.slice(0, 200) : "client-error",
+            }),
+          });
+          await credits.refetch();
+          toast.info("Crédito reembolsado — no llegamos a aplicar el cambio");
+        } catch (refundErr) {
+          console.error("[quitar-fondo-editor] refund client-side falló:", refundErr);
+        }
+      }
     } finally {
       setRemovingBgObjId(null);
     }
@@ -4426,6 +4488,7 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
         amount={CREDIT_COST.download_png}
         balance={credits.balance ?? 0}
         daysUntilReset={credits.daysUntilReset ?? undefined}
+        plan={authProfile?.plan}
         exportDetails={(() => {
           const fmt = getFormatByDimensions(canvasSize.w, canvasSize.h);
           return {
@@ -4446,6 +4509,7 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
         amount={CREDIT_COST.quitar_fondo}
         balance={credits.balance ?? 0}
         daysUntilReset={credits.daysUntilReset ?? undefined}
+        plan={authProfile?.plan}
       />
 
       {/* Z.17 — Borrador mágico/manual full-screen */}
