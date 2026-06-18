@@ -2670,7 +2670,14 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
       </header>
 
       {/* ═══ CANVAS — protagonista (~70% pantalla) ═══════════════════════ */}
-      <div className="flex-1 min-h-0 px-3 py-3 flex items-center justify-center relative">
+      {/* UX#21 — cuando hay sheet abierto, padding-bottom dinámico empuja
+          el canvas hacia arriba (flex centra dentro del área reducida) →
+          la capa seleccionada queda visible sobre el sheet en lugar de
+          taparse. Transition suave para que no salte. */}
+      <div
+        className="flex-1 min-h-0 px-3 py-3 flex items-center justify-center relative transition-[padding] duration-200 ease-out"
+        style={{ paddingBottom: openSheet ? "calc(45vh + 12px)" : undefined }}
+      >
         <div
           ref={wrapperRef}
           className="h-full w-full max-w-full max-h-full rounded-xl overflow-hidden bg-[#111] shadow-2xl shadow-black/40 relative flex items-center justify-center"
@@ -3061,7 +3068,7 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
             className="fixed inset-0 z-30 bg-black/40 backdrop-blur-[2px]"
             onClick={() => setOpenSheet(null)}
           />
-          <div className="fixed bottom-0 left-0 right-0 z-40 bg-[#1c1c2a] rounded-t-3xl border-t border-white/[0.12] shadow-2xl max-h-[55vh] flex flex-col safe-area-bottom animate-in slide-in-from-bottom duration-200">
+          <div className="fixed bottom-0 left-0 right-0 z-40 bg-[#1c1c2a] rounded-t-3xl border-t border-white/[0.12] shadow-2xl max-h-[45vh] flex flex-col safe-area-bottom animate-in slide-in-from-bottom duration-200">
             <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mt-2.5 mb-1 shrink-0"/>
             <div className="px-4 py-3 flex items-center justify-between shrink-0 border-b border-white/[0.06]">
               <h2 className="text-[15px] font-bold">

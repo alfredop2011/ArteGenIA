@@ -18,6 +18,7 @@ import type { AudienceId } from "@/data/templates";
 import type { FormatId } from "@/data/formats";
 import { useLocale } from "@/hooks/useLocale";
 import type { TranslationKey } from "@/lib/translations";
+import HomeVsCanva from "@/components/home/HomeVsCanva";
 
 // Lazy-load: TemplateFabricThumbnail arrastra Fabric.js (~320 KB). En la home
 // son thumbnails decorativos, así que se cargan en un chunk aparte (ssr:false)
@@ -529,6 +530,9 @@ export default function Home() {
             <AudienceCard icon={Music}         accent="#22d3ee" title="Discotecas" desc="Lineup semanal sin gastar en diseñador." />
           </div>
         </section>
+
+        {/* ═════ EST#14 — Comparativa vs Canva (argumento competitivo) ═════ */}
+        <HomeVsCanva />
 
         {/* ═════ FAQ — 3 preguntas (era 4) ═════ */}
         <section className="mt-10 sm:mt-14">
