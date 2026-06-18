@@ -2035,7 +2035,7 @@ export const templates: Template[] = [
                 { id: "info-value-3", type: "text", text: "Donativo desde 80€", x: 600, y: 1250, width: 380, fontSize: 18, fontFamily: "Playfair Display, serif", color: "#ffffff", textAlign: "left" },
 
                 { id: "info-label-4", type: "text", text: "RSVP", x: 600, y: 1290, width: 200, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.5)", fontWeight: "700", textAlign: "left", charSpacing: 300 },
-                { id: "info-value-4", type: "text", text: "gala@voices.es", x: 600, y: 1310, width: 380, fontSize: 18, fontFamily: "Playfair Display, serif", color: "#b48744", textAlign: "left", fontStyle: "italic" },
+                { id: "info-value-4", type: "text", text: "gala@voices.es", x: 600, y: 1310, width: 380, fontSize: 26, fontFamily: "Playfair Display, serif", color: "#b48744", textAlign: "left", fontStyle: "italic" },
             ] },
         ],
     },
@@ -2218,7 +2218,7 @@ export const templates: Template[] = [
                 { id: "chip-label", type: "text", text: "·  ÚNICA SESIÓN  ·", x: 0, y: 132, width: 1080, fontSize: 20, fontFamily: "Anton, Impact, sans-serif", color: "#fca5a5", textAlign: "center", charSpacing: 600 },
 
                 // SUPRA + TITULOS mas grandes
-                { id: "supra", type: "text", text: "M A S T E R   W O R K S H O P", x: 0, y: 215, width: 1080, fontSize: 18, fontFamily: "Cormorant Garamond, serif", color: "#fbbf24", fontWeight: "500", textAlign: "center", charSpacing: 700 },
+                { id: "supra", type: "text", text: "M A S T E R   W O R K S H O P", x: 0, y: 215, width: 1080, fontSize: 26, fontFamily: "Cormorant Garamond, serif", color: "#fbbf24", fontWeight: "500", textAlign: "center", charSpacing: 700 },
                 { id: "title-1", type: "text", text: "BACHATA", x: 0, y: 260, width: 1080, fontSize: 130, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "center", charSpacing: 40 },
                 { id: "title-2", type: "text", text: "Sensual", x: 0, y: 390, width: 1080, fontSize: 90, fontFamily: "Playfair Display, serif", color: "#fbbf24", textAlign: "center", fontStyle: "italic" },
 
@@ -2345,25 +2345,25 @@ export const templates: Template[] = [
                 { id: "sched-line", type: "shape", shape: "rect", x: 600, y: 502, width: 80, height: 2, fill: "#7c1d2c", selectable: false },
 
                 // Fila 1 LUN
-                { id: "sched-d1", type: "text", text: "LUN", x: 600, y: 525, width: 80, fontSize: 18, fontFamily: "Anton, Impact, sans-serif", color: "#7c1d2c", textAlign: "left", charSpacing: 150 },
+                { id: "sched-d1", type: "text", text: "LUN", x: 600, y: 525, width: 80, fontSize: 26, fontFamily: "Anton, Impact, sans-serif", color: "#7c1d2c", textAlign: "left", charSpacing: 150 },
                 { id: "sched-t1", type: "text", text: "Iniciación bachata", x: 720, y: 525, width: 240, fontSize: 17, fontFamily: "Montserrat, sans-serif", color: "#1f1010", fontWeight: "600", textAlign: "left" },
                 { id: "sched-h1", type: "text", text: "19:00", x: 970, y: 525, width: 80, fontSize: 16, fontFamily: "Montserrat, sans-serif", color: "rgba(31,16,16,0.6)", fontWeight: "500", textAlign: "right" },
                 { id: "sched-sep1", type: "shape", shape: "rect", x: 600, y: 555, width: 440, height: 1, fill: "rgba(31,16,16,0.12)", selectable: false },
 
                 // Fila 2 MAR
-                { id: "sched-d2", type: "text", text: "MAR", x: 600, y: 570, width: 80, fontSize: 18, fontFamily: "Anton, Impact, sans-serif", color: "#7c1d2c", textAlign: "left", charSpacing: 150 },
+                { id: "sched-d2", type: "text", text: "MAR", x: 600, y: 570, width: 80, fontSize: 26, fontFamily: "Anton, Impact, sans-serif", color: "#7c1d2c", textAlign: "left", charSpacing: 150 },
                 { id: "sched-t2", type: "text", text: "Salsa cubana", x: 720, y: 570, width: 240, fontSize: 17, fontFamily: "Montserrat, sans-serif", color: "#1f1010", fontWeight: "600", textAlign: "left" },
                 { id: "sched-h2", type: "text", text: "20:00", x: 970, y: 570, width: 80, fontSize: 16, fontFamily: "Montserrat, sans-serif", color: "rgba(31,16,16,0.6)", fontWeight: "500", textAlign: "right" },
                 { id: "sched-sep2", type: "shape", shape: "rect", x: 600, y: 600, width: 440, height: 1, fill: "rgba(31,16,16,0.12)", selectable: false },
 
                 // Fila 3 MIE
-                { id: "sched-d3", type: "text", text: "MIÉ", x: 600, y: 615, width: 80, fontSize: 18, fontFamily: "Anton, Impact, sans-serif", color: "#7c1d2c", textAlign: "left", charSpacing: 150 },
+                { id: "sched-d3", type: "text", text: "MIÉ", x: 600, y: 615, width: 80, fontSize: 26, fontFamily: "Anton, Impact, sans-serif", color: "#7c1d2c", textAlign: "left", charSpacing: 150 },
                 { id: "sched-t3", type: "text", text: "Bachata intermedio", x: 720, y: 615, width: 240, fontSize: 17, fontFamily: "Montserrat, sans-serif", color: "#1f1010", fontWeight: "600", textAlign: "left" },
                 { id: "sched-h3", type: "text", text: "19:30", x: 970, y: 615, width: 80, fontSize: 16, fontFamily: "Montserrat, sans-serif", color: "rgba(31,16,16,0.6)", fontWeight: "500", textAlign: "right" },
                 { id: "sched-sep3", type: "shape", shape: "rect", x: 600, y: 645, width: 440, height: 1, fill: "rgba(31,16,16,0.12)", selectable: false },
 
                 // Fila 4 JUE
-                { id: "sched-d4", type: "text", text: "JUE", x: 600, y: 660, width: 80, fontSize: 18, fontFamily: "Anton, Impact, sans-serif", color: "#7c1d2c", textAlign: "left", charSpacing: 150 },
+                { id: "sched-d4", type: "text", text: "JUE", x: 600, y: 660, width: 80, fontSize: 26, fontFamily: "Anton, Impact, sans-serif", color: "#7c1d2c", textAlign: "left", charSpacing: 150 },
                 { id: "sched-t4", type: "text", text: "Estilo en pareja", x: 720, y: 660, width: 240, fontSize: 17, fontFamily: "Montserrat, sans-serif", color: "#1f1010", fontWeight: "600", textAlign: "left" },
                 { id: "sched-h4", type: "text", text: "21:00", x: 970, y: 660, width: 80, fontSize: 16, fontFamily: "Montserrat, sans-serif", color: "rgba(31,16,16,0.6)", fontWeight: "500", textAlign: "right" },
                 { id: "sched-sep4", type: "shape", shape: "rect", x: 600, y: 690, width: 440, height: 1, fill: "rgba(31,16,16,0.12)", selectable: false },
@@ -2985,16 +2985,16 @@ export const templates: Template[] = [
                 { id: "sab-day", type: "text", text: "SÁBADO 25", x: 60, y: 845, width: 460, fontSize: 24, fontFamily: "Anton, Impact, sans-serif", color: "#fbbf24", textAlign: "center", charSpacing: 200 },
                 { id: "sab-line", type: "shape", shape: "rect", x: 220, y: 880, width: 140, height: 2, fill: "#fbbf24", selectable: false },
 
-                { id: "sab-1-t", type: "text", text: "10:00", x: 90, y: 905, width: 100, fontSize: 18, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "left", charSpacing: 100 },
+                { id: "sab-1-t", type: "text", text: "10:00", x: 90, y: 905, width: 100, fontSize: 26, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "left", charSpacing: 100 },
                 { id: "sab-1-d", type: "text", text: "Técnica de base", x: 200, y: 907, width: 300, fontSize: 14, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.85)", fontWeight: "600", textAlign: "left" },
 
-                { id: "sab-2-t", type: "text", text: "13:00", x: 90, y: 940, width: 100, fontSize: 18, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "left", charSpacing: 100 },
+                { id: "sab-2-t", type: "text", text: "13:00", x: 90, y: 940, width: 100, fontSize: 26, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "left", charSpacing: 100 },
                 { id: "sab-2-d", type: "text", text: "Almuerzo", x: 200, y: 942, width: 300, fontSize: 14, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.55)", fontWeight: "500", textAlign: "left", fontStyle: "italic" },
 
-                { id: "sab-3-t", type: "text", text: "16:00", x: 90, y: 975, width: 100, fontSize: 18, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "left", charSpacing: 100 },
+                { id: "sab-3-t", type: "text", text: "16:00", x: 90, y: 975, width: 100, fontSize: 26, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "left", charSpacing: 100 },
                 { id: "sab-3-d", type: "text", text: "Figuras pareja", x: 200, y: 977, width: 300, fontSize: 14, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.85)", fontWeight: "600", textAlign: "left" },
 
-                { id: "sab-4-t", type: "text", text: "19:00", x: 90, y: 1010, width: 100, fontSize: 18, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "left", charSpacing: 100 },
+                { id: "sab-4-t", type: "text", text: "19:00", x: 90, y: 1010, width: 100, fontSize: 26, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "left", charSpacing: 100 },
                 { id: "sab-4-d", type: "text", text: "Social abierta", x: 200, y: 1012, width: 300, fontSize: 14, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.85)", fontWeight: "600", textAlign: "left" },
 
                 { id: "sab-hours", type: "text", text: "5H DE TRABAJO", x: 60, y: 1075, width: 460, fontSize: 19, fontFamily: "Montserrat, sans-serif", color: "rgba(251,191,36,0.7)", fontWeight: "700", textAlign: "center", charSpacing: 350 },
@@ -3004,16 +3004,16 @@ export const templates: Template[] = [
                 { id: "dom-day", type: "text", text: "DOMINGO 26", x: 560, y: 845, width: 460, fontSize: 24, fontFamily: "Anton, Impact, sans-serif", color: "#fbbf24", textAlign: "center", charSpacing: 200 },
                 { id: "dom-line", type: "shape", shape: "rect", x: 720, y: 880, width: 140, height: 2, fill: "#fbbf24", selectable: false },
 
-                { id: "dom-1-t", type: "text", text: "10:00", x: 590, y: 905, width: 100, fontSize: 18, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "left", charSpacing: 100 },
+                { id: "dom-1-t", type: "text", text: "10:00", x: 590, y: 905, width: 100, fontSize: 26, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "left", charSpacing: 100 },
                 { id: "dom-1-d", type: "text", text: "Musicalidad", x: 700, y: 907, width: 300, fontSize: 14, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.85)", fontWeight: "600", textAlign: "left" },
 
-                { id: "dom-2-t", type: "text", text: "13:00", x: 590, y: 940, width: 100, fontSize: 18, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "left", charSpacing: 100 },
+                { id: "dom-2-t", type: "text", text: "13:00", x: 590, y: 940, width: 100, fontSize: 26, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "left", charSpacing: 100 },
                 { id: "dom-2-d", type: "text", text: "Almuerzo", x: 700, y: 942, width: 300, fontSize: 14, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.55)", fontWeight: "500", textAlign: "left", fontStyle: "italic" },
 
-                { id: "dom-3-t", type: "text", text: "16:00", x: 590, y: 975, width: 100, fontSize: 18, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "left", charSpacing: 100 },
+                { id: "dom-3-t", type: "text", text: "16:00", x: 590, y: 975, width: 100, fontSize: 26, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "left", charSpacing: 100 },
                 { id: "dom-3-d", type: "text", text: "Sensual styling", x: 700, y: 977, width: 300, fontSize: 14, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.85)", fontWeight: "600", textAlign: "left" },
 
-                { id: "dom-4-t", type: "text", text: "18:00", x: 590, y: 1010, width: 100, fontSize: 18, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "left", charSpacing: 100 },
+                { id: "dom-4-t", type: "text", text: "18:00", x: 590, y: 1010, width: 100, fontSize: 26, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "left", charSpacing: 100 },
                 { id: "dom-4-d", type: "text", text: "Cierre & grupal", x: 700, y: 1012, width: 300, fontSize: 14, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.85)", fontWeight: "600", textAlign: "left" },
 
                 { id: "dom-hours", type: "text", text: "5H DE TRABAJO", x: 560, y: 1075, width: 460, fontSize: 19, fontFamily: "Montserrat, sans-serif", color: "rgba(251,191,36,0.7)", fontWeight: "700", textAlign: "center", charSpacing: 350 },
@@ -3491,10 +3491,10 @@ export const templates: Template[] = [
                 { id: "tag-1-text", type: "text", text: "URBAN", x: 60, y: 86, width: 180, fontSize: 20, fontFamily: "Anton, Impact, sans-serif", color: "#0d0d0d", fontWeight: "900", textAlign: "center", charSpacing: 200, angle: -8 },
 
                 { id: "tag-2-bg", type: "shape", shape: "rect", x: 870, y: 130, width: 150, height: 28, fill: "#22d3ee", angle: 6, selectable: false },
-                { id: "tag-2-text", type: "text", text: "VIBES", x: 870, y: 135, width: 150, fontSize: 18, fontFamily: "Anton, Impact, sans-serif", color: "#0d0d0d", fontWeight: "900", textAlign: "center", charSpacing: 200, angle: 6 },
+                { id: "tag-2-text", type: "text", text: "VIBES", x: 870, y: 135, width: 150, fontSize: 26, fontFamily: "Anton, Impact, sans-serif", color: "#0d0d0d", fontWeight: "900", textAlign: "center", charSpacing: 200, angle: 6 },
 
                 { id: "tag-3-bg", type: "shape", shape: "rect", x: 30, y: 1180, width: 160, height: 28, fill: "#fde047", angle: -5, selectable: false },
-                { id: "tag-3-text", type: "text", text: "STREET", x: 30, y: 1185, width: 160, fontSize: 18, fontFamily: "Anton, Impact, sans-serif", color: "#0d0d0d", fontWeight: "900", textAlign: "center", charSpacing: 200, angle: -5 },
+                { id: "tag-3-text", type: "text", text: "STREET", x: 30, y: 1185, width: 160, fontSize: 26, fontFamily: "Anton, Impact, sans-serif", color: "#0d0d0d", fontWeight: "900", textAlign: "center", charSpacing: 200, angle: -5 },
 
                 // Simulacion de "spray drips" (rect verticales finos con color)
                 { id: "drip-1", type: "shape", shape: "rect", x: 200, y: 280, width: 3, height: 60, fill: "rgba(244,114,182,0.6)", selectable: false },
@@ -3554,7 +3554,7 @@ export const templates: Template[] = [
                 { id: "spray-cyan", type: "shape", shape: "circle", x: 580, y: 100, width: 600, height: 600, fill: "rgba(34,211,238,0.28)", opacity: 0.9, selectable: false },
                 { id: "spray-yellow", type: "shape", shape: "circle", x: 200, y: 700, width: 500, height: 500, fill: "rgba(253,224,71,0.20)", opacity: 0.85, selectable: false },
                 { id: "tag-1-bg", type: "shape", shape: "rect", x: 60, y: 70, width: 160, height: 30, fill: "#f472b6", angle: -8, selectable: false },
-                { id: "tag-1-text", type: "text", text: "URBAN", x: 60, y: 76, width: 160, fontSize: 18, fontFamily: "Anton, Impact, sans-serif", color: "#0d0d0d", fontWeight: "900", textAlign: "center", charSpacing: 200, angle: -8 },
+                { id: "tag-1-text", type: "text", text: "URBAN", x: 60, y: 76, width: 160, fontSize: 26, fontFamily: "Anton, Impact, sans-serif", color: "#0d0d0d", fontWeight: "900", textAlign: "center", charSpacing: 200, angle: -8 },
                 { id: "title-stroke", type: "text", text: "HIP-HOP", x: 0, y: 160, width: 1080, fontSize: 150, fontFamily: "Anton, Impact, sans-serif", color: "transparent", stroke: "#f472b6", strokeWidth: 5, textAlign: "center", charSpacing: -10 },
                 { id: "title", type: "text", text: "HIP-HOP", x: 0, y: 160, width: 1080, fontSize: 150, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "center", charSpacing: -10 },
                 { id: "subtitle-bg", type: "shape", shape: "rect", x: 240, y: 310, width: 600, height: 44, fill: "#22d3ee", angle: -2, selectable: false },
