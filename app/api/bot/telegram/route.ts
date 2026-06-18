@@ -88,6 +88,33 @@ async function saveEmail(ref: string, email: string) {
     .eq("submitter_ref", ref);
 }
 
+// Interpreta un texto como precio: "gratis" → 0; un número → ese precio;
+// varios números → precio "desde" (mínimo) + detalle. null si no parece precio.
+function parsePriceText(text: string): { price: number; info: string | null } | null {
+  const t = text.toLowerCase();
+  if (/(gratis|gratuita|libre|free|entrada libre)/.test(t)) return { price: 0, info: null };
+  const nums = (text.match(/\d+(?:[.,]\d+)?/g) ?? []).map((n) => parseFloat(n.replace(",", ".")));
+  if (nums.length === 0) return null;
+  if (nums.length === 1) return { price: nums[0], info: null };
+  return { price: Math.min(...nums), info: text.trim().slice(0, 120) };
+}
+
+// Completa el precio en el último evento del remitente que lo tenga vacío.
+async function fillLatestMissingPrice(ref: string, price: number, info: string | null) {
+  const { data: ev } = await supabaseAdmin
+    .from("events")
+    .select("id,title")
+    .eq("submitter_channel", "telegram")
+    .eq("submitter_ref", ref)
+    .is("price", null)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (!ev) return null;
+  await supabaseAdmin.from("events").update({ price, price_info: info }).eq("id", ev.id);
+  return ev.title as string;
+}
+
 export async function POST(req: NextRequest) {
   // Verificación del secreto del webhook (si está configurado).
   if (WEBHOOK_SECRET && req.headers.get("x-telegram-bot-api-secret-token") !== WEBHOOK_SECRET) {
@@ -108,17 +135,33 @@ export async function POST(req: NextRequest) {
     const fromName: string = msg.from?.first_name || msg.from?.username || "";
     const hi = fromName ? `${fromName}, ` : "";
 
-    // Texto sin foto: si es un email, lo guardamos como contacto; si no, instrucciones.
+    // Texto sin foto: completar datos en el chat (email / precio) o instrucciones.
     if (!msg.photo) {
       const text: string = (msg.text || "").trim();
+
+      // 1) Email → contacto.
       if (EMAIL_RE.test(text)) {
         await saveEmail(String(chatId), text);
-        await tgSend(chatId, `✉️ ¡Anotado! Te avisaré en <b>${text}</b> si a algún evento le falta algún dato.`);
+        await tgSend(chatId, `✉️ ¡Anotado, ${fromName || "gracias"}! Te avisaré en <b>${text}</b> si a algún evento le falta algún dato.`);
         return NextResponse.json({ ok: true });
       }
+
+      // 2) Precio → completa el último evento sin precio.
+      const pp = parsePriceText(text);
+      if (pp) {
+        const title = await fillLatestMissingPrice(String(chatId), pp.price, pp.info);
+        if (title) {
+          const shown = pp.info ?? (pp.price === 0 ? "Entrada libre" : `${pp.price} €`);
+          await tgSend(chatId, `💶 ¡Listo! Añadí el precio a «${title}»: <b>${shown}</b>.`);
+          return NextResponse.json({ ok: true });
+        }
+      }
+
+      // 3) Instrucciones / invitación.
       await tgSend(
         chatId,
-        `👋 ¡Hola${fromName ? " " + fromName : ""}! Envíame el <b>flyer</b> de tu evento (como foto) y lo publico solo en la agenda. Leo la fecha, el lugar y el precio automáticamente.`
+        `👋 ¡Hola${fromName ? " " + fromName : ""}! Envíame el <b>flyer</b> de tu evento (como foto) y lo publico solo en la agenda — leo fecha, lugar y precio automáticamente.\n\n` +
+          `✨ <b>Totalmente gratis</b>: planifica todo el año y mira lo que publican otros organizadores.`
       );
       return NextResponse.json({ ok: true });
     }
@@ -225,15 +268,21 @@ export async function POST(req: NextRequest) {
       ? "💶 Entrada libre\n"
       : `💶 ${extracted.price} €\n`;
 
-    // Qué datos faltan (para avisar e invitar a completarlos).
+    // Otros datos que falten (el precio se trata aparte, abajo).
     const missing: string[] = [];
-    if (extracted.price == null && !extracted.price_info) missing.push("precio");
     if (!extracted.venue) missing.push("lugar");
-    const missingLine = missing.length ? `\n⚠️ Faltan datos en el flyer: <b>${missing.join(", ")}</b>.` : "";
 
-    // Si no tenemos su email y falta algo, lo pedimos para avisarle.
-    const askEmail = missing.length && !knownEmail
-      ? "\n📧 Mándame tu email y te aviso para que lo completes (o regístrate abajo)."
+    // Si falta el precio, invitamos a completarlo AQUÍ MISMO en el chat.
+    const priceMissing = extracted.price == null && !extracted.price_info;
+    const completeLine = priceMissing
+      ? `\n⚠️ Faltó el <b>precio</b>. Respóndeme aquí mismo (ej. «12€», «anticipada 12 taquilla 15» o «gratis») y lo añado.`
+      : missing.length
+      ? `\n⚠️ Faltó: <b>${missing.join(", ")}</b>. Respóndeme aquí o edítalo en tu panel.`
+      : "";
+
+    // Email opcional (solo si aún no lo tenemos).
+    const askEmail = !knownEmail
+      ? "\n📧 Si me dejas tu email, te aviso cuando a un evento le falte algún dato."
       : "";
 
     await tgSend(
@@ -242,9 +291,9 @@ export async function POST(req: NextRequest) {
         `📅 ${extracted.event_date} · ${extracted.event_time}\n` +
         `📍 ${extracted.venue || "—"}\n` +
         priceLine +
-        missingLine +
+        completeLine +
         askEmail +
-        `\n\nGestiona y completa tu evento aquí:\n${claimUrl}`
+        `\n\n✨ <b>Gratis</b>: cambia lo que quieras del flyer, configura varios eventos, planifica todo el año y mira lo que publican otros organizadores 👉\n${claimUrl}`
     );
     return NextResponse.json({ ok: true });
   } catch (err) {
