@@ -1728,13 +1728,13 @@ export const templates: Template[] = [
                 { id: "div-2", type: "shape", shape: "rect", x: 380, y: 1118, width: 320, height: 1, fill: "#5c2a0a", selectable: false },
 
                 // CREDITOS estilo pelicula al pie en grid 3 columnas
-                { id: "credits-1-label", type: "text", text: "DIRIGE", x: 130, y: 1145, width: 240, fontSize: 11, fontFamily: "Cormorant Garamond, serif", color: "rgba(92,42,10,0.6)", fontWeight: "700", textAlign: "center", charSpacing: 350 },
+                { id: "credits-1-label", type: "text", text: "DIRIGE", x: 130, y: 1145, width: 240, fontSize: 20, fontFamily: "Cormorant Garamond, serif", color: "rgba(92,42,10,0.6)", fontWeight: "700", textAlign: "center", charSpacing: 350 },
                 { id: "credits-1-value", type: "text", text: "L. Vega", x: 130, y: 1165, width: 240, fontSize: 20, fontFamily: "Playfair Display, serif", color: "#3d1a05", textAlign: "center", fontStyle: "italic" },
 
-                { id: "credits-2-label", type: "text", text: "MÚSICA", x: 420, y: 1145, width: 240, fontSize: 11, fontFamily: "Cormorant Garamond, serif", color: "rgba(92,42,10,0.6)", fontWeight: "700", textAlign: "center", charSpacing: 350 },
+                { id: "credits-2-label", type: "text", text: "MÚSICA", x: 420, y: 1145, width: 240, fontSize: 20, fontFamily: "Cormorant Garamond, serif", color: "rgba(92,42,10,0.6)", fontWeight: "700", textAlign: "center", charSpacing: 350 },
                 { id: "credits-2-value", type: "text", text: "El Sexteto", x: 420, y: 1165, width: 240, fontSize: 20, fontFamily: "Playfair Display, serif", color: "#3d1a05", textAlign: "center", fontStyle: "italic" },
 
-                { id: "credits-3-label", type: "text", text: "PRODUCE", x: 710, y: 1145, width: 240, fontSize: 11, fontFamily: "Cormorant Garamond, serif", color: "rgba(92,42,10,0.6)", fontWeight: "700", textAlign: "center", charSpacing: 350 },
+                { id: "credits-3-label", type: "text", text: "PRODUCE", x: 710, y: 1145, width: 240, fontSize: 20, fontFamily: "Cormorant Garamond, serif", color: "rgba(92,42,10,0.6)", fontWeight: "700", textAlign: "center", charSpacing: 350 },
                 { id: "credits-3-value", type: "text", text: "Casa Real", x: 710, y: 1165, width: 240, fontSize: 20, fontFamily: "Playfair Display, serif", color: "#3d1a05", textAlign: "center", fontStyle: "italic" },
 
                 // PIE: fecha y venue tipo billete
@@ -1881,15 +1881,15 @@ export const templates: Template[] = [
                 { id: "perf-line", type: "shape", shape: "rect", x: 0, y: 1110, width: 1080, height: 4, fill: "#fbbf24", selectable: false },
 
                 // INFO 3 columnas tipo ticket
-                { id: "tk-col1-label", type: "text", text: "FECHA", x: 60, y: 1140, width: 280, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(251,191,36,0.7)", fontWeight: "700", textAlign: "left", charSpacing: 300 },
+                { id: "tk-col1-label", type: "text", text: "FECHA", x: 60, y: 1140, width: 280, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(251,191,36,0.7)", fontWeight: "700", textAlign: "left", charSpacing: 300 },
                 { id: "tk-col1-value", type: "text", text: "VIE  ·  3 OCT", x: 60, y: 1158, width: 280, fontSize: 30, fontFamily: "Anton, Impact, sans-serif", color: "#fef3c7", textAlign: "left", charSpacing: 80 },
                 { id: "tk-col1-extra", type: "text", text: "21:00 — 03:00", x: 60, y: 1198, width: 280, fontSize: 15, fontFamily: "Montserrat, sans-serif", color: "#fbbf24", fontWeight: "600", textAlign: "left" },
 
-                { id: "tk-col2-label", type: "text", text: "LUGAR", x: 380, y: 1140, width: 320, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(251,191,36,0.7)", fontWeight: "700", textAlign: "left", charSpacing: 300 },
+                { id: "tk-col2-label", type: "text", text: "LUGAR", x: 380, y: 1140, width: 320, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(251,191,36,0.7)", fontWeight: "700", textAlign: "left", charSpacing: 300 },
                 { id: "tk-col2-value", type: "text", text: "SALA TROPICAL", x: 380, y: 1158, width: 320, fontSize: 30, fontFamily: "Anton, Impact, sans-serif", color: "#fef3c7", textAlign: "left", charSpacing: 80 },
                 { id: "tk-col2-extra", type: "text", text: "C/ Libertad 8  ·  Metro Chueca", x: 380, y: 1198, width: 320, fontSize: 13, fontFamily: "Montserrat, sans-serif", color: "#fbbf24", fontWeight: "500", textAlign: "left" },
 
-                { id: "tk-col3-label", type: "text", text: "PRECIO", x: 740, y: 1140, width: 280, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(251,191,36,0.7)", fontWeight: "700", textAlign: "left", charSpacing: 300 },
+                { id: "tk-col3-label", type: "text", text: "PRECIO", x: 740, y: 1140, width: 280, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(251,191,36,0.7)", fontWeight: "700", textAlign: "left", charSpacing: 300 },
                 { id: "tk-col3-value", type: "text", text: "12€ / 18€", x: 740, y: 1158, width: 280, fontSize: 30, fontFamily: "Anton, Impact, sans-serif", color: "#fef3c7", textAlign: "left", charSpacing: 80 },
                 { id: "tk-col3-extra", type: "text", text: "Anticipada / Puerta", x: 740, y: 1198, width: 280, fontSize: 13, fontFamily: "Montserrat, sans-serif", color: "#fbbf24", fontWeight: "500", textAlign: "left" },
 
@@ -2025,16 +2025,16 @@ export const templates: Template[] = [
                 { id: "title-2", type: "text", text: "de Cristal", x: 60, y: 1110, width: 960, fontSize: 96, fontFamily: "Playfair Display, serif", color: "#b48744", textAlign: "left", fontStyle: "italic" },
 
                 // GRID INFO 2x2 (label tiny + value)
-                { id: "info-label-1", type: "text", text: "FECHA", x: 60, y: 1230, width: 200, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.5)", fontWeight: "700", textAlign: "left", charSpacing: 300 },
+                { id: "info-label-1", type: "text", text: "FECHA", x: 60, y: 1230, width: 200, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.5)", fontWeight: "700", textAlign: "left", charSpacing: 300 },
                 { id: "info-value-1", type: "text", text: "28 NOV  ·  21:00 H", x: 60, y: 1250, width: 320, fontSize: 18, fontFamily: "Playfair Display, serif", color: "#ffffff", textAlign: "left" },
 
-                { id: "info-label-2", type: "text", text: "LUGAR", x: 60, y: 1290, width: 200, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.5)", fontWeight: "700", textAlign: "left", charSpacing: 300 },
+                { id: "info-label-2", type: "text", text: "LUGAR", x: 60, y: 1290, width: 200, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.5)", fontWeight: "700", textAlign: "left", charSpacing: 300 },
                 { id: "info-value-2", type: "text", text: "Hotel Mandarín  ·  Madrid", x: 60, y: 1310, width: 360, fontSize: 18, fontFamily: "Playfair Display, serif", color: "#ffffff", textAlign: "left", fontStyle: "italic" },
 
-                { id: "info-label-3", type: "text", text: "PRECIO", x: 600, y: 1230, width: 200, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.5)", fontWeight: "700", textAlign: "left", charSpacing: 300 },
+                { id: "info-label-3", type: "text", text: "PRECIO", x: 600, y: 1230, width: 200, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.5)", fontWeight: "700", textAlign: "left", charSpacing: 300 },
                 { id: "info-value-3", type: "text", text: "Donativo desde 80€", x: 600, y: 1250, width: 380, fontSize: 18, fontFamily: "Playfair Display, serif", color: "#ffffff", textAlign: "left" },
 
-                { id: "info-label-4", type: "text", text: "RSVP", x: 600, y: 1290, width: 200, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.5)", fontWeight: "700", textAlign: "left", charSpacing: 300 },
+                { id: "info-label-4", type: "text", text: "RSVP", x: 600, y: 1290, width: 200, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.5)", fontWeight: "700", textAlign: "left", charSpacing: 300 },
                 { id: "info-value-4", type: "text", text: "gala@voices.es", x: 600, y: 1310, width: 380, fontSize: 18, fontFamily: "Playfair Display, serif", color: "#b48744", textAlign: "left", fontStyle: "italic" },
             ] },
         ],
@@ -2136,19 +2136,19 @@ export const templates: Template[] = [
                 // ─── BLOQUE INFO 3 CAJAS GEOMETRICAS ───
                 // Caja 1 - FECHA
                 { id: "card-1", type: "shape", shape: "rect", x: 40, y: 1030, width: 320, height: 200, fill: "rgba(15,3,8,0.65)", radius: 8, stroke: "rgba(251,191,36,0.35)", strokeWidth: 1, selectable: false },
-                { id: "c1-label", type: "text", text: "FECHA", x: 40, y: 1055, width: 320, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "#fbbf24", fontWeight: "700", textAlign: "center", charSpacing: 400 },
+                { id: "c1-label", type: "text", text: "FECHA", x: 40, y: 1055, width: 320, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "#fbbf24", fontWeight: "700", textAlign: "center", charSpacing: 400 },
                 { id: "c1-day", type: "text", text: "11", x: 40, y: 1080, width: 320, fontSize: 80, fontFamily: "Playfair Display, serif", color: "#ffffff", textAlign: "center", fontStyle: "italic" },
                 { id: "c1-month", type: "text", text: "OCT · SÁB", x: 40, y: 1190, width: 320, fontSize: 16, fontFamily: "Anton, Impact, sans-serif", color: "#fbbf24", textAlign: "center", charSpacing: 250 },
 
                 // Caja 2 - PRECIO
                 { id: "card-2", type: "shape", shape: "rect", x: 380, y: 1030, width: 320, height: 200, fill: "rgba(15,3,8,0.65)", radius: 8, stroke: "rgba(251,191,36,0.35)", strokeWidth: 1, selectable: false },
-                { id: "c2-label", type: "text", text: "PRECIO", x: 380, y: 1055, width: 320, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "#fbbf24", fontWeight: "700", textAlign: "center", charSpacing: 400 },
+                { id: "c2-label", type: "text", text: "PRECIO", x: 380, y: 1055, width: 320, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "#fbbf24", fontWeight: "700", textAlign: "center", charSpacing: 400 },
                 { id: "c2-day", type: "text", text: "45€", x: 380, y: 1080, width: 320, fontSize: 76, fontFamily: "Playfair Display, serif", color: "#ffffff", textAlign: "center", fontStyle: "italic" },
                 { id: "c2-month", type: "text", text: "2H · PLAZAS LIMITADAS", x: 380, y: 1190, width: 320, fontSize: 20, fontFamily: "Anton, Impact, sans-serif", color: "#fbbf24", textAlign: "center", charSpacing: 200 },
 
                 // Caja 3 - HORA
                 { id: "card-3", type: "shape", shape: "rect", x: 720, y: 1030, width: 320, height: 200, fill: "rgba(15,3,8,0.65)", radius: 8, stroke: "rgba(251,191,36,0.35)", strokeWidth: 1, selectable: false },
-                { id: "c3-label", type: "text", text: "HORA", x: 720, y: 1055, width: 320, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "#fbbf24", fontWeight: "700", textAlign: "center", charSpacing: 400 },
+                { id: "c3-label", type: "text", text: "HORA", x: 720, y: 1055, width: 320, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "#fbbf24", fontWeight: "700", textAlign: "center", charSpacing: 400 },
                 { id: "c3-day", type: "text", text: "18 H", x: 720, y: 1080, width: 320, fontSize: 76, fontFamily: "Playfair Display, serif", color: "#ffffff", textAlign: "center", fontStyle: "italic" },
                 { id: "c3-month", type: "text", text: "DURACIÓN 2 HORAS", x: 720, y: 1190, width: 320, fontSize: 20, fontFamily: "Anton, Impact, sans-serif", color: "#fbbf24", textAlign: "center", charSpacing: 200 },
 
@@ -2187,17 +2187,17 @@ export const templates: Template[] = [
 
                 // 3 CAJAS info compactas
                 { id: "card-1", type: "shape", shape: "rect", x: 40, y: 810, width: 320, height: 200, fill: "rgba(15,3,8,0.65)", radius: 8, stroke: "rgba(251,191,36,0.35)", strokeWidth: 1, selectable: false },
-                { id: "c1-label", type: "text", text: "FECHA", x: 40, y: 832, width: 320, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "#fbbf24", fontWeight: "700", textAlign: "center", charSpacing: 400 },
+                { id: "c1-label", type: "text", text: "FECHA", x: 40, y: 832, width: 320, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "#fbbf24", fontWeight: "700", textAlign: "center", charSpacing: 400 },
                 { id: "c1-day", type: "text", text: "11", x: 40, y: 850, width: 320, fontSize: 80, fontFamily: "Playfair Display, serif", color: "#ffffff", textAlign: "center", fontStyle: "italic" },
                 { id: "c1-month", type: "text", text: "OCT · SÁB", x: 40, y: 970, width: 320, fontSize: 14, fontFamily: "Anton, Impact, sans-serif", color: "#fbbf24", textAlign: "center", charSpacing: 250 },
 
                 { id: "card-2", type: "shape", shape: "rect", x: 380, y: 810, width: 320, height: 200, fill: "rgba(15,3,8,0.65)", radius: 8, stroke: "rgba(251,191,36,0.35)", strokeWidth: 1, selectable: false },
-                { id: "c2-label", type: "text", text: "PRECIO", x: 380, y: 832, width: 320, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "#fbbf24", fontWeight: "700", textAlign: "center", charSpacing: 400 },
+                { id: "c2-label", type: "text", text: "PRECIO", x: 380, y: 832, width: 320, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "#fbbf24", fontWeight: "700", textAlign: "center", charSpacing: 400 },
                 { id: "c2-day", type: "text", text: "45€", x: 380, y: 850, width: 320, fontSize: 76, fontFamily: "Playfair Display, serif", color: "#ffffff", textAlign: "center", fontStyle: "italic" },
                 { id: "c2-month", type: "text", text: "PLAZAS LIMITADAS", x: 380, y: 970, width: 320, fontSize: 19, fontFamily: "Anton, Impact, sans-serif", color: "#fbbf24", textAlign: "center", charSpacing: 200 },
 
                 { id: "card-3", type: "shape", shape: "rect", x: 720, y: 810, width: 320, height: 200, fill: "rgba(15,3,8,0.65)", radius: 8, stroke: "rgba(251,191,36,0.35)", strokeWidth: 1, selectable: false },
-                { id: "c3-label", type: "text", text: "HORA", x: 720, y: 832, width: 320, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "#fbbf24", fontWeight: "700", textAlign: "center", charSpacing: 400 },
+                { id: "c3-label", type: "text", text: "HORA", x: 720, y: 832, width: 320, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "#fbbf24", fontWeight: "700", textAlign: "center", charSpacing: 400 },
                 { id: "c3-day", type: "text", text: "18H", x: 720, y: 850, width: 320, fontSize: 76, fontFamily: "Playfair Display, serif", color: "#ffffff", textAlign: "center", fontStyle: "italic" },
                 { id: "c3-month", type: "text", text: "DURACIÓN 2H", x: 720, y: 970, width: 320, fontSize: 19, fontFamily: "Anton, Impact, sans-serif", color: "#fbbf24", textAlign: "center", charSpacing: 200 },
 
@@ -2341,7 +2341,7 @@ export const templates: Template[] = [
                 { id: "desc", type: "text", text: "Formación regular en grupo. Nivel principiante e intermedio. Plazas limitadas a 12 alumnos por clase.", x: 600, y: 360, width: 440, fontSize: 16, fontFamily: "Montserrat, sans-serif", color: "rgba(31,16,16,0.75)", fontWeight: "500", textAlign: "left", lineHeight: 1.4 },
 
                 // ─── HORARIOS lista limpia ───
-                { id: "sched-title", type: "text", text: "HORARIOS", x: 600, y: 480, width: 440, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(31,16,16,0.5)", fontWeight: "700", textAlign: "left", charSpacing: 400 },
+                { id: "sched-title", type: "text", text: "HORARIOS", x: 600, y: 480, width: 440, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(31,16,16,0.5)", fontWeight: "700", textAlign: "left", charSpacing: 400 },
                 { id: "sched-line", type: "shape", shape: "rect", x: 600, y: 502, width: 80, height: 2, fill: "#7c1d2c", selectable: false },
 
                 // Fila 1 LUN
@@ -2375,13 +2375,13 @@ export const templates: Template[] = [
                 { id: "price-extra", type: "text", text: "4 clases / mes  ·  clase suelta 18€", x: 600, y: 880, width: 440, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.85)", fontWeight: "500", textAlign: "center", charSpacing: 150 },
 
                 // FOOTER info
-                { id: "addr-label", type: "text", text: "DÓNDE", x: 600, y: 945, width: 440, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(31,16,16,0.5)", fontWeight: "700", textAlign: "left", charSpacing: 400 },
+                { id: "addr-label", type: "text", text: "DÓNDE", x: 600, y: 945, width: 440, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(31,16,16,0.5)", fontWeight: "700", textAlign: "left", charSpacing: 400 },
                 { id: "addr-value", type: "text", text: "Estudio Jean · C/ Goya 22", x: 600, y: 965, width: 440, fontSize: 17, fontFamily: "Playfair Display, serif", color: "#1f1010", textAlign: "left", fontStyle: "italic" },
 
-                { id: "tel-label", type: "text", text: "RESERVA", x: 600, y: 1010, width: 440, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(31,16,16,0.5)", fontWeight: "700", textAlign: "left", charSpacing: 400 },
+                { id: "tel-label", type: "text", text: "RESERVA", x: 600, y: 1010, width: 440, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(31,16,16,0.5)", fontWeight: "700", textAlign: "left", charSpacing: 400 },
                 { id: "tel-value", type: "text", text: "+34 600 222 333  ·  WhatsApp", x: 600, y: 1030, width: 440, fontSize: 17, fontFamily: "Playfair Display, serif", color: "#1f1010", textAlign: "left", fontStyle: "italic" },
 
-                { id: "web-label", type: "text", text: "WEB", x: 600, y: 1075, width: 440, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(31,16,16,0.5)", fontWeight: "700", textAlign: "left", charSpacing: 400 },
+                { id: "web-label", type: "text", text: "WEB", x: 600, y: 1075, width: 440, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(31,16,16,0.5)", fontWeight: "700", textAlign: "left", charSpacing: 400 },
                 { id: "web-value", type: "text", text: "estudiojean.es", x: 600, y: 1095, width: 440, fontSize: 17, fontFamily: "Playfair Display, serif", color: "#7c1d2c", textAlign: "left", fontStyle: "italic" },
             ] },
 
@@ -2396,7 +2396,7 @@ export const templates: Template[] = [
                 { id: "title-1", type: "text", text: "Clases", x: 600, y: 110, width: 440, fontSize: 56, fontFamily: "Playfair Display, serif", color: "#1f1010", textAlign: "left", fontStyle: "italic" },
                 { id: "title-2", type: "text", text: "Semanales", x: 600, y: 175, width: 460, fontSize: 56, fontFamily: "Playfair Display, serif", color: "#7c1d2c", textAlign: "left", fontStyle: "italic" },
                 { id: "div", type: "shape", shape: "rect", x: 600, y: 260, width: 80, height: 3, fill: "#7c1d2c", selectable: false },
-                { id: "sched-title", type: "text", text: "HORARIOS", x: 600, y: 280, width: 440, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(31,16,16,0.5)", fontWeight: "700", textAlign: "left", charSpacing: 400 },
+                { id: "sched-title", type: "text", text: "HORARIOS", x: 600, y: 280, width: 440, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(31,16,16,0.5)", fontWeight: "700", textAlign: "left", charSpacing: 400 },
                 { id: "sched-d1", type: "text", text: "LUN", x: 600, y: 305, width: 80, fontSize: 16, fontFamily: "Anton, Impact, sans-serif", color: "#7c1d2c", textAlign: "left", charSpacing: 150 },
                 { id: "sched-t1", type: "text", text: "Iniciación bachata", x: 700, y: 305, width: 280, fontSize: 14, fontFamily: "Montserrat, sans-serif", color: "#1f1010", fontWeight: "600", textAlign: "left" },
                 { id: "sched-h1", type: "text", text: "19:00", x: 970, y: 305, width: 80, fontSize: 14, fontFamily: "Montserrat, sans-serif", color: "rgba(31,16,16,0.6)", fontWeight: "500", textAlign: "right" },
@@ -2455,7 +2455,7 @@ export const templates: Template[] = [
                 { id: "title-1", type: "text", text: "Clases", x: 820, y: 130, width: 1050, fontSize: 88, fontFamily: "Playfair Display, serif", color: "#1f1010", textAlign: "left", fontStyle: "italic" },
                 { id: "title-2", type: "text", text: "Semanales", x: 820, y: 230, width: 1050, fontSize: 88, fontFamily: "Playfair Display, serif", color: "#7c1d2c", textAlign: "left", fontStyle: "italic" },
                 { id: "div", type: "shape", shape: "rect", x: 820, y: 355, width: 100, height: 3, fill: "#7c1d2c", selectable: false },
-                { id: "sched-title", type: "text", text: "HORARIOS", x: 820, y: 380, width: 1050, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(31,16,16,0.5)", fontWeight: "700", textAlign: "left", charSpacing: 400 },
+                { id: "sched-title", type: "text", text: "HORARIOS", x: 820, y: 380, width: 1050, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(31,16,16,0.5)", fontWeight: "700", textAlign: "left", charSpacing: 400 },
                 // 2 columnas de horarios
                 { id: "sched-c1-1", type: "text", text: "LUN  Iniciación bachata", x: 820, y: 410, width: 480, fontSize: 17, fontFamily: "Montserrat, sans-serif", color: "#1f1010", fontWeight: "600", textAlign: "left" },
                 { id: "sched-c1-1h", type: "text", text: "19:00", x: 1280, y: 410, width: 80, fontSize: 16, fontFamily: "Montserrat, sans-serif", color: "rgba(31,16,16,0.6)", fontWeight: "500", textAlign: "right" },
@@ -2535,15 +2535,15 @@ export const templates: Template[] = [
                 { id: "div", type: "shape", shape: "rect", x: 420, y: 1215, width: 240, height: 1, fill: "#dc2626", selectable: false },
 
                 // INFO pie 3 columnas
-                { id: "i-1-l", type: "text", text: "FECHA", x: 60, y: 1235, width: 320, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(220,38,38,0.85)", fontWeight: "700", textAlign: "center", charSpacing: 350 },
+                { id: "i-1-l", type: "text", text: "FECHA", x: 60, y: 1235, width: 320, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(220,38,38,0.85)", fontWeight: "700", textAlign: "center", charSpacing: 350 },
                 { id: "i-1-v", type: "text", text: "DOM 18 OCT", x: 60, y: 1255, width: 320, fontSize: 18, fontFamily: "Playfair Display, serif", color: "#ffffff", textAlign: "center" },
                 { id: "i-1-x", type: "text", text: "11:00 — 14:00", x: 60, y: 1283, width: 320, fontSize: 13, fontFamily: "Cormorant Garamond, serif", color: "rgba(255,255,255,0.7)", fontStyle: "italic", textAlign: "center" },
 
-                { id: "i-2-l", type: "text", text: "PRECIO", x: 380, y: 1235, width: 320, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(220,38,38,0.85)", fontWeight: "700", textAlign: "center", charSpacing: 350 },
+                { id: "i-2-l", type: "text", text: "PRECIO", x: 380, y: 1235, width: 320, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(220,38,38,0.85)", fontWeight: "700", textAlign: "center", charSpacing: 350 },
                 { id: "i-2-v", type: "text", text: "50€", x: 380, y: 1252, width: 320, fontSize: 22, fontFamily: "Playfair Display, serif", color: "#ffffff", textAlign: "center", fontStyle: "italic" },
                 { id: "i-2-x", type: "text", text: "Plazas limitadas a 15", x: 380, y: 1283, width: 320, fontSize: 13, fontFamily: "Cormorant Garamond, serif", color: "rgba(255,255,255,0.7)", fontStyle: "italic", textAlign: "center" },
 
-                { id: "i-3-l", type: "text", text: "LUGAR", x: 700, y: 1235, width: 320, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(220,38,38,0.85)", fontWeight: "700", textAlign: "center", charSpacing: 350 },
+                { id: "i-3-l", type: "text", text: "LUGAR", x: 700, y: 1235, width: 320, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(220,38,38,0.85)", fontWeight: "700", textAlign: "center", charSpacing: 350 },
                 { id: "i-3-v", type: "text", text: "Sala Carmen", x: 700, y: 1253, width: 320, fontSize: 18, fontFamily: "Playfair Display, serif", color: "#ffffff", textAlign: "center" },
                 { id: "i-3-x", type: "text", text: "C/ La Latina · Madrid", x: 700, y: 1283, width: 320, fontSize: 13, fontFamily: "Cormorant Garamond, serif", color: "rgba(255,255,255,0.7)", fontStyle: "italic", textAlign: "center" },
 
@@ -3162,7 +3162,7 @@ export const templates: Template[] = [
                 { id: "deco-r3", type: "shape", shape: "rect", x: 840, y: 1264, width: 180, height: 1, fill: "#d4af37", selectable: false },
 
                 // CABECERA tipo programa milonga
-                { id: "kicker", type: "text", text: "M I L O N G A   ·   E S T U D I O   B A I L E", x: 60, y: 110, width: 480, fontSize: 11, fontFamily: "Cormorant Garamond, serif", color: "#7a1532", fontWeight: "700", textAlign: "left", charSpacing: 500 },
+                { id: "kicker", type: "text", text: "M I L O N G A   ·   E S T U D I O   B A I L E", x: 60, y: 110, width: 480, fontSize: 20, fontFamily: "Cormorant Garamond, serif", color: "#7a1532", fontWeight: "700", textAlign: "left", charSpacing: 500 },
 
                 // TITULO Playfair italica MASIVO 2 lineas
                 { id: "title-1", type: "text", text: "Tango", x: 60, y: 150, width: 480, fontSize: 130, fontFamily: "Playfair Display, serif", color: "#0a0a0a", textAlign: "left", fontStyle: "italic" },
@@ -3184,22 +3184,22 @@ export const templates: Template[] = [
                 { id: "plate-bg", type: "shape", shape: "rect", x: 600, y: 760, width: 400, height: 100, fill: "rgba(245,240,232,0.92)", selectable: false },
                 { id: "plate-line-t", type: "shape", shape: "rect", x: 600, y: 760, width: 400, height: 2, fill: "#b8860b", selectable: false },
                 { id: "plate-line-b", type: "shape", shape: "rect", x: 600, y: 858, width: 400, height: 2, fill: "#b8860b", selectable: false },
-                { id: "plate-label", type: "text", text: "IMPARTEN", x: 600, y: 776, width: 400, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(122,21,50,0.7)", fontWeight: "800", textAlign: "center", charSpacing: 500 },
+                { id: "plate-label", type: "text", text: "IMPARTEN", x: 600, y: 776, width: 400, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(122,21,50,0.7)", fontWeight: "800", textAlign: "center", charSpacing: 500 },
                 { id: "plate-names", type: "text", text: "Lucía  &  Mateo", x: 600, y: 798, width: 400, fontSize: 32, fontFamily: "Playfair Display, serif", color: "#0a0a0a", textAlign: "center", fontStyle: "italic" },
 
                 // ─── BLOQUE INFO 4 LINEAS columna izq ───
                 // Linea 1 FECHA
-                { id: "info-1-l", type: "text", text: "FECHA", x: 60, y: 920, width: 200, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(10,10,10,0.55)", fontWeight: "800", textAlign: "left", charSpacing: 400 },
+                { id: "info-1-l", type: "text", text: "FECHA", x: 60, y: 920, width: 200, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(10,10,10,0.55)", fontWeight: "800", textAlign: "left", charSpacing: 400 },
                 { id: "info-1-v", type: "text", text: "Sábado 8 de noviembre", x: 60, y: 942, width: 440, fontSize: 22, fontFamily: "Playfair Display, serif", color: "#0a0a0a", textAlign: "left", fontStyle: "italic" },
                 { id: "info-1-sep", type: "shape", shape: "rect", x: 60, y: 985, width: 440, height: 1, fill: "rgba(10,10,10,0.18)", selectable: false },
 
                 // Linea 2 HORA
-                { id: "info-2-l", type: "text", text: "HORARIO", x: 60, y: 1000, width: 200, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(10,10,10,0.55)", fontWeight: "800", textAlign: "left", charSpacing: 400 },
+                { id: "info-2-l", type: "text", text: "HORARIO", x: 60, y: 1000, width: 200, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(10,10,10,0.55)", fontWeight: "800", textAlign: "left", charSpacing: 400 },
                 { id: "info-2-v", type: "text", text: "18:00 — 21:00 H", x: 60, y: 1022, width: 440, fontSize: 22, fontFamily: "Playfair Display, serif", color: "#0a0a0a", textAlign: "left", fontStyle: "italic" },
                 { id: "info-2-sep", type: "shape", shape: "rect", x: 60, y: 1065, width: 440, height: 1, fill: "rgba(10,10,10,0.18)", selectable: false },
 
                 // Linea 3 LUGAR
-                { id: "info-3-l", type: "text", text: "LUGAR", x: 60, y: 1080, width: 200, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(10,10,10,0.55)", fontWeight: "800", textAlign: "left", charSpacing: 400 },
+                { id: "info-3-l", type: "text", text: "LUGAR", x: 60, y: 1080, width: 200, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(10,10,10,0.55)", fontWeight: "800", textAlign: "left", charSpacing: 400 },
                 { id: "info-3-v", type: "text", text: "El Salón Buenos Aires", x: 60, y: 1102, width: 440, fontSize: 22, fontFamily: "Playfair Display, serif", color: "#0a0a0a", textAlign: "left", fontStyle: "italic" },
                 { id: "info-3-x", type: "text", text: "C/ Espoz y Mina · Madrid", x: 60, y: 1135, width: 440, fontSize: 14, fontFamily: "Cormorant Garamond, serif", color: "rgba(10,10,10,0.6)", fontStyle: "italic", textAlign: "left" },
 
@@ -3207,7 +3207,7 @@ export const templates: Template[] = [
                 { id: "price-bg", type: "shape", shape: "rect", x: 600, y: 920, width: 400, height: 270, fill: "#0a0a0a", selectable: false },
                 { id: "price-line-t", type: "shape", shape: "rect", x: 630, y: 945, width: 340, height: 1, fill: "#b8860b", selectable: false },
                 { id: "price-line-b", type: "shape", shape: "rect", x: 630, y: 1170, width: 340, height: 1, fill: "#b8860b", selectable: false },
-                { id: "price-label", type: "text", text: "INVERSIÓN", x: 600, y: 965, width: 400, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "#b8860b", fontWeight: "800", textAlign: "center", charSpacing: 500 },
+                { id: "price-label", type: "text", text: "INVERSIÓN", x: 600, y: 965, width: 400, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "#b8860b", fontWeight: "800", textAlign: "center", charSpacing: 500 },
                 { id: "price-value", type: "text", text: "65€", x: 600, y: 990, width: 400, fontSize: 110, fontFamily: "Playfair Display, serif", color: "#f5f0e8", textAlign: "center", fontStyle: "italic" },
                 { id: "price-extra", type: "text", text: "Plazas limitadas a 18", x: 600, y: 1130, width: 400, fontSize: 13, fontFamily: "Cormorant Garamond, serif", color: "rgba(245,240,232,0.78)", fontStyle: "italic", textAlign: "center", charSpacing: 100 },
 
@@ -3228,12 +3228,12 @@ export const templates: Template[] = [
                 { id: "desc", type: "text", text: "Abrazo cerrado y caminata.", x: 60, y: 305, width: 460, fontSize: 18, fontFamily: "Cormorant Garamond, serif", color: "rgba(10,10,10,0.78)", fontStyle: "italic", textAlign: "left" },
                 { id: "couple", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/07_lucia_mateo_pareja.png", x: 800, y: 60, scaleX: 0.62, scaleY: 0.62, originX: "center", originY: "top", shadow: { color: "rgba(180,134,11,0.55)", blur: 30, offsetX: 0, offsetY: 0 } },
                 { id: "plate-bg", type: "shape", shape: "rect", x: 620, y: 600, width: 380, height: 80, fill: "rgba(245,240,232,0.92)", selectable: false },
-                { id: "plate-label", type: "text", text: "IMPARTEN", x: 620, y: 612, width: 380, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(122,21,50,0.7)", fontWeight: "800", textAlign: "center", charSpacing: 500 },
+                { id: "plate-label", type: "text", text: "IMPARTEN", x: 620, y: 612, width: 380, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(122,21,50,0.7)", fontWeight: "800", textAlign: "center", charSpacing: 500 },
                 { id: "plate-names", type: "text", text: "Lucía  &  Mateo", x: 620, y: 632, width: 380, fontSize: 28, fontFamily: "Playfair Display, serif", color: "#0a0a0a", textAlign: "center", fontStyle: "italic" },
                 { id: "info-1", type: "text", text: "FECHA  ·  Sábado 8 de noviembre  ·  18:00 — 21:00 H", x: 60, y: 760, width: 960, fontSize: 17, fontFamily: "Playfair Display, serif", color: "#0a0a0a", textAlign: "left", fontStyle: "italic" },
                 { id: "info-2", type: "text", text: "LUGAR  ·  El Salón Buenos Aires  ·  Madrid", x: 60, y: 800, width: 960, fontSize: 17, fontFamily: "Playfair Display, serif", color: "#0a0a0a", textAlign: "left", fontStyle: "italic" },
                 { id: "price-bg", type: "shape", shape: "rect", x: 660, y: 850, width: 340, height: 150, fill: "#0a0a0a", selectable: false },
-                { id: "price-label", type: "text", text: "INVERSIÓN", x: 660, y: 870, width: 340, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "#b8860b", fontWeight: "800", textAlign: "center", charSpacing: 500 },
+                { id: "price-label", type: "text", text: "INVERSIÓN", x: 660, y: 870, width: 340, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "#b8860b", fontWeight: "800", textAlign: "center", charSpacing: 500 },
                 { id: "price-value", type: "text", text: "65€", x: 660, y: 890, width: 340, fontSize: 84, fontFamily: "Playfair Display, serif", color: "#f5f0e8", textAlign: "center", fontStyle: "italic" },
                 { id: "cta", type: "text", text: "RESERVA  ·  salon.ba@tango.es", x: 60, y: 870, width: 580, fontSize: 14, fontFamily: "Cormorant Garamond, serif", color: "#7a1532", fontStyle: "italic", textAlign: "left", charSpacing: 200 },
                 { id: "phone", type: "text", text: "+34 600 333 444", x: 60, y: 905, width: 580, fontSize: 13, fontFamily: "Montserrat, sans-serif", color: "rgba(10,10,10,0.6)", fontWeight: "500", textAlign: "left", charSpacing: 200 },
@@ -3252,7 +3252,7 @@ export const templates: Template[] = [
                 { id: "desc", type: "text", text: "Tradición porteña, abrazo cerrado y caminata.", x: 80, y: 510, width: 920, fontSize: 22, fontFamily: "Cormorant Garamond, serif", color: "rgba(10,10,10,0.78)", fontStyle: "italic", textAlign: "center" },
                 { id: "couple", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/07_lucia_mateo_pareja.png", x: 540, y: 580, scaleX: 1.0, scaleY: 1.0, originX: "center", originY: "top", shadow: { color: "rgba(180,134,11,0.55)", blur: 50, offsetX: 0, offsetY: 0 } },
                 { id: "plate-bg", type: "shape", shape: "rect", x: 290, y: 1190, width: 500, height: 110, fill: "rgba(245,240,232,0.92)", selectable: false },
-                { id: "plate-label", type: "text", text: "IMPARTEN", x: 290, y: 1207, width: 500, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(122,21,50,0.7)", fontWeight: "800", textAlign: "center", charSpacing: 500 },
+                { id: "plate-label", type: "text", text: "IMPARTEN", x: 290, y: 1207, width: 500, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(122,21,50,0.7)", fontWeight: "800", textAlign: "center", charSpacing: 500 },
                 { id: "plate-names", type: "text", text: "Lucía  &  Mateo", x: 290, y: 1230, width: 500, fontSize: 38, fontFamily: "Playfair Display, serif", color: "#0a0a0a", textAlign: "center", fontStyle: "italic" },
                 { id: "info-1-l", type: "text", text: "FECHA", x: 80, y: 1370, width: 920, fontSize: 21, fontFamily: "Montserrat, sans-serif", color: "rgba(254,243,199,0.85)", fontWeight: "800", textAlign: "left", charSpacing: 400 },
                 { id: "info-1-v", type: "text", text: "Sábado 8 de noviembre  ·  18:00 — 21:00 H", x: 80, y: 1395, width: 920, fontSize: 26, fontFamily: "Playfair Display, serif", color: "#ffffff", textAlign: "left", fontStyle: "italic" },
@@ -3275,12 +3275,12 @@ export const templates: Template[] = [
                 { id: "div", type: "shape", shape: "rect", x: 80, y: 390, width: 80, height: 2, fill: "#b8860b", selectable: false },
                 { id: "desc", type: "text", text: "Tradición porteña, abrazo cerrado y caminata.", x: 80, y: 410, width: 1000, fontSize: 22, fontFamily: "Cormorant Garamond, serif", color: "rgba(10,10,10,0.78)", fontStyle: "italic", textAlign: "left" },
                 { id: "couple", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/07_lucia_mateo_pareja.png", x: 1500, y: 50, scaleX: 0.85, scaleY: 0.85, originX: "center", originY: "top", shadow: { color: "rgba(180,134,11,0.55)", blur: 40, offsetX: 0, offsetY: 0 } },
-                { id: "plate-label", type: "text", text: "IMPARTEN", x: 80, y: 490, width: 700, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(122,21,50,0.7)", fontWeight: "800", textAlign: "left", charSpacing: 500 },
+                { id: "plate-label", type: "text", text: "IMPARTEN", x: 80, y: 490, width: 700, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(122,21,50,0.7)", fontWeight: "800", textAlign: "left", charSpacing: 500 },
                 { id: "plate-names", type: "text", text: "Lucía  &  Mateo", x: 80, y: 510, width: 700, fontSize: 36, fontFamily: "Playfair Display, serif", color: "#0a0a0a", textAlign: "left", fontStyle: "italic" },
                 { id: "info-1", type: "text", text: "Sábado 8 de noviembre  ·  18:00 — 21:00 H", x: 80, y: 590, width: 1000, fontSize: 20, fontFamily: "Playfair Display, serif", color: "#0a0a0a", textAlign: "left", fontStyle: "italic" },
                 { id: "info-2", type: "text", text: "El Salón Buenos Aires  ·  C/ Espoz y Mina  ·  Madrid", x: 80, y: 625, width: 1000, fontSize: 18, fontFamily: "Cormorant Garamond, serif", color: "rgba(10,10,10,0.7)", textAlign: "left" },
                 { id: "price-bg", type: "shape", shape: "rect", x: 80, y: 680, width: 400, height: 130, fill: "#0a0a0a", selectable: false },
-                { id: "price-label", type: "text", text: "INVERSIÓN", x: 80, y: 700, width: 400, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "#b8860b", fontWeight: "800", textAlign: "center", charSpacing: 500 },
+                { id: "price-label", type: "text", text: "INVERSIÓN", x: 80, y: 700, width: 400, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "#b8860b", fontWeight: "800", textAlign: "center", charSpacing: 500 },
                 { id: "price-value", type: "text", text: "65€", x: 80, y: 720, width: 400, fontSize: 80, fontFamily: "Playfair Display, serif", color: "#f5f0e8", textAlign: "center", fontStyle: "italic" },
                 { id: "cta", type: "text", text: "RESERVA  ·  salon.ba@tango.es", x: 510, y: 700, width: 600, fontSize: 16, fontFamily: "Cormorant Garamond, serif", color: "#7a1532", fontStyle: "italic", textAlign: "left", charSpacing: 200 },
                 { id: "phone", type: "text", text: "+34 600 333 444  ·  Plazas limitadas a 18", x: 510, y: 735, width: 600, fontSize: 14, fontFamily: "Montserrat, sans-serif", color: "rgba(10,10,10,0.6)", fontWeight: "500", textAlign: "left", charSpacing: 150 },
@@ -3383,13 +3383,13 @@ export const templates: Template[] = [
                 { id: "plate-name", type: "text", text: "PROFE DAMIÁN", x: 0, y: 675, width: 1080, fontSize: 22, fontFamily: "Anton, Impact, sans-serif", color: "#fde047", textAlign: "center", charSpacing: 250 },
                 { id: "day-1-bg", type: "shape", shape: "rect", x: 60, y: 760, width: 300, height: 80, fill: "rgba(254,224,71,0.95)", radius: 10, selectable: false },
                 { id: "day-1", type: "text", text: "LUN · 19H", x: 60, y: 778, width: 300, fontSize: 26, fontFamily: "Anton, Impact, sans-serif", color: "#ea580c", textAlign: "center", charSpacing: 100 },
-                { id: "day-1-x", type: "text", text: "INICIO", x: 60, y: 808, width: 300, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(10,10,10,0.7)", fontWeight: "800", textAlign: "center", charSpacing: 300 },
+                { id: "day-1-x", type: "text", text: "INICIO", x: 60, y: 808, width: 300, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(10,10,10,0.7)", fontWeight: "800", textAlign: "center", charSpacing: 300 },
                 { id: "day-2-bg", type: "shape", shape: "rect", x: 390, y: 760, width: 300, height: 80, fill: "rgba(254,224,71,0.95)", radius: 10, selectable: false },
                 { id: "day-2", type: "text", text: "MIÉ · 20H", x: 390, y: 778, width: 300, fontSize: 26, fontFamily: "Anton, Impact, sans-serif", color: "#ea580c", textAlign: "center", charSpacing: 100 },
-                { id: "day-2-x", type: "text", text: "INTERMEDIO", x: 390, y: 808, width: 300, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(10,10,10,0.7)", fontWeight: "800", textAlign: "center", charSpacing: 300 },
+                { id: "day-2-x", type: "text", text: "INTERMEDIO", x: 390, y: 808, width: 300, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(10,10,10,0.7)", fontWeight: "800", textAlign: "center", charSpacing: 300 },
                 { id: "day-3-bg", type: "shape", shape: "rect", x: 720, y: 760, width: 300, height: 80, fill: "rgba(254,224,71,0.95)", radius: 10, selectable: false },
                 { id: "day-3", type: "text", text: "VIE · 21H", x: 720, y: 778, width: 300, fontSize: 26, fontFamily: "Anton, Impact, sans-serif", color: "#ea580c", textAlign: "center", charSpacing: 100 },
-                { id: "day-3-x", type: "text", text: "SOCIAL", x: 720, y: 808, width: 300, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(10,10,10,0.7)", fontWeight: "800", textAlign: "center", charSpacing: 300 },
+                { id: "day-3-x", type: "text", text: "SOCIAL", x: 720, y: 808, width: 300, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(10,10,10,0.7)", fontWeight: "800", textAlign: "center", charSpacing: 300 },
                 { id: "price-bg", type: "shape", shape: "rect", x: 340, y: 880, width: 400, height: 60, fill: "#0a0a0a", radius: 30, selectable: false },
                 { id: "price-text", type: "text", text: "BONO MES · 50€", x: 0, y: 895, width: 1080, fontSize: 24, fontFamily: "Anton, Impact, sans-serif", color: "#fde047", textAlign: "center", charSpacing: 200 },
                 { id: "footer-where", type: "text", text: "ESTUDIO DEL SOL  ·  C/ TENERIFE 5  ·  MADRID", x: 0, y: 985, width: 1080, fontSize: 14, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "center", charSpacing: 300 },
@@ -3514,7 +3514,7 @@ export const templates: Template[] = [
 
                 // Sello nombre profe (rect rotado tipo sticker)
                 { id: "sticker-bg", type: "shape", shape: "rect", x: 700, y: 880, width: 280, height: 60, fill: "#fde047", angle: 4, selectable: false },
-                { id: "sticker-l", type: "text", text: "PROFE", x: 700, y: 887, width: 280, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(13,13,13,0.7)", fontWeight: "800", textAlign: "center", charSpacing: 400, angle: 4 },
+                { id: "sticker-l", type: "text", text: "PROFE", x: 700, y: 887, width: 280, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(13,13,13,0.7)", fontWeight: "800", textAlign: "center", charSpacing: 400, angle: 4 },
                 { id: "sticker-n", type: "text", text: "MALIK SANTOS", x: 700, y: 905, width: 280, fontSize: 22, fontFamily: "Anton, Impact, sans-serif", color: "#0d0d0d", textAlign: "center", charSpacing: 100, angle: 4 },
 
                 // ─── INFO INFERIOR caja "tag-board" con grid ───
@@ -3562,11 +3562,11 @@ export const templates: Template[] = [
                 { id: "profe", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/04_malik_santos_perfil.png", x: 540, y: 380, scaleX: 0.6, scaleY: 0.6, originX: "center", originY: "top", shadow: { color: "rgba(34,211,238,0.85)", blur: 50, offsetX: 0, offsetY: 0 } },
                 { id: "sticker-bg", type: "shape", shape: "rect", x: 740, y: 720, width: 260, height: 55, fill: "#fde047", angle: 4, selectable: false },
                 { id: "sticker-n", type: "text", text: "PROFE MALIK", x: 740, y: 736, width: 260, fontSize: 20, fontFamily: "Anton, Impact, sans-serif", color: "#0d0d0d", textAlign: "center", charSpacing: 150, angle: 4 },
-                { id: "g-1-l", type: "text", text: "DÍAS", x: 60, y: 815, width: 300, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "#f472b6", fontWeight: "800", textAlign: "left", charSpacing: 350 },
+                { id: "g-1-l", type: "text", text: "DÍAS", x: 60, y: 815, width: 300, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "#f472b6", fontWeight: "800", textAlign: "left", charSpacing: 350 },
                 { id: "g-1-v", type: "text", text: "LUN · MIÉ · VIE", x: 60, y: 835, width: 480, fontSize: 30, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "left", charSpacing: 80 },
-                { id: "g-2-l", type: "text", text: "HORA", x: 600, y: 815, width: 300, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "#f472b6", fontWeight: "800", textAlign: "left", charSpacing: 350 },
+                { id: "g-2-l", type: "text", text: "HORA", x: 600, y: 815, width: 300, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "#f472b6", fontWeight: "800", textAlign: "left", charSpacing: 350 },
                 { id: "g-2-v", type: "text", text: "20:30 H", x: 600, y: 835, width: 380, fontSize: 30, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "left", charSpacing: 100 },
-                { id: "g-3-l", type: "text", text: "LUGAR", x: 60, y: 895, width: 300, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "#22d3ee", fontWeight: "800", textAlign: "left", charSpacing: 350 },
+                { id: "g-3-l", type: "text", text: "LUGAR", x: 60, y: 895, width: 300, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "#22d3ee", fontWeight: "800", textAlign: "left", charSpacing: 350 },
                 { id: "g-3-v", type: "text", text: "WAREHOUSE 12", x: 60, y: 912, width: 480, fontSize: 26, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "left", charSpacing: 80 },
                 { id: "g-4-l", type: "text", text: "BONO MES", x: 600, y: 895, width: 300, fontSize: 19, fontFamily: "Montserrat, sans-serif", color: "#fde047", fontWeight: "800", textAlign: "left", charSpacing: 350 },
                 { id: "g-4-v", type: "text", text: "55€", x: 600, y: 905, width: 380, fontSize: 48, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "left", charSpacing: 30 },
@@ -3682,24 +3682,24 @@ export const templates: Template[] = [
 
                 // Plate nombres profes pareja
                 { id: "plate-line-t", type: "shape", shape: "rect", x: 80, y: 905, width: 920, height: 1, fill: "#d4a058", selectable: false },
-                { id: "plate-label", type: "text", text: "IMPARTEN", x: 0, y: 920, width: 1080, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(212,160,88,0.75)", fontWeight: "800", textAlign: "center", charSpacing: 500 },
+                { id: "plate-label", type: "text", text: "IMPARTEN", x: 0, y: 920, width: 1080, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(212,160,88,0.75)", fontWeight: "800", textAlign: "center", charSpacing: 500 },
                 { id: "plate-names", type: "text", text: "João  &  Catarina", x: 0, y: 944, width: 1080, fontSize: 44, fontFamily: "Playfair Display, serif", color: "#fef3c7", textAlign: "center", fontStyle: "italic" },
                 { id: "plate-from", type: "text", text: "DESDE LISBOA · CAMPEONES DEL MUNDO 2024", x: 0, y: 1005, width: 1080, fontSize: 20, fontFamily: "Cormorant Garamond, serif", color: "#d4a058", fontWeight: "600", textAlign: "center", charSpacing: 400 },
                 { id: "plate-line-b", type: "shape", shape: "rect", x: 80, y: 1035, width: 920, height: 1, fill: "#d4a058", selectable: false },
 
                 // ─── BLOQUE INFO 3 cajas tierra ───
                 { id: "box-1-bg", type: "shape", shape: "rect", x: 60, y: 1070, width: 310, height: 200, fill: "rgba(28,15,8,0.7)", stroke: "rgba(212,160,88,0.45)", strokeWidth: 1, selectable: false },
-                { id: "b1-l", type: "text", text: "FECHA", x: 60, y: 1090, width: 310, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "#d4a058", fontWeight: "800", textAlign: "center", charSpacing: 400 },
+                { id: "b1-l", type: "text", text: "FECHA", x: 60, y: 1090, width: 310, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "#d4a058", fontWeight: "800", textAlign: "center", charSpacing: 400 },
                 { id: "b1-day", type: "text", text: "22", x: 60, y: 1110, width: 310, fontSize: 88, fontFamily: "Playfair Display, serif", color: "#fef3c7", textAlign: "center", fontStyle: "italic" },
                 { id: "b1-month", type: "text", text: "NOV · SÁBADO", x: 60, y: 1228, width: 310, fontSize: 13, fontFamily: "Cormorant Garamond, serif", color: "rgba(254,243,199,0.75)", textAlign: "center", charSpacing: 250 },
 
                 { id: "box-2-bg", type: "shape", shape: "rect", x: 385, y: 1070, width: 310, height: 200, fill: "rgba(28,15,8,0.7)", stroke: "rgba(212,160,88,0.45)", strokeWidth: 1, selectable: false },
-                { id: "b2-l", type: "text", text: "HORARIO", x: 385, y: 1090, width: 310, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "#d4a058", fontWeight: "800", textAlign: "center", charSpacing: 400 },
+                { id: "b2-l", type: "text", text: "HORARIO", x: 385, y: 1090, width: 310, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "#d4a058", fontWeight: "800", textAlign: "center", charSpacing: 400 },
                 { id: "b2-day", type: "text", text: "16 — 20H", x: 385, y: 1110, width: 310, fontSize: 50, fontFamily: "Playfair Display, serif", color: "#fef3c7", textAlign: "center", fontStyle: "italic" },
                 { id: "b2-month", type: "text", text: "4 HORAS · 2 BLOQUES", x: 385, y: 1228, width: 310, fontSize: 13, fontFamily: "Cormorant Garamond, serif", color: "rgba(254,243,199,0.75)", textAlign: "center", charSpacing: 200 },
 
                 { id: "box-3-bg", type: "shape", shape: "rect", x: 710, y: 1070, width: 310, height: 200, fill: "rgba(28,15,8,0.7)", stroke: "rgba(212,160,88,0.45)", strokeWidth: 1, selectable: false },
-                { id: "b3-l", type: "text", text: "INVERSIÓN", x: 710, y: 1090, width: 310, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "#d4a058", fontWeight: "800", textAlign: "center", charSpacing: 400 },
+                { id: "b3-l", type: "text", text: "INVERSIÓN", x: 710, y: 1090, width: 310, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "#d4a058", fontWeight: "800", textAlign: "center", charSpacing: 400 },
                 { id: "b3-day", type: "text", text: "70€", x: 710, y: 1110, width: 310, fontSize: 88, fontFamily: "Playfair Display, serif", color: "#fef3c7", textAlign: "center", fontStyle: "italic" },
                 { id: "b3-month", type: "text", text: "EARLY BIRD 60€", x: 710, y: 1228, width: 310, fontSize: 13, fontFamily: "Cormorant Garamond, serif", color: "rgba(254,243,199,0.75)", textAlign: "center", charSpacing: 200 },
 
@@ -3717,7 +3717,7 @@ export const templates: Template[] = [
                 { id: "title-1", type: "text", text: "Kizomba", x: 60, y: 100, width: 800, fontSize: 100, fontFamily: "Playfair Display, serif", color: "#fef3c7", textAlign: "left", fontStyle: "italic" },
                 { id: "title-2", type: "text", text: "& Tarraxinha", x: 60, y: 210, width: 800, fontSize: 50, fontFamily: "Playfair Display, serif", color: "#d4a058", textAlign: "left", fontStyle: "italic" },
                 { id: "couple", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/Kizomba-Joa%CC%83o%20y%20Catarina.png", x: 540, y: 320, scaleX: 0.78, scaleY: 0.78, originX: "center", originY: "top", shadow: { color: "rgba(212,160,88,0.65)", blur: 40, offsetX: 0, offsetY: 0 } },
-                { id: "plate-label", type: "text", text: "IMPARTEN", x: 0, y: 800, width: 1080, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(212,160,88,0.75)", fontWeight: "800", textAlign: "center", charSpacing: 500 },
+                { id: "plate-label", type: "text", text: "IMPARTEN", x: 0, y: 800, width: 1080, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(212,160,88,0.75)", fontWeight: "800", textAlign: "center", charSpacing: 500 },
                 { id: "plate-names", type: "text", text: "João  &  Catarina", x: 0, y: 822, width: 1080, fontSize: 36, fontFamily: "Playfair Display, serif", color: "#fef3c7", textAlign: "center", fontStyle: "italic" },
                 { id: "info", type: "text", text: "SÁB 22 NOV  ·  16 — 20H  ·  70€ (Early bird 60€)", x: 0, y: 890, width: 1080, fontSize: 18, fontFamily: "Cormorant Garamond, serif", color: "#fef3c7", fontStyle: "italic", textAlign: "center", charSpacing: 100 },
                 { id: "venue", type: "text", text: "STUDIO KIZ  ·  C/ MIRA EL RÍO ALTA 17  ·  MADRID", x: 0, y: 935, width: 1080, fontSize: 13, fontFamily: "Cormorant Garamond, serif", color: "#d4a058", fontWeight: "600", textAlign: "center", charSpacing: 350 },
@@ -3742,15 +3742,15 @@ export const templates: Template[] = [
                 { id: "plate-from", type: "text", text: "DESDE LISBOA · CAMPEONES DEL MUNDO 2024", x: 0, y: 1395, width: 1080, fontSize: 13, fontFamily: "Cormorant Garamond, serif", color: "#d4a058", fontWeight: "600", textAlign: "center", charSpacing: 400 },
                 { id: "plate-line-b", type: "shape", shape: "rect", x: 80, y: 1430, width: 920, height: 1, fill: "#d4a058", selectable: false },
                 { id: "box-1-bg", type: "shape", shape: "rect", x: 60, y: 1470, width: 310, height: 200, fill: "rgba(28,15,8,0.7)", stroke: "rgba(212,160,88,0.45)", strokeWidth: 1, selectable: false },
-                { id: "b1-l", type: "text", text: "FECHA", x: 60, y: 1490, width: 310, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "#d4a058", fontWeight: "800", textAlign: "center", charSpacing: 400 },
+                { id: "b1-l", type: "text", text: "FECHA", x: 60, y: 1490, width: 310, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "#d4a058", fontWeight: "800", textAlign: "center", charSpacing: 400 },
                 { id: "b1-day", type: "text", text: "22", x: 60, y: 1510, width: 310, fontSize: 90, fontFamily: "Playfair Display, serif", color: "#fef3c7", textAlign: "center", fontStyle: "italic" },
                 { id: "b1-month", type: "text", text: "NOV · SÁB", x: 60, y: 1628, width: 310, fontSize: 13, fontFamily: "Cormorant Garamond, serif", color: "rgba(254,243,199,0.75)", textAlign: "center", charSpacing: 250 },
                 { id: "box-2-bg", type: "shape", shape: "rect", x: 385, y: 1470, width: 310, height: 200, fill: "rgba(28,15,8,0.7)", stroke: "rgba(212,160,88,0.45)", strokeWidth: 1, selectable: false },
-                { id: "b2-l", type: "text", text: "HORARIO", x: 385, y: 1490, width: 310, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "#d4a058", fontWeight: "800", textAlign: "center", charSpacing: 400 },
+                { id: "b2-l", type: "text", text: "HORARIO", x: 385, y: 1490, width: 310, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "#d4a058", fontWeight: "800", textAlign: "center", charSpacing: 400 },
                 { id: "b2-day", type: "text", text: "16 — 20H", x: 385, y: 1510, width: 310, fontSize: 50, fontFamily: "Playfair Display, serif", color: "#fef3c7", textAlign: "center", fontStyle: "italic" },
                 { id: "b2-month", type: "text", text: "4H · 2 BLOQUES", x: 385, y: 1628, width: 310, fontSize: 13, fontFamily: "Cormorant Garamond, serif", color: "rgba(254,243,199,0.75)", textAlign: "center", charSpacing: 200 },
                 { id: "box-3-bg", type: "shape", shape: "rect", x: 710, y: 1470, width: 310, height: 200, fill: "rgba(28,15,8,0.7)", stroke: "rgba(212,160,88,0.45)", strokeWidth: 1, selectable: false },
-                { id: "b3-l", type: "text", text: "INVERSIÓN", x: 710, y: 1490, width: 310, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "#d4a058", fontWeight: "800", textAlign: "center", charSpacing: 400 },
+                { id: "b3-l", type: "text", text: "INVERSIÓN", x: 710, y: 1490, width: 310, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "#d4a058", fontWeight: "800", textAlign: "center", charSpacing: 400 },
                 { id: "b3-day", type: "text", text: "70€", x: 710, y: 1510, width: 310, fontSize: 90, fontFamily: "Playfair Display, serif", color: "#fef3c7", textAlign: "center", fontStyle: "italic" },
                 { id: "b3-month", type: "text", text: "EARLY BIRD 60€", x: 710, y: 1628, width: 310, fontSize: 13, fontFamily: "Cormorant Garamond, serif", color: "rgba(254,243,199,0.75)", textAlign: "center", charSpacing: 200 },
                 { id: "footer-where", type: "text", text: "STUDIO KIZ  ·  C/ MIRA EL RÍO ALTA 17  ·  MADRID", x: 0, y: 1750, width: 1080, fontSize: 16, fontFamily: "Cormorant Garamond, serif", color: "#d4a058", fontWeight: "600", textAlign: "center", charSpacing: 350 },
@@ -3766,14 +3766,14 @@ export const templates: Template[] = [
                 { id: "title-1", type: "text", text: "Kizomba", x: 80, y: 140, width: 1100, fontSize: 150, fontFamily: "Playfair Display, serif", color: "#fef3c7", textAlign: "left", fontStyle: "italic" },
                 { id: "title-2", type: "text", text: "& Tarraxinha", x: 80, y: 305, width: 1100, fontSize: 70, fontFamily: "Playfair Display, serif", color: "#d4a058", textAlign: "left", fontStyle: "italic" },
                 { id: "desc", type: "text", text: "Abrazo cerrado, musicalidad lenta, raíces angoleñas.", x: 80, y: 410, width: 1100, fontSize: 20, fontFamily: "Cormorant Garamond, serif", color: "rgba(254,243,199,0.78)", fontStyle: "italic", textAlign: "left" },
-                { id: "plate-label", type: "text", text: "IMPARTEN", x: 80, y: 475, width: 800, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(212,160,88,0.75)", fontWeight: "800", textAlign: "left", charSpacing: 500 },
+                { id: "plate-label", type: "text", text: "IMPARTEN", x: 80, y: 475, width: 800, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(212,160,88,0.75)", fontWeight: "800", textAlign: "left", charSpacing: 500 },
                 { id: "plate-names", type: "text", text: "João  &  Catarina  ·  Desde Lisboa", x: 80, y: 500, width: 1100, fontSize: 32, fontFamily: "Playfair Display, serif", color: "#fef3c7", textAlign: "left", fontStyle: "italic" },
                 { id: "box-1-bg", type: "shape", shape: "rect", x: 80, y: 570, width: 360, height: 170, fill: "rgba(28,15,8,0.7)", stroke: "rgba(212,160,88,0.45)", strokeWidth: 1, selectable: false },
-                { id: "b1-l", type: "text", text: "FECHA", x: 80, y: 590, width: 360, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "#d4a058", fontWeight: "800", textAlign: "center", charSpacing: 400 },
+                { id: "b1-l", type: "text", text: "FECHA", x: 80, y: 590, width: 360, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "#d4a058", fontWeight: "800", textAlign: "center", charSpacing: 400 },
                 { id: "b1-day", type: "text", text: "SÁB 22 NOV", x: 80, y: 620, width: 360, fontSize: 38, fontFamily: "Playfair Display, serif", color: "#fef3c7", textAlign: "center", fontStyle: "italic" },
                 { id: "b1-month", type: "text", text: "16:00 — 20:00 H", x: 80, y: 690, width: 360, fontSize: 14, fontFamily: "Cormorant Garamond, serif", color: "rgba(254,243,199,0.75)", textAlign: "center", charSpacing: 200 },
                 { id: "box-2-bg", type: "shape", shape: "rect", x: 460, y: 570, width: 360, height: 170, fill: "rgba(28,15,8,0.7)", stroke: "rgba(212,160,88,0.45)", strokeWidth: 1, selectable: false },
-                { id: "b2-l", type: "text", text: "INVERSIÓN", x: 460, y: 590, width: 360, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "#d4a058", fontWeight: "800", textAlign: "center", charSpacing: 400 },
+                { id: "b2-l", type: "text", text: "INVERSIÓN", x: 460, y: 590, width: 360, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "#d4a058", fontWeight: "800", textAlign: "center", charSpacing: 400 },
                 { id: "b2-day", type: "text", text: "70€", x: 460, y: 615, width: 360, fontSize: 82, fontFamily: "Playfair Display, serif", color: "#fef3c7", textAlign: "center", fontStyle: "italic" },
                 { id: "b2-month", type: "text", text: "EARLY BIRD 60€", x: 460, y: 710, width: 360, fontSize: 20, fontFamily: "Cormorant Garamond, serif", color: "rgba(254,243,199,0.75)", textAlign: "center", charSpacing: 200 },
                 { id: "couple", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/Kizomba-Joa%CC%83o%20y%20Catarina.png", x: 1440, y: 60, scaleX: 0.95, scaleY: 0.95, originX: "center", originY: "top", shadow: { color: "rgba(212,160,88,0.65)", blur: 50, offsetX: 0, offsetY: 0 } },
@@ -3830,7 +3830,7 @@ export const templates: Template[] = [
                 { id: "info-top-line", type: "shape", shape: "rect", x: 0, y: 950, width: 1080, height: 4, fill: "#fde047", selectable: false },
 
                 // Nombre profe destacado
-                { id: "profe-label", type: "text", text: "IMPARTE", x: 0, y: 985, width: 1080, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(253,224,71,0.7)", fontWeight: "800", textAlign: "center", charSpacing: 500 },
+                { id: "profe-label", type: "text", text: "IMPARTE", x: 0, y: 985, width: 1080, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(253,224,71,0.7)", fontWeight: "800", textAlign: "center", charSpacing: 500 },
                 { id: "profe-name", type: "text", text: "ELENA RUIZ", x: 0, y: 1010, width: 1080, fontSize: 52, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "center", charSpacing: 100 },
                 { id: "profe-role", type: "text", text: "10 años en escuelas internacionales", x: 0, y: 1075, width: 1080, fontSize: 14, fontFamily: "Playfair Display, serif", color: "rgba(255,255,255,0.65)", fontStyle: "italic", textAlign: "center" },
 
@@ -3838,15 +3838,15 @@ export const templates: Template[] = [
                 { id: "div", type: "shape", shape: "rect", x: 420, y: 1115, width: 240, height: 1, fill: "rgba(253,224,71,0.5)", selectable: false },
 
                 // INFO grid 3 columnas
-                { id: "i-1-l", type: "text", text: "DÍAS", x: 60, y: 1140, width: 320, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(253,224,71,0.85)", fontWeight: "800", textAlign: "center", charSpacing: 400 },
+                { id: "i-1-l", type: "text", text: "DÍAS", x: 60, y: 1140, width: 320, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(253,224,71,0.85)", fontWeight: "800", textAlign: "center", charSpacing: 400 },
                 { id: "i-1-v", type: "text", text: "LUN · JUE", x: 60, y: 1162, width: 320, fontSize: 30, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "center", charSpacing: 80 },
                 { id: "i-1-x", type: "text", text: "20:00 — 21:30", x: 60, y: 1208, width: 320, fontSize: 13, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.7)", fontWeight: "500", textAlign: "center" },
 
-                { id: "i-2-l", type: "text", text: "PRECIO", x: 380, y: 1140, width: 320, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(253,224,71,0.85)", fontWeight: "800", textAlign: "center", charSpacing: 400 },
+                { id: "i-2-l", type: "text", text: "PRECIO", x: 380, y: 1140, width: 320, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(253,224,71,0.85)", fontWeight: "800", textAlign: "center", charSpacing: 400 },
                 { id: "i-2-v", type: "text", text: "55€", x: 380, y: 1160, width: 320, fontSize: 40, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "center", charSpacing: 30 },
                 { id: "i-2-x", type: "text", text: "BONO MENSUAL", x: 380, y: 1208, width: 320, fontSize: 13, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.7)", fontWeight: "600", textAlign: "center", charSpacing: 200 },
 
-                { id: "i-3-l", type: "text", text: "DÓNDE", x: 700, y: 1140, width: 320, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(253,224,71,0.85)", fontWeight: "800", textAlign: "center", charSpacing: 400 },
+                { id: "i-3-l", type: "text", text: "DÓNDE", x: 700, y: 1140, width: 320, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(253,224,71,0.85)", fontWeight: "800", textAlign: "center", charSpacing: 400 },
                 { id: "i-3-v", type: "text", text: "Academia del Ritmo", x: 700, y: 1166, width: 320, fontSize: 17, fontFamily: "Playfair Display, serif", color: "#ffffff", textAlign: "center", fontStyle: "italic" },
                 { id: "i-3-x", type: "text", text: "Gran Vía 12 · Madrid", x: 700, y: 1198, width: 320, fontSize: 13, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.7)", fontWeight: "500", textAlign: "center" },
 
@@ -3869,13 +3869,13 @@ export const templates: Template[] = [
                 { id: "subtitle", type: "text", text: "Tu academia se sube al ritmo.", x: 60, y: 360, width: 540, fontSize: 18, fontFamily: "Playfair Display, serif", color: "rgba(255,255,255,0.9)", fontStyle: "italic", textAlign: "left" },
                 { id: "info-bg", type: "shape", shape: "rect", x: 0, y: 760, width: 1080, height: 320, fill: "rgba(15,5,5,0.92)", selectable: false },
                 { id: "info-top-line", type: "shape", shape: "rect", x: 0, y: 760, width: 1080, height: 3, fill: "#fde047", selectable: false },
-                { id: "profe-label", type: "text", text: "IMPARTE", x: 0, y: 785, width: 1080, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(253,224,71,0.7)", fontWeight: "800", textAlign: "center", charSpacing: 500 },
+                { id: "profe-label", type: "text", text: "IMPARTE", x: 0, y: 785, width: 1080, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(253,224,71,0.7)", fontWeight: "800", textAlign: "center", charSpacing: 500 },
                 { id: "profe-name", type: "text", text: "ELENA RUIZ", x: 0, y: 805, width: 1080, fontSize: 42, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "center", charSpacing: 100 },
-                { id: "i-1-l", type: "text", text: "DÍAS", x: 60, y: 880, width: 320, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(253,224,71,0.85)", fontWeight: "800", textAlign: "center", charSpacing: 400 },
+                { id: "i-1-l", type: "text", text: "DÍAS", x: 60, y: 880, width: 320, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(253,224,71,0.85)", fontWeight: "800", textAlign: "center", charSpacing: 400 },
                 { id: "i-1-v", type: "text", text: "LUN · JUE 20H", x: 60, y: 900, width: 320, fontSize: 24, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "center", charSpacing: 80 },
-                { id: "i-2-l", type: "text", text: "BONO", x: 380, y: 880, width: 320, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(253,224,71,0.85)", fontWeight: "800", textAlign: "center", charSpacing: 400 },
+                { id: "i-2-l", type: "text", text: "BONO", x: 380, y: 880, width: 320, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(253,224,71,0.85)", fontWeight: "800", textAlign: "center", charSpacing: 400 },
                 { id: "i-2-v", type: "text", text: "55€ / MES", x: 380, y: 900, width: 320, fontSize: 24, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "center", charSpacing: 80 },
-                { id: "i-3-l", type: "text", text: "DÓNDE", x: 700, y: 880, width: 320, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(253,224,71,0.85)", fontWeight: "800", textAlign: "center", charSpacing: 400 },
+                { id: "i-3-l", type: "text", text: "DÓNDE", x: 700, y: 880, width: 320, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(253,224,71,0.85)", fontWeight: "800", textAlign: "center", charSpacing: 400 },
                 { id: "i-3-v", type: "text", text: "Academia Ritmo", x: 700, y: 904, width: 320, fontSize: 15, fontFamily: "Playfair Display, serif", color: "#ffffff", textAlign: "center", fontStyle: "italic" },
                 { id: "cta", type: "text", text: "INSCRIBE TU GRUPO · academiaritmo.es", x: 0, y: 1010, width: 1080, fontSize: 14, fontFamily: "Anton, Impact, sans-serif", color: "#fde047", textAlign: "center", charSpacing: 250 },
                 { id: "cta-phone", type: "text", text: "+34 600 444 555", x: 0, y: 1045, width: 1080, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.7)", fontWeight: "500", textAlign: "center", charSpacing: 250 },
@@ -3898,13 +3898,13 @@ export const templates: Template[] = [
                 { id: "profe-name", type: "text", text: "ELENA RUIZ", x: 0, y: 1445, width: 1080, fontSize: 58, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "center", charSpacing: 100 },
                 { id: "profe-role", type: "text", text: "10 años en escuelas internacionales", x: 0, y: 1515, width: 1080, fontSize: 16, fontFamily: "Playfair Display, serif", color: "rgba(255,255,255,0.65)", fontStyle: "italic", textAlign: "center" },
                 { id: "div", type: "shape", shape: "rect", x: 460, y: 1565, width: 160, height: 1, fill: "rgba(253,224,71,0.5)", selectable: false },
-                { id: "i-1-l", type: "text", text: "DÍAS", x: 60, y: 1595, width: 320, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(253,224,71,0.85)", fontWeight: "800", textAlign: "center", charSpacing: 400 },
+                { id: "i-1-l", type: "text", text: "DÍAS", x: 60, y: 1595, width: 320, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(253,224,71,0.85)", fontWeight: "800", textAlign: "center", charSpacing: 400 },
                 { id: "i-1-v", type: "text", text: "LUN · JUE", x: 60, y: 1620, width: 320, fontSize: 32, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "center", charSpacing: 80 },
                 { id: "i-1-x", type: "text", text: "20:00 — 21:30", x: 60, y: 1670, width: 320, fontSize: 14, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.7)", fontWeight: "500", textAlign: "center" },
                 { id: "i-2-l", type: "text", text: "BONO MES", x: 380, y: 1595, width: 320, fontSize: 19, fontFamily: "Montserrat, sans-serif", color: "rgba(253,224,71,0.85)", fontWeight: "800", textAlign: "center", charSpacing: 400 },
                 { id: "i-2-v", type: "text", text: "55€", x: 380, y: 1615, width: 320, fontSize: 46, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "center", charSpacing: 30 },
                 { id: "i-2-x", type: "text", text: "TODAS LAS CLASES", x: 380, y: 1672, width: 320, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.7)", fontWeight: "600", textAlign: "center", charSpacing: 200 },
-                { id: "i-3-l", type: "text", text: "DÓNDE", x: 700, y: 1595, width: 320, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(253,224,71,0.85)", fontWeight: "800", textAlign: "center", charSpacing: 400 },
+                { id: "i-3-l", type: "text", text: "DÓNDE", x: 700, y: 1595, width: 320, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(253,224,71,0.85)", fontWeight: "800", textAlign: "center", charSpacing: 400 },
                 { id: "i-3-v", type: "text", text: "Academia Ritmo", x: 700, y: 1625, width: 320, fontSize: 18, fontFamily: "Playfair Display, serif", color: "#ffffff", textAlign: "center", fontStyle: "italic" },
                 { id: "i-3-x", type: "text", text: "Gran Vía 12 · Madrid", x: 700, y: 1665, width: 320, fontSize: 13, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.7)", fontWeight: "500", textAlign: "center" },
                 { id: "cta-line", type: "shape", shape: "rect", x: 80, y: 1750, width: 920, height: 1, fill: "rgba(253,224,71,0.3)", selectable: false },
@@ -3924,7 +3924,7 @@ export const templates: Template[] = [
                 { id: "title-line", type: "shape", shape: "rect", x: 80, y: 400, width: 200, height: 5, fill: "#fde047", selectable: false },
                 { id: "subtitle", type: "text", text: "Tu academia se sube al ritmo.", x: 80, y: 420, width: 900, fontSize: 22, fontFamily: "Playfair Display, serif", color: "rgba(255,255,255,0.9)", fontStyle: "italic", textAlign: "left" },
                 { id: "elena", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/Profesores_Baile_Urbano_Latino_Elena-grupales.png", x: 1500, y: 60, scaleX: 0.9, scaleY: 0.9, originX: "center", originY: "top", shadow: { color: "rgba(253,224,71,0.55)", blur: 50, offsetX: 0, offsetY: 0 } },
-                { id: "profe-label", type: "text", text: "IMPARTE", x: 80, y: 510, width: 800, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(253,224,71,0.85)", fontWeight: "800", textAlign: "left", charSpacing: 500 },
+                { id: "profe-label", type: "text", text: "IMPARTE", x: 80, y: 510, width: 800, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(253,224,71,0.85)", fontWeight: "800", textAlign: "left", charSpacing: 500 },
                 { id: "profe-name", type: "text", text: "ELENA RUIZ  ·  Coreógrafa", x: 80, y: 535, width: 1100, fontSize: 32, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "left", charSpacing: 100 },
                 { id: "info-1", type: "text", text: "LUN · JUE 20:00 — 21:30  ·  BONO MES 55€", x: 80, y: 610, width: 1100, fontSize: 22, fontFamily: "Anton, Impact, sans-serif", color: "#fde047", textAlign: "left", charSpacing: 150 },
                 { id: "info-2", type: "text", text: "Academia del Ritmo  ·  Gran Vía 12  ·  Madrid", x: 80, y: 655, width: 1100, fontSize: 18, fontFamily: "Playfair Display, serif", color: "rgba(255,255,255,0.85)", textAlign: "left", fontStyle: "italic" },
@@ -3988,7 +3988,7 @@ export const templates: Template[] = [
                 { id: "info-top-line", type: "shape", shape: "rect", x: 0, y: 950, width: 1080, height: 4, fill: "#22d3ee", selectable: false },
 
                 // Nombre profe destacado
-                { id: "profe-label", type: "text", text: "IMPARTE", x: 0, y: 985, width: 1080, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(34,211,238,0.7)", fontWeight: "800", textAlign: "center", charSpacing: 500 },
+                { id: "profe-label", type: "text", text: "IMPARTE", x: 0, y: 985, width: 1080, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(34,211,238,0.7)", fontWeight: "800", textAlign: "center", charSpacing: 500 },
                 { id: "profe-name", type: "text", text: "MARCO SILVA", x: 0, y: 1010, width: 1080, fontSize: 52, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "center", charSpacing: 100 },
                 { id: "profe-role", type: "text", text: "Coreógrafo · Producciones audiovisuales", x: 0, y: 1075, width: 1080, fontSize: 14, fontFamily: "Playfair Display, serif", color: "rgba(255,255,255,0.65)", fontStyle: "italic", textAlign: "center" },
 
@@ -3996,15 +3996,15 @@ export const templates: Template[] = [
                 { id: "div", type: "shape", shape: "rect", x: 420, y: 1115, width: 240, height: 1, fill: "rgba(34,211,238,0.5)", selectable: false },
 
                 // INFO grid 3 columnas
-                { id: "i-1-l", type: "text", text: "DÍAS", x: 60, y: 1140, width: 320, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(34,211,238,0.85)", fontWeight: "800", textAlign: "center", charSpacing: 400 },
+                { id: "i-1-l", type: "text", text: "DÍAS", x: 60, y: 1140, width: 320, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(34,211,238,0.85)", fontWeight: "800", textAlign: "center", charSpacing: 400 },
                 { id: "i-1-v", type: "text", text: "MAR · VIE", x: 60, y: 1162, width: 320, fontSize: 30, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "center", charSpacing: 80 },
                 { id: "i-1-x", type: "text", text: "19:00 — 20:30", x: 60, y: 1208, width: 320, fontSize: 13, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.7)", fontWeight: "500", textAlign: "center" },
 
-                { id: "i-2-l", type: "text", text: "PRECIO", x: 380, y: 1140, width: 320, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(34,211,238,0.85)", fontWeight: "800", textAlign: "center", charSpacing: 400 },
+                { id: "i-2-l", type: "text", text: "PRECIO", x: 380, y: 1140, width: 320, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(34,211,238,0.85)", fontWeight: "800", textAlign: "center", charSpacing: 400 },
                 { id: "i-2-v", type: "text", text: "60€", x: 380, y: 1160, width: 320, fontSize: 40, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "center", charSpacing: 30 },
                 { id: "i-2-x", type: "text", text: "BONO MENSUAL", x: 380, y: 1208, width: 320, fontSize: 13, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.7)", fontWeight: "600", textAlign: "center", charSpacing: 200 },
 
-                { id: "i-3-l", type: "text", text: "DÓNDE", x: 700, y: 1140, width: 320, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(34,211,238,0.85)", fontWeight: "800", textAlign: "center", charSpacing: 400 },
+                { id: "i-3-l", type: "text", text: "DÓNDE", x: 700, y: 1140, width: 320, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(34,211,238,0.85)", fontWeight: "800", textAlign: "center", charSpacing: 400 },
                 { id: "i-3-v", type: "text", text: "Academia del Ritmo", x: 700, y: 1166, width: 320, fontSize: 17, fontFamily: "Playfair Display, serif", color: "#ffffff", textAlign: "center", fontStyle: "italic" },
                 { id: "i-3-x", type: "text", text: "Gran Vía 12 · Madrid", x: 700, y: 1198, width: 320, fontSize: 13, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.7)", fontWeight: "500", textAlign: "center" },
 
@@ -4027,13 +4027,13 @@ export const templates: Template[] = [
                 { id: "subtitle", type: "text", text: "Coreografía moderna y movimiento.", x: 480, y: 340, width: 540, fontSize: 16, fontFamily: "Playfair Display, serif", color: "rgba(255,255,255,0.9)", fontStyle: "italic", textAlign: "right" },
                 { id: "info-bg", type: "shape", shape: "rect", x: 0, y: 760, width: 1080, height: 320, fill: "rgba(4,8,20,0.92)", selectable: false },
                 { id: "info-top-line", type: "shape", shape: "rect", x: 0, y: 760, width: 1080, height: 3, fill: "#22d3ee", selectable: false },
-                { id: "profe-label", type: "text", text: "IMPARTE", x: 0, y: 785, width: 1080, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(34,211,238,0.7)", fontWeight: "800", textAlign: "center", charSpacing: 500 },
+                { id: "profe-label", type: "text", text: "IMPARTE", x: 0, y: 785, width: 1080, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(34,211,238,0.7)", fontWeight: "800", textAlign: "center", charSpacing: 500 },
                 { id: "profe-name", type: "text", text: "MARCO SILVA", x: 0, y: 805, width: 1080, fontSize: 42, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "center", charSpacing: 100 },
-                { id: "i-1-l", type: "text", text: "DÍAS", x: 60, y: 880, width: 320, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(34,211,238,0.85)", fontWeight: "800", textAlign: "center", charSpacing: 400 },
+                { id: "i-1-l", type: "text", text: "DÍAS", x: 60, y: 880, width: 320, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(34,211,238,0.85)", fontWeight: "800", textAlign: "center", charSpacing: 400 },
                 { id: "i-1-v", type: "text", text: "MAR · VIE 19H", x: 60, y: 900, width: 320, fontSize: 24, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "center", charSpacing: 80 },
-                { id: "i-2-l", type: "text", text: "BONO", x: 380, y: 880, width: 320, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(34,211,238,0.85)", fontWeight: "800", textAlign: "center", charSpacing: 400 },
+                { id: "i-2-l", type: "text", text: "BONO", x: 380, y: 880, width: 320, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(34,211,238,0.85)", fontWeight: "800", textAlign: "center", charSpacing: 400 },
                 { id: "i-2-v", type: "text", text: "60€ / MES", x: 380, y: 900, width: 320, fontSize: 24, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "center", charSpacing: 80 },
-                { id: "i-3-l", type: "text", text: "DÓNDE", x: 700, y: 880, width: 320, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(34,211,238,0.85)", fontWeight: "800", textAlign: "center", charSpacing: 400 },
+                { id: "i-3-l", type: "text", text: "DÓNDE", x: 700, y: 880, width: 320, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(34,211,238,0.85)", fontWeight: "800", textAlign: "center", charSpacing: 400 },
                 { id: "i-3-v", type: "text", text: "Academia Ritmo", x: 700, y: 904, width: 320, fontSize: 15, fontFamily: "Playfair Display, serif", color: "#ffffff", textAlign: "center", fontStyle: "italic" },
                 { id: "cta", type: "text", text: "INFO Y RESERVA · academiaritmo.es", x: 0, y: 1010, width: 1080, fontSize: 14, fontFamily: "Anton, Impact, sans-serif", color: "#22d3ee", textAlign: "center", charSpacing: 250 },
                 { id: "cta-phone", type: "text", text: "+34 600 444 555", x: 0, y: 1045, width: 1080, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.7)", fontWeight: "500", textAlign: "center", charSpacing: 250 },
@@ -4056,12 +4056,12 @@ export const templates: Template[] = [
                 { id: "profe-name", type: "text", text: "MARCO SILVA", x: 0, y: 1445, width: 1080, fontSize: 58, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "center", charSpacing: 100 },
                 { id: "profe-role", type: "text", text: "Coreógrafo · Producciones audiovisuales", x: 0, y: 1515, width: 1080, fontSize: 16, fontFamily: "Playfair Display, serif", color: "rgba(255,255,255,0.65)", fontStyle: "italic", textAlign: "center" },
                 { id: "div", type: "shape", shape: "rect", x: 460, y: 1565, width: 160, height: 1, fill: "rgba(34,211,238,0.5)", selectable: false },
-                { id: "i-1-l", type: "text", text: "DÍAS", x: 60, y: 1595, width: 320, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(34,211,238,0.85)", fontWeight: "800", textAlign: "center", charSpacing: 400 },
+                { id: "i-1-l", type: "text", text: "DÍAS", x: 60, y: 1595, width: 320, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(34,211,238,0.85)", fontWeight: "800", textAlign: "center", charSpacing: 400 },
                 { id: "i-1-v", type: "text", text: "MAR · VIE", x: 60, y: 1620, width: 320, fontSize: 32, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "center", charSpacing: 80 },
                 { id: "i-1-x", type: "text", text: "19:00 — 20:30", x: 60, y: 1670, width: 320, fontSize: 14, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.7)", fontWeight: "500", textAlign: "center" },
                 { id: "i-2-l", type: "text", text: "BONO MES", x: 380, y: 1595, width: 320, fontSize: 19, fontFamily: "Montserrat, sans-serif", color: "rgba(34,211,238,0.85)", fontWeight: "800", textAlign: "center", charSpacing: 400 },
                 { id: "i-2-v", type: "text", text: "60€", x: 380, y: 1615, width: 320, fontSize: 46, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "center", charSpacing: 30 },
-                { id: "i-3-l", type: "text", text: "DÓNDE", x: 700, y: 1595, width: 320, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(34,211,238,0.85)", fontWeight: "800", textAlign: "center", charSpacing: 400 },
+                { id: "i-3-l", type: "text", text: "DÓNDE", x: 700, y: 1595, width: 320, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(34,211,238,0.85)", fontWeight: "800", textAlign: "center", charSpacing: 400 },
                 { id: "i-3-v", type: "text", text: "Academia Ritmo", x: 700, y: 1625, width: 320, fontSize: 18, fontFamily: "Playfair Display, serif", color: "#ffffff", textAlign: "center", fontStyle: "italic" },
                 { id: "i-3-x", type: "text", text: "Gran Vía 12 · Madrid", x: 700, y: 1665, width: 320, fontSize: 13, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.7)", fontWeight: "500", textAlign: "center" },
                 { id: "cta", type: "text", text: "INFO Y RESERVA  ·  academiaritmo.es", x: 0, y: 1775, width: 1080, fontSize: 16, fontFamily: "Anton, Impact, sans-serif", color: "#22d3ee", textAlign: "center", charSpacing: 300 },
@@ -4080,7 +4080,7 @@ export const templates: Template[] = [
                 { id: "title-2", type: "text", text: "URBAN LATIN", x: 780, y: 285, width: 1100, fontSize: 56, fontFamily: "Anton, Impact, sans-serif", color: "#22d3ee", textAlign: "left", charSpacing: 100 },
                 { id: "title-line", type: "shape", shape: "rect", x: 780, y: 380, width: 200, height: 5, fill: "#22d3ee", selectable: false },
                 { id: "subtitle", type: "text", text: "Coreografía moderna y movimiento.", x: 780, y: 400, width: 1100, fontSize: 22, fontFamily: "Playfair Display, serif", color: "rgba(255,255,255,0.9)", fontStyle: "italic", textAlign: "left" },
-                { id: "profe-label", type: "text", text: "IMPARTE", x: 780, y: 490, width: 800, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(34,211,238,0.85)", fontWeight: "800", textAlign: "left", charSpacing: 500 },
+                { id: "profe-label", type: "text", text: "IMPARTE", x: 780, y: 490, width: 800, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(34,211,238,0.85)", fontWeight: "800", textAlign: "left", charSpacing: 500 },
                 { id: "profe-name", type: "text", text: "MARCO SILVA  ·  Coreógrafo", x: 780, y: 515, width: 1100, fontSize: 32, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "left", charSpacing: 100 },
                 { id: "info-1", type: "text", text: "MAR · VIE 19:00 — 20:30  ·  BONO MES 60€", x: 780, y: 595, width: 1100, fontSize: 22, fontFamily: "Anton, Impact, sans-serif", color: "#22d3ee", textAlign: "left", charSpacing: 150 },
                 { id: "info-2", type: "text", text: "Academia del Ritmo  ·  Gran Vía 12  ·  Madrid", x: 780, y: 640, width: 1100, fontSize: 18, fontFamily: "Playfair Display, serif", color: "rgba(255,255,255,0.85)", textAlign: "left", fontStyle: "italic" },
@@ -4149,16 +4149,16 @@ export const templates: Template[] = [
                 { id: "chip-4", type: "text", text: "MERENGUE", x: 770, y: 1038, width: 180, fontSize: 13, fontFamily: "Anton, Impact, sans-serif", color: "#7c4a03", textAlign: "center", charSpacing: 200 },
 
                 // ─── DETALLES PRACTICOS grid 4 columnas ───
-                { id: "details-1-l", type: "text", text: "DÍAS", x: 60, y: 1110, width: 240, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(91,122,153,0.7)", fontWeight: "800", textAlign: "left", charSpacing: 400 },
+                { id: "details-1-l", type: "text", text: "DÍAS", x: 60, y: 1110, width: 240, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(91,122,153,0.7)", fontWeight: "800", textAlign: "left", charSpacing: 400 },
                 { id: "details-1-v", type: "text", text: "MAR  ·  JUE", x: 60, y: 1128, width: 240, fontSize: 24, fontFamily: "Playfair Display, serif", color: "#1a2b3f", textAlign: "left", fontStyle: "italic" },
 
-                { id: "details-2-l", type: "text", text: "HORA", x: 330, y: 1110, width: 240, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(91,122,153,0.7)", fontWeight: "800", textAlign: "left", charSpacing: 400 },
+                { id: "details-2-l", type: "text", text: "HORA", x: 330, y: 1110, width: 240, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(91,122,153,0.7)", fontWeight: "800", textAlign: "left", charSpacing: 400 },
                 { id: "details-2-v", type: "text", text: "11:00 H", x: 330, y: 1128, width: 240, fontSize: 24, fontFamily: "Playfair Display, serif", color: "#1a2b3f", textAlign: "left", fontStyle: "italic" },
 
-                { id: "details-3-l", type: "text", text: "PRECIO", x: 580, y: 1110, width: 240, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(91,122,153,0.7)", fontWeight: "800", textAlign: "left", charSpacing: 400 },
+                { id: "details-3-l", type: "text", text: "PRECIO", x: 580, y: 1110, width: 240, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(91,122,153,0.7)", fontWeight: "800", textAlign: "left", charSpacing: 400 },
                 { id: "details-3-v", type: "text", text: "30€ / mes", x: 580, y: 1128, width: 240, fontSize: 24, fontFamily: "Playfair Display, serif", color: "#1a2b3f", textAlign: "left", fontStyle: "italic" },
 
-                { id: "details-4-l", type: "text", text: "PARA", x: 830, y: 1110, width: 240, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(91,122,153,0.7)", fontWeight: "800", textAlign: "left", charSpacing: 400 },
+                { id: "details-4-l", type: "text", text: "PARA", x: 830, y: 1110, width: 240, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(91,122,153,0.7)", fontWeight: "800", textAlign: "left", charSpacing: 400 },
                 { id: "details-4-v", type: "text", text: "+55 años", x: 830, y: 1128, width: 240, fontSize: 24, fontFamily: "Playfair Display, serif", color: "#d97706", textAlign: "left", fontStyle: "italic" },
 
                 // Linea separadora
@@ -4222,13 +4222,13 @@ export const templates: Template[] = [
                 { id: "chip-3", type: "text", text: "VALS LENTO", x: 570, y: 1315, width: 180, fontSize: 14, fontFamily: "Anton, Impact, sans-serif", color: "#7c4a03", textAlign: "center", charSpacing: 200 },
                 { id: "chip-4-bg", type: "shape", shape: "rect", x: 770, y: 1300, width: 180, height: 50, fill: "#fde68a", radius: 25, selectable: false },
                 { id: "chip-4", type: "text", text: "MERENGUE", x: 770, y: 1315, width: 180, fontSize: 14, fontFamily: "Anton, Impact, sans-serif", color: "#7c4a03", textAlign: "center", charSpacing: 200 },
-                { id: "details-1-l", type: "text", text: "DÍAS", x: 60, y: 1400, width: 240, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(91,122,153,0.7)", fontWeight: "800", textAlign: "left", charSpacing: 400 },
+                { id: "details-1-l", type: "text", text: "DÍAS", x: 60, y: 1400, width: 240, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(91,122,153,0.7)", fontWeight: "800", textAlign: "left", charSpacing: 400 },
                 { id: "details-1-v", type: "text", text: "MAR  ·  JUE", x: 60, y: 1420, width: 240, fontSize: 28, fontFamily: "Playfair Display, serif", color: "#1a2b3f", textAlign: "left", fontStyle: "italic" },
-                { id: "details-2-l", type: "text", text: "HORA", x: 330, y: 1400, width: 240, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(91,122,153,0.7)", fontWeight: "800", textAlign: "left", charSpacing: 400 },
+                { id: "details-2-l", type: "text", text: "HORA", x: 330, y: 1400, width: 240, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(91,122,153,0.7)", fontWeight: "800", textAlign: "left", charSpacing: 400 },
                 { id: "details-2-v", type: "text", text: "11:00 H", x: 330, y: 1420, width: 240, fontSize: 28, fontFamily: "Playfair Display, serif", color: "#1a2b3f", textAlign: "left", fontStyle: "italic" },
-                { id: "details-3-l", type: "text", text: "PRECIO", x: 580, y: 1400, width: 240, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(91,122,153,0.7)", fontWeight: "800", textAlign: "left", charSpacing: 400 },
+                { id: "details-3-l", type: "text", text: "PRECIO", x: 580, y: 1400, width: 240, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(91,122,153,0.7)", fontWeight: "800", textAlign: "left", charSpacing: 400 },
                 { id: "details-3-v", type: "text", text: "30€ / mes", x: 580, y: 1420, width: 240, fontSize: 28, fontFamily: "Playfair Display, serif", color: "#1a2b3f", textAlign: "left", fontStyle: "italic" },
-                { id: "details-4-l", type: "text", text: "PARA", x: 830, y: 1400, width: 240, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(91,122,153,0.7)", fontWeight: "800", textAlign: "left", charSpacing: 400 },
+                { id: "details-4-l", type: "text", text: "PARA", x: 830, y: 1400, width: 240, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(91,122,153,0.7)", fontWeight: "800", textAlign: "left", charSpacing: 400 },
                 { id: "details-4-v", type: "text", text: "+55 años", x: 830, y: 1420, width: 240, fontSize: 28, fontFamily: "Playfair Display, serif", color: "#d97706", textAlign: "left", fontStyle: "italic" },
                 { id: "info-sep", type: "shape", shape: "rect", x: 60, y: 1480, width: 960, height: 1, fill: "rgba(91,122,153,0.3)", selectable: false },
                 { id: "footer-1", type: "text", text: "Centro Cultural La Plaza  ·  Goya 88  ·  Madrid", x: 0, y: 1740, width: 1080, fontSize: 18, fontFamily: "Playfair Display, serif", color: "#1a2b3f", textAlign: "center", fontStyle: "italic" },
@@ -4315,7 +4315,7 @@ export const templates: Template[] = [
                 // ─── BLOQUE INFO sobre banda verde ───
                 // Plate nombre profe sobre banda verde
                 { id: "plate-line", type: "shape", shape: "rect", x: 360, y: 985, width: 360, height: 1, fill: "#fde68a", selectable: false },
-                { id: "plate-label", type: "text", text: "I M P A R T E", x: 0, y: 1000, width: 1080, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(254,230,138,0.75)", fontWeight: "800", textAlign: "center", charSpacing: 500 },
+                { id: "plate-label", type: "text", text: "I M P A R T E", x: 0, y: 1000, width: 1080, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(254,230,138,0.75)", fontWeight: "800", textAlign: "center", charSpacing: 500 },
                 { id: "plate-name", type: "text", text: "Paco Romero", x: 0, y: 1025, width: 1080, fontSize: 36, fontFamily: "Playfair Display, serif", color: "#fef3c7", textAlign: "center", fontStyle: "italic" },
                 { id: "plate-role", type: "text", text: "Maestro de baile · 30 años de experiencia", x: 0, y: 1075, width: 1080, fontSize: 13, fontFamily: "Cormorant Garamond, serif", color: "rgba(254,243,199,0.75)", fontStyle: "italic", textAlign: "center", charSpacing: 200 },
 
@@ -4323,15 +4323,15 @@ export const templates: Template[] = [
                 { id: "div", type: "shape", shape: "rect", x: 460, y: 1115, width: 160, height: 1, fill: "#fde68a", selectable: false },
 
                 // INFO 3 columnas sobre verde
-                { id: "i-1-l", type: "text", text: "DÍAS", x: 60, y: 1140, width: 320, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(254,230,138,0.85)", fontWeight: "800", textAlign: "center", charSpacing: 400 },
+                { id: "i-1-l", type: "text", text: "DÍAS", x: 60, y: 1140, width: 320, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(254,230,138,0.85)", fontWeight: "800", textAlign: "center", charSpacing: 400 },
                 { id: "i-1-v", type: "text", text: "LUN · MIÉ", x: 60, y: 1160, width: 320, fontSize: 26, fontFamily: "Playfair Display, serif", color: "#fef3c7", textAlign: "center", fontStyle: "italic" },
                 { id: "i-1-x", type: "text", text: "11:00 — 12:30", x: 60, y: 1200, width: 320, fontSize: 13, fontFamily: "Cormorant Garamond, serif", color: "rgba(254,243,199,0.7)", fontStyle: "italic", textAlign: "center" },
 
-                { id: "i-2-l", type: "text", text: "PRECIO", x: 380, y: 1140, width: 320, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(254,230,138,0.85)", fontWeight: "800", textAlign: "center", charSpacing: 400 },
+                { id: "i-2-l", type: "text", text: "PRECIO", x: 380, y: 1140, width: 320, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(254,230,138,0.85)", fontWeight: "800", textAlign: "center", charSpacing: 400 },
                 { id: "i-2-v", type: "text", text: "30€ / mes", x: 380, y: 1160, width: 320, fontSize: 26, fontFamily: "Playfair Display, serif", color: "#fef3c7", textAlign: "center", fontStyle: "italic" },
                 { id: "i-2-x", type: "text", text: "Sesión suelta · 10€", x: 380, y: 1200, width: 320, fontSize: 13, fontFamily: "Cormorant Garamond, serif", color: "rgba(254,243,199,0.7)", fontStyle: "italic", textAlign: "center" },
 
-                { id: "i-3-l", type: "text", text: "PARA", x: 700, y: 1140, width: 320, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(254,230,138,0.85)", fontWeight: "800", textAlign: "center", charSpacing: 400 },
+                { id: "i-3-l", type: "text", text: "PARA", x: 700, y: 1140, width: 320, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(254,230,138,0.85)", fontWeight: "800", textAlign: "center", charSpacing: 400 },
                 { id: "i-3-v", type: "text", text: "+60 años", x: 700, y: 1160, width: 320, fontSize: 26, fontFamily: "Playfair Display, serif", color: "#fde68a", textAlign: "center", fontStyle: "italic" },
                 { id: "i-3-x", type: "text", text: "Sin experiencia previa", x: 700, y: 1200, width: 320, fontSize: 13, fontFamily: "Cormorant Garamond, serif", color: "rgba(254,243,199,0.7)", fontStyle: "italic", textAlign: "center" },
 
@@ -4356,7 +4356,7 @@ export const templates: Template[] = [
                 { id: "orn-d", type: "shape", shape: "circle", x: 530, y: 340, width: 12, height: 12, fill: "transparent", stroke: "#4a5a2c", strokeWidth: 1, selectable: false },
                 { id: "orn-r", type: "shape", shape: "rect", x: 570, y: 345, width: 130, height: 1, fill: "#4a5a2c", selectable: false },
                 { id: "paco", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/profe%20maduro%20o%20bailarines%20mayores-grupales-Paco.png", x: 540, y: 365, scaleX: 1.05, scaleY: 1.05, originX: "center", originY: "top", shadow: { color: "rgba(74,90,44,0.55)", blur: 35, offsetX: 0, offsetY: 8 } },
-                { id: "plate-label", type: "text", text: "I M P A R T E", x: 0, y: 750, width: 1080, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(254,230,138,0.75)", fontWeight: "800", textAlign: "center", charSpacing: 500 },
+                { id: "plate-label", type: "text", text: "I M P A R T E", x: 0, y: 750, width: 1080, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(254,230,138,0.75)", fontWeight: "800", textAlign: "center", charSpacing: 500 },
                 { id: "plate-name", type: "text", text: "Paco Romero", x: 0, y: 772, width: 1080, fontSize: 30, fontFamily: "Playfair Display, serif", color: "#fef3c7", textAlign: "center", fontStyle: "italic" },
                 { id: "plate-role", type: "text", text: "Maestro de baile · 30 años de experiencia", x: 0, y: 815, width: 1080, fontSize: 13, fontFamily: "Cormorant Garamond, serif", color: "rgba(254,243,199,0.75)", fontStyle: "italic", textAlign: "center", charSpacing: 200 },
                 { id: "div", type: "shape", shape: "rect", x: 460, y: 855, width: 160, height: 1, fill: "#fde68a", selectable: false },
@@ -4387,13 +4387,13 @@ export const templates: Template[] = [
                 { id: "plate-name", type: "text", text: "Paco Romero", x: 0, y: 1455, width: 1080, fontSize: 44, fontFamily: "Playfair Display, serif", color: "#fef3c7", textAlign: "center", fontStyle: "italic" },
                 { id: "plate-role", type: "text", text: "Maestro de baile · 30 años de experiencia", x: 0, y: 1520, width: 1080, fontSize: 15, fontFamily: "Cormorant Garamond, serif", color: "rgba(254,243,199,0.75)", fontStyle: "italic", textAlign: "center", charSpacing: 200 },
                 { id: "div", type: "shape", shape: "rect", x: 460, y: 1565, width: 160, height: 1, fill: "#fde68a", selectable: false },
-                { id: "i-1-l", type: "text", text: "DÍAS", x: 60, y: 1595, width: 320, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(254,230,138,0.85)", fontWeight: "800", textAlign: "center", charSpacing: 400 },
+                { id: "i-1-l", type: "text", text: "DÍAS", x: 60, y: 1595, width: 320, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(254,230,138,0.85)", fontWeight: "800", textAlign: "center", charSpacing: 400 },
                 { id: "i-1-v", type: "text", text: "LUN · MIÉ", x: 60, y: 1620, width: 320, fontSize: 30, fontFamily: "Playfair Display, serif", color: "#fef3c7", textAlign: "center", fontStyle: "italic" },
                 { id: "i-1-x", type: "text", text: "11:00 — 12:30", x: 60, y: 1665, width: 320, fontSize: 14, fontFamily: "Cormorant Garamond, serif", color: "rgba(254,243,199,0.7)", fontStyle: "italic", textAlign: "center" },
-                { id: "i-2-l", type: "text", text: "PRECIO", x: 380, y: 1595, width: 320, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(254,230,138,0.85)", fontWeight: "800", textAlign: "center", charSpacing: 400 },
+                { id: "i-2-l", type: "text", text: "PRECIO", x: 380, y: 1595, width: 320, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(254,230,138,0.85)", fontWeight: "800", textAlign: "center", charSpacing: 400 },
                 { id: "i-2-v", type: "text", text: "30€ / mes", x: 380, y: 1620, width: 320, fontSize: 30, fontFamily: "Playfair Display, serif", color: "#fef3c7", textAlign: "center", fontStyle: "italic" },
                 { id: "i-2-x", type: "text", text: "Sesión suelta · 10€", x: 380, y: 1665, width: 320, fontSize: 14, fontFamily: "Cormorant Garamond, serif", color: "rgba(254,243,199,0.7)", fontStyle: "italic", textAlign: "center" },
-                { id: "i-3-l", type: "text", text: "PARA", x: 700, y: 1595, width: 320, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(254,230,138,0.85)", fontWeight: "800", textAlign: "center", charSpacing: 400 },
+                { id: "i-3-l", type: "text", text: "PARA", x: 700, y: 1595, width: 320, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(254,230,138,0.85)", fontWeight: "800", textAlign: "center", charSpacing: 400 },
                 { id: "i-3-v", type: "text", text: "+60 años", x: 700, y: 1620, width: 320, fontSize: 30, fontFamily: "Playfair Display, serif", color: "#fde68a", textAlign: "center", fontStyle: "italic" },
                 { id: "i-3-x", type: "text", text: "Sin experiencia previa", x: 700, y: 1665, width: 320, fontSize: 14, fontFamily: "Cormorant Garamond, serif", color: "rgba(254,243,199,0.7)", fontStyle: "italic", textAlign: "center" },
                 { id: "cta-line", type: "shape", shape: "rect", x: 80, y: 1740, width: 920, height: 1, fill: "rgba(254,230,138,0.3)", selectable: false },
@@ -4419,7 +4419,7 @@ export const templates: Template[] = [
                 { id: "cta-line", type: "shape", shape: "rect", x: 80, y: 720, width: 240, height: 2, fill: "#4a5a2c", selectable: false },
                 { id: "cta", type: "text", text: "+34 600 555 666  ·  primera sesión gratuita", x: 80, y: 740, width: 1000, fontSize: 16, fontFamily: "Montserrat, sans-serif", color: "#4a5a2c", fontWeight: "700", textAlign: "left", charSpacing: 250 },
                 { id: "paco", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/profe%20maduro%20o%20bailarines%20mayores-grupales-Paco.png", x: 1500, y: 60, scaleX: 1.0, scaleY: 1.0, originX: "center", originY: "top", shadow: { color: "rgba(74,90,44,0.55)", blur: 40, offsetX: 0, offsetY: 10 } },
-                { id: "plate-label", type: "text", text: "I M P A R T E", x: 1200, y: 830, width: 700, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "rgba(254,230,138,0.75)", fontWeight: "800", textAlign: "center", charSpacing: 500 },
+                { id: "plate-label", type: "text", text: "I M P A R T E", x: 1200, y: 830, width: 700, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(254,230,138,0.75)", fontWeight: "800", textAlign: "center", charSpacing: 500 },
                 { id: "plate-name", type: "text", text: "Paco Romero", x: 1200, y: 850, width: 700, fontSize: 28, fontFamily: "Playfair Display, serif", color: "#fef3c7", textAlign: "center", fontStyle: "italic" },
                 { id: "plate-role", type: "text", text: "30 años de experiencia", x: 1200, y: 905, width: 700, fontSize: 14, fontFamily: "Cormorant Garamond, serif", color: "rgba(254,243,199,0.75)", fontStyle: "italic", textAlign: "center", charSpacing: 200 },
             ] },
