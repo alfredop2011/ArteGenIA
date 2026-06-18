@@ -291,7 +291,7 @@ export async function POST(req: Request) {
     // las personas abrazadas como UNA sola — no las puede separar. Avisamos
     // al usuario para que sepa que con esta foto especifica el AI no llega.
     const imgRes = await fetch(publicUrl, { method: "HEAD" }).catch(() => null);
-    let totalArea: number | null = null;
+    const totalArea: number | null = null;
     if (imgRes?.ok) {
       // Como no tenemos las dimensiones aqui, las leemos del crop subsiguiente.
       // Por ahora detectamos si el bbox > 80% de su propia imagen (proxy).

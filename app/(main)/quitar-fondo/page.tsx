@@ -634,9 +634,9 @@ export default function QuitarFondoPage() {
 
             {/* Testimonial */}
             <div className="p-6 rounded-3xl bg-white/[0.025] border border-white/[0.06] flex flex-col">
-              <div className="text-purple-400/60 text-[36px] leading-none mb-2 font-serif">"</div>
+              <div className="text-purple-400/60 text-[36px] leading-none mb-2 font-serif">&ldquo;</div>
               <p className="text-[13px] text-gray-200 leading-relaxed mb-4 flex-1">
-                "Increíble! En segundos tengo imágenes listas para mis diseños."
+                &ldquo;Increíble! En segundos tengo imágenes listas para mis diseños.&rdquo;
               </p>
               <div className="flex gap-0.5 mb-3">
                 {[1,2,3,4,5].map(i => (

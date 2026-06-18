@@ -37,7 +37,7 @@ export function useProjects() {
                 if (error) throw error;
                 return data.id;
             }
-        } catch (e: any) { setError(e.message); return null; }
+        } catch (e) { setError(e instanceof Error ? e.message : String(e)); return null; }
         finally { setLoading(false); }
     }, []);
 
@@ -50,7 +50,7 @@ export function useProjects() {
                 .eq("user_id", user.id).order("updated_at", { ascending: false });
             if (error) throw error;
             return data ?? [];
-        } catch (e: any) { setError(e.message); return []; }
+        } catch (e) { setError(e instanceof Error ? e.message : String(e)); return []; }
         finally { setLoading(false); }
     }, []);
 
@@ -63,7 +63,7 @@ export function useProjects() {
                 .eq("id", projectId).eq("user_id", user.id);
             if (error) throw error;
             return true;
-        } catch (e: any) { setError(e.message); return false; }
+        } catch (e) { setError(e instanceof Error ? e.message : String(e)); return false; }
         finally { setLoading(false); }
     }, []);
 
@@ -106,7 +106,7 @@ export function useProjects() {
                 .select("id").single();
             if (insertErr) throw insertErr;
             return created.id;
-        } catch (e: any) { setError(e.message); return null; }
+        } catch (e) { setError(e instanceof Error ? e.message : String(e)); return null; }
         finally { setLoading(false); }
     }, []);
 

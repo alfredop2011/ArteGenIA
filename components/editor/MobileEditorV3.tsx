@@ -1867,10 +1867,9 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
       // formato nuevo, serializamos como ProjectPages. Si no (proyecto
       // legacy con 1 página), guardamos el JSON plano de Fabric para
       // mantener backward compat con el resto del código.
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const fabricJson: object = pages.pageCount > 1
         ? (pages.serializeForSave(fc, canvasSize.w, canvasSize.h) as unknown as object)
-        : ((fc.toJSON as any)(["customId"]) as object);
+        : ((fc.toJSON as (propertiesToInclude?: string[]) => object)(["customId"]) as object);
       // Thumbnail JPEG ~320px
       let thumbnailUrl: string | null = null;
       try {
