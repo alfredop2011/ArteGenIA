@@ -359,7 +359,7 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
       if (!matchesDate(e.date, dateFilter, range)) return false;
       if (activeCats.size > 0 && !activeCats.has(e.category)) return false;
       if (activeAuds.size > 0 && !e.audience.some((a) => activeAuds.has(a))) return false;
-      if (onlyFree && e.price > 0) return false;
+      if (onlyFree && e.price !== 0) return false;
       if (q) {
         const hay = `${e.title} ${e.venue} ${e.neighborhood} ${CATEGORIES[e.category].label}`.toLowerCase();
         if (!hay.includes(q)) return false;
@@ -878,7 +878,7 @@ function EventCard({
             <Cat.icon size={11} /> {Cat.label}
           </span>
           <span className="absolute bottom-3 right-3 rounded-full bg-white/90 px-2 py-1 text-[11px] font-semibold text-gray-900">
-            {event.price === 0 ? "Gratis" : `${event.price} €`}
+            {event.price == null ? "Consultar" : event.price === 0 ? "Gratis" : `${event.price} €`}
           </span>
         </div>
       </button>
@@ -1037,7 +1037,7 @@ function EventModal({
             <p className="flex items-center gap-2"><CalendarIcon size={15} style={{ color: "var(--ag-brand)" }} /> <span className="capitalize">{fmtLong(event.date)}</span></p>
             <p className="flex items-center gap-2"><Clock size={15} style={{ color: "var(--ag-brand)" }} /> {event.time} h</p>
             <p className="flex items-center gap-2"><MapPin size={15} style={{ color: "var(--ag-brand)" }} /> {event.venue} · {event.neighborhood}</p>
-            <p className="flex items-center gap-2"><Ticket size={15} style={{ color: "var(--ag-brand)" }} /> {event.price === 0 ? "Entrada gratuita" : `${event.price} €`}</p>
+            <p className="flex items-center gap-2"><Ticket size={15} style={{ color: "var(--ag-brand)" }} /> {event.price == null ? "Precio por confirmar" : event.price === 0 ? "Entrada gratuita" : `${event.price} €`}</p>
           </div>
 
           {/* Acciones secundarias: guardar + compartir */}
@@ -1070,13 +1070,13 @@ function EventModal({
             >
               Comprar entradas online <ExternalLink size={15} />
             </a>
-          ) : event.price > 0 ? (
-            <div className="mt-2 rounded-xl py-3 text-center text-sm font-medium" style={{ background: "var(--ag-info-bg)", color: "var(--ag-info)" }}>
-              Entradas en taquilla
-            </div>
-          ) : (
+          ) : event.price === 0 ? (
             <div className="mt-2 rounded-xl py-3 text-center text-sm font-medium" style={{ background: "var(--ag-success-bg)", color: "var(--ag-success)" }}>
               Entrada libre — no necesitas reservar
+            </div>
+          ) : (
+            <div className="mt-2 rounded-xl py-3 text-center text-sm font-medium" style={{ background: "var(--ag-info-bg)", color: "var(--ag-info)" }}>
+              {event.price == null ? "Consulta el precio con el organizador" : "Entradas en taquilla"}
             </div>
           )}
         </div>

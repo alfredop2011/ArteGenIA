@@ -79,11 +79,15 @@ export async function POST(req: NextRequest) {
     const chatId: number | undefined = msg?.chat?.id;
     if (!chatId) return NextResponse.json({ ok: true });
 
-    // /start o texto sin foto → instrucciones.
+    // Nombre del remitente (para saludarle e identificarlo aunque no tenga cuenta).
+    const fromName: string = msg.from?.first_name || msg.from?.username || "";
+    const hi = fromName ? `${fromName}, ` : "";
+
+    // /start o texto sin foto → instrucciones (saludo personalizado).
     if (!msg.photo) {
       await tgSend(
         chatId,
-        "👋 ¡Hola! Envíame el <b>flyer</b> de tu evento (como foto) y lo publico solo en la agenda. Leo la fecha, el lugar y el precio automáticamente."
+        `👋 ¡Hola${fromName ? " " + fromName : ""}! Envíame el <b>flyer</b> de tu evento (como foto) y lo publico solo en la agenda. Leo la fecha, el lugar y el precio automáticamente.`
       );
       return NextResponse.json({ ok: true });
     }
@@ -96,7 +100,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true });
     }
 
-    await tgSend(chatId, "📸 Recibido. Leyendo el flyer…");
+    await tgSend(chatId, `📸 ¡Gracias${fromName ? " " + fromName : ""}! Recibido. Leyendo el flyer…`);
 
     // Subir a R2 + extraer datos en paralelo.
     const ext = dl.mediaType === "image/png" ? "png" : dl.mediaType === "image/webp" ? "webp" : "jpg";
@@ -120,6 +124,7 @@ export async function POST(req: NextRequest) {
       organizer_id: null,
       submitter_channel: "telegram",
       submitter_ref: ref,
+      submitter_name: fromName || null,
       claim_token: claimToken,
       source: "telegram",
       status: "published",
@@ -146,12 +151,19 @@ export async function POST(req: NextRequest) {
     }
 
     const claimUrl = `${APP_URL}/organizador?claim=${claimToken}`;
+    const priceLine =
+      extracted.price == null
+        ? "💶 Precio: no lo vi en el flyer → sale como “Consultar”. Edítalo al reclamar.\n"
+        : extracted.price === 0
+        ? "💶 Entrada libre\n"
+        : `💶 ${extracted.price} €\n`;
     await tgSend(
       chatId,
-      `✅ <b>${extracted.title}</b> publicado en la agenda\n` +
+      `✅ ${hi}publiqué <b>${extracted.title}</b> en la agenda\n` +
         `📅 ${extracted.event_date} · ${extracted.event_time}\n` +
-        `📍 ${extracted.venue || "—"}\n\n` +
-        `Cuando quieras gestionarlo, abre tu cuenta y reclama tus eventos aquí:\n${claimUrl}`
+        `📍 ${extracted.venue || "—"}\n` +
+        priceLine +
+        `\nCuando quieras gestionarlo, abre tu cuenta y reclama tus eventos aquí:\n${claimUrl}`
     );
     return NextResponse.json({ ok: true });
   } catch (err) {

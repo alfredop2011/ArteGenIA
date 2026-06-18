@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase, type EventRow, type EventCategory, type EventAudience } from "@/lib/supabase";
+import { isAdmin } from "@/lib/admin";
 import AuthModal from "@/components/auth/AuthModal";
 
 /**
@@ -90,7 +91,7 @@ const EMPTY_FORM: FormState = {
   neighborhood: "",
   category: "fiesta",
   audience: [],
-  price: "0",
+  price: "",
   has_online_sale: false,
   ticket_url: "",
   image_url: "",
@@ -107,14 +108,16 @@ export default function OrganizadorPage() {
   const [showAuth, setShowAuth] = useState(false);
   const [claimMsg, setClaimMsg] = useState<string | null>(null);
 
+  const admin = isAdmin(user?.email);
+
   const load = useCallback(async () => {
     if (!user) return;
     setLoading(true);
-    const { data, error } = await supabase
-      .from("events")
-      .select("*")
-      .eq("organizer_id", user.id)
-      .order("event_date", { ascending: true });
+    // Admin ve TODOS los eventos (incluidos los del bot sin dueño) para poder
+    // gestionarlos; el resto solo los suyos.
+    let q = supabase.from("events").select("*").order("event_date", { ascending: true });
+    if (!isAdmin(user.email)) q = q.eq("organizer_id", user.id);
+    const { data, error } = await q;
     if (error) setError(error.message);
     else setEvents((data as EventRow[]) ?? []);
     setLoading(false);
@@ -225,9 +228,16 @@ export default function OrganizadorPage() {
             <Link href="/eventos" className="text-xs underline" style={{ color: "var(--home-text-soft)" }}>
               ← Agenda pública
             </Link>
-            <h1 className="mt-1 text-2xl font-black sm:text-3xl">Mis eventos</h1>
+            <h1 className="mt-1 flex items-center gap-2 text-2xl font-black sm:text-3xl">
+              {admin ? "Todos los eventos" : "Mis eventos"}
+              {admin && (
+                <span className="rounded-full px-2 py-0.5 text-[11px] font-bold uppercase" style={{ background: "var(--ag-brand-bg)", color: "var(--ag-brand)", border: "1px solid var(--ag-brand-border)" }}>
+                  Admin
+                </span>
+              )}
+            </h1>
             <p className="text-sm" style={{ color: "var(--home-text-muted)" }}>
-              Publica eventos en la agenda y diseña sus flyers.
+              {admin ? "Gestiona cualquier evento (incluidos los del bot sin dueño)." : "Publica eventos en la agenda y diseña sus flyers."}
             </p>
           </div>
           <button
@@ -345,6 +355,10 @@ function EventRowCard({
         <div className="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 text-xs" style={{ color: "var(--home-text-muted)" }}>
           <span className="flex items-center gap-1"><CalendarDays size={12} /> {ev.event_date} · {ev.event_time}</span>
           <span className="flex items-center gap-1"><MapPin size={12} /> {ev.venue}</span>
+          <span>{ev.price == null ? "Consultar" : ev.price === 0 ? "Gratis" : `${ev.price} €`}</span>
+          {ev.source !== "organizer" && (
+            <span style={{ color: "var(--ag-brand)" }}>📩 {ev.submitter_name || "anónimo"} · {ev.source}</span>
+          )}
         </div>
       </div>
       <div className="flex shrink-0 items-center gap-1">
@@ -391,7 +405,7 @@ function EventForm({
           neighborhood: initial.neighborhood ?? "",
           category: initial.category,
           audience: initial.audience ?? [],
-          price: String(initial.price ?? 0),
+          price: initial.price == null ? "" : String(initial.price),
           has_online_sale: initial.has_online_sale ?? false,
           ticket_url: initial.ticket_url ?? "",
           image_url: initial.image_url ?? "",
@@ -444,7 +458,7 @@ function EventForm({
         venue: f.venue || (d?.venue ?? ""),
         neighborhood: f.neighborhood || (d?.neighborhood ?? ""),
         category: d?.category && f.category === "fiesta" ? d.category : f.category,
-        price: f.price === "0" && d?.price ? String(d.price) : f.price,
+        price: f.price === "" && d?.price != null ? String(d.price) : f.price,
         has_online_sale: f.has_online_sale || Boolean(d?.has_online_sale),
         ticket_url: f.ticket_url || (d?.ticket_url ?? ""),
         description: f.description || (d?.description ?? ""),
@@ -475,7 +489,8 @@ function EventForm({
       neighborhood: form.neighborhood.trim() || null,
       category: form.category,
       audience: form.audience,
-      price: Number(form.price) || 0,
+      // vacío = precio no indicado (null → "Consultar"); 0 = gratis.
+      price: form.price.trim() === "" ? null : Number(form.price) || 0,
       has_online_sale: form.has_online_sale,
       // Solo guardamos el link de compra si marcó venta online.
       ticket_url: form.has_online_sale ? form.ticket_url.trim() || null : null,
@@ -610,8 +625,8 @@ function EventForm({
             </div>
           </Field>
 
-          <Field label="Precio (€) — 0 = gratis">
-            <input type="number" min="0" step="0.01" value={form.price} onChange={(e) => set("price", e.target.value)} className="ag-input" />
+          <Field label="Precio (€) — vacío = consultar · 0 = gratis">
+            <input type="number" min="0" step="0.01" value={form.price} onChange={(e) => set("price", e.target.value)} className="ag-input" placeholder="Sin precio = Consultar" />
           </Field>
 
           {/* Venta online: si está activa, pedimos la página del evento / pago

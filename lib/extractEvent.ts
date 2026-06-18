@@ -18,7 +18,7 @@ export type ExtractedEvent = {
   venue: string;
   neighborhood: string | null;
   category: EventCategory;
-  price: number;
+  price: number | null; // null = el flyer no indica precio
   has_online_sale: boolean;
   ticket_url: string | null;
   description: string | null;
@@ -36,7 +36,7 @@ const SYSTEM = `Eres un extractor de datos de flyers de eventos. Recibes la imag
   "venue": string,                 // sala/lugar. "" si no aparece
   "neighborhood": string|null,     // barrio/zona o null
   "category": string,              // UNA de: "fiesta","conciertos","festival","clases","club","corporativo"
-  "price": number,                 // número en euros, 0 si gratis o no aparece
+  "price": number|null,            // euros. 0 SOLO si dice "gratis/free/entrada libre". null si el flyer NO muestra precio. Nunca inventes un precio
   "has_online_sale": boolean,      // true si el flyer indica venta/reserva online o muestra un enlace de entradas
   "ticket_url": string|null,       // URL de compra/reserva si aparece, si no null
   "description": string|null,      // 1 frase con lo relevante (artistas, line-up) o null
@@ -113,7 +113,7 @@ export async function extractEventFromImage(
       venue: String(raw.venue || "").slice(0, 120),
       neighborhood: raw.neighborhood ? String(raw.neighborhood).slice(0, 80) : null,
       category,
-      price: Number.isFinite(Number(raw.price)) ? Math.max(0, Number(raw.price)) : 0,
+      price: raw.price == null ? null : Number.isFinite(Number(raw.price)) ? Math.max(0, Number(raw.price)) : null,
       has_online_sale: Boolean(raw.has_online_sale),
       ticket_url: typeof raw.ticket_url === "string" && raw.ticket_url.startsWith("http") ? raw.ticket_url : null,
       description: raw.description ? String(raw.description).slice(0, 300) : null,

@@ -58,6 +58,7 @@ export type EventRow = {
     organizer_id: string | null; // null = enviado por bot, sin reclamar
     submitter_channel: string | null;
     submitter_ref: string | null;
+    submitter_name: string | null; // nombre del remitente (bot)
     claim_token: string | null;
     title: string;
     description: string | null;
@@ -69,7 +70,7 @@ export type EventRow = {
     neighborhood: string | null;
     category: EventCategory;
     audience: EventAudience[];
-    price: number;
+    price: number | null; // null = precio no indicado ("Consultar")
     has_online_sale: boolean;
     ticket_url: string | null;
     image_url: string | null;
