@@ -2389,7 +2389,10 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
   }, [toast, authUser]);
 
   /** Tras confirmar modal: descarga blob, manda a /api/remove-bg, reemplaza src
-   *  en Fabric. Si 402 → sin créditos. Si 5xx → refund automático server-side. */
+   *  en Fabric. Si 402 → sin créditos. Si 5xx → refund automático server-side.
+   *  Si server 200 pero setSrc falla en cliente (típico: CORS R2 mal
+   *  configurado, ver AGENTS.md) → refund vía /api/credits/refund-client-failure
+   *  porque el server ya cobró pero el user nunca verá el resultado. */
   const handleConfirmRemoveBg = useCallback(async () => {
     const obj = pendingRemoveBg;
     if (!obj) return;
@@ -2398,6 +2401,10 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const objId = ((obj as any).customId as string | undefined) ?? String(obj.left ?? "") + ":" + String(obj.top ?? "");
     setRemovingBgObjId(objId);
+
+    // Flag: tras 200 del server, el crédito se ha cobrado. Si algo falla
+    // después (típicamente setSrc CORS), debemos pedir refund client-side.
+    let serverCharged = false;
 
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -2419,8 +2426,12 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
         return;
       }
       if (!res.ok || !json.url) {
+        // Server falló post-cobro → su catch global hace refund. No marcamos
+        // serverCharged porque ya está cubierto server-side.
         throw new Error(json.error || "No se pudo quitar el fondo");
       }
+      // A partir de aquí, server cobró 1 crédito (res.ok && json.url).
+      serverCharged = true;
 
       // Reemplaza src en Fabric — añadimos ?v= para evitar caché R2 sin CORS.
       // Fabric v6 setSrc(src, opts) devuelve Promise (NO acepta callback).
@@ -2438,9 +2449,31 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
       setSaveState("unsaved");
       void credits.refetch();
       toast.success("Fondo eliminado");
+      serverCharged = false; // todo OK, no necesita refund
     } catch (e) {
       console.error("[quitar-fondo-editor]", e);
       toast.error(e instanceof Error ? e.message : "Error al quitar fondo");
+
+      // Si el server cobró pero el render client falló (típico: CORS R2),
+      // pedir refund. Endpoint dedicado: rate-limited y loggeado para
+      // detectar abuso (revisable en credit_transactions con
+      // reason='refund:client_quitar_fondo').
+      if (serverCharged) {
+        try {
+          await fetch("/api/credits/refund-client-failure", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              module: "quitar_fondo",
+              reason: e instanceof Error ? e.message.slice(0, 200) : "client-error",
+            }),
+          });
+          await credits.refetch();
+          toast.info("Crédito reembolsado — no llegamos a aplicar el cambio");
+        } catch (refundErr) {
+          console.error("[quitar-fondo-editor] refund client-side falló:", refundErr);
+        }
+      }
     } finally {
       setRemovingBgObjId(null);
     }
