@@ -64,6 +64,7 @@ export async function POST(req: NextRequest) {
           { status: 404 },
         );
       }
+      // Preferir customer con suscripción activa/trial/past_due.
       for (const c of customers.data) {
         const subs = await stripe.subscriptions.list({
           customer: c.id,
@@ -75,12 +76,23 @@ export async function POST(req: NextRequest) {
           break;
         }
       }
+      // Si ninguno tiene sub activa, NO podemos seguir si hay 2+ customers
+      // (ambiguo: podríamos abrir billing de otra cuenta que comparte email).
+      // Solo si hay exactamente 1 customer es seguro asumir que es este user.
       if (!customerId) {
-        customerId = customers.data
-          .slice()
-          .sort((a, b) => (b.created ?? 0) - (a.created ?? 0))[0].id;
+        if (customers.data.length === 1) {
+          customerId = customers.data[0].id;
+        } else {
+          return NextResponse.json(
+            {
+              error: "Hay varias cuentas Stripe asociadas a tu email y ninguna tiene suscripción activa. Por seguridad no podemos abrir el portal automáticamente. Contacta soporte (hola@artegenia.com) para consolidarlas.",
+              code: "MULTIPLE_CUSTOMERS_AMBIGUOUS",
+            },
+            { status: 409 },
+          );
+        }
       }
-      // Backfill para próximas llamadas
+      // Backfill para próximas llamadas (solo si encontramos id seguro)
       if (customerId) {
         await sbAdmin
           .from("profiles")
