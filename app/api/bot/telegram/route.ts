@@ -80,6 +80,13 @@ async function emailFor(ref: string): Promise<string | null> {
   return data?.submitter_email ?? null;
 }
 
+// Silencia / reactiva los avisos del remitente.
+async function setMuted(ref: string, muted: boolean) {
+  await supabaseAdmin
+    .from("bot_subscribers")
+    .upsert({ channel: "telegram", ref, muted }, { onConflict: "channel,ref" });
+}
+
 // Guarda el email en todos los eventos de ese remitente.
 async function saveEmail(ref: string, email: string) {
   await supabaseAdmin
@@ -222,9 +229,34 @@ export async function POST(req: NextRequest) {
     const fromName: string = msg.from?.first_name || msg.from?.username || "";
     const hi = fromName ? `${fromName}, ` : "";
 
-    // Texto sin foto: completar datos en el chat (email / precio) o instrucciones.
+    // Texto sin foto: comandos, completar datos (email/precio) o conversación.
     if (!msg.photo) {
       const text: string = (msg.text || "").trim();
+
+      // 0) Comandos del menú (/start, /ayuda, /silenciar, …). Quita @NombreBot.
+      const cmd = text.toLowerCase().replace(/@\w+\s*$/, "").trim();
+      const intro =
+        `👋 ¡Hola${fromName ? " " + fromName : ""}! Soy la agenda de eventos de ArteGenIA.\n\n` +
+        `📸 <b>Organizadores</b>: mándame el flyer (foto) y publico tu evento solo — leo fecha, lugar y precio. Gratis.\n` +
+        `🔎 <b>¿Buscas plan?</b> Pregúntame "¿qué hay en Madrid hoy?".\n\n` +
+        `También edito, cancelo o te digo cómo va tu evento. Escríbeme 👇`;
+      if (cmd === "/start" || cmd === "/ayuda") {
+        await tgSend(chatId, intro);
+        return NextResponse.json({ ok: true });
+      }
+      if (cmd === "/silenciar") {
+        await setMuted(String(chatId), true);
+        await tgSend(chatId, "🔕 Avisos silenciados. No te escribiré salvo que me hables. Usa /activar para reactivarlos.");
+        return NextResponse.json({ ok: true });
+      }
+      if (cmd === "/activar") {
+        await setMuted(String(chatId), false);
+        await tgSend(chatId, "🔔 Avisos reactivados.");
+        return NextResponse.json({ ok: true });
+      }
+      // /eventos y /miseventos → los resuelve el cerebro con una intención clara.
+      const brainText =
+        cmd === "/eventos" ? "¿Qué eventos hay esta semana?" : cmd === "/miseventos" ? "Muéstrame mis eventos" : text;
 
       // 1) Email → contacto.
       if (EMAIL_RE.test(text)) {
@@ -250,7 +282,7 @@ export async function POST(req: NextRequest) {
       const reply = await converse({
         events: await loadBrainEvents(String(chatId)),
         userName: fromName,
-        text,
+        text: brainText,
         today,
         runTool: makeRunTool(String(chatId)),
       });
