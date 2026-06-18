@@ -17,7 +17,7 @@ const geistMono = Geist_Mono({
 
 // Dominio canonico para resolver URLs absolutas (og:image, sitemap, etc.).
 // Cuando se compre dominio propio, cambiar aqui o setear NEXT_PUBLIC_SITE_URL en Vercel.
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://artegenia.vercel.app";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://artegenia.com";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),

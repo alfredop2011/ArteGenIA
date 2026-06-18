@@ -26,6 +26,8 @@ yarn-error.log*
 .pnpm-debug.log*
 # env files (can opt-in for committing if needed)
 .env*
+# ...pero la plantilla SÍ se versiona (checklist de deploy, sin secretos)
+!.env.example
 # vercel
 .vercel
 # typescript
