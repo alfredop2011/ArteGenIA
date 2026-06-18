@@ -116,21 +116,38 @@ async function fillLatestMissingPrice(ref: string, price: number, info: string |
   return ev.title as string;
 }
 
-// Eventos del remitente, para dar contexto al "cerebro".
+// Eventos del remitente, para dar contexto al "cerebro" (incluye analítica).
 async function loadBrainEvents(ref: string): Promise<BrainEvent[]> {
   const { data } = await supabaseAdmin
     .from("events")
-    .select("id,title,event_date,event_time,venue,price,status")
+    .select("id,title,event_date,event_time,venue,price,status,view_count,click_count,ticket_url")
     .eq("submitter_channel", "telegram")
     .eq("submitter_ref", ref)
     .order("event_date", { ascending: true })
     .limit(40);
-  return (data as BrainEvent[]) ?? [];
+  type Row = {
+    id: string; title: string; event_date: string; event_time: string; venue: string;
+    price: number | null; status: string; view_count: number; click_count: number; ticket_url: string | null;
+  };
+  return ((data as Row[]) ?? []).map((r) => ({
+    id: r.id, title: r.title, event_date: r.event_date, event_time: r.event_time, venue: r.venue,
+    price: r.price, status: r.status, viewCount: r.view_count ?? 0, clickCount: r.click_count ?? 0,
+    hasLink: !!r.ticket_url,
+  }));
 }
 
 // Ejecutor de acciones del cerebro — SIEMPRE limitado a los eventos de `ref`.
 function makeRunTool(ref: string) {
   return async (name: string, input: Record<string, unknown>): Promise<string> => {
+    // Preferencia de avisos (no requiere id).
+    if (name === "silenciar_avisos" || name === "activar_avisos") {
+      const muted = name === "silenciar_avisos";
+      await supabaseAdmin
+        .from("bot_subscribers")
+        .upsert({ channel: "telegram", ref, muted }, { onConflict: "channel,ref" });
+      return muted ? "Avisos silenciados. No te escribiré salvo que me hables." : "Avisos reactivados.";
+    }
+
     const id = typeof input.id === "string" ? input.id : "";
     if (!id) return "Falta el id del evento.";
     const { data: ev } = await supabaseAdmin

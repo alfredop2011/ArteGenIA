@@ -80,6 +80,8 @@ export type EventRow = {
     image_key: string | null;
     source: "organizer" | "auto";
     status: "draft" | "published" | "cancelled";
+    view_count: number;
+    click_count: number;
     created_at: string;
     updated_at: string;
 };

@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/lib/supabase";
 import AuthModal from "@/components/auth/AuthModal";
 import { type Category, type Audience, type EventItem, CATEGORY_GRAD } from "./eventData";
 import {
@@ -358,6 +359,20 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
     const t = setTimeout(() => setCopied(false), 2000);
     return () => clearTimeout(t);
   }, [copied]);
+
+  // ── Analítica: vistas (abrir detalle) y clicks (comprar) ──
+  // Solo para eventos reales (id UUID); los mock no se cuentan.
+  const viewedRef = useRef<Set<string>>(new Set());
+  const isRealId = (id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(id);
+  useEffect(() => {
+    const id = selected?.id;
+    if (!id || !isRealId(id) || viewedRef.current.has(id)) return;
+    viewedRef.current.add(id);
+    void supabase.rpc("increment_event_view", { p_id: id });
+  }, [selected]);
+  const trackClick = (id: string) => {
+    if (isRealId(id)) void supabase.rpc("increment_event_click", { p_id: id });
+  };
 
   const toggleCat = (c: Category) =>
     setActiveCats((prev) => {
@@ -806,6 +821,7 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
               )
             }
             copied={copied}
+            onBuy={() => trackClick(selected.id)}
             onClose={() => setSelected(null)}
           />
         )}
@@ -1062,6 +1078,7 @@ function EventModal({
   onFav,
   onShare,
   copied,
+  onBuy,
   onClose,
 }: {
   event: EventItem;
@@ -1069,6 +1086,7 @@ function EventModal({
   onFav: () => void;
   onShare: () => void;
   copied: boolean;
+  onBuy: () => void;
   onClose: () => void;
 }) {
   const Cat = CATEGORIES[event.category];
@@ -1131,6 +1149,7 @@ function EventModal({
               href={event.url}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={onBuy}
               className="mt-2 flex items-center justify-center gap-1.5 rounded-xl py-3 text-sm font-semibold text-white"
               style={{ background: "var(--ag-brand)" }}
             >

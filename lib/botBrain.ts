@@ -16,6 +16,9 @@ export type BrainEvent = {
   venue: string;
   price: number | null;
   status: string;
+  viewCount: number;
+  clickCount: number;
+  hasLink: boolean;
 };
 
 type ToolInput = Record<string, unknown>;
@@ -52,6 +55,16 @@ const TOOLS = [
     description: "Reactiva (vuelve a publicar) un evento cancelado.",
     input_schema: { type: "object", properties: { id: { type: "string" } }, required: ["id"] },
   },
+  {
+    name: "silenciar_avisos",
+    description: "El organizador pide no recibir avisos/notificaciones del bot.",
+    input_schema: { type: "object", properties: {} },
+  },
+  {
+    name: "activar_avisos",
+    description: "El organizador quiere volver a recibir avisos del bot.",
+    input_schema: { type: "object", properties: {} },
+  },
 ];
 
 export async function converse(opts: {
@@ -70,7 +83,7 @@ export async function converse(opts: {
           (e) =>
             `- id:${e.id} | "${e.title}" | ${e.event_date} ${e.event_time} | ${e.venue} | ${
               e.price == null ? "consultar" : e.price === 0 ? "gratis" : e.price + "€"
-            } | ${e.status}`
+            } | ${e.status} | 👁 ${e.viewCount} vistas · 🛒 ${e.clickCount} clics | ${e.hasLink ? "con link de compra" : "SIN link de compra"}`
         )
         .join("\n")
     : "(todavía no tiene eventos)";
@@ -79,7 +92,13 @@ export async function converse(opts: {
 El organizador ${opts.userName || ""} tiene estos eventos (SOLO puedes tocar estos):
 ${list}
 
-Responde en español, breve y cercano. Si pide un cambio (hora, precio, lugar, fecha, título), usa "actualizar_evento" con el id correcto. Cancelar → "cancelar_evento". Reactivar → "reactivar_evento". Para CREAR un evento nuevo, dile que te envíe el flyer como foto. No inventes eventos ni datos. Si no tienes claro a qué evento se refiere, pregúntale antes de actuar.`;
+Tu objetivo es APORTAR VALOR, no solo obedecer. Responde en español, breve y cercano.
+- Si pide un cambio (hora, precio, lugar, fecha, título) usa "actualizar_evento" con el id correcto; cancelar → "cancelar_evento"; reactivar → "reactivar_evento".
+- Si a un evento le falta info (precio = "consultar", lugar por confirmar), pídela amablemente.
+- Cuando pregunte cómo va un evento, usa sus vistas/clics y da una lectura útil + una idea concreta (estrategia) para mejorar (ej. compartir el link, ajustar precio/hora, anunciar con antelación). Si NO tiene link de compra, sugiere añadir uno o explica cómo asistir.
+- Invita a registrarse de forma MUY SUTIL y solo si encaja (ej. "puedes gestionarlo y planificar el año en tu panel"), nunca insistas.
+- Si quiere dejar de recibir avisos → "silenciar_avisos"; volver a recibir → "activar_avisos".
+- Para CREAR un evento nuevo, dile que te envíe el flyer (foto). No inventes eventos ni datos. Si dudas a qué evento se refiere, pregunta antes de actuar.`;
 
   const messages: Msg[] = [{ role: "user", content: opts.text }];
 
