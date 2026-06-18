@@ -392,15 +392,35 @@ export const templates: Template[] = [
         audience: ["academias"],
         variants: [
             { format: "portrait", width: 1080, height: 1350, layers: [
+            // FONDO amarillo neón
             { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1350, fill: "#FFE600", selectable: false },
-            { id: "deco-purple", type: "shape", shape: "rect", x: 597, y: -80, width: 422, height: 520, fill: "#7B2FBE", opacity: 0.95, angle: 12 },
-            { id: "top-band", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 220, fill: "#0D0D0D", selectable: false },
-            { id: "title-line1", type: "text", text: "CLASES DE", x: 540, y: 48, width: 1080, fontSize: 112, fontFamily: "Anton, Impact, sans-serif", color: "#FFFFFF", fontWeight: "900", textAlign: "center", originX: "center", originY: "top", charSpacing: -10 },
-            { id: "title-line2", type: "text", text: "BAILE", x: 540, y: 148, width: 1080, fontSize: 112, fontFamily: "Anton, Impact, sans-serif", color: "#FFE600", fontWeight: "900", textAlign: "center", originX: "center", originY: "top", charSpacing: -10 },
-            { id: "artist-photo-9", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/ChatGPT%20Image%2012%20abr%202026%2C%2014_10_17.png", x: 540, y: 670, scaleX: 0.65, scaleY: 0.65, originX: "center", originY: "center" },
+            // FORMA decorativa morada rotada (esquina sup. derecha)
+            { id: "deco-purple-tr", type: "shape", shape: "rect", x: 720, y: -100, width: 520, height: 360, fill: "#7B2FBE", opacity: 0.95, angle: 18, selectable: false },
+            // FORMA decorativa morada (esquina inf. izquierda)
+            { id: "deco-purple-bl", type: "shape", shape: "rect", x: -120, y: 1150, width: 480, height: 280, fill: "#7B2FBE", opacity: 0.85, angle: -12, selectable: false },
+            // TOP BAND negra
+            { id: "top-band", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 240, fill: "#0D0D0D", selectable: false },
+            // KICKER pequeño arriba
+            { id: "kicker", type: "text", text: "ACADEMIA · TEMPORADA 2026", x: 540, y: 36, width: 1080, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "#FFE600", fontWeight: "700", textAlign: "center", originX: "center", originY: "top", charSpacing: 400 },
+            // TÍTULO hero línea 1
+            { id: "title-line1", type: "text", text: "CLASES DE", x: 540, y: 72, width: 1080, fontSize: 92, fontFamily: "Anton, Impact, sans-serif", color: "#FFFFFF", fontWeight: "900", textAlign: "center", originX: "center", originY: "top", charSpacing: -10 },
+            // TÍTULO hero línea 2
+            { id: "title-line2", type: "text", text: "BAILE", x: 540, y: 160, width: 1080, fontSize: 92, fontFamily: "Anton, Impact, sans-serif", color: "#FFE600", fontWeight: "900", textAlign: "center", originX: "center", originY: "top", charSpacing: -10 },
+            // PAREJA de baile centrada con halo blanco
+            { id: "couple", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/07_lucia_mateo_pareja.png", x: 540, y: 290, scaleX: 0.68, scaleY: 0.68, originX: "center", originY: "top", shadow: { color: "rgba(255,255,255,0.95)", blur: 50, offsetX: 0, offsetY: 0 } },
+            // BOTTOM BAND negra
             { id: "bottom-band", type: "shape", shape: "rect", x: 0, y: 1090, width: 1080, height: 260, fill: "#0D0D0D", selectable: false },
-            { id: "date", type: "text", text: "00.00.2024", x: 540, y: 1110, width: 1080, fontSize: 96, fontFamily: "Anton, Impact, sans-serif", color: "#FFE600", fontWeight: "900", textAlign: "center", originX: "center", originY: "top", charSpacing: 5 },
-            { id: "venue", type: "text", text: "DESDE LAS 17:00 | CALLE CUALQUIERA 123", x: 540, y: 1222, width: 1080, fontSize: 28, fontFamily: "Montserrat, sans-serif", color: "#FFFFFF", fontWeight: "600", textAlign: "center", originX: "center", originY: "top", charSpacing: 30 },
+            // LÍNEA divisora amarilla
+            { id: "div-line", type: "shape", shape: "rect", x: 440, y: 1110, width: 200, height: 4, fill: "#FFE600", selectable: false },
+            // FECHA
+            { id: "date", type: "text", text: "SÁBADO 15 · NOVIEMBRE", x: 540, y: 1135, width: 1080, fontSize: 30, fontFamily: "Anton, Impact, sans-serif", color: "#FFE600", fontWeight: "900", textAlign: "center", originX: "center", originY: "top", charSpacing: 100 },
+            // HORARIO grande
+            { id: "time", type: "text", text: "17:00 — 21:00 H", x: 540, y: 1180, width: 1080, fontSize: 56, fontFamily: "Anton, Impact, sans-serif", color: "#FFFFFF", fontWeight: "900", textAlign: "center", originX: "center", originY: "top", charSpacing: 30 },
+            // VENUE info
+            { id: "venue", type: "text", text: "ESTUDIO DEL SOL  ·  C/ TENERIFE 5  ·  MADRID", x: 540, y: 1265, width: 1080, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "#FFFFFF", fontWeight: "600", textAlign: "center", originX: "center", originY: "top", charSpacing: 200 },
+            // PRECIO en chip
+            { id: "price-chip", type: "shape", shape: "rect", x: 470, y: 1300, width: 140, height: 30, fill: "#FFE600", radius: 15, selectable: false },
+            { id: "price-text", type: "text", text: "15€ POR CLASE", x: 540, y: 1306, width: 140, fontSize: 16, fontFamily: "Montserrat, sans-serif", color: "#0D0D0D", fontWeight: "900", textAlign: "center", originX: "center", originY: "top", charSpacing: 80 },
         ] },
         ],
     },
