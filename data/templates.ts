@@ -4710,4 +4710,194 @@ export const templates: Template[] = [
         ],
     },
 
+// ─────────────────────────────────────────────────────────────────────
+// 55 — DJ Tropical House (DJ-1, beach party + sunset turquoise vibes)
+// ─────────────────────────────────────────────────────────────────────
+    {
+        id: 55,
+        title: "DJ Tropical House",
+        category: "Club / Discoteca",
+        image: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dj/Dj-1.png",
+        premium: false,
+        audience: ["productoras", "freelance"],
+        internalTags: ["complete"],
+        variants: [
+            { format: "portrait", width: 1080, height: 1350, layers: [
+                // Fondo coral sunset
+                { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1350, fill: "#fb7185", selectable: false },
+                // Capa naranja arriba
+                { id: "sunset-orange", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 700, fill: "#fb923c", opacity: 0.85, selectable: false },
+                // Capa amarilla degradada
+                { id: "sunset-yellow", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 400, fill: "#fde047", opacity: 0.55, selectable: false },
+                // Sol — círculo blanco
+                { id: "sun", type: "shape", shape: "circle", x: 540, y: 280, width: 420, height: 420, radius: 210, fill: "#ffffff", opacity: 0.85, originX: "center", originY: "center", selectable: false },
+                // Mar — banda turquesa abajo
+                { id: "sea", type: "shape", shape: "rect", x: 0, y: 850, width: 1080, height: 500, fill: "#14b8a6", selectable: false },
+                // Olas — bandas blancas finas
+                { id: "wave-1", type: "shape", shape: "rect", x: 0, y: 870, width: 1080, height: 3, fill: "#ffffff", opacity: 0.55, selectable: false },
+                { id: "wave-2", type: "shape", shape: "rect", x: 0, y: 890, width: 1080, height: 2, fill: "#ffffff", opacity: 0.40, selectable: false },
+                // KICKER
+                { id: "kicker", type: "text", text: "TROPICAL HOUSE  ·  BEACH PARTY", x: 540, y: 80, width: 1080, fontSize: 18, fontFamily: "Montserrat, sans-serif", color: "#7c2d12", fontWeight: "900", textAlign: "center", originX: "center", originY: "top", charSpacing: 500 },
+                // TÍTULO PARADISE
+                { id: "title-1", type: "text", text: "PARADISE", x: 540, y: 480, width: 1080, fontSize: 120, fontFamily: "Anton, Impact, sans-serif", color: "#0c4a6e", fontWeight: "900", textAlign: "center", originX: "center", originY: "top", charSpacing: 60 },
+                // Subtítulo SESSION
+                { id: "title-2", type: "text", text: "SESSION", x: 540, y: 600, width: 1080, fontSize: 90, fontFamily: "Playfair Display, serif", color: "#ffffff", fontStyle: "italic", textAlign: "center", originX: "center", originY: "top", charSpacing: 100 },
+                // DJ photo
+                { id: "dj-photo", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dj/Dj-1.png", x: 540, y: 720, scaleX: 0.95, scaleY: 0.95, originX: "center", originY: "top", shadow: { color: "rgba(255,255,255,0.85)", blur: 50, offsetX: 0, offsetY: 0 } },
+                // Info bottom
+                { id: "info-bg", type: "shape", shape: "rect", x: 0, y: 1200, width: 1080, height: 150, fill: "#0c4a6e", selectable: false },
+                { id: "dj-name", type: "text", text: "DJ NOVA", x: 540, y: 1220, width: 1080, fontSize: 40, fontFamily: "Anton, Impact, sans-serif", color: "#fde047", fontWeight: "900", textAlign: "center", originX: "center", originY: "top", charSpacing: 250 },
+                { id: "date", type: "text", text: "SÁB 13 JUL  ·  PLAYA DE PALMA", x: 540, y: 1280, width: 1080, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "#ffffff", fontWeight: "700", textAlign: "center", originX: "center", originY: "top", charSpacing: 300 },
+                { id: "venue", type: "text", text: "16:00 — 00:00  ·  25€ DESDE 18 AÑOS", x: 540, y: 1315, width: 1080, fontSize: 14, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.85)", fontWeight: "600", textAlign: "center", originX: "center", originY: "top", charSpacing: 300 },
+            ] },
+        ],
+    },
+
+// ─────────────────────────────────────────────────────────────────────
+// 56 — DJ Hip-Hop Graffiti (DJ-3, concrete + spray naranja/amarillo)
+// ─────────────────────────────────────────────────────────────────────
+    {
+        id: 56,
+        title: "DJ Hip-Hop Graffiti",
+        category: "Club / Discoteca",
+        image: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dj/Dj-3.png",
+        premium: false,
+        audience: ["productoras", "freelance"],
+        internalTags: ["complete"],
+        variants: [
+            { format: "portrait", width: 1080, height: 1350, layers: [
+                // Fondo concrete (gris oscuro)
+                { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1350, fill: "#1f2937", selectable: false },
+                // Manchas concrete simuladas (rectángulos oscuros aleatorios)
+                { id: "stain-1", type: "shape", shape: "rect", x: 100, y: 300, width: 400, height: 250, fill: "#111827", opacity: 0.65, angle: -8, selectable: false },
+                { id: "stain-2", type: "shape", shape: "rect", x: 600, y: 900, width: 350, height: 200, fill: "#111827", opacity: 0.55, angle: 6, selectable: false },
+                // Spray naranja — forma decorativa
+                { id: "spray-orange", type: "shape", shape: "rect", x: 60, y: 120, width: 250, height: 80, fill: "#fb923c", angle: -8, opacity: 0.95, selectable: false },
+                // Spray amarillo
+                { id: "spray-yellow", type: "shape", shape: "rect", x: 780, y: 850, width: 200, height: 60, fill: "#fde047", angle: 12, opacity: 0.95, selectable: false },
+                // Drip naranja (líneas finas que simulan goteos de spray)
+                { id: "drip-1", type: "shape", shape: "rect", x: 130, y: 190, width: 4, height: 50, fill: "#fb923c", selectable: false },
+                { id: "drip-2", type: "shape", shape: "rect", x: 200, y: 195, width: 3, height: 35, fill: "#fb923c", selectable: false },
+                { id: "drip-3", type: "shape", shape: "rect", x: 270, y: 190, width: 4, height: 40, fill: "#fb923c", selectable: false },
+                // TÍTULO STREET en outline naranja
+                { id: "title-1", type: "text", text: "STREET", x: 540, y: 220, width: 1080, fontSize: 140, fontFamily: "Anton, Impact, sans-serif", color: "transparent", stroke: "#fb923c", strokeWidth: 4, fontWeight: "900", textAlign: "center", originX: "center", originY: "top", charSpacing: 60 },
+                // BEATS sólido amarillo
+                { id: "title-2", type: "text", text: "BEATS", x: 540, y: 360, width: 1080, fontSize: 160, fontFamily: "Anton, Impact, sans-serif", color: "#fde047", fontWeight: "900", textAlign: "center", originX: "center", originY: "top", charSpacing: 40 },
+                // KICKER
+                { id: "kicker", type: "text", text: "★ HIP-HOP NIGHT ★", x: 540, y: 540, width: 1080, fontSize: 22, fontFamily: "Montserrat, sans-serif", color: "#fb923c", fontWeight: "900", textAlign: "center", originX: "center", originY: "top", charSpacing: 400 },
+                // DJ photo
+                { id: "dj-photo", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dj/Dj-3.png", x: 540, y: 590, scaleX: 1.0, scaleY: 1.0, originX: "center", originY: "top", shadow: { color: "rgba(251,146,60,0.7)", blur: 50, offsetX: 4, offsetY: 4 } },
+                // Tag pegatina
+                { id: "sticker-bg", type: "shape", shape: "rect", x: 100, y: 1200, width: 880, height: 70, fill: "#fde047", angle: -1.5, selectable: false },
+                { id: "dj-name", type: "text", text: "DJ MASTER  ·  MC FLOW  ·  DJ UVE", x: 540, y: 1218, width: 880, fontSize: 28, fontFamily: "Anton, Impact, sans-serif", color: "#1f2937", fontWeight: "900", textAlign: "center", originX: "center", originY: "top", charSpacing: 80 },
+                // Info bottom
+                { id: "date", type: "text", text: "VIE 19 JUL  ·  23:30 H", x: 540, y: 1290, width: 1080, fontSize: 22, fontFamily: "Anton, Impact, sans-serif", color: "#fde047", fontWeight: "900", textAlign: "center", originX: "center", originY: "top", charSpacing: 200 },
+                { id: "venue", type: "text", text: "SALA VILLANOS  ·  MADRID  ·  12€", x: 540, y: 1320, width: 1080, fontSize: 16, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.85)", fontWeight: "700", textAlign: "center", originX: "center", originY: "top", charSpacing: 300 },
+            ] },
+        ],
+    },
+
+// ─────────────────────────────────────────────────────────────────────
+// 57 — DJ Electronic Grid (DJ-2, cyber pink + cyan + wireframe grid)
+// ─────────────────────────────────────────────────────────────────────
+    {
+        id: 57,
+        title: "DJ Electronic Grid",
+        category: "Club / Discoteca",
+        image: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dj/Dj-2.png",
+        premium: false,
+        audience: ["productoras", "freelance"],
+        internalTags: ["complete"],
+        variants: [
+            { format: "portrait", width: 1080, height: 1350, layers: [
+                // Fondo oscuro azulado
+                { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1350, fill: "#0a0a1f", selectable: false },
+                // Glow cyan top-left
+                { id: "glow-cyan", type: "shape", shape: "circle", x: 100, y: 100, width: 700, height: 700, radius: 350, fill: "#06b6d4", opacity: 0.20, originX: "center", originY: "center", selectable: false },
+                // Glow pink bottom-right
+                { id: "glow-pink", type: "shape", shape: "circle", x: 900, y: 1200, width: 700, height: 700, radius: 350, fill: "#ec4899", opacity: 0.25, originX: "center", originY: "center", selectable: false },
+                // GRID — líneas horizontales cyan (wireframe)
+                { id: "grid-h-1", type: "shape", shape: "rect", x: 0, y: 200, width: 1080, height: 1, fill: "#06b6d4", opacity: 0.30, selectable: false },
+                { id: "grid-h-2", type: "shape", shape: "rect", x: 0, y: 350, width: 1080, height: 1, fill: "#06b6d4", opacity: 0.25, selectable: false },
+                { id: "grid-h-3", type: "shape", shape: "rect", x: 0, y: 500, width: 1080, height: 1, fill: "#06b6d4", opacity: 0.20, selectable: false },
+                { id: "grid-h-4", type: "shape", shape: "rect", x: 0, y: 1000, width: 1080, height: 1, fill: "#ec4899", opacity: 0.25, selectable: false },
+                { id: "grid-h-5", type: "shape", shape: "rect", x: 0, y: 1150, width: 1080, height: 1, fill: "#ec4899", opacity: 0.20, selectable: false },
+                // GRID — líneas verticales
+                { id: "grid-v-1", type: "shape", shape: "rect", x: 200, y: 0, width: 1, height: 1350, fill: "#06b6d4", opacity: 0.20, selectable: false },
+                { id: "grid-v-2", type: "shape", shape: "rect", x: 540, y: 0, width: 1, height: 1350, fill: "#ec4899", opacity: 0.25, selectable: false },
+                { id: "grid-v-3", type: "shape", shape: "rect", x: 880, y: 0, width: 1, height: 1350, fill: "#06b6d4", opacity: 0.20, selectable: false },
+                // KICKER
+                { id: "kicker", type: "text", text: "[ CYBER ELECTRONIC SESSION ]", x: 540, y: 80, width: 1080, fontSize: 16, fontFamily: "Montserrat, sans-serif", color: "#06b6d4", fontWeight: "700", textAlign: "center", originX: "center", originY: "top", charSpacing: 500 },
+                // TÍTULO TECH gradiente simulado
+                { id: "title-1", type: "text", text: "TECH", x: 540, y: 130, width: 1080, fontSize: 200, fontFamily: "Anton, Impact, sans-serif", color: "#06b6d4", fontWeight: "900", textAlign: "center", originX: "center", originY: "top", charSpacing: 60 },
+                // Subtítulo NIGHT en pink
+                { id: "title-2", type: "text", text: "NIGHT", x: 540, y: 330, width: 1080, fontSize: 130, fontFamily: "Anton, Impact, sans-serif", color: "#ec4899", fontWeight: "900", textAlign: "center", originX: "center", originY: "top", charSpacing: 150 },
+                // DJ photo con glow doble
+                { id: "dj-photo", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dj/Dj-2.png", x: 540, y: 500, scaleX: 1.05, scaleY: 1.05, originX: "center", originY: "top", shadow: { color: "rgba(236,72,153,0.7)", blur: 60, offsetX: 0, offsetY: 0 } },
+                // Info bottom — banda translúcida con borde
+                { id: "info-bg", type: "shape", shape: "rect", x: 60, y: 1170, width: 960, height: 150, fill: "rgba(6,182,212,0.10)", radius: 6, stroke: "#06b6d4", strokeWidth: 1, selectable: false },
+                { id: "dj-name", type: "text", text: "DJ AXIS  ·  LIVE SET", x: 540, y: 1190, width: 960, fontSize: 32, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", fontWeight: "900", textAlign: "center", originX: "center", originY: "top", charSpacing: 200 },
+                { id: "date", type: "text", text: ">>  SÁB 06 JUL  ·  23:00 — 06:00", x: 540, y: 1240, width: 960, fontSize: 18, fontFamily: "Montserrat, sans-serif", color: "#06b6d4", fontWeight: "700", textAlign: "center", originX: "center", originY: "top", charSpacing: 250 },
+                { id: "venue", type: "text", text: "FABRIK  ·  HUMANES (MADRID)  ·  20€", x: 540, y: 1280, width: 960, fontSize: 14, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.85)", fontWeight: "600", textAlign: "center", originX: "center", originY: "top", charSpacing: 300 },
+            ] },
+        ],
+    },
+
+// ─────────────────────────────────────────────────────────────────────
+// 58 — DJ Vinyl Vintage (DJ-1, sepia/dorado + texturas grano + vinyl)
+// ─────────────────────────────────────────────────────────────────────
+    {
+        id: 58,
+        title: "DJ Vinyl Vintage",
+        category: "Club / Discoteca",
+        image: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dj/Dj-1.png",
+        premium: false,
+        audience: ["productoras", "freelance"],
+        internalTags: ["complete"],
+        variants: [
+            { format: "portrait", width: 1080, height: 1350, layers: [
+                // Fondo crema vintage
+                { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1350, fill: "#f5e6c8", selectable: false },
+                // Marco dorado interior
+                { id: "frame-top", type: "shape", shape: "rect", x: 40, y: 40, width: 1000, height: 4, fill: "#b8860b", selectable: false },
+                { id: "frame-bottom", type: "shape", shape: "rect", x: 40, y: 1306, width: 1000, height: 4, fill: "#b8860b", selectable: false },
+                { id: "frame-left", type: "shape", shape: "rect", x: 40, y: 40, width: 4, height: 1270, fill: "#b8860b", selectable: false },
+                { id: "frame-right", type: "shape", shape: "rect", x: 1036, y: 40, width: 4, height: 1270, fill: "#b8860b", selectable: false },
+                // Disco vinyl decorativo arriba derecha
+                { id: "vinyl-outer", type: "shape", shape: "circle", x: 880, y: 200, width: 280, height: 280, radius: 140, fill: "#1a1a1a", originX: "center", originY: "center", selectable: false },
+                { id: "vinyl-ring-1", type: "shape", shape: "circle", x: 880, y: 200, width: 220, height: 220, radius: 110, fill: "transparent", stroke: "#3d3d3d", strokeWidth: 1, originX: "center", originY: "center", selectable: false },
+                { id: "vinyl-ring-2", type: "shape", shape: "circle", x: 880, y: 200, width: 160, height: 160, radius: 80, fill: "transparent", stroke: "#3d3d3d", strokeWidth: 1, originX: "center", originY: "center", selectable: false },
+                { id: "vinyl-label", type: "shape", shape: "circle", x: 880, y: 200, width: 90, height: 90, radius: 45, fill: "#7c2d12", originX: "center", originY: "center", selectable: false },
+                { id: "vinyl-center", type: "shape", shape: "circle", x: 880, y: 200, width: 14, height: 14, radius: 7, fill: "#f5e6c8", originX: "center", originY: "center", selectable: false },
+                // Textura grano simulada — puntos dispersos
+                { id: "grain-1", type: "shape", shape: "circle", x: 120, y: 350, width: 4, height: 4, radius: 2, fill: "#5c3317", opacity: 0.40, selectable: false },
+                { id: "grain-2", type: "shape", shape: "circle", x: 250, y: 480, width: 3, height: 3, radius: 1.5, fill: "#5c3317", opacity: 0.35, selectable: false },
+                { id: "grain-3", type: "shape", shape: "circle", x: 950, y: 720, width: 5, height: 5, radius: 2.5, fill: "#5c3317", opacity: 0.30, selectable: false },
+                { id: "grain-4", type: "shape", shape: "circle", x: 180, y: 890, width: 3, height: 3, radius: 1.5, fill: "#5c3317", opacity: 0.35, selectable: false },
+                { id: "grain-5", type: "shape", shape: "circle", x: 800, y: 1020, width: 4, height: 4, radius: 2, fill: "#5c3317", opacity: 0.30, selectable: false },
+                // KICKER decorativo arriba izq
+                { id: "kicker", type: "text", text: "VINYL ONLY  ·  EST. 1968", x: 60, y: 90, width: 700, fontSize: 16, fontFamily: "Cormorant Garamond, serif", color: "#7c2d12", fontWeight: "700", textAlign: "left", originX: "left", originY: "top", charSpacing: 500 },
+                // TÍTULO hero serif italica
+                { id: "title-1", type: "text", text: "Soul", x: 60, y: 140, width: 800, fontSize: 180, fontFamily: "Playfair Display, serif", color: "#1f1010", fontStyle: "italic", textAlign: "left", originX: "left", originY: "top" },
+                // Subtítulo &
+                { id: "title-amp", type: "text", text: "&", x: 60, y: 320, width: 800, fontSize: 100, fontFamily: "Playfair Display, serif", color: "#b8860b", fontStyle: "italic", textAlign: "left", originX: "left", originY: "top" },
+                // Subtítulo Funk
+                { id: "title-2", type: "text", text: "Funk", x: 60, y: 420, width: 800, fontSize: 180, fontFamily: "Playfair Display, serif", color: "#7c2d12", fontStyle: "italic", textAlign: "left", originX: "left", originY: "top" },
+                // Divider ornamental
+                { id: "div-line", type: "shape", shape: "rect", x: 60, y: 640, width: 200, height: 2, fill: "#b8860b", selectable: false },
+                // Descripción
+                { id: "desc", type: "text", text: "Una noche de vinilo clásico, soul, funk\ny groove. Solo vinilo, solo verdad.", x: 60, y: 660, width: 700, fontSize: 20, fontFamily: "Cormorant Garamond, serif", color: "rgba(31,16,16,0.78)", fontStyle: "italic", textAlign: "left", lineHeight: 1.3, originX: "left", originY: "top" },
+                // DJ photo a la derecha
+                { id: "dj-photo", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dj/Dj-1.png", x: 700, y: 480, scaleX: 0.75, scaleY: 0.75, originX: "center", originY: "top", shadow: { color: "rgba(184,134,11,0.45)", blur: 30, offsetX: 4, offsetY: 4 } },
+                // Banda info inferior — fondo oscuro
+                { id: "info-bg", type: "shape", shape: "rect", x: 60, y: 1100, width: 960, height: 180, fill: "#1f1010", selectable: false },
+                { id: "info-frame-top", type: "shape", shape: "rect", x: 60, y: 1100, width: 960, height: 2, fill: "#b8860b", selectable: false },
+                { id: "info-frame-bottom", type: "shape", shape: "rect", x: 60, y: 1278, width: 960, height: 2, fill: "#b8860b", selectable: false },
+                { id: "dj-name", type: "text", text: "DJ VINTAGE", x: 540, y: 1130, width: 960, fontSize: 38, fontFamily: "Playfair Display, serif", color: "#f5e6c8", fontStyle: "italic", textAlign: "center", originX: "center", originY: "top", charSpacing: 100 },
+                { id: "date", type: "text", text: "Sábado 27 Julio  ·  22:00 H", x: 540, y: 1190, width: 960, fontSize: 22, fontFamily: "Cormorant Garamond, serif", color: "#fbbf24", fontWeight: "700", textAlign: "center", originX: "center", originY: "top", charSpacing: 200 },
+                { id: "venue", type: "text", text: "GROOVE BAR  ·  LAVAPIÉS  ·  MADRID  ·  10€", x: 540, y: 1230, width: 960, fontSize: 14, fontFamily: "Cormorant Garamond, serif", color: "rgba(245,230,200,0.85)", fontStyle: "italic", textAlign: "center", originX: "center", originY: "top", charSpacing: 300 },
+            ] },
+        ],
+    },
+
 ];
