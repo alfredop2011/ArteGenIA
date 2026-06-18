@@ -23,7 +23,8 @@ export type EventItem = {
   url?: string;
   hasSale?: boolean;
   cancelled?: boolean;
-  image: string; // gradiente CSS o url(...) del flyer
+  image: string; // gradiente CSS o url(...) del flyer (fondo de la card)
+  flyerUrl?: string | null; // URL cruda del flyer (para visor a tamaño completo)
 };
 
 // Gradiente por categoría (fondo de la card cuando no hay flyer).
@@ -60,5 +61,6 @@ export function rowToEvent(r: EventRow): EventItem {
     hasSale: r.has_online_sale && !!r.ticket_url,
     cancelled: r.status === "cancelled",
     image: bgFor(r.category as Category, r.image_url),
+    flyerUrl: r.image_url ?? null,
   };
 }

@@ -32,6 +32,7 @@ import {
   Sparkles,
   Navigation,
   Loader2,
+  Maximize2,
 } from "lucide-react";
 
 /**
@@ -1090,6 +1091,7 @@ function EventModal({
   onClose: () => void;
 }) {
   const Cat = CATEGORIES[event.category];
+  const [showFlyer, setShowFlyer] = useState(false);
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -1106,14 +1108,23 @@ function EventModal({
         className="w-full max-w-md overflow-hidden rounded-t-3xl sm:rounded-3xl"
         style={{ background: "var(--home-bg-soft)", color: "var(--home-text)" }}
       >
-        <div className="relative h-40" style={{ background: event.image }}>
+        <div
+          className={`relative h-40 ${event.flyerUrl ? "cursor-zoom-in" : ""}`}
+          style={{ background: event.image }}
+          onClick={() => event.flyerUrl && setShowFlyer(true)}
+        >
           {event.cancelled && <CancelledSeal big />}
-          <button onClick={onClose} className="absolute right-3 top-3 rounded-full bg-black/30 p-2 text-white backdrop-blur">
+          <button onClick={(e) => { e.stopPropagation(); onClose(); }} className="absolute right-3 top-3 rounded-full bg-black/30 p-2 text-white backdrop-blur">
             <X size={16} />
           </button>
           <span className="absolute bottom-3 left-3 flex items-center gap-1.5 rounded-full bg-black/30 px-2.5 py-1 text-xs font-medium text-white backdrop-blur">
             <Cat.icon size={13} /> {Cat.label}
           </span>
+          {event.flyerUrl && (
+            <span className="absolute bottom-3 right-3 flex items-center gap-1 rounded-full bg-black/40 px-2.5 py-1 text-xs font-medium text-white backdrop-blur">
+              <Maximize2 size={12} /> Ver flyer
+            </span>
+          )}
         </div>
         <div className="p-5">
           <h3 className="text-xl font-bold">{event.title}</h3>
@@ -1166,6 +1177,43 @@ function EventModal({
           )}
         </div>
       </motion.div>
+
+      {/* Visor de flyer a tamaño completo (escritorio y móvil) */}
+      <AnimatePresence>
+        {showFlyer && event.flyerUrl && (
+          <FlyerLightbox url={event.flyerUrl} alt={event.title} onClose={() => setShowFlyer(false)} />
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
+}
+
+// ─── Visor de flyer a pantalla completa ──────────────────────────────────────
+
+function FlyerLightbox({ url, alt, onClose }: { url: string; alt: string; onClose: () => void }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      onClick={(e) => { e.stopPropagation(); onClose(); }}
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/90 p-4"
+    >
+      <button
+        onClick={(e) => { e.stopPropagation(); onClose(); }}
+        className="absolute right-4 top-4 rounded-full bg-white/15 p-2 text-white backdrop-blur"
+        aria-label="Cerrar"
+      >
+        <X size={20} />
+      </button>
+      <motion.img
+        initial={{ scale: 0.96 }}
+        animate={{ scale: 1 }}
+        src={url}
+        alt={alt}
+        onClick={(e) => e.stopPropagation()}
+        className="max-h-[90vh] max-w-[95vw] rounded-lg object-contain shadow-2xl"
+      />
     </motion.div>
   );
 }
