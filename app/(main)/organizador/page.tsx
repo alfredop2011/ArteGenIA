@@ -183,7 +183,10 @@ export default function OrganizadorPage() {
     }
   };
 
-  const published = useMemo(() => events.filter((e) => e.status === "published"), [events]);
+  const todayIso = new Date().toISOString().slice(0, 10);
+  // Publicados se parten en Próximos (futuros) y Vencidos (ya pasaron).
+  const upcoming = useMemo(() => events.filter((e) => e.status === "published" && e.event_date >= todayIso), [events, todayIso]);
+  const past = useMemo(() => events.filter((e) => e.status === "published" && e.event_date < todayIso), [events, todayIso]);
   const drafts = useMemo(() => events.filter((e) => e.status === "draft"), [events]);
   const cancelled = useMemo(() => events.filter((e) => e.status === "cancelled"), [events]);
 
@@ -287,15 +290,22 @@ export default function OrganizadorPage() {
                 ))}
               </Section>
             )}
-            <Section title={`Publicados (${published.length})`} hint="Visibles para todo el público en la agenda.">
-              {published.length === 0 ? (
-                <p className="text-sm" style={{ color: "var(--home-text-soft)" }}>Aún no has publicado ningún evento.</p>
+            <Section title={`Próximos (${upcoming.length})`} hint="Publicados y aún por celebrarse — visibles en la agenda.">
+              {upcoming.length === 0 ? (
+                <p className="text-sm" style={{ color: "var(--home-text-soft)" }}>No tienes eventos próximos. Pulsa “Nuevo evento” o envía un flyer al bot.</p>
               ) : (
-                published.map((e) => (
+                upcoming.map((e) => (
                   <EventRowCard key={e.id} ev={e} onEdit={() => setEditing(e)} onDelete={() => remove(e)} onToggle={() => togglePublish(e)} onCancel={() => toggleCancel(e)} seriesCount={seriesCountOf(e)} />
                 ))
               )}
             </Section>
+            {past.length > 0 && (
+              <Section title={`Vencidos (${past.length})`} hint="Ya pasaron. No aparecen en la agenda pública.">
+                {past.map((e) => (
+                  <EventRowCard key={e.id} ev={e} onEdit={() => setEditing(e)} onDelete={() => remove(e)} onToggle={() => togglePublish(e)} onCancel={() => toggleCancel(e)} seriesCount={seriesCountOf(e)} />
+                ))}
+              </Section>
+            )}
             {cancelled.length > 0 && (
               <Section title={`Cancelados (${cancelled.length})`} hint="Siguen visibles en la agenda con el sello CANCELADO. Puedes reactivarlos.">
                 {cancelled.map((e) => (
