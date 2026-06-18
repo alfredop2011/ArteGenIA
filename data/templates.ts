@@ -2405,18 +2405,25 @@ export const templates: Template[] = [
                 // Banda lateral izquierda granate (donde va la foto)
                 { id: "left-band", type: "shape", shape: "rect", x: 0, y: 0, width: 540, height: 1350, fill: "#7c1d2c", selectable: false },
 
-                // PROFE foto centrada en banda izquierda — scale aumentada para ocupar mejor
-                // Imagen real: 447×558. Scale 1.5 → render 670×837. y:120 → termina en y:957
-                // Deja 100px hasta "JEAN MARC" en y:1080 (subido desde y:1230)
-                { id: "profe", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/Profe-jean.png", x: 270, y: 120, scaleX: 1.5, scaleY: 1.5, originX: "center", originY: "top", shadow: { color: "rgba(0,0,0,0.55)", blur: 35, offsetX: 5, offsetY: 8 } },
+                // PROFE foto centrada en banda izquierda
+                // Imagen real: 447×558. Scale 1.1 → render 491×614 (cabe en banda 540 ancho)
+                // y:170 → termina en y:784. Franja decorativa solapa últimos ~70px (y:720-790)
+                // → el corte queda DENTRO de la franja, no se ve abrupto
+                { id: "profe", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/Profe-jean.png", x: 270, y: 170, scaleX: 1.1, scaleY: 1.1, originX: "center", originY: "top", shadow: { color: "rgba(0,0,0,0.55)", blur: 35, offsetX: 5, offsetY: 8 } },
 
-                // Sello vertical en banda izq abajo
-                { id: "side-vert", type: "text", text: "ACADEMIA  ·  TEMPORADA 2026 / 27", x: 50, y: 1000, width: 50, fontSize: 18, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.45)", fontWeight: "600", textAlign: "left", angle: -90, charSpacing: 400 },
-                // FRANJA decorativa para enmascarar corte de imagen
-                { id: "profe-band", type: "shape", shape: "rect", x: 0, y: 980, width: 540, height: 50, fill: "rgba(0,0,0,0.35)", selectable: false },
-                // Nombre del profe en banda izq abajo (subido desde 1230)
-                { id: "profe-name-l", type: "text", text: "JEAN MARC", x: 0, y: 1080, width: 540, fontSize: 42, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "center", charSpacing: 80 },
-                { id: "profe-role", type: "text", text: "Director artístico", x: 0, y: 1135, width: 540, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.85)", fontWeight: "500", textAlign: "center", fontStyle: "italic", charSpacing: 150 },
+                // FRANJA gradiente simulado (3 rects con opacidad creciente) — enmascara corte del profe
+                { id: "profe-fade-1", type: "shape", shape: "rect", x: 0, y: 700, width: 540, height: 30, fill: "rgba(124,29,44,0.4)", selectable: false },
+                { id: "profe-fade-2", type: "shape", shape: "rect", x: 0, y: 730, width: 540, height: 30, fill: "rgba(124,29,44,0.7)", selectable: false },
+                { id: "profe-fade-3", type: "shape", shape: "rect", x: 0, y: 760, width: 540, height: 30, fill: "#7c1d2c", selectable: false },
+                // FRANJA negra decorativa donde termina la imagen
+                { id: "profe-band", type: "shape", shape: "rect", x: 0, y: 790, width: 540, height: 6, fill: "#fbbf24", selectable: false },
+
+                // Sello vertical en banda izq lateral (lateral izquierdo)
+                { id: "side-vert", type: "text", text: "ACADEMIA  ·  TEMPORADA 2026 / 27", x: 40, y: 880, width: 50, fontSize: 18, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.45)", fontWeight: "600", textAlign: "left", angle: -90, charSpacing: 400 },
+
+                // Nombre del profe DEBAJO de la franja decorativa
+                { id: "profe-name-l", type: "text", text: "JEAN MARC", x: 0, y: 840, width: 540, fontSize: 44, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "center", charSpacing: 80 },
+                { id: "profe-role", type: "text", text: "Director artístico", x: 0, y: 895, width: 540, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.85)", fontWeight: "500", textAlign: "center", fontStyle: "italic", charSpacing: 150 },
 
                 // LADO DERECHO - info
                 // Kicker arriba
@@ -3271,8 +3278,15 @@ export const templates: Template[] = [
 
                 // FOTO pareja en lado derecho sobre fondo bordo — más grande
                 // Imagen real: 500×500. Scale 1.05 → render 525×525, ocupa bien la zona bordo
-                // y:130 → termina en y:655, dejando espacio para plate IMPARTEN en y:760
+                // y:130 → termina en y:655. Franja fade decorativa enmascara corte
                 { id: "couple", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/07_lucia_mateo_pareja.png", x: 800, y: 130, scaleX: 1.05, scaleY: 1.05, originX: "center", originY: "top", shadow: { color: "rgba(180,134,11,0.65)", blur: 50, offsetX: 0, offsetY: 0 } },
+
+                // FRANJA gradiente simulado bajo la pareja (enmascara corte de piernas)
+                { id: "couple-fade-1", type: "shape", shape: "rect", x: 540, y: 600, width: 540, height: 25, fill: "rgba(122,21,50,0.35)", angle: 6, selectable: false },
+                { id: "couple-fade-2", type: "shape", shape: "rect", x: 540, y: 625, width: 540, height: 25, fill: "rgba(122,21,50,0.65)", angle: 6, selectable: false },
+                { id: "couple-fade-3", type: "shape", shape: "rect", x: 540, y: 650, width: 540, height: 30, fill: "#7a1532", angle: 6, selectable: false },
+                // Línea dorada decorativa para enmarcar
+                { id: "couple-gold-line", type: "shape", shape: "rect", x: 600, y: 695, width: 380, height: 2, fill: "#d4af37", selectable: false },
 
                 // Plate de nombres dentro del bordo
                 { id: "plate-bg", type: "shape", shape: "rect", x: 600, y: 760, width: 400, height: 100, fill: "rgba(245,240,232,0.92)", selectable: false },
