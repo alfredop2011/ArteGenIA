@@ -16,6 +16,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { trackCreditsExhausted, trackUpgradeClicked, type AnalyticsModule } from "@/lib/analytics";
+import { shouldWatermark } from "@/lib/applyWatermark";
 
 // UX#19 — clave localStorage para recordar "no preguntar más hoy".
 // Almacena un timestamp ms. Si Date.now() < valor, el modal se autoconfirma
@@ -65,10 +66,16 @@ export type ConfirmCreditModalProps = {
     /** Tipo de archivo final. Ej: "PNG" / "JPG" / "PDF" / "SVG" */
     fileType?: string;
   };
+  /** UX#21 follow-up — plan del user. Si está presente Y shouldWatermark(plan)
+   *  es true, mostramos warning visible 'Esta descarga llevará marca de agua'
+   *  antes de confirmar. Hoy WATERMARK_ENABLED=false → nunca se muestra.
+   *  Precautorio: si en el futuro re-activan el watermark, el aviso ya está
+   *  conectado y los users free no se sorprenden con la marca tras descargar. */
+  plan?: string | null;
 };
 
 export function ConfirmCreditModal({
-  open, onClose, onConfirm, actionLabel, amount, balance, daysUntilReset, exportDetails,
+  open, onClose, onConfirm, actionLabel, amount, balance, daysUntilReset, exportDetails, plan,
 }: ConfirmCreditModalProps) {
   const [loading, setLoading] = useState(false);
   const [skipNext, setSkipNext] = useState(false);
@@ -213,6 +220,35 @@ export function ConfirmCreditModal({
                   {exportDetails.formatSubtitle && (
                     <p className="text-[10.5px] text-gray-500 mt-2 leading-tight">{exportDetails.formatSubtitle}</p>
                   )}
+                </div>
+              )}
+
+              {/* UX#21 follow-up — Warning watermark (precautorio).
+                  Hoy WATERMARK_ENABLED=false → shouldWatermark() siempre
+                  retorna false → este bloque no se renderiza nunca. Si
+                  en el futuro re-activan el watermark, el aviso aparece
+                  automáticamente para users free SOLO en exports. */}
+              {exportDetails && shouldWatermark(plan) && (
+                <div className="mb-4 p-3 rounded-xl flex items-start gap-2.5"
+                     style={{ background: "rgba(251,191,36,0.10)", boxShadow: "0 0 0 1px rgba(251,191,36,0.30)" }}>
+                  <span className="text-[16px] leading-none mt-[1px]" aria-hidden>⚠️</span>
+                  <div className="flex-1">
+                    <p className="text-[12px] font-bold text-amber-200 mb-0.5">
+                      Esta descarga llevará marca de agua
+                    </p>
+                    <p className="text-[11px] text-amber-100/80 leading-snug">
+                      Sello "Hecho con ArteGenIA" en una esquina.{" "}
+                      <Link href="/pricing"
+                            onClick={() => trackUpgradeClicked({
+                              source: "feature_gate",
+                              current_plan: (plan === "pro" || plan === "enterprise" || plan === "anonymous" ? plan : "free"),
+                              current_balance: balance,
+                            })}
+                            className="font-bold underline underline-offset-2 hover:text-amber-50">
+                        Quítala con Pro →
+                      </Link>
+                    </p>
+                  </div>
                 </div>
               )}
 

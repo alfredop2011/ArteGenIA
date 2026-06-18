@@ -3497,6 +3497,7 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
         }
         balance={credits.balance ?? 0}
         daysUntilReset={credits.daysUntilReset ?? undefined}
+        plan={authProfile?.plan}
         exportDetails={(() => {
           if (!pendingExportPayload) return undefined;
           const fmt = getFormatByDimensions(canvasSize.w, canvasSize.h);

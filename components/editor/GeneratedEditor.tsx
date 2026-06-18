@@ -4459,6 +4459,7 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
         amount={CREDIT_COST.download_png}
         balance={credits.balance ?? 0}
         daysUntilReset={credits.daysUntilReset ?? undefined}
+        plan={authProfile?.plan}
         exportDetails={(() => {
           const fmt = getFormatByDimensions(canvasSize.w, canvasSize.h);
           return {
@@ -4479,6 +4480,7 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
         amount={CREDIT_COST.quitar_fondo}
         balance={credits.balance ?? 0}
         daysUntilReset={credits.daysUntilReset ?? undefined}
+        plan={authProfile?.plan}
       />
 
       {/* Z.17 — Borrador mágico/manual full-screen */}
