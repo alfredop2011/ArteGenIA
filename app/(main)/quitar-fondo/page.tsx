@@ -19,10 +19,9 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/lib/toast";
-import AuthModal from "@/components/auth/AuthModal";
-import { ConfirmCreditModal } from "@/components/credits/ConfirmCreditModal";
 import { useCredits } from "@/hooks/useCredits";
 import { CREDIT_COST } from "@/lib/credits";
 import {
@@ -31,6 +30,19 @@ import {
   trackExportCompleted,
   type UserPlan,
 } from "@/lib/analytics";
+
+// UX#8 perf — AuthModal y ConfirmCreditModal solo se abren cuando el user
+// interactúa (click upload sin auth, click descargar). Cargarlos eager
+// añade ~30KB al first-load para nada. Dynamic import los mueve a chunks
+// que solo se descargan cuando se necesitan = LCP más rápido en mobile.
+// ssr:false porque dependen de hooks que solo viven en cliente (Auth, Stripe).
+const AuthModal = dynamic(() => import("@/components/auth/AuthModal"), {
+  ssr: false,
+});
+const ConfirmCreditModal = dynamic(
+  () => import("@/components/credits/ConfirmCreditModal").then(m => m.ConfirmCreditModal),
+  { ssr: false },
+);
 
 type FlowState = "upload" | "processing" | "preview";
 
