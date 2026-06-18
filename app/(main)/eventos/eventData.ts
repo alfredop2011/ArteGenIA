@@ -4,7 +4,7 @@
 
 import type { EventRow } from "@/lib/supabase";
 
-export type Category = "fiesta" | "conciertos" | "festival" | "clases" | "club" | "corporativo" | "social";
+export type Category = "fiesta" | "conciertos" | "festival" | "clases" | "club" | "corporativo" | "social" | "teatro";
 export type Audience = "academias" | "productoras" | "freelance" | "instituciones" | "agencias" | "colegios";
 
 export type EventItem = {
@@ -36,6 +36,7 @@ export const CATEGORY_GRAD: Record<Category, string> = {
   club: "linear-gradient(135deg,#6366f1,#0ea5e9)",
   corporativo: "linear-gradient(135deg,#0ea5e9,#22c55e)",
   social: "linear-gradient(135deg,#06b6d4,#8b5cf6)",
+  teatro: "linear-gradient(135deg,#e11d48,#7c3aed)",
 };
 
 // Fondo de la card: flyer real si existe, si no gradiente por categoría.

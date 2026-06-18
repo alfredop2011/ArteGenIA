@@ -27,7 +27,7 @@ export type ExtractedEvent = {
   confidence: "alta" | "media" | "baja";
 };
 
-const VALID_CATS: EventCategory[] = ["fiesta", "conciertos", "festival", "clases", "club", "corporativo", "social"];
+const VALID_CATS: EventCategory[] = ["fiesta", "conciertos", "festival", "clases", "club", "corporativo", "social", "teatro"];
 
 const SYSTEM = `Eres un extractor de datos de flyers de eventos. Recibes la imagen de un flyer y devuelves SOLO un objeto JSON (sin texto extra, sin markdown) con esta forma exacta:
 {
@@ -38,7 +38,7 @@ const SYSTEM = `Eres un extractor de datos de flyers de eventos. Recibes la imag
   "city": string,                  // ciudad en minúsculas sin tildes: "madrid","barcelona","valencia","sevilla". "madrid" si no aparece
   "venue": string,                 // sala/lugar. "" si no aparece
   "neighborhood": string|null,     // barrio/zona o null
-  "category": string,              // UNA de: "fiesta","conciertos","festival","clases","club","corporativo","social"
+  "category": string,              // UNA de: "fiesta","conciertos","festival","clases","club","corporativo","social","teatro"
   "price": number|null,            // euros. Si hay VARIAS tarifas, pon la MÁS BARATA aquí. 0 SOLO si dice "gratis/free/entrada libre". null si el flyer NO muestra precio. Nunca inventes
   "price_info": string|null,       // si hay varias tarifas, el detalle tal cual: "Anticipada 12€ · Taquilla 15€". null si solo hay un precio o ninguno
   "is_cancelled": boolean,         // true si el flyer dice CANCELADO / APLAZADO / SUSPENDIDO / POSPUESTO
@@ -47,7 +47,7 @@ const SYSTEM = `Eres un extractor de datos de flyers de eventos. Recibes la imag
   "description": string|null,      // 1 frase con lo relevante (artistas, line-up) o null
   "confidence": "alta"|"media"|"baja"  // qué tan seguro estás de los datos
 }
-Mapea la categoría: social de baile / tardeo / noche para bailar / práctica / rueda de casino / "ven a bailar" -> "social"; clases/talleres/masterclass de baile -> "clases"; fiesta general -> "fiesta"; discoteca/club night -> "club"; festival -> "festival"; concierto/directo/música en vivo (artista en escenario) -> "conciertos"; evento de empresa/networking -> "corporativo". Pista: si la gente VA A BAILAR (no a ver un concierto), es "social".`;
+Mapea la categoría: social de baile / tardeo / noche para bailar / práctica / rueda de casino / "ven a bailar" -> "social"; clases/talleres/masterclass de baile -> "clases"; fiesta general -> "fiesta"; discoteca/club night -> "club"; festival -> "festival"; concierto/directo/música en vivo (artista en escenario) -> "conciertos"; teatro/obra/musical/monólogo/danza escénica -> "teatro"; evento de empresa/networking -> "corporativo". Pista: si la gente VA A BAILAR (no a ver un concierto), es "social".`;
 
 // Regla de año: el modelo no sabe en qué año estamos, así que se la inyectamos.
 function dateRule(today: string): string {

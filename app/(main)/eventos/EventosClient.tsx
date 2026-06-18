@@ -28,6 +28,7 @@ import {
   Footprints,
   Disc3,
   Briefcase,
+  Drama,
   Users,
   Sparkles,
   Navigation,
@@ -64,6 +65,7 @@ const CATEGORIES: Record<Category, { label: string; icon: typeof Music; grad: st
   club: { label: "Club / Discoteca", icon: Disc3, grad: CATEGORY_GRAD.club },
   corporativo: { label: "Corporativo", icon: Briefcase, grad: CATEGORY_GRAD.corporativo },
   social: { label: "Bailes sociales", icon: Users, grad: CATEGORY_GRAD.social },
+  teatro: { label: "Teatro", icon: Drama, grad: CATEGORY_GRAD.teatro },
 };
 
 const AUDIENCES: { id: Audience; label: string }[] = [

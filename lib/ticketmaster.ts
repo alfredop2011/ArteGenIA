@@ -36,14 +36,22 @@ function bestImage(images?: TmImage[]): string | null {
   return pool.reduce((a, b) => (b.width > a.width ? b : a)).url ?? null;
 }
 
-/** Trae conciertos próximos de una ciudad (cityName) y los mapea a nuestro shape. */
-export async function fetchTicketmasterConcerts(cityId: string, cityName: string, max = 40): Promise<TmEventRow[]> {
+/**
+ * Trae eventos próximos de una ciudad por clasificación de Ticketmaster
+ * ("music" → conciertos, "Arts & Theatre" → teatro) y los mapea a nuestro shape.
+ */
+export async function fetchTicketmasterEvents(
+  cityId: string,
+  cityName: string,
+  classificationName: string,
+  max = 30
+): Promise<TmEventRow[]> {
   const key = process.env.TICKETMASTER_API_KEY;
   if (!key) return [];
   const start = new Date().toISOString().slice(0, 19) + "Z"; // desde ahora
   const url =
     `https://app.ticketmaster.com/discovery/v2/events.json?apikey=${key}` +
-    `&city=${encodeURIComponent(cityName)}&countryCode=ES&classificationName=music` +
+    `&city=${encodeURIComponent(cityName)}&countryCode=ES&classificationName=${encodeURIComponent(classificationName)}` +
     `&startDateTime=${encodeURIComponent(start)}&sort=date,asc&size=${max}`;
   const res = await fetch(url);
   if (!res.ok) return [];

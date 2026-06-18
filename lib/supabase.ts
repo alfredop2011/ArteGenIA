@@ -44,7 +44,7 @@ export type Project = {
 };
 
 /** Categorías de eventos — alineadas con la taxonomía del producto. */
-export type EventCategory = "fiesta" | "conciertos" | "festival" | "clases" | "club" | "corporativo" | "social";
+export type EventCategory = "fiesta" | "conciertos" | "festival" | "clases" | "club" | "corporativo" | "social" | "teatro";
 
 /** Audiencias ("Para quién es") — coincide con el enum organizer_type. */
 export type EventAudience = "academias" | "productoras" | "freelance" | "instituciones" | "agencias" | "colegios";
