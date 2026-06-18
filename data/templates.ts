@@ -1145,7 +1145,7 @@ export const templates: Template[] = [
 
                 // CARTELERA - 3 niveles jerarquia
                 { id: "tier-divider-1", type: "shape", shape: "rect", x: 90, y: 955, width: 900, height: 1, fill: "rgba(255,255,255,0.3)", selectable: false },
-                { id: "headliners", type: "text", text: "HEADLINERS", x: 0, y: 975, width: 1080, fontSize: 14, fontFamily: "Montserrat, sans-serif", color: "#fbbf24", fontWeight: "700", textAlign: "center", charSpacing: 400 },
+                { id: "headliners", type: "text", text: "HEADLINERS", x: 0, y: 975, width: 1080, fontSize: 24, fontFamily: "Montserrat, sans-serif", color: "#fbbf24", fontWeight: "700", textAlign: "center", charSpacing: 400 },
                 { id: "tier1-names", type: "text", text: "QUANTUM  \u00b7  ECHO RIVALS  \u00b7  STARLINE", x: 0, y: 1005, width: 1080, fontSize: 30, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "center", charSpacing: 100 },
 
                 { id: "tier2-names", type: "text", text: "Nebula  \u00b7  Vinyl Riot  \u00b7  Aurora Live  \u00b7  Kiosko 9", x: 0, y: 1060, width: 1080, fontSize: 22, fontFamily: "Montserrat, sans-serif", color: "#ffffff", fontWeight: "600", textAlign: "center", charSpacing: 100 },
@@ -1206,7 +1206,7 @@ export const templates: Template[] = [
 
                 // Columna derecha
                 { id: "date-4", type: "text", text: "6 MAY \u2014 SEVILLA", x: 540, y: 950, width: 440, fontSize: 22, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "left", charSpacing: 80 },
-                { id: "venue-4", type: "text", text: "Custom", x: 540, y: 985, width: 440, fontSize: 14, fontFamily: "Montserrat, sans-serif", color: "rgba(96,165,250,0.85)", fontWeight: "500", textAlign: "left" },
+                { id: "venue-4", type: "text", text: "Custom", x: 540, y: 985, width: 440, fontSize: 24, fontFamily: "Montserrat, sans-serif", color: "rgba(96,165,250,0.85)", fontWeight: "500", textAlign: "left" },
 
                 { id: "date-5", type: "text", text: "13 MAY \u2014 BILBAO", x: 540, y: 1030, width: 440, fontSize: 22, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "left", charSpacing: 80 },
                 { id: "venue-5", type: "text", text: "Kafe Antzokia", x: 540, y: 1065, width: 440, fontSize: 14, fontFamily: "Montserrat, sans-serif", color: "rgba(96,165,250,0.85)", fontWeight: "500", textAlign: "left" },
@@ -1942,7 +1942,7 @@ export const templates: Template[] = [
                 { id: "stamp-bg", type: "shape", shape: "rect", x: 850, y: 140, width: 180, height: 220, fill: "#fef3c7", stroke: "#7c2d12", strokeWidth: 3, strokeDashArray: [6, 4], selectable: false },
                 { id: "stamp-inner", type: "shape", shape: "rect", x: 866, y: 156, width: 148, height: 188, fill: "transparent", stroke: "#7c2d12", strokeWidth: 1, selectable: false },
                 { id: "stamp-value", type: "text", text: "25€", x: 850, y: 180, width: 180, fontSize: 40, fontFamily: "Playfair Display, serif", color: "#7c2d12", fontWeight: "900", textAlign: "center", fontStyle: "italic" },
-                { id: "stamp-text", type: "text", text: "ESPAÑA", x: 850, y: 240, width: 180, fontSize: 14, fontFamily: "Cormorant Garamond, serif", color: "#7c2d12", fontWeight: "700", textAlign: "center", charSpacing: 300 },
+                { id: "stamp-text", type: "text", text: "ESPAÑA", x: 850, y: 240, width: 180, fontSize: 24, fontFamily: "Cormorant Garamond, serif", color: "#7c2d12", fontWeight: "700", textAlign: "center", charSpacing: 300 },
                 { id: "stamp-mini", type: "text", text: "POSTA CULTURAL", x: 850, y: 270, width: 180, fontSize: 19, fontFamily: "Cormorant Garamond, serif", color: "#7c2d12", textAlign: "center", charSpacing: 200 },
                 // "Matasellos" sobre el sello (circulo con stroke)
                 { id: "postmark", type: "shape", shape: "circle", x: 760, y: 200, width: 130, height: 130, fill: "transparent", stroke: "rgba(124,45,18,0.45)", strokeWidth: 2, selectable: false },
@@ -2170,7 +2170,7 @@ export const templates: Template[] = [
                 { id: "chip-label", type: "text", text: "·  ÚNICA SESIÓN  ·", x: 0, y: 38, width: 1080, fontSize: 16, fontFamily: "Anton, Impact, sans-serif", color: "#fca5a5", textAlign: "center", charSpacing: 600 },
 
                 // SUPRA + TITULOS
-                { id: "supra", type: "text", text: "M A S T E R   W O R K S H O P", x: 0, y: 95, width: 1080, fontSize: 14, fontFamily: "Cormorant Garamond, serif", color: "#fbbf24", fontWeight: "500", textAlign: "center", charSpacing: 700 },
+                { id: "supra", type: "text", text: "M A S T E R   W O R K S H O P", x: 0, y: 95, width: 1080, fontSize: 24, fontFamily: "Cormorant Garamond, serif", color: "#fbbf24", fontWeight: "500", textAlign: "center", charSpacing: 700 },
                 { id: "title-1", type: "text", text: "BACHATA", x: 0, y: 125, width: 1080, fontSize: 88, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "center", charSpacing: 40 },
                 { id: "title-2", type: "text", text: "Sensual", x: 0, y: 215, width: 1080, fontSize: 60, fontFamily: "Playfair Display, serif", color: "#fbbf24", textAlign: "center", fontStyle: "italic" },
 
@@ -2399,22 +2399,22 @@ export const templates: Template[] = [
                 { id: "sched-title", type: "text", text: "HORARIOS", x: 600, y: 280, width: 440, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(31,16,16,0.5)", fontWeight: "700", textAlign: "left", charSpacing: 400 },
                 { id: "sched-d1", type: "text", text: "LUN", x: 600, y: 305, width: 80, fontSize: 16, fontFamily: "Anton, Impact, sans-serif", color: "#7c1d2c", textAlign: "left", charSpacing: 150 },
                 { id: "sched-t1", type: "text", text: "Iniciación bachata", x: 700, y: 305, width: 280, fontSize: 14, fontFamily: "Montserrat, sans-serif", color: "#1f1010", fontWeight: "600", textAlign: "left" },
-                { id: "sched-h1", type: "text", text: "19:00", x: 970, y: 305, width: 80, fontSize: 14, fontFamily: "Montserrat, sans-serif", color: "rgba(31,16,16,0.6)", fontWeight: "500", textAlign: "right" },
+                { id: "sched-h1", type: "text", text: "19:00", x: 970, y: 305, width: 80, fontSize: 24, fontFamily: "Montserrat, sans-serif", color: "rgba(31,16,16,0.6)", fontWeight: "500", textAlign: "right" },
                 { id: "sched-sep1", type: "shape", shape: "rect", x: 600, y: 335, width: 440, height: 1, fill: "rgba(31,16,16,0.12)", selectable: false },
                 { id: "sched-d2", type: "text", text: "MIÉ", x: 600, y: 350, width: 80, fontSize: 16, fontFamily: "Anton, Impact, sans-serif", color: "#7c1d2c", textAlign: "left", charSpacing: 150 },
                 { id: "sched-t2", type: "text", text: "Bachata intermedio", x: 700, y: 350, width: 280, fontSize: 14, fontFamily: "Montserrat, sans-serif", color: "#1f1010", fontWeight: "600", textAlign: "left" },
-                { id: "sched-h2", type: "text", text: "19:30", x: 970, y: 350, width: 80, fontSize: 14, fontFamily: "Montserrat, sans-serif", color: "rgba(31,16,16,0.6)", fontWeight: "500", textAlign: "right" },
+                { id: "sched-h2", type: "text", text: "19:30", x: 970, y: 350, width: 80, fontSize: 24, fontFamily: "Montserrat, sans-serif", color: "rgba(31,16,16,0.6)", fontWeight: "500", textAlign: "right" },
                 { id: "sched-sep2", type: "shape", shape: "rect", x: 600, y: 380, width: 440, height: 1, fill: "rgba(31,16,16,0.12)", selectable: false },
                 { id: "sched-d3", type: "text", text: "JUE", x: 600, y: 395, width: 80, fontSize: 16, fontFamily: "Anton, Impact, sans-serif", color: "#7c1d2c", textAlign: "left", charSpacing: 150 },
                 { id: "sched-t3", type: "text", text: "Estilo en pareja", x: 700, y: 395, width: 280, fontSize: 14, fontFamily: "Montserrat, sans-serif", color: "#1f1010", fontWeight: "600", textAlign: "left" },
-                { id: "sched-h3", type: "text", text: "21:00", x: 970, y: 395, width: 80, fontSize: 14, fontFamily: "Montserrat, sans-serif", color: "rgba(31,16,16,0.6)", fontWeight: "500", textAlign: "right" },
+                { id: "sched-h3", type: "text", text: "21:00", x: 970, y: 395, width: 80, fontSize: 24, fontFamily: "Montserrat, sans-serif", color: "rgba(31,16,16,0.6)", fontWeight: "500", textAlign: "right" },
                 { id: "price-bg", type: "shape", shape: "rect", x: 600, y: 450, width: 440, height: 130, fill: "#7c1d2c", radius: 6, selectable: false },
                 { id: "price-label", type: "text", text: "BONO MENSUAL", x: 600, y: 470, width: 440, fontSize: 19, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.65)", fontWeight: "700", textAlign: "center", charSpacing: 400 },
                 { id: "price-value", type: "text", text: "60€", x: 600, y: 490, width: 440, fontSize: 56, fontFamily: "Playfair Display, serif", color: "#ffffff", textAlign: "center", fontStyle: "italic" },
                 { id: "price-extra", type: "text", text: "4 clases / mes · suelta 18€", x: 600, y: 555, width: 440, fontSize: 19, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.85)", fontWeight: "500", textAlign: "center", charSpacing: 150 },
                 { id: "addr-value", type: "text", text: "Estudio Jean · C/ Goya 22 · Madrid", x: 600, y: 615, width: 440, fontSize: 15, fontFamily: "Playfair Display, serif", color: "#1f1010", textAlign: "left", fontStyle: "italic" },
                 { id: "tel-value", type: "text", text: "+34 600 222 333 · WhatsApp", x: 600, y: 645, width: 440, fontSize: 14, fontFamily: "Montserrat, sans-serif", color: "rgba(31,16,16,0.7)", fontWeight: "500", textAlign: "left" },
-                { id: "web-value", type: "text", text: "estudiojean.es", x: 600, y: 670, width: 440, fontSize: 14, fontFamily: "Playfair Display, serif", color: "#7c1d2c", textAlign: "left", fontStyle: "italic" },
+                { id: "web-value", type: "text", text: "estudiojean.es", x: 600, y: 670, width: 440, fontSize: 24, fontFamily: "Playfair Display, serif", color: "#7c1d2c", textAlign: "left", fontStyle: "italic" },
             ] },
 
             // ─── STORY 1080x1920 ───
@@ -2978,7 +2978,7 @@ export const templates: Template[] = [
                 { id: "role-r", type: "text", text: "Técnica & musicalidad", x: 670, y: 730, width: 280, fontSize: 13, fontFamily: "Montserrat, sans-serif", color: "rgba(251,191,36,0.85)", fontWeight: "600", textAlign: "center", charSpacing: 100 },
 
                 // ─── ITINERARIO SCHEDULE bloques ───
-                { id: "sched-title", type: "text", text: "PROGRAMA", x: 0, y: 790, width: 1080, fontSize: 14, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.5)", fontWeight: "700", textAlign: "center", charSpacing: 500 },
+                { id: "sched-title", type: "text", text: "PROGRAMA", x: 0, y: 790, width: 1080, fontSize: 24, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.5)", fontWeight: "700", textAlign: "center", charSpacing: 500 },
 
                 // Sábado bloque
                 { id: "sab-bg", type: "shape", shape: "rect", x: 60, y: 825, width: 460, height: 290, fill: "rgba(255,255,255,0.06)", radius: 8, stroke: "rgba(251,191,36,0.45)", strokeWidth: 1, selectable: false },
@@ -2989,7 +2989,7 @@ export const templates: Template[] = [
                 { id: "sab-1-d", type: "text", text: "Técnica de base", x: 200, y: 907, width: 300, fontSize: 14, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.85)", fontWeight: "600", textAlign: "left" },
 
                 { id: "sab-2-t", type: "text", text: "13:00", x: 90, y: 940, width: 100, fontSize: 26, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "left", charSpacing: 100 },
-                { id: "sab-2-d", type: "text", text: "Almuerzo", x: 200, y: 942, width: 300, fontSize: 14, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.55)", fontWeight: "500", textAlign: "left", fontStyle: "italic" },
+                { id: "sab-2-d", type: "text", text: "Almuerzo", x: 200, y: 942, width: 300, fontSize: 24, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.55)", fontWeight: "500", textAlign: "left", fontStyle: "italic" },
 
                 { id: "sab-3-t", type: "text", text: "16:00", x: 90, y: 975, width: 100, fontSize: 26, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "left", charSpacing: 100 },
                 { id: "sab-3-d", type: "text", text: "Figuras pareja", x: 200, y: 977, width: 300, fontSize: 14, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.85)", fontWeight: "600", textAlign: "left" },
@@ -3005,10 +3005,10 @@ export const templates: Template[] = [
                 { id: "dom-line", type: "shape", shape: "rect", x: 720, y: 880, width: 140, height: 2, fill: "#fbbf24", selectable: false },
 
                 { id: "dom-1-t", type: "text", text: "10:00", x: 590, y: 905, width: 100, fontSize: 26, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "left", charSpacing: 100 },
-                { id: "dom-1-d", type: "text", text: "Musicalidad", x: 700, y: 907, width: 300, fontSize: 14, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.85)", fontWeight: "600", textAlign: "left" },
+                { id: "dom-1-d", type: "text", text: "Musicalidad", x: 700, y: 907, width: 300, fontSize: 24, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.85)", fontWeight: "600", textAlign: "left" },
 
                 { id: "dom-2-t", type: "text", text: "13:00", x: 590, y: 940, width: 100, fontSize: 26, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "left", charSpacing: 100 },
-                { id: "dom-2-d", type: "text", text: "Almuerzo", x: 700, y: 942, width: 300, fontSize: 14, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.55)", fontWeight: "500", textAlign: "left", fontStyle: "italic" },
+                { id: "dom-2-d", type: "text", text: "Almuerzo", x: 700, y: 942, width: 300, fontSize: 24, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.55)", fontWeight: "500", textAlign: "left", fontStyle: "italic" },
 
                 { id: "dom-3-t", type: "text", text: "16:00", x: 590, y: 975, width: 100, fontSize: 26, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "left", charSpacing: 100 },
                 { id: "dom-3-d", type: "text", text: "Sensual styling", x: 700, y: 977, width: 300, fontSize: 14, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.85)", fontWeight: "600", textAlign: "left" },
@@ -3072,7 +3072,7 @@ export const templates: Template[] = [
                 { id: "frame-r", type: "shape", shape: "circle", x: 790, y: 520, width: 320, height: 320, fill: "#fbbf24", originX: "center", originY: "top", selectable: false },
                 { id: "profe-r", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/02_damian_reyes_perfil.png", x: 790, y: 515, scaleX: 0.5, scaleY: 0.5, originX: "center", originY: "top", shadow: { color: "rgba(0,0,0,0.5)", blur: 25, offsetX: 0, offsetY: 5 } },
                 { id: "name-r", type: "text", text: "DAMIÁN", x: 630, y: 855, width: 320, fontSize: 32, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "center", charSpacing: 80 },
-                { id: "sched-title", type: "text", text: "PROGRAMA", x: 0, y: 950, width: 1080, fontSize: 14, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.5)", fontWeight: "700", textAlign: "center", charSpacing: 500 },
+                { id: "sched-title", type: "text", text: "PROGRAMA", x: 0, y: 950, width: 1080, fontSize: 24, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.5)", fontWeight: "700", textAlign: "center", charSpacing: 500 },
                 { id: "sab-bg", type: "shape", shape: "rect", x: 60, y: 990, width: 460, height: 340, fill: "rgba(255,255,255,0.06)", radius: 8, stroke: "rgba(251,191,36,0.45)", strokeWidth: 1, selectable: false },
                 { id: "sab-day", type: "text", text: "SÁBADO 25", x: 60, y: 1020, width: 460, fontSize: 26, fontFamily: "Anton, Impact, sans-serif", color: "#fbbf24", textAlign: "center", charSpacing: 200 },
                 { id: "sab-1", type: "text", text: "10:00 Técnica de base", x: 80, y: 1080, width: 420, fontSize: 16, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.85)", fontWeight: "600", textAlign: "left" },
@@ -3343,19 +3343,19 @@ export const templates: Template[] = [
                 // 3 dias en grid 3 columnas (sobre verde)
                 // Lunes
                 { id: "day-1-bg", type: "shape", shape: "rect", x: 80, y: 990, width: 290, height: 130, fill: "rgba(254,224,71,0.95)", radius: 12, selectable: false },
-                { id: "day-1-label", type: "text", text: "LUNES", x: 80, y: 1005, width: 290, fontSize: 14, fontFamily: "Anton, Impact, sans-serif", color: "#ea580c", textAlign: "center", charSpacing: 400 },
+                { id: "day-1-label", type: "text", text: "LUNES", x: 80, y: 1005, width: 290, fontSize: 24, fontFamily: "Anton, Impact, sans-serif", color: "#ea580c", textAlign: "center", charSpacing: 400 },
                 { id: "day-1-time", type: "text", text: "19:00", x: 80, y: 1030, width: 290, fontSize: 50, fontFamily: "Anton, Impact, sans-serif", color: "#0a0a0a", textAlign: "center", charSpacing: 30 },
                 { id: "day-1-extra", type: "text", text: "INICIO", x: 80, y: 1090, width: 290, fontSize: 22, fontFamily: "Montserrat, sans-serif", color: "rgba(10,10,10,0.7)", fontWeight: "700", textAlign: "center", charSpacing: 300 },
 
                 // Miercoles
                 { id: "day-2-bg", type: "shape", shape: "rect", x: 395, y: 990, width: 290, height: 130, fill: "rgba(254,224,71,0.95)", radius: 12, selectable: false },
-                { id: "day-2-label", type: "text", text: "MIÉRCOLES", x: 395, y: 1005, width: 290, fontSize: 14, fontFamily: "Anton, Impact, sans-serif", color: "#ea580c", textAlign: "center", charSpacing: 400 },
+                { id: "day-2-label", type: "text", text: "MIÉRCOLES", x: 395, y: 1005, width: 290, fontSize: 24, fontFamily: "Anton, Impact, sans-serif", color: "#ea580c", textAlign: "center", charSpacing: 400 },
                 { id: "day-2-time", type: "text", text: "20:00", x: 395, y: 1030, width: 290, fontSize: 50, fontFamily: "Anton, Impact, sans-serif", color: "#0a0a0a", textAlign: "center", charSpacing: 30 },
                 { id: "day-2-extra", type: "text", text: "INTERMEDIO", x: 395, y: 1090, width: 290, fontSize: 22, fontFamily: "Montserrat, sans-serif", color: "rgba(10,10,10,0.7)", fontWeight: "700", textAlign: "center", charSpacing: 300 },
 
                 // Viernes
                 { id: "day-3-bg", type: "shape", shape: "rect", x: 710, y: 990, width: 290, height: 130, fill: "rgba(254,224,71,0.95)", radius: 12, selectable: false },
-                { id: "day-3-label", type: "text", text: "VIERNES", x: 710, y: 1005, width: 290, fontSize: 14, fontFamily: "Anton, Impact, sans-serif", color: "#ea580c", textAlign: "center", charSpacing: 400 },
+                { id: "day-3-label", type: "text", text: "VIERNES", x: 710, y: 1005, width: 290, fontSize: 24, fontFamily: "Anton, Impact, sans-serif", color: "#ea580c", textAlign: "center", charSpacing: 400 },
                 { id: "day-3-time", type: "text", text: "21:00", x: 710, y: 1030, width: 290, fontSize: 50, fontFamily: "Anton, Impact, sans-serif", color: "#0a0a0a", textAlign: "center", charSpacing: 30 },
                 { id: "day-3-extra", type: "text", text: "SOCIAL", x: 710, y: 1090, width: 290, fontSize: 22, fontFamily: "Montserrat, sans-serif", color: "rgba(10,10,10,0.7)", fontWeight: "700", textAlign: "center", charSpacing: 300 },
 
@@ -3414,15 +3414,15 @@ export const templates: Template[] = [
                 { id: "plate-name", type: "text", text: "PROFE DAMIÁN", x: 0, y: 1048, width: 1080, fontSize: 26, fontFamily: "Anton, Impact, sans-serif", color: "#fde047", textAlign: "center", charSpacing: 250 },
                 { id: "info-title", type: "text", text: "·  HORARIOS  ·", x: 0, y: 1125, width: 1080, fontSize: 16, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "center", charSpacing: 500 },
                 { id: "day-1-bg", type: "shape", shape: "rect", x: 80, y: 1170, width: 290, height: 130, fill: "rgba(254,224,71,0.95)", radius: 12, selectable: false },
-                { id: "day-1-label", type: "text", text: "LUNES", x: 80, y: 1185, width: 290, fontSize: 14, fontFamily: "Anton, Impact, sans-serif", color: "#ea580c", textAlign: "center", charSpacing: 400 },
+                { id: "day-1-label", type: "text", text: "LUNES", x: 80, y: 1185, width: 290, fontSize: 24, fontFamily: "Anton, Impact, sans-serif", color: "#ea580c", textAlign: "center", charSpacing: 400 },
                 { id: "day-1-time", type: "text", text: "19:00", x: 80, y: 1210, width: 290, fontSize: 50, fontFamily: "Anton, Impact, sans-serif", color: "#0a0a0a", textAlign: "center", charSpacing: 30 },
                 { id: "day-1-extra", type: "text", text: "INICIO", x: 80, y: 1270, width: 290, fontSize: 22, fontFamily: "Montserrat, sans-serif", color: "rgba(10,10,10,0.7)", fontWeight: "700", textAlign: "center", charSpacing: 300 },
                 { id: "day-2-bg", type: "shape", shape: "rect", x: 395, y: 1170, width: 290, height: 130, fill: "rgba(254,224,71,0.95)", radius: 12, selectable: false },
-                { id: "day-2-label", type: "text", text: "MIÉRCOLES", x: 395, y: 1185, width: 290, fontSize: 14, fontFamily: "Anton, Impact, sans-serif", color: "#ea580c", textAlign: "center", charSpacing: 400 },
+                { id: "day-2-label", type: "text", text: "MIÉRCOLES", x: 395, y: 1185, width: 290, fontSize: 24, fontFamily: "Anton, Impact, sans-serif", color: "#ea580c", textAlign: "center", charSpacing: 400 },
                 { id: "day-2-time", type: "text", text: "20:00", x: 395, y: 1210, width: 290, fontSize: 50, fontFamily: "Anton, Impact, sans-serif", color: "#0a0a0a", textAlign: "center", charSpacing: 30 },
                 { id: "day-2-extra", type: "text", text: "INTERMEDIO", x: 395, y: 1270, width: 290, fontSize: 22, fontFamily: "Montserrat, sans-serif", color: "rgba(10,10,10,0.7)", fontWeight: "700", textAlign: "center", charSpacing: 300 },
                 { id: "day-3-bg", type: "shape", shape: "rect", x: 710, y: 1170, width: 290, height: 130, fill: "rgba(254,224,71,0.95)", radius: 12, selectable: false },
-                { id: "day-3-label", type: "text", text: "VIERNES", x: 710, y: 1185, width: 290, fontSize: 14, fontFamily: "Anton, Impact, sans-serif", color: "#ea580c", textAlign: "center", charSpacing: 400 },
+                { id: "day-3-label", type: "text", text: "VIERNES", x: 710, y: 1185, width: 290, fontSize: 24, fontFamily: "Anton, Impact, sans-serif", color: "#ea580c", textAlign: "center", charSpacing: 400 },
                 { id: "day-3-time", type: "text", text: "21:00", x: 710, y: 1210, width: 290, fontSize: 50, fontFamily: "Anton, Impact, sans-serif", color: "#0a0a0a", textAlign: "center", charSpacing: 30 },
                 { id: "day-3-extra", type: "text", text: "SOCIAL", x: 710, y: 1270, width: 290, fontSize: 22, fontFamily: "Montserrat, sans-serif", color: "rgba(10,10,10,0.7)", fontWeight: "700", textAlign: "center", charSpacing: 300 },
                 { id: "price-bg", type: "shape", shape: "rect", x: 340, y: 1380, width: 400, height: 80, fill: "#0a0a0a", radius: 40, selectable: false },
@@ -3447,13 +3447,13 @@ export const templates: Template[] = [
                 { id: "plate-name", type: "text", text: "PROFE DAMIÁN", x: 110, y: 820, width: 380, fontSize: 26, fontFamily: "Anton, Impact, sans-serif", color: "#0a0a0a", textAlign: "center", charSpacing: 200 },
                 { id: "day-1-bg", type: "shape", shape: "rect", x: 700, y: 430, width: 360, height: 130, fill: "rgba(254,224,71,0.95)", radius: 12, selectable: false },
                 { id: "day-1", type: "text", text: "LUNES  19:00", x: 700, y: 458, width: 360, fontSize: 32, fontFamily: "Anton, Impact, sans-serif", color: "#0a0a0a", textAlign: "center", charSpacing: 80 },
-                { id: "day-1-x", type: "text", text: "INICIO", x: 700, y: 510, width: 360, fontSize: 14, fontFamily: "Montserrat, sans-serif", color: "rgba(10,10,10,0.7)", fontWeight: "800", textAlign: "center", charSpacing: 300 },
+                { id: "day-1-x", type: "text", text: "INICIO", x: 700, y: 510, width: 360, fontSize: 24, fontFamily: "Montserrat, sans-serif", color: "rgba(10,10,10,0.7)", fontWeight: "800", textAlign: "center", charSpacing: 300 },
                 { id: "day-2-bg", type: "shape", shape: "rect", x: 1080, y: 430, width: 360, height: 130, fill: "rgba(254,224,71,0.95)", radius: 12, selectable: false },
                 { id: "day-2", type: "text", text: "MIÉ  20:00", x: 1080, y: 458, width: 360, fontSize: 32, fontFamily: "Anton, Impact, sans-serif", color: "#0a0a0a", textAlign: "center", charSpacing: 80 },
-                { id: "day-2-x", type: "text", text: "INTERMEDIO", x: 1080, y: 510, width: 360, fontSize: 14, fontFamily: "Montserrat, sans-serif", color: "rgba(10,10,10,0.7)", fontWeight: "800", textAlign: "center", charSpacing: 300 },
+                { id: "day-2-x", type: "text", text: "INTERMEDIO", x: 1080, y: 510, width: 360, fontSize: 24, fontFamily: "Montserrat, sans-serif", color: "rgba(10,10,10,0.7)", fontWeight: "800", textAlign: "center", charSpacing: 300 },
                 { id: "day-3-bg", type: "shape", shape: "rect", x: 1460, y: 430, width: 360, height: 130, fill: "rgba(254,224,71,0.95)", radius: 12, selectable: false },
                 { id: "day-3", type: "text", text: "VIE  21:00", x: 1460, y: 458, width: 360, fontSize: 32, fontFamily: "Anton, Impact, sans-serif", color: "#0a0a0a", textAlign: "center", charSpacing: 80 },
-                { id: "day-3-x", type: "text", text: "SOCIAL", x: 1460, y: 510, width: 360, fontSize: 14, fontFamily: "Montserrat, sans-serif", color: "rgba(10,10,10,0.7)", fontWeight: "800", textAlign: "center", charSpacing: 300 },
+                { id: "day-3-x", type: "text", text: "SOCIAL", x: 1460, y: 510, width: 360, fontSize: 24, fontFamily: "Montserrat, sans-serif", color: "rgba(10,10,10,0.7)", fontWeight: "800", textAlign: "center", charSpacing: 300 },
                 { id: "price-bg", type: "shape", shape: "rect", x: 700, y: 610, width: 1120, height: 80, fill: "#0a0a0a", radius: 40, selectable: false },
                 { id: "price-text", type: "text", text: "BONO MES · 50€", x: 700, y: 635, width: 1120, fontSize: 32, fontFamily: "Anton, Impact, sans-serif", color: "#fde047", textAlign: "center", charSpacing: 200 },
                 { id: "footer-where", type: "text", text: "ESTUDIO DEL SOL  ·  C/ TENERIFE 5  ·  MADRID  ·  estudiodelsol.es", x: 0, y: 870, width: 1920, fontSize: 18, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "center", charSpacing: 300 },
@@ -3661,7 +3661,7 @@ export const templates: Template[] = [
                 { id: "header-num", type: "text", text: "WORKSHOP  ·  N° 12  ·  TEMPORADA 26/27", x: 60, y: 50, width: 480, fontSize: 19, fontFamily: "Cormorant Garamond, serif", color: "#d4a058", fontWeight: "700", textAlign: "left", charSpacing: 450 },
 
                 // TITULO grande Playfair italica + sans condensado
-                { id: "supra", type: "text", text: "MASTER", x: 60, y: 110, width: 480, fontSize: 14, fontFamily: "Anton, Impact, sans-serif", color: "rgba(212,160,88,0.85)", textAlign: "left", charSpacing: 500 },
+                { id: "supra", type: "text", text: "MASTER", x: 60, y: 110, width: 480, fontSize: 24, fontFamily: "Anton, Impact, sans-serif", color: "rgba(212,160,88,0.85)", textAlign: "left", charSpacing: 500 },
                 { id: "title-1", type: "text", text: "Kizomba", x: 60, y: 140, width: 700, fontSize: 130, fontFamily: "Playfair Display, serif", color: "#fef3c7", textAlign: "left", fontStyle: "italic" },
                 { id: "title-2", type: "text", text: "& Tarraxinha", x: 60, y: 270, width: 700, fontSize: 60, fontFamily: "Playfair Display, serif", color: "#d4a058", textAlign: "left", fontStyle: "italic" },
 
@@ -4217,11 +4217,11 @@ export const templates: Template[] = [
                 { id: "chip-1-bg", type: "shape", shape: "rect", x: 130, y: 1300, width: 200, height: 50, fill: "#fde68a", radius: 25, selectable: false },
                 { id: "chip-1", type: "text", text: "BACHATA SUAVE", x: 130, y: 1315, width: 200, fontSize: 14, fontFamily: "Anton, Impact, sans-serif", color: "#7c4a03", textAlign: "center", charSpacing: 200 },
                 { id: "chip-2-bg", type: "shape", shape: "rect", x: 350, y: 1300, width: 200, height: 50, fill: "#fde68a", radius: 25, selectable: false },
-                { id: "chip-2", type: "text", text: "PASODOBLE", x: 350, y: 1315, width: 200, fontSize: 14, fontFamily: "Anton, Impact, sans-serif", color: "#7c4a03", textAlign: "center", charSpacing: 200 },
+                { id: "chip-2", type: "text", text: "PASODOBLE", x: 350, y: 1315, width: 200, fontSize: 24, fontFamily: "Anton, Impact, sans-serif", color: "#7c4a03", textAlign: "center", charSpacing: 200 },
                 { id: "chip-3-bg", type: "shape", shape: "rect", x: 570, y: 1300, width: 180, height: 50, fill: "#fde68a", radius: 25, selectable: false },
                 { id: "chip-3", type: "text", text: "VALS LENTO", x: 570, y: 1315, width: 180, fontSize: 14, fontFamily: "Anton, Impact, sans-serif", color: "#7c4a03", textAlign: "center", charSpacing: 200 },
                 { id: "chip-4-bg", type: "shape", shape: "rect", x: 770, y: 1300, width: 180, height: 50, fill: "#fde68a", radius: 25, selectable: false },
-                { id: "chip-4", type: "text", text: "MERENGUE", x: 770, y: 1315, width: 180, fontSize: 14, fontFamily: "Anton, Impact, sans-serif", color: "#7c4a03", textAlign: "center", charSpacing: 200 },
+                { id: "chip-4", type: "text", text: "MERENGUE", x: 770, y: 1315, width: 180, fontSize: 24, fontFamily: "Anton, Impact, sans-serif", color: "#7c4a03", textAlign: "center", charSpacing: 200 },
                 { id: "details-1-l", type: "text", text: "DÍAS", x: 60, y: 1400, width: 240, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(91,122,153,0.7)", fontWeight: "800", textAlign: "left", charSpacing: 400 },
                 { id: "details-1-v", type: "text", text: "MAR  ·  JUE", x: 60, y: 1420, width: 240, fontSize: 28, fontFamily: "Playfair Display, serif", color: "#1a2b3f", textAlign: "left", fontStyle: "italic" },
                 { id: "details-2-l", type: "text", text: "HORA", x: 330, y: 1400, width: 240, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(91,122,153,0.7)", fontWeight: "800", textAlign: "left", charSpacing: 400 },
@@ -4373,7 +4373,7 @@ export const templates: Template[] = [
                 { id: "header-line-t", type: "shape", shape: "rect", x: 60, y: 130, width: 960, height: 1, fill: "#4a5a2c", selectable: false },
                 { id: "header-line-b", type: "shape", shape: "rect", x: 60, y: 170, width: 960, height: 1, fill: "#4a5a2c", selectable: false },
                 { id: "header-text", type: "text", text: "C E N T R O   M A Y O R E S   ·   2 0 2 6 / 2 7", x: 0, y: 143, width: 1080, fontSize: 22, fontFamily: "Cormorant Garamond, serif", color: "#4a5a2c", fontWeight: "700", textAlign: "center", charSpacing: 600 },
-                { id: "supra", type: "text", text: "L A   P I S T A   E S T Á   A B I E R T A", x: 0, y: 220, width: 1080, fontSize: 14, fontFamily: "Montserrat, sans-serif", color: "#7c4a03", fontWeight: "700", textAlign: "center", charSpacing: 700 },
+                { id: "supra", type: "text", text: "L A   P I S T A   E S T Á   A B I E R T A", x: 0, y: 220, width: 1080, fontSize: 22, fontFamily: "Montserrat, sans-serif", color: "#7c4a03", fontWeight: "700", textAlign: "center", charSpacing: 700 },
                 { id: "title-1", type: "text", text: "Súmate a", x: 0, y: 260, width: 1080, fontSize: 130, fontFamily: "Playfair Display, serif", color: "#2a3018", textAlign: "center", fontStyle: "italic" },
                 { id: "title-2", type: "text", text: "la pista.", x: 0, y: 410, width: 1080, fontSize: 130, fontFamily: "Playfair Display, serif", color: "#7c4a03", textAlign: "center", fontStyle: "italic" },
                 { id: "orn-l", type: "shape", shape: "rect", x: 380, y: 580, width: 130, height: 1, fill: "#4a5a2c", selectable: false },
