@@ -45,6 +45,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     const [organizerAnswered, setOrganizerAnswered] = useState(false);
     const [hasVictory, setHasVictory] = useState(false);
     const isTechnicalRoute = pathname.startsWith("/editor") || pathname.startsWith("/upload");
+    // Agenda cultural pública (/eventos, /organizador): es una experiencia de
+    // CONSULTA para el público general, no el panel del editor. Ahí ocultamos
+    // el menú de flyers (Crear, Quitar fondo, Plantillas…) y la bottom nav
+    // móvil para que se sienta como una agenda, no como la app de flyers.
+    // La cabecera mantiene logo + idioma + tema + login (cuenta = organizador).
+    const isAgendaRoute = pathname.startsWith("/eventos") || pathname.startsWith("/organizador");
 
     // Lee localStorage al montar + escucha el evento custom para
     // re-renderizar cuando el user completa su primera descarga.
@@ -143,27 +149,51 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                         </span>
                     </Link>
 
-                    {/* Nav central - SOLO DESKTOP (md+) */}
-                    <nav className="hidden md:flex items-center gap-1">
-                        {navLinks.map((link) => {
-                            const isActive = pathname === link.href;
-                            return (
-                                <Link key={link.href} href={link.href}
-                                    className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all flex items-center gap-1.5 ${
-                                        isActive
-                                            ? "text-ag-active border-b-2 border-ag-active rounded-none"
-                                            : "text-ag-muted hover:text-ag-primary"
-                                    }`}>
-                                    {link.label}
-                                    {link.badge && (
-                                        <span className="text-[9px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded-full bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/40 text-purple-300">
-                                            {link.badge}
-                                        </span>
-                                    )}
-                                </Link>
-                            );
-                        })}
-                    </nav>
+                    {/* Nav central - SOLO DESKTOP (md+).
+                        En rutas de agenda NO mostramos el menú de flyers: la
+                        agenda es pública y de consulta. En su lugar, un único
+                        acceso de organizador ("Sube tu evento"). */}
+                    {isAgendaRoute ? (
+                        <nav className="hidden md:flex items-center gap-1">
+                            <Link href="/eventos"
+                                className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                                    pathname.startsWith("/eventos")
+                                        ? "text-ag-active border-b-2 border-ag-active rounded-none"
+                                        : "text-ag-muted hover:text-ag-primary"
+                                }`}>
+                                Agenda
+                            </Link>
+                            <Link href="/organizador"
+                                className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                                    pathname.startsWith("/organizador")
+                                        ? "text-ag-active border-b-2 border-ag-active rounded-none"
+                                        : "text-ag-muted hover:text-ag-primary"
+                                }`}>
+                                Sube tu evento
+                            </Link>
+                        </nav>
+                    ) : (
+                        <nav className="hidden md:flex items-center gap-1">
+                            {navLinks.map((link) => {
+                                const isActive = pathname === link.href;
+                                return (
+                                    <Link key={link.href} href={link.href}
+                                        className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all flex items-center gap-1.5 ${
+                                            isActive
+                                                ? "text-ag-active border-b-2 border-ag-active rounded-none"
+                                                : "text-ag-muted hover:text-ag-primary"
+                                        }`}>
+                                        {link.label}
+                                        {link.badge && (
+                                            <span className="text-[9px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded-full bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/40 text-purple-300">
+                                                {link.badge}
+                                            </span>
+                                        )}
+                                    </Link>
+                                );
+                            })}
+                        </nav>
+                    )}
 
                     {/* Derecha */}
                     <div className="flex items-center gap-2 sm:gap-3 shrink-0">
@@ -280,7 +310,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             {/* Footer con links legales (privacidad, terminos, cookies) */}
             <Footer />
 
-            {/* Bottom Navigation Bar - SOLO MOBILE */}
+            {/* Bottom Navigation Bar - SOLO MOBILE. Oculta en rutas de agenda
+                (no es la app de flyers; ahí estorba la nav de Crear/Plantillas…). */}
+            {!isAgendaRoute && (
             <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 backdrop-blur-md border-t safe-area-bottom"
                  style={{ background: "var(--header-bg)", borderColor: "var(--header-border)" }}>
                 <div className="flex items-center justify-around h-16 px-2">
@@ -308,6 +340,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                     </button>
                 </div>
             </nav>
+            )}
 
             {/* Drawer "Mas" - SOLO MOBILE */}
             {showMobileMenu && (

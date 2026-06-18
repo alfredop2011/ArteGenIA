@@ -43,6 +43,43 @@ export type Project = {
     updated_at: string;
 };
 
+/** Categorías de eventos — alineadas con la taxonomía del producto. */
+export type EventCategory = "fiesta" | "conciertos" | "festival" | "clases" | "club" | "corporativo";
+
+/** Audiencias ("Para quién es") — coincide con el enum organizer_type. */
+export type EventAudience = "academias" | "productoras" | "freelance" | "instituciones" | "agencias" | "colegios";
+
+/**
+ * Evento de la agenda cultural pública (/eventos) y del panel /organizador.
+ * Migration 2026_06_18_events.sql.
+ */
+export type EventRow = {
+    id: string;
+    organizer_id: string | null; // null = enviado por bot, sin reclamar
+    submitter_channel: string | null;
+    submitter_ref: string | null;
+    claim_token: string | null;
+    title: string;
+    description: string | null;
+    event_date: string; // ISO yyyy-mm-dd
+    event_time: string; // HH:mm
+    country: string;
+    city: string;
+    venue: string;
+    neighborhood: string | null;
+    category: EventCategory;
+    audience: EventAudience[];
+    price: number;
+    has_online_sale: boolean;
+    ticket_url: string | null;
+    image_url: string | null;
+    image_key: string | null;
+    source: "organizer" | "auto";
+    status: "draft" | "published" | "cancelled";
+    created_at: string;
+    updated_at: string;
+};
+
 /**
  * Borrador de plantilla creado desde /admin/templates/new.
  * El admin edita el borrador y luego lo publica (lo mueve a templates_published).

@@ -40,6 +40,8 @@ export const RATE_LIMITS: Record<string, RateLimitConfig> = {
   "remix-ai":           { max: 20, windowMinutes: 1 },
   // Compartir: sube PNG a R2 — protege storage
   "share-upload":       { max: 15, windowMinutes: 1 },
+  // Subir flyer de evento (organizador) a R2 — protege storage
+  "event-flyer-upload": { max: 20, windowMinutes: 1 },
   // Asistente IA — Claude Haiku, barato
   "assistant-ai":       { max: 10, windowMinutes: 1 },
   // Generar flyer — Flux schnell ($0.003), pero limita scraping/abuso
