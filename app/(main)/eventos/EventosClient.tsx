@@ -505,16 +505,17 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
           className="absolute inset-0 -z-10 opacity-60"
           style={{ background: "radial-gradient(60% 80% at 50% 0%, var(--ag-brand-bg), transparent 70%)" }}
         />
-        <div className="mx-auto max-w-6xl px-4 pt-8 pb-8 sm:pt-10">
-          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="text-center">
+        <div className="mx-auto max-w-6xl px-4 pt-5 pb-4 sm:pt-10 sm:pb-8">
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="text-left sm:text-center">
             <span
-              className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium"
+              className="mb-3 hidden items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium sm:inline-flex"
               style={{ background: "var(--ag-brand-bg)", color: "var(--ag-brand)", border: "1px solid var(--ag-brand-border)" }}
             >
               <Sparkles size={13} /> Agenda cultural pública
             </span>
-            <h1 className="mx-auto mt-4 max-w-3xl text-3xl font-bold tracking-tight sm:text-5xl">
-              ¿Qué planes hay en{" "}
+            <h1 className="mx-auto max-w-3xl text-2xl font-bold tracking-tight sm:text-5xl">
+              <span className="sm:hidden">Planes culturales en </span>
+              <span className="hidden sm:inline">¿Qué planes hay en </span>
               <span className="relative inline-flex items-baseline" style={{ color: "var(--ag-brand)" }}>
                 <AnimatePresence mode="wait">
                   <motion.span
@@ -529,10 +530,10 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
                   </motion.span>
                 </AnimatePresence>
               </span>
-              ?
+              <span className="hidden sm:inline">?</span>
             </h1>
-            <p className="mx-auto mt-3 max-w-xl text-base sm:text-lg" style={{ color: "var(--home-text-muted)" }}>
-              Conciertos, exposiciones, teatro y mucho más. Consulta qué hay hoy, esta semana o las fechas que quieras. Sin registro.
+            <p className="mx-auto mt-1.5 max-w-xl text-sm sm:mt-3 sm:text-lg" style={{ color: "var(--home-text-muted)" }}>
+              Conciertos, exposiciones, teatro y más cerca de ti.
             </p>
           </motion.div>
 
@@ -540,9 +541,11 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="mx-auto mt-7 flex max-w-3xl flex-col gap-2 sm:flex-row"
+            transition={{ duration: 0.4, delay: 0.05 }}
+            className="mx-auto mt-4 flex max-w-3xl flex-col gap-2 sm:mt-7 sm:flex-row"
           >
+            {/* País + ciudad: solo escritorio (en móvil basta el buscador + ◎) */}
+            <div className="hidden gap-2 sm:flex">
             {/* País */}
             <Dropdown
               open={countryOpen}
@@ -591,6 +594,7 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
               ))}
             </Dropdown>
 
+            </div>
             {/* Búsqueda libre + botón de ubicación (◎) */}
             <div className="relative flex-1">
               <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2" style={{ color: "var(--home-text-soft)" }} />
