@@ -279,69 +279,6 @@ export const templatesMeta: TemplateMeta[] = [
     ]
   },
   {
-    "id": 12,
-    "title": "Crossover 3 Artistas",
-    "category": "Fiesta",
-    "image": "https://images.unsplash.com/photo-1561489413-985b06da5bee?q=80&w=800",
-    "premium": false,
-    "audience": [
-      "productoras",
-      "academias"
-    ],
-    "internalTags": [
-      "beta"
-    ],
-    "variants": [
-      {
-        "format": "portrait",
-        "width": 1080,
-        "height": 1350
-      }
-    ]
-  },
-  {
-    "id": 13,
-    "title": "Crossover 5 Artistas",
-    "category": "Fiesta",
-    "image": "https://images.unsplash.com/photo-1574391884720-bbc049ec09ad?q=80&w=800",
-    "premium": false,
-    "audience": [
-      "productoras",
-      "academias"
-    ],
-    "internalTags": [
-      "beta"
-    ],
-    "variants": [
-      {
-        "format": "portrait",
-        "width": 1080,
-        "height": 1350
-      }
-    ]
-  },
-  {
-    "id": 14,
-    "title": "Crossover 7 Artistas",
-    "category": "Fiesta",
-    "image": "https://images.unsplash.com/photo-1574391884720-bbc049ec09ad?q=80&w=800",
-    "premium": false,
-    "audience": [
-      "productoras",
-      "academias"
-    ],
-    "internalTags": [
-      "beta"
-    ],
-    "variants": [
-      {
-        "format": "portrait",
-        "width": 1080,
-        "height": 1350
-      }
-    ]
-  },
-  {
     "id": 15,
     "title": "Crossover 5 Artistas Demo",
     "category": "Fiesta",
