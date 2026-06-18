@@ -29,6 +29,8 @@ import {
   Briefcase,
   Users,
   Sparkles,
+  Navigation,
+  Loader2,
 } from "lucide-react";
 
 /**
@@ -85,6 +87,14 @@ const CITIES_BY_COUNTRY: Record<string, { id: string; label: string; available: 
     { id: "valencia", label: "Valencia", available: false },
     { id: "sevilla", label: "Sevilla", available: false },
   ],
+};
+
+// Coordenadas para "Cerca de mí" (detección por GPS → ciudad más cercana).
+const CITY_COORDS: Record<string, { country: string; lat: number; lng: number }> = {
+  madrid: { country: "es", lat: 40.4168, lng: -3.7038 },
+  barcelona: { country: "es", lat: 41.3874, lng: 2.1686 },
+  valencia: { country: "es", lat: 39.4699, lng: -0.3763 },
+  sevilla: { country: "es", lat: 37.3891, lng: -5.9845 },
 };
 
 // Ciudades para el "ticker" del hero cuando el filtro está a nivel país
@@ -233,6 +243,41 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
   // autenticarse, volvemos a /organizador (nextUrl para el flujo OAuth).
   const goOrganizer = () => (user ? router.push("/organizador") : setShowAuth(true));
 
+  // "Cerca de mí": pide ubicación al navegador y elige la ciudad DISPONIBLE
+  // (con eventos) más cercana. Solo se activa si el usuario lo pulsa.
+  const detectLocation = () => {
+    if (typeof navigator === "undefined" || !navigator.geolocation) {
+      setGeo({ status: "error", msg: "Tu navegador no permite ubicación" });
+      return;
+    }
+    setGeo({ status: "locating" });
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords;
+        // Ciudades disponibles (con eventos), de todos los países.
+        const available = Object.entries(CITIES_BY_COUNTRY).flatMap(([ct, list]) =>
+          list.filter((c) => c.available && c.id !== "todas" && CITY_COORDS[c.id]).map((c) => ({ id: c.id, label: c.label, country: ct }))
+        );
+        let best: { id: string; label: string; country: string } | null = null;
+        let bestD = Infinity;
+        for (const c of available) {
+          const co = CITY_COORDS[c.id];
+          const d = (co.lat - latitude) ** 2 + (co.lng - longitude) ** 2;
+          if (d < bestD) { bestD = d; best = c; }
+        }
+        if (best) {
+          setCountry(best.country);
+          setCity(best.id);
+          setGeo({ status: "done", msg: `Mostrando ${best.label}` });
+        } else {
+          setGeo({ status: "error", msg: "Aún no hay eventos cerca de ti" });
+        }
+      },
+      () => setGeo({ status: "error", msg: "No pudimos obtener tu ubicación" }),
+      { timeout: 8000 }
+    );
+  };
+
   // Eventos: vienen del servidor (SSR). Si no hay datos reales, mock de muestra.
   const events = initialEvents.length > 0 ? initialEvents : MOCK_EVENTS;
   const usingMock = initialEvents.length === 0;
@@ -241,6 +286,7 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
   const [city, setCity] = useState("todas");
   const [countryOpen, setCountryOpen] = useState(false);
   const [cityOpen, setCityOpen] = useState(false);
+  const [geo, setGeo] = useState<{ status: "idle" | "locating" | "done" | "error"; msg?: string }>({ status: "idle" });
   const [query, setQuery] = useState("");
   const [dateFilter, setDateFilter] = useState<DateFilter>("todos");
   const [range, setRange] = useState({ from: "", to: "" });
@@ -531,6 +577,22 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
               )}
             </div>
           </motion.div>
+
+          {/* Cerca de mí — detección de ubicación opcional */}
+          <div className="mx-auto mt-3 flex max-w-3xl items-center justify-center gap-2 text-xs">
+            <button
+              onClick={detectLocation}
+              disabled={geo.status === "locating"}
+              className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 font-medium transition-colors disabled:opacity-60"
+              style={{ background: "var(--home-card-bg)", color: "var(--ag-brand)" }}
+            >
+              {geo.status === "locating" ? <Loader2 size={13} className="animate-spin" /> : <Navigation size={13} />}
+              {geo.status === "locating" ? "Buscando tu zona…" : "Cerca de mí"}
+            </button>
+            {geo.msg && (
+              <span style={{ color: geo.status === "error" ? "var(--ag-warning)" : "var(--home-text-soft)" }}>{geo.msg}</span>
+            )}
+          </div>
         </div>
       </section>
 
@@ -771,11 +833,11 @@ function Dropdown({
     <div className="relative">
       <button
         onClick={() => setOpen((o) => !o)}
-        className="flex h-12 w-full items-center justify-between gap-2 rounded-xl px-4 text-sm font-medium sm:w-auto"
+        className="flex h-12 w-full items-center justify-between gap-2 rounded-xl px-4 text-sm font-medium sm:w-auto sm:min-w-[160px]"
         style={{ background: "var(--home-bg-soft)", border: "1px solid var(--home-card-border)" }}
       >
-        <span className="flex items-center gap-2">{icon}{label}</span>
-        <ChevronDown size={15} className={`transition-transform ${open ? "rotate-180" : ""}`} style={{ color: "var(--home-text-soft)" }} />
+        <span className="flex items-center gap-2 truncate">{icon}<span className="truncate">{label}</span></span>
+        <ChevronDown size={15} className={`shrink-0 transition-transform ${open ? "rotate-180" : ""}`} style={{ color: "var(--home-text-soft)" }} />
       </button>
       <AnimatePresence>
         {open && (
