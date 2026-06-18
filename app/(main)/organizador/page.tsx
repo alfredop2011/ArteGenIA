@@ -25,6 +25,7 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { supabase, type EventRow, type EventCategory, type EventAudience } from "@/lib/supabase";
 import { isAdmin } from "@/lib/admin";
+import { seriesKeyFromTitle } from "@/lib/eventSeries";
 import AuthModal from "@/components/auth/AuthModal";
 
 /**
@@ -186,6 +187,14 @@ export default function OrganizadorPage() {
   const drafts = useMemo(() => events.filter((e) => e.status === "draft"), [events]);
   const cancelled = useMemo(() => events.filter((e) => e.status === "cancelled"), [events]);
 
+  // Conteo por serie: cuántas fechas tiene cada serie (para agrupar/etiquetar).
+  const seriesCounts = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const e of events) if (e.series_key) m.set(e.series_key, (m.get(e.series_key) ?? 0) + 1);
+    return m;
+  }, [events]);
+  const seriesCountOf = (e: EventRow) => (e.series_key ? seriesCounts.get(e.series_key) ?? 1 : 1);
+
   // claim token presente → tras login, volver a /organizador?claim=… (OAuth).
   const claimToken = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("claim") : null;
   const authNext = claimToken ? `/organizador?claim=${claimToken}` : "/organizador";
@@ -274,7 +283,7 @@ export default function OrganizadorPage() {
             {drafts.length > 0 && (
               <Section title="Borradores" hint="Solo tú los ves. Publícalos para que aparezcan en la agenda.">
                 {drafts.map((e) => (
-                  <EventRowCard key={e.id} ev={e} onEdit={() => setEditing(e)} onDelete={() => remove(e)} onToggle={() => togglePublish(e)} onCancel={() => toggleCancel(e)} />
+                  <EventRowCard key={e.id} ev={e} onEdit={() => setEditing(e)} onDelete={() => remove(e)} onToggle={() => togglePublish(e)} onCancel={() => toggleCancel(e)} seriesCount={seriesCountOf(e)} />
                 ))}
               </Section>
             )}
@@ -283,14 +292,14 @@ export default function OrganizadorPage() {
                 <p className="text-sm" style={{ color: "var(--home-text-soft)" }}>Aún no has publicado ningún evento.</p>
               ) : (
                 published.map((e) => (
-                  <EventRowCard key={e.id} ev={e} onEdit={() => setEditing(e)} onDelete={() => remove(e)} onToggle={() => togglePublish(e)} onCancel={() => toggleCancel(e)} />
+                  <EventRowCard key={e.id} ev={e} onEdit={() => setEditing(e)} onDelete={() => remove(e)} onToggle={() => togglePublish(e)} onCancel={() => toggleCancel(e)} seriesCount={seriesCountOf(e)} />
                 ))
               )}
             </Section>
             {cancelled.length > 0 && (
               <Section title={`Cancelados (${cancelled.length})`} hint="Siguen visibles en la agenda con el sello CANCELADO. Puedes reactivarlos.">
                 {cancelled.map((e) => (
-                  <EventRowCard key={e.id} ev={e} onEdit={() => setEditing(e)} onDelete={() => remove(e)} onToggle={() => togglePublish(e)} onCancel={() => toggleCancel(e)} />
+                  <EventRowCard key={e.id} ev={e} onEdit={() => setEditing(e)} onDelete={() => remove(e)} onToggle={() => togglePublish(e)} onCancel={() => toggleCancel(e)} seriesCount={seriesCountOf(e)} />
                 ))}
               </Section>
             )}
@@ -335,12 +344,14 @@ function EventRowCard({
   onDelete,
   onToggle,
   onCancel,
+  seriesCount = 1,
 }: {
   ev: EventRow;
   onEdit: () => void;
   onDelete: () => void;
   onToggle: () => void;
   onCancel: () => void;
+  seriesCount?: number;
 }) {
   const isPub = ev.status === "published";
   const isCancelled = ev.status === "cancelled";
@@ -358,6 +369,9 @@ function EventRowCard({
           <span className="flex items-center gap-1"><CalendarDays size={12} /> {ev.event_date} · {ev.event_time}</span>
           <span className="flex items-center gap-1"><MapPin size={12} /> {ev.venue}</span>
           <span>{ev.price == null ? "Consultar" : ev.price === 0 ? "Gratis" : `${ev.price} €`}</span>
+          {seriesCount > 1 && (
+            <span style={{ color: "var(--ag-brand)" }}>🔁 serie · {seriesCount} fechas</span>
+          )}
           {ev.source !== "organizer" && (
             <span style={{ color: "var(--ag-brand)" }}>📩 {ev.submitter_name || "anónimo"}{ev.submitter_email ? ` · ${ev.submitter_email}` : ""} · {ev.source}</span>
           )}
@@ -484,6 +498,7 @@ function EventForm({
     const payload = {
       organizer_id: userId,
       title: form.title.trim(),
+      series_key: seriesKeyFromTitle(form.title),
       description: form.description.trim() || null,
       event_date: form.event_date,
       event_time: form.event_time || "20:00",

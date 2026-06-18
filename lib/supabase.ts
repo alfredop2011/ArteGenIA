@@ -60,6 +60,7 @@ export type EventRow = {
     submitter_ref: string | null;
     submitter_name: string | null; // nombre del remitente (bot)
     submitter_email: string | null; // contacto para avisar si falta algún dato
+    series_key: string | null; // agrupa ocurrencias de una serie recurrente
     claim_token: string | null;
     title: string;
     description: string | null;

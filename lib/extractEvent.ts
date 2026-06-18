@@ -20,6 +20,7 @@ export type ExtractedEvent = {
   category: EventCategory;
   price: number | null; // null = el flyer no indica precio. Si hay tarifas = "desde" (mínimo)
   price_info: string | null; // detalle si hay varias tarifas
+  is_cancelled: boolean; // el flyer indica CANCELADO / APLAZADO / SUSPENDIDO
   has_online_sale: boolean;
   ticket_url: string | null;
   description: string | null;
@@ -39,6 +40,7 @@ const SYSTEM = `Eres un extractor de datos de flyers de eventos. Recibes la imag
   "category": string,              // UNA de: "fiesta","conciertos","festival","clases","club","corporativo"
   "price": number|null,            // euros. Si hay VARIAS tarifas, pon la MÁS BARATA aquí. 0 SOLO si dice "gratis/free/entrada libre". null si el flyer NO muestra precio. Nunca inventes
   "price_info": string|null,       // si hay varias tarifas, el detalle tal cual: "Anticipada 12€ · Taquilla 15€". null si solo hay un precio o ninguno
+  "is_cancelled": boolean,         // true si el flyer dice CANCELADO / APLAZADO / SUSPENDIDO / POSPUESTO
   "has_online_sale": boolean,      // true si el flyer indica venta/reserva online o muestra un enlace de entradas
   "ticket_url": string|null,       // URL de compra/reserva si aparece, si no null
   "description": string|null,      // 1 frase con lo relevante (artistas, line-up) o null
@@ -117,6 +119,7 @@ export async function extractEventFromImage(
       category,
       price: raw.price == null ? null : Number.isFinite(Number(raw.price)) ? Math.max(0, Number(raw.price)) : null,
       price_info: raw.price_info ? String(raw.price_info).slice(0, 120) : null,
+      is_cancelled: Boolean(raw.is_cancelled),
       has_online_sale: Boolean(raw.has_online_sale),
       ticket_url: typeof raw.ticket_url === "string" && raw.ticket_url.startsWith("http") ? raw.ticket_url : null,
       description: raw.description ? String(raw.description).slice(0, 300) : null,

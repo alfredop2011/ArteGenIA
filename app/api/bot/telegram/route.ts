@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { uploadToR2, makeKey } from "@/lib/r2";
 import { extractEventFromImage } from "@/lib/extractEvent";
+import { seriesKeyFromTitle } from "@/lib/eventSeries";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -151,15 +152,27 @@ export async function POST(req: NextRequest) {
     const ref = String(chatId);
     const claimToken = await claimTokenFor(ref);
     const knownEmail = await emailFor(ref);
-    const { error } = await supabaseAdmin.from("events").insert({
-      organizer_id: null,
-      submitter_channel: "telegram",
-      submitter_ref: ref,
+    const seriesKey = seriesKeyFromTitle(extracted.title);
+    const newStatus = extracted.is_cancelled ? "cancelled" : "published";
+
+    // ¿Ya existe esta ocurrencia? (misma serie, misma fecha, mismo remitente)
+    // → es un cambio/cancelación: ACTUALIZAMOS en vez de duplicar.
+    const { data: existing } = await supabaseAdmin
+      .from("events")
+      .select("id")
+      .eq("submitter_channel", "telegram")
+      .eq("submitter_ref", ref)
+      .eq("event_date", extracted.event_date)
+      .eq("series_key", seriesKey)
+      .limit(1)
+      .maybeSingle();
+
+    const payload = {
       submitter_name: fromName || null,
       submitter_email: knownEmail,
-      claim_token: claimToken,
+      series_key: seriesKey,
       source: "telegram",
-      status: "published",
+      status: newStatus,
       title: extracted.title,
       description: extracted.description,
       event_date: extracted.event_date,
@@ -175,15 +188,35 @@ export async function POST(req: NextRequest) {
       ticket_url: extracted.ticket_url,
       image_url: imageUrl,
       image_key: imageKey,
-    });
+    };
+
+    let error;
+    if (existing) {
+      // Actualiza la ocurrencia existente (no toca organizer_id ni claim_token).
+      ({ error } = await supabaseAdmin.from("events").update(payload).eq("id", existing.id));
+    } else {
+      ({ error } = await supabaseAdmin.from("events").insert({
+        ...payload,
+        organizer_id: null,
+        submitter_channel: "telegram",
+        submitter_ref: ref,
+        claim_token: claimToken,
+      }));
+    }
 
     if (error) {
-      console.error("[bot/telegram] insert", error.message);
+      console.error("[bot/telegram] upsert", error.message);
       await tgSend(chatId, "Ups, no pude publicar el evento. Inténtalo más tarde 🙏");
       return NextResponse.json({ ok: true });
     }
 
     const claimUrl = `${APP_URL}/organizador?claim=${claimToken}`;
+    // Encabezado según el caso: cancelado / actualizado / nuevo.
+    const head = extracted.is_cancelled
+      ? `🚫 ${hi}marqué como <b>CANCELADO</b> «${extracted.title}»`
+      : existing
+      ? `🔄 ${hi}actualicé «${extracted.title}»`
+      : `✅ ${hi}publiqué <b>${extracted.title}</b> en la agenda`;
     const priceLine = extracted.price_info
       ? `💶 ${extracted.price_info}\n`
       : extracted.price == null
@@ -205,7 +238,7 @@ export async function POST(req: NextRequest) {
 
     await tgSend(
       chatId,
-      `✅ ${hi}publiqué <b>${extracted.title}</b> en la agenda\n` +
+      `${head}\n` +
         `📅 ${extracted.event_date} · ${extracted.event_time}\n` +
         `📍 ${extracted.venue || "—"}\n` +
         priceLine +
