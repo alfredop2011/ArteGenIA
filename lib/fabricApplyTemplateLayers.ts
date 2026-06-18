@@ -85,7 +85,9 @@ export async function applyTemplateLayers(
 
         // ── TEXT ───────────────────────────────────────────────────────────
         if (layer.type === "text") {
-            addWithId(canvas, new Textbox(layer.text, {
+            const textAlign = layer.textAlign ?? "left";
+            const originX = layer.originX ?? "left";
+            const tb = new Textbox(layer.text, {
                 left: layer.x * scale,
                 top: layer.y * scale,
                 width: layer.width * scale,
@@ -94,8 +96,8 @@ export async function applyTemplateLayers(
                 fill: layer.color === "transparent" ? "" : layer.color,
                 fontWeight: layer.fontWeight ?? "normal",
                 fontStyle: layer.fontStyle ?? "normal",
-                textAlign: layer.textAlign ?? "left",
-                originX: layer.originX ?? "left",
+                textAlign,
+                originX,
                 originY: layer.originY ?? "top",
                 angle: layer.angle ?? 0,
                 charSpacing: layer.charSpacing ?? 0,
@@ -105,12 +107,51 @@ export async function applyTemplateLayers(
                 strokeWidth: (layer.strokeWidth ?? 0) * scale,
                 splitByGrapheme: false,
                 editable: true,
-                // selectable/evented explicitos: Fabric tiene default true, pero
-                // forzarlo evita roturas si alguna actualizacion de la libreria
-                // cambia el comportamiento por defecto.
                 selectable: true,
                 evented: true,
-            }), layer.id);
+            });
+
+            // Bbox ajustado al texto real (solo cuando cabe en 1 línea).
+            // Sin esto, plantillas que declaran width=1080 (todo el lienzo)
+            // para centrar texto, al seleccionarse muestran handles pegados
+            // a los bordes del canvas — confunde al usuario ("se sale").
+            // Compensamos `left` para que la posición visual del texto NO
+            // cambie (importante para thumbnails StaticCanvas y para que
+            // el texto no "salte" al hacer click en el editor).
+            try {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const lines = (tb as any).textLines as string[] | undefined;
+                if (lines && lines.length === 1) {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    const realWidth = (tb as any).calcTextWidth?.() as number | undefined;
+                    if (typeof realWidth === "number" && realWidth > 0) {
+                        const newWidth = Math.ceil(realWidth) + 4;
+                        if (newWidth < tb.width) {
+                            const dw = tb.width - newWidth;
+                            // Compensación según originX + textAlign:
+                            //  - originX="center"/"right": el bbox ya se reposiciona
+                            //    alrededor de su punto de anclaje al cambiar width.
+                            //    No tocar left.
+                            //  - originX="left" + textAlign="center": el texto estaba
+                            //    centrado dentro del bbox grande; al achicarlo, hay
+                            //    que mover left a la derecha (dw/2) para mantenerlo.
+                            //  - originX="left" + textAlign="right": mover left (dw).
+                            //  - originX="left" + textAlign="left": no mover.
+                            let leftDelta = 0;
+                            if (originX === "left") {
+                                if (textAlign === "center") leftDelta = dw / 2;
+                                else if (textAlign === "right") leftDelta = dw;
+                            }
+                            tb.set({ width: newWidth, left: tb.left + leftDelta });
+                            tb.setCoords();
+                        }
+                    }
+                }
+            } catch {
+                // Si Fabric cambia API interna, fallback silencioso.
+            }
+
+            addWithId(canvas, tb, layer.id);
         }
 
         // ── IMAGE ──────────────────────────────────────────────────────────
