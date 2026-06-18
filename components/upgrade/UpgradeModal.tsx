@@ -1,7 +1,28 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect } from "react";
 import { Sparkles, X, Check } from "lucide-react";
+
+// UX#20 — Límite "1 modal upgrade por sesión".
+// Usamos sessionStorage (no localStorage) para que se resetee cuando el user
+// cierra el tab/navegador. La 2ª, 3ª... veces que el user intente una feature
+// Pro en la misma sesión, el modal NO reaparece — autocierra silenciosamente.
+// Razón: tras la 1ª vez el user ya sabe que la feature es Pro; mostrar el
+// modal de nuevo es spam.
+const SHOWN_KEY = "upgradeModal_shownThisSession";
+
+function wasShownThisSession(): boolean {
+  if (typeof window === "undefined") return false;
+  try { return window.sessionStorage.getItem(SHOWN_KEY) === "1"; }
+  catch { return false; }
+}
+
+function markShownThisSession() {
+  if (typeof window === "undefined") return;
+  try { window.sessionStorage.setItem(SHOWN_KEY, "1"); }
+  catch { /* ignore quota errors */ }
+}
 
 /**
  * Modal contextual "Sube a Pro" para puntos de fricción del editor.
@@ -117,6 +138,20 @@ export function UpgradeModal({
   const pricingHref = nextUrl
     ? `/pricing?next=${encodeURIComponent(nextUrl)}`
     : "/pricing";
+
+  // UX#20 — Si ya se mostró este modal en la sesión, autocerrar.
+  // Si no, marcar como mostrado para que la próxima vez no aparezca.
+  const skipThisRender = wasShownThisSession();
+  useEffect(() => {
+    if (skipThisRender) {
+      onClose();
+      return;
+    }
+    markShownThisSession();
+    // Solo en mount. onClose es estable del padre.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  if (skipThisRender) return null;
 
   return (
     <>

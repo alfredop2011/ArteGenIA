@@ -17,6 +17,28 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { trackCreditsExhausted, trackUpgradeClicked, type AnalyticsModule } from "@/lib/analytics";
 
+// UX#19 — clave localStorage para recordar "no preguntar más hoy".
+// Almacena un timestamp ms. Si Date.now() < valor, el modal se autoconfirma
+// sin mostrar UI. Se resetea cada 24h para evitar que el user gaste sin querer
+// si baja del plan o cambia precios.
+const SKIP_KEY = "creditConfirm_skipUntil";
+const SKIP_TTL_MS = 24 * 60 * 60 * 1000;
+
+function readSkipUntil(): number {
+  if (typeof window === "undefined") return 0;
+  try {
+    const v = window.localStorage.getItem(SKIP_KEY);
+    return v ? parseInt(v, 10) || 0 : 0;
+  } catch { return 0; }
+}
+
+function writeSkipFor24h() {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(SKIP_KEY, String(Date.now() + SKIP_TTL_MS));
+  } catch { /* ignore quota errors */ }
+}
+
 export type ConfirmCreditModalProps = {
   open: boolean;
   onClose: () => void;
@@ -49,6 +71,7 @@ export function ConfirmCreditModal({
   open, onClose, onConfirm, actionLabel, amount, balance, daysUntilReset, exportDetails,
 }: ConfirmCreditModalProps) {
   const [loading, setLoading] = useState(false);
+  const [skipNext, setSkipNext] = useState(false);
   const insufficient = balance < amount;
 
   // Z.9 — track credits_exhausted cuando se abre el modal en estado insuficiente
@@ -64,12 +87,30 @@ export function ConfirmCreditModal({
     }
   }, [open, insufficient, amount, balance, daysUntilReset]);
 
+  // UX#19 — Auto-confirm si el user marcó "no preguntar más hoy" dentro de las
+  // últimas 24h. Solo se aplica si tiene créditos suficientes (los estados
+  // exhausted/upgrade siempre se muestran porque requieren decisión activa).
+  useEffect(() => {
+    if (!open || insufficient) return;
+    if (readSkipUntil() <= Date.now()) return;
+    // Auto-confirmar silenciosamente
+    void (async () => {
+      try { await onConfirm(); } finally { onClose(); }
+    })();
+    // Solo en mount/cambio de open. onConfirm/onClose son estables del padre.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, insufficient]);
+
   if (!open) return null;
+  // Si auto-skip activo, no renderizar nada — el useEffect se encarga.
+  if (!insufficient && readSkipUntil() > Date.now()) return null;
+
   const afterBalance = balance - amount;
 
   const handleConfirm = async () => {
     setLoading(true);
     try {
+      if (skipNext) writeSkipFor24h();
       await onConfirm();
       onClose();
     } finally {
@@ -196,6 +237,19 @@ export function ConfirmCreditModal({
                   </div>
                 </div>
               </div>
+
+              {/* UX#19 — Checkbox 'no volver a preguntar hoy' (24h en localStorage) */}
+              <label className="flex items-center gap-2 mb-3 cursor-pointer select-none group">
+                <input
+                  type="checkbox"
+                  checked={skipNext}
+                  onChange={(e) => setSkipNext(e.target.checked)}
+                  className="w-4 h-4 rounded border-white/20 bg-white/[0.04] checked:bg-purple-500 checked:border-purple-500 focus:ring-2 focus:ring-purple-500/40 cursor-pointer accent-purple-500"
+                />
+                <span className="text-[11.5px] text-gray-400 group-hover:text-gray-300">
+                  No volver a preguntar hoy
+                </span>
+              </label>
 
               <div className="flex gap-2">
                 <button
