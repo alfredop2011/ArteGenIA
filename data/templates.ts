@@ -410,10 +410,11 @@ export const templates: Template[] = [
             { id: "title-line1", type: "text", text: "CLASES DE", x: 540, y: 110, width: 1080, fontSize: 108, fontFamily: "Anton, Impact, sans-serif", color: "#FFFFFF", fontWeight: "900", textAlign: "center", originX: "center", originY: "top", charSpacing: -10 },
             // TÍTULO hero línea 2 (amarillo, sobre negro)
             { id: "title-line2", type: "text", text: "BAILE", x: 540, y: 210, width: 1080, fontSize: 108, fontFamily: "Anton, Impact, sans-serif", color: "#FFE600", fontWeight: "900", textAlign: "center", originX: "center", originY: "top", charSpacing: -10 },
-            // PAREJA recortada a medio cuerpo (crop torso+cabeza, no piernas)
-            // cropHeight=900: muestra desde y=0 hasta y=900 de la imagen original
-            // (asume imagen ~1080x1350 — si es más pequeña, se muestra entera sin romper)
-            { id: "couple", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/07_lucia_mateo_pareja.png", x: 540, y: 290, scaleX: 0.92, scaleY: 0.92, originX: "center", originY: "top", cropX: 0, cropY: 0, cropWidth: 1080, cropHeight: 900, shadow: { color: "rgba(124,47,190,0.7)", blur: 60, offsetX: 0, offsetY: 0 } },
+            // PAREJA: imagen real es 500x500 PNG transparente.
+            // scale 1.5 → render 750×750, encaja en el bloque amarillo (760 alto).
+            // Sin crop (la imagen ya es cuadrada y cabe entera).
+            // Shadow más suave para no crear halo cuadrado visible.
+            { id: "couple", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/07_lucia_mateo_pareja.png", x: 540, y: 310, scaleX: 1.4, scaleY: 1.4, originX: "center", originY: "top", shadow: { color: "rgba(124,47,190,0.35)", blur: 30, offsetX: 0, offsetY: 0 } },
             // FRANJA decorativa negra inferior del bloque amarillo (disimula corte)
             { id: "yellow-bottom-band", type: "shape", shape: "rect", x: 60, y: 1010, width: 960, height: 70, fill: "#0D0D0D", selectable: false },
             // TEXTO sobre franja: tagline emocional
