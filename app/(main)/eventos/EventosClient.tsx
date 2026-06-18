@@ -307,7 +307,8 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
   const [query, setQuery] = useState("");
   const [dateFilter, setDateFilter] = useState<DateFilter>("todos");
   const [range, setRange] = useState({ from: "", to: "" });
-  const [activeCats, setActiveCats] = useState<Set<Category>>(new Set());
+  // Por defecto mostramos Conciertos + Bailes sociales (el foco de la escena).
+  const [activeCats, setActiveCats] = useState<Set<Category>>(new Set<Category>(["conciertos", "social"]));
   const [activeAuds, setActiveAuds] = useState<Set<Audience>>(new Set());
   const [moreFilters, setMoreFilters] = useState(false); // panel "Más filtros"
   const [onlyFree, setOnlyFree] = useState(false);
@@ -622,9 +623,21 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
               </button>
             </div>
           </motion.div>
-          {geo.msg && (
-            <p className="mx-auto mt-2 max-w-3xl text-center text-xs" style={{ color: geo.status === "error" ? "var(--ag-warning)" : "var(--home-text-soft)" }}>{geo.msg}</p>
-          )}
+          {geo.status === "error" ? (
+            <div className="mx-auto mt-2 max-w-sm text-center">
+              <p className="text-xs" style={{ color: "var(--ag-warning)" }}>{geo.msg} · escribe tu ciudad:</p>
+              <CityAutocomplete
+                cities={cities}
+                onPick={(id) => {
+                  const lbl = cities.find((c) => c.id === id)?.label ?? "";
+                  setCity(id);
+                  setGeo({ status: "done", msg: `Mostrando ${lbl}` });
+                }}
+              />
+            </div>
+          ) : geo.msg ? (
+            <p className="mx-auto mt-2 max-w-3xl text-center text-xs" style={{ color: "var(--home-text-soft)" }}>{geo.msg}</p>
+          ) : null}
         </div>
       </section>
 
@@ -876,6 +889,45 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
           />
         )}
       </AnimatePresence>
+    </div>
+  );
+}
+
+// ─── Autocompletado de ciudad (fallback si falla el GPS) ───────────────────
+
+function CityAutocomplete({
+  cities,
+  onPick,
+}: {
+  cities: { id: string; label: string; available: boolean }[];
+  onPick: (id: string) => void;
+}) {
+  const [q, setQ] = useState("");
+  const norm = (s: string) => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+  const matches = cities.filter((c) => c.id !== "todas" && c.available && norm(c.label).includes(norm(q.trim()))).slice(0, 6);
+  return (
+    <div className="relative mt-2">
+      <input
+        value={q}
+        onChange={(e) => setQ(e.target.value)}
+        placeholder="Escribe tu ciudad…"
+        autoFocus
+        className="w-full rounded-xl px-3 py-2 text-sm outline-none"
+        style={{ background: "var(--home-bg-soft)", border: "1px solid var(--home-card-border)", color: "var(--home-text)" }}
+      />
+      {q.trim() && (
+        <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-xl text-left shadow-lg" style={{ background: "var(--home-bg-soft)", border: "1px solid var(--home-card-border)" }}>
+          {matches.length > 0 ? (
+            matches.map((c) => (
+              <button key={c.id} onClick={() => onPick(c.id)} className="block w-full px-3 py-2 text-left text-sm hover:bg-ag-card" style={{ color: "var(--home-text)" }}>
+                {c.label}
+              </button>
+            ))
+          ) : (
+            <p className="px-3 py-2 text-xs" style={{ color: "var(--home-text-soft)" }}>Aún no tenemos eventos ahí. Prueba Madrid, Barcelona, Valencia…</p>
+          )}
+        </div>
+      )}
     </div>
   );
 }
