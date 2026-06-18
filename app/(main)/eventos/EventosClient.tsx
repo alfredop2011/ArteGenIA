@@ -34,6 +34,8 @@ import {
   Navigation,
   Loader2,
   Maximize2,
+  Crosshair,
+  SlidersHorizontal,
 } from "lucide-react";
 
 /**
@@ -307,7 +309,7 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
   const [range, setRange] = useState({ from: "", to: "" });
   const [activeCats, setActiveCats] = useState<Set<Category>>(new Set());
   const [activeAuds, setActiveAuds] = useState<Set<Audience>>(new Set());
-  const [audOpen, setAudOpen] = useState(false); // panel "Para quién es"
+  const [moreFilters, setMoreFilters] = useState(false); // panel "Más filtros"
   const [onlyFree, setOnlyFree] = useState(false);
   const [view, setView] = useState<"lista" | "calendario">("lista");
   const [calMonth, setCalMonth] = useState(5); // junio (0-indexed)
@@ -589,39 +591,36 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
               ))}
             </Dropdown>
 
-            {/* Búsqueda libre */}
+            {/* Búsqueda libre + botón de ubicación (◎) */}
             <div className="relative flex-1">
               <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2" style={{ color: "var(--home-text-soft)" }} />
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Busca por nombre, sala o barrio…"
-                className="h-12 w-full rounded-xl pl-11 pr-10 text-sm outline-none"
+                placeholder="Busca eventos, salas o barrios"
+                className="h-12 w-full rounded-xl pl-11 pr-20 text-sm outline-none"
                 style={{ background: "var(--home-bg-soft)", border: "1px solid var(--home-card-border)", color: "var(--home-text)" }}
               />
               {query && (
-                <button onClick={() => setQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2" style={{ color: "var(--home-text-soft)" }}>
+                <button onClick={() => setQuery("")} className="absolute right-11 top-1/2 -translate-y-1/2" style={{ color: "var(--home-text-soft)" }}>
                   <X size={16} />
                 </button>
               )}
+              <button
+                onClick={detectLocation}
+                disabled={geo.status === "locating"}
+                title="Cerca de mí"
+                aria-label="Cerca de mí"
+                className="absolute right-3 top-1/2 -translate-y-1/2 disabled:opacity-60"
+                style={{ color: "var(--ag-brand)" }}
+              >
+                {geo.status === "locating" ? <Loader2 size={18} className="animate-spin" /> : <Crosshair size={18} />}
+              </button>
             </div>
           </motion.div>
-
-          {/* Cerca de mí — detección de ubicación opcional */}
-          <div className="mx-auto mt-3 flex max-w-3xl items-center justify-center gap-2 text-xs">
-            <button
-              onClick={detectLocation}
-              disabled={geo.status === "locating"}
-              className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 font-medium transition-colors disabled:opacity-60"
-              style={{ background: "var(--home-card-bg)", color: "var(--ag-brand)" }}
-            >
-              {geo.status === "locating" ? <Loader2 size={13} className="animate-spin" /> : <Navigation size={13} />}
-              {geo.status === "locating" ? "Buscando tu zona…" : "Cerca de mí"}
-            </button>
-            {geo.msg && (
-              <span style={{ color: geo.status === "error" ? "var(--ag-warning)" : "var(--home-text-soft)" }}>{geo.msg}</span>
-            )}
-          </div>
+          {geo.msg && (
+            <p className="mx-auto mt-2 max-w-3xl text-center text-xs" style={{ color: geo.status === "error" ? "var(--ag-warning)" : "var(--home-text-soft)" }}>{geo.msg}</p>
+          )}
         </div>
       </section>
 
@@ -629,17 +628,58 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
       <div className="sticky top-0 z-10 backdrop-blur" style={{ background: "var(--header-bg)", borderBottom: "1px solid var(--header-border)" }}>
         <div className="mx-auto max-w-6xl px-4 py-3">
           <div className="flex items-center justify-between gap-3">
-            <div className="flex flex-wrap gap-2">
-              {DATE_FILTERS.map((f) => (
-                <button
-                  key={f.id}
-                  onClick={() => setDateFilter(f.id)}
-                  className="rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors"
-                  style={dateFilter === f.id ? { background: "var(--ag-brand)", color: "#fff" } : { background: "var(--home-card-bg)", color: "var(--home-text-muted)" }}
-                >
-                  {f.label}
-                </button>
-              ))}
+            {/* Chips rápidos (scroll horizontal en móvil) */}
+            <div className="flex flex-1 gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
+              {(["hoy", "finde"] as DateFilter[]).map((id) => {
+                const f = DATE_FILTERS.find((x) => x.id === id)!;
+                const on = dateFilter === id;
+                return (
+                  <button
+                    key={id}
+                    onClick={() => setDateFilter(on ? "todos" : id)}
+                    className="shrink-0 rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors"
+                    style={on ? { background: "var(--ag-brand)", color: "#fff" } : { background: "var(--home-card-bg)", color: "var(--home-text-muted)" }}
+                  >
+                    {f.label}
+                  </button>
+                );
+              })}
+              <button
+                onClick={() => setOnlyFree((v) => !v)}
+                className="flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all"
+                style={onlyFree ? { background: "var(--ag-success-bg)", color: "var(--ag-success)", border: "1px solid var(--ag-success-border)" } : { background: "var(--home-card-bg)", color: "var(--home-text-muted)" }}
+              >
+                <Ticket size={13} /> Gratis
+              </button>
+              {(["conciertos", "teatro", "social"] as Category[]).map((c) => {
+                const Cat = CATEGORIES[c];
+                const on = activeCats.has(c);
+                return (
+                  <button
+                    key={c}
+                    onClick={() => toggleCat(c)}
+                    className="flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all"
+                    style={on ? { background: "var(--ag-brand-bg)", color: "var(--ag-brand)", border: "1px solid var(--ag-brand-border)" } : { background: "var(--home-card-bg)", color: "var(--home-text-muted)" }}
+                  >
+                    <Cat.icon size={13} /> {Cat.label}
+                  </button>
+                );
+              })}
+              <button
+                onClick={detectLocation}
+                className="flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all"
+                style={{ background: "var(--home-card-bg)", color: "var(--ag-brand)" }}
+              >
+                <Navigation size={13} /> Cerca de mí
+              </button>
+              <button
+                onClick={() => setMoreFilters((o) => !o)}
+                className="flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all"
+                style={moreFilters || activeAuds.size > 0 || showFavs ? { background: "var(--ag-brand-bg)", color: "var(--ag-brand)", border: "1px solid var(--ag-brand-border)" } : { background: "var(--home-card-bg)", color: "var(--home-text-muted)" }}
+              >
+                <SlidersHorizontal size={13} /> Más filtros
+                <ChevronDown size={12} className={`transition-transform ${moreFilters ? "rotate-180" : ""}`} />
+              </button>
             </div>
             <div className="flex shrink-0 rounded-full p-0.5" style={{ background: "var(--home-card-bg)" }}>
               {([
@@ -659,6 +699,60 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
               ))}
             </div>
           </div>
+
+          {/* ── MÁS FILTROS (plegable): fechas, categorías, audiencia ── */}
+          <AnimatePresence>
+            {moreFilters && (
+              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
+                <div className="mt-3 space-y-3 border-t pt-3" style={{ borderColor: "var(--home-divider)" }}>
+                  <div>
+                    <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide" style={{ color: "var(--home-text-soft)" }}>Cuándo</p>
+                    <div className="flex flex-wrap gap-2">
+                      {DATE_FILTERS.map((f) => (
+                        <button key={f.id} onClick={() => setDateFilter(f.id)} className="rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors"
+                          style={dateFilter === f.id ? { background: "var(--ag-brand)", color: "#fff" } : { background: "var(--home-card-bg)", color: "var(--home-text-muted)" }}>
+                          {f.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide" style={{ color: "var(--home-text-soft)" }}>Categoría</p>
+                    <div className="flex flex-wrap gap-2">
+                      {(Object.keys(CATEGORIES) as Category[]).map((c) => {
+                        const Cat = CATEGORIES[c];
+                        const on = activeCats.has(c);
+                        return (
+                          <button key={c} onClick={() => toggleCat(c)} className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all"
+                            style={on ? { background: "var(--ag-brand-bg)", color: "var(--ag-brand)", border: "1px solid var(--ag-brand-border)" } : { background: "transparent", color: "var(--home-text-muted)", border: "1px solid var(--home-card-border)" }}>
+                            <Cat.icon size={13} /> {Cat.label}
+                          </button>
+                        );
+                      })}
+                      <button onClick={() => setShowFavs((f) => !f)} className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all"
+                        style={showFavs ? { background: "var(--ag-danger-bg)", color: "var(--ag-danger)", border: "1px solid var(--ag-danger-border)" } : { background: "transparent", color: "var(--home-text-muted)", border: "1px solid var(--home-card-border)" }}>
+                        <Heart size={13} fill={showFavs ? "currentColor" : "none"} /> Guardados {favs.size > 0 && `(${favs.size})`}
+                      </button>
+                    </div>
+                  </div>
+                  <div>
+                    <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide" style={{ color: "var(--home-text-soft)" }}>Para quién es</p>
+                    <div className="flex flex-wrap gap-2">
+                      {AUDIENCES.map((a) => {
+                        const on = activeAuds.has(a.id);
+                        return (
+                          <button key={a.id} onClick={() => toggleAud(a.id)} className="rounded-full px-3 py-1.5 text-xs font-medium transition-all"
+                            style={on ? { background: "var(--ag-brand-bg)", color: "var(--ag-brand)", border: "1px solid var(--ag-brand-border)" } : { background: "transparent", color: "var(--home-text-muted)", border: "1px solid var(--home-card-border)" }}>
+                            {a.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Rango personalizado de fechas */}
           <AnimatePresence>
@@ -691,75 +785,6 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
             )}
           </AnimatePresence>
 
-          {/* Categorías + gratis + guardados */}
-          <div className="mt-2.5 flex flex-wrap gap-2">
-            {(Object.keys(CATEGORIES) as Category[]).map((c) => {
-              const Cat = CATEGORIES[c];
-              const on = activeCats.has(c);
-              return (
-                <button
-                  key={c}
-                  onClick={() => toggleCat(c)}
-                  className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all"
-                  style={on ? { background: "var(--ag-brand-bg)", color: "var(--ag-brand)", border: "1px solid var(--ag-brand-border)" } : { background: "transparent", color: "var(--home-text-muted)", border: "1px solid var(--home-card-border)" }}
-                >
-                  <Cat.icon size={13} />
-                  {Cat.label}
-                </button>
-              );
-            })}
-            <button
-              onClick={() => setOnlyFree((f) => !f)}
-              className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all"
-              style={onlyFree ? { background: "var(--ag-success-bg)", color: "var(--ag-success)", border: "1px solid var(--ag-success-border)" } : { background: "transparent", color: "var(--home-text-muted)", border: "1px solid var(--home-card-border)" }}
-            >
-              <Ticket size={13} /> Gratis
-            </button>
-            <button
-              onClick={() => setShowFavs((f) => !f)}
-              className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all"
-              style={showFavs ? { background: "var(--ag-danger-bg)", color: "var(--ag-danger)", border: "1px solid var(--ag-danger-border)" } : { background: "transparent", color: "var(--home-text-muted)", border: "1px solid var(--home-card-border)" }}
-            >
-              <Heart size={13} fill={showFavs ? "currentColor" : "none"} /> Guardados {favs.size > 0 && `(${favs.size})`}
-            </button>
-            {/* "Para quién es" — filtro de audiencia (secundario, plegable). */}
-            <button
-              onClick={() => setAudOpen((o) => !o)}
-              className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all"
-              style={activeAuds.size > 0 || audOpen ? { background: "var(--ag-brand-bg)", color: "var(--ag-brand)", border: "1px solid var(--ag-brand-border)" } : { background: "transparent", color: "var(--home-text-muted)", border: "1px solid var(--home-card-border)" }}
-            >
-              <Users size={13} /> Para quién es {activeAuds.size > 0 && `(${activeAuds.size})`}
-              <ChevronDown size={12} className={`transition-transform ${audOpen ? "rotate-180" : ""}`} />
-            </button>
-          </div>
-
-          {/* Pills de audiencia (plegable) */}
-          <AnimatePresence>
-            {audOpen && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                className="overflow-hidden"
-              >
-                <div className="mt-2.5 flex flex-wrap gap-2">
-                  {AUDIENCES.map((a) => {
-                    const on = activeAuds.has(a.id);
-                    return (
-                      <button
-                        key={a.id}
-                        onClick={() => toggleAud(a.id)}
-                        className="rounded-full px-3 py-1.5 text-xs font-medium transition-all"
-                        style={on ? { background: "var(--ag-brand-bg)", color: "var(--ag-brand)", border: "1px solid var(--ag-brand-border)" } : { background: "transparent", color: "var(--home-text-muted)", border: "1px solid var(--home-card-border)" }}
-                      >
-                        {a.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
         </div>
       </div>
 
