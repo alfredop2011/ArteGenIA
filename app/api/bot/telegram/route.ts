@@ -124,19 +124,32 @@ async function fillLatestMissingPrice(ref: string, price: number, info: string |
 }
 
 // Eventos del remitente, para dar contexto al "cerebro" (incluye analítica).
+// Si faltan columnas de analítica (migración 2026_06_18e sin aplicar), reintenta
+// sin ellas para que el bot SIEMPRE conozca los eventos del organizador.
 async function loadBrainEvents(ref: string): Promise<BrainEvent[]> {
-  const { data } = await supabaseAdmin
+  type Row = {
+    id: string; title: string; event_date: string; event_time: string; venue: string;
+    price: number | null; status: string; view_count?: number; click_count?: number; ticket_url: string | null;
+  };
+  const full = await supabaseAdmin
     .from("events")
     .select("id,title,event_date,event_time,venue,price,status,view_count,click_count,ticket_url")
     .eq("submitter_channel", "telegram")
     .eq("submitter_ref", ref)
     .order("event_date", { ascending: true })
     .limit(40);
-  type Row = {
-    id: string; title: string; event_date: string; event_time: string; venue: string;
-    price: number | null; status: string; view_count: number; click_count: number; ticket_url: string | null;
-  };
-  return ((data as Row[]) ?? []).map((r) => ({
+  // Fallback sin columnas de analítica (migración 2026_06_18e sin aplicar).
+  const basic = full.error
+    ? await supabaseAdmin
+        .from("events")
+        .select("id,title,event_date,event_time,venue,price,status,ticket_url")
+        .eq("submitter_channel", "telegram")
+        .eq("submitter_ref", ref)
+        .order("event_date", { ascending: true })
+        .limit(40)
+    : null;
+  const rows = (full.error ? basic?.data : full.data) as Row[] | null;
+  return (rows ?? []).map((r) => ({
     id: r.id, title: r.title, event_date: r.event_date, event_time: r.event_time, venue: r.venue,
     price: r.price, status: r.status, viewCount: r.view_count ?? 0, clickCount: r.click_count ?? 0,
     hasLink: !!r.ticket_url,
@@ -282,15 +295,21 @@ export async function POST(req: NextRequest) {
       }
 
       // 3) Cerebro conversacional (Claude): entiende y ejecuta acciones.
-      const today = new Date().toISOString().slice(0, 10);
-      const reply = await converse({
-        events: await loadBrainEvents(String(chatId)),
-        userName: fromName,
-        text: brainText,
-        today,
-        runTool: makeRunTool(String(chatId)),
-      });
-      await tgSend(chatId, reply);
+      // Nunca se queda mudo: si algo falla, responde igualmente.
+      try {
+        const today = new Date().toISOString().slice(0, 10);
+        const reply = await converse({
+          events: await loadBrainEvents(String(chatId)),
+          userName: fromName,
+          text: brainText,
+          today,
+          runTool: makeRunTool(String(chatId)),
+        });
+        await tgSend(chatId, reply || "Cuéntame, ¿qué necesitas? Puedo subir tu evento (mándame el flyer), buscar planes o cambiar algo.");
+      } catch (e) {
+        console.error("[bot/telegram] brain", e);
+        await tgSend(chatId, "Uy, algo se me cruzó 😅. Reinténtalo en un momento, o mándame el flyer y te lo subo.");
+      }
       return NextResponse.json({ ok: true });
     }
 
