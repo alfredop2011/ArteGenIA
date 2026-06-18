@@ -1323,5 +1323,67 @@ export const templatesMeta: TemplateMeta[] = [
         "height": 1080
       }
     ]
+  },
+  {
+    "id": 52,
+    "title": "DJ Techno Dark",
+    "category": "Club / Discoteca",
+    "image": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dj/Dj-2.png",
+    "premium": false,
+    "audience": [
+      "productoras",
+      "freelance"
+    ],
+    "internalTags": [
+      "complete"
+    ],
+    "variants": [
+      {
+        "format": "portrait",
+        "width": 1080,
+        "height": 1350
+      }
+    ]
+  },
+  {
+    "id": 53,
+    "title": "DJ Day Pool",
+    "category": "Club / Discoteca",
+    "image": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dj/Dj-1.png",
+    "premium": false,
+    "audience": [
+      "productoras",
+      "freelance"
+    ],
+    "internalTags": [
+      "complete"
+    ],
+    "variants": [
+      {
+        "format": "portrait",
+        "width": 1080,
+        "height": 1350
+      }
+    ]
+  },
+  {
+    "id": 54,
+    "title": "DJ Festival Multi",
+    "category": "Festival",
+    "image": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dj/Dj-1.png",
+    "premium": false,
+    "audience": [
+      "productoras"
+    ],
+    "internalTags": [
+      "complete"
+    ],
+    "variants": [
+      {
+        "format": "portrait",
+        "width": 1080,
+        "height": 1350
+      }
+    ]
   }
 ];

@@ -4552,4 +4552,162 @@ export const templates: Template[] = [
         ],
     },
 
+// ─────────────────────────────────────────────────────────────────────
+// 52 — DJ Techno Dark (DJ-2, underground violeta + glitch)
+//      Estética: negro pleno + glow violeta + glitch lines RGB offset
+// ─────────────────────────────────────────────────────────────────────
+    {
+        id: 52,
+        title: "DJ Techno Dark",
+        category: "Club / Discoteca",
+        image: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dj/Dj-2.png",
+        premium: false,
+        audience: ["productoras", "freelance"],
+        internalTags: ["complete"],
+        variants: [
+            { format: "portrait", width: 1080, height: 1350, layers: [
+                // FONDO negro plenitud
+                { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1350, fill: "#0a0a0a", selectable: false },
+                // Glow violeta ambient esquina superior derecha
+                { id: "glow-violet", type: "shape", shape: "circle", x: 880, y: 200, width: 700, height: 700, radius: 350, fill: "#7B2FBE", opacity: 0.30, originX: "center", originY: "center", selectable: false },
+                // Glow cyan ambient esquina inferior izquierda
+                { id: "glow-cyan", type: "shape", shape: "circle", x: 100, y: 1150, width: 600, height: 600, radius: 300, fill: "#06b6d4", opacity: 0.18, originX: "center", originY: "center", selectable: false },
+                // Líneas glitch horizontales (rayas violetas que simulan VHS distortion)
+                { id: "glitch-1", type: "shape", shape: "rect", x: 0, y: 280, width: 1080, height: 2, fill: "#a855f7", opacity: 0.45, selectable: false },
+                { id: "glitch-2", type: "shape", shape: "rect", x: 0, y: 285, width: 1080, height: 1, fill: "#22d3ee", opacity: 0.30, selectable: false },
+                { id: "glitch-3", type: "shape", shape: "rect", x: 0, y: 820, width: 1080, height: 2, fill: "#a855f7", opacity: 0.35, selectable: false },
+                // KICKER top
+                { id: "kicker", type: "text", text: "U N D E R G R O U N D   ·   T E C H N O", x: 540, y: 110, width: 1080, fontSize: 14, fontFamily: "Montserrat, sans-serif", color: "#a855f7", fontWeight: "700", textAlign: "center", originX: "center", originY: "top", charSpacing: 600 },
+                // TÍTULO hero — TECHNO en violeta gigante
+                { id: "title-1", type: "text", text: "TECHNO", x: 540, y: 160, width: 1080, fontSize: 160, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", fontWeight: "900", textAlign: "center", originX: "center", originY: "top", charSpacing: 40 },
+                // Subtítulo NIGHT en violeta neon
+                { id: "title-2", type: "text", text: "NIGHT", x: 540, y: 310, width: 1080, fontSize: 130, fontFamily: "Anton, Impact, sans-serif", color: "#a855f7", fontWeight: "900", textAlign: "center", originX: "center", originY: "top", charSpacing: 100 },
+                // DJ photo centrada con glow violeta
+                { id: "dj-photo", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dj/Dj-2.png", x: 540, y: 480, scaleX: 1.0, scaleY: 1.0, originX: "center", originY: "top", shadow: { color: "rgba(168,85,247,0.75)", blur: 70, offsetX: 0, offsetY: 0 } },
+                // Banda inferior con info — fondo violeta translúcido
+                { id: "info-band-bg", type: "shape", shape: "rect", x: 0, y: 1070, width: 1080, height: 280, fill: "rgba(168,85,247,0.18)", selectable: false },
+                { id: "info-band-top-line", type: "shape", shape: "rect", x: 0, y: 1070, width: 1080, height: 2, fill: "#a855f7", selectable: false },
+                // DJ name hero
+                { id: "dj-name", type: "text", text: "DJ AXIS", x: 540, y: 1095, width: 1080, fontSize: 56, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", fontWeight: "900", textAlign: "center", originX: "center", originY: "top", charSpacing: 200 },
+                // Fecha hero amarilla
+                { id: "date", type: "text", text: "VIE 28 JUN  ·  23:30 H", x: 540, y: 1170, width: 1080, fontSize: 32, fontFamily: "Anton, Impact, sans-serif", color: "#facc15", fontWeight: "900", textAlign: "center", originX: "center", originY: "top", charSpacing: 150 },
+                // Sala + ciudad
+                { id: "venue", type: "text", text: "MONDO DISKO  ·  MADRID", x: 540, y: 1225, width: 1080, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.85)", fontWeight: "600", textAlign: "center", originX: "center", originY: "top", charSpacing: 400 },
+                // Entrada
+                { id: "doors", type: "text", text: "12€ ANT  ·  15€ PUERTA  ·  +18", x: 540, y: 1280, width: 1080, fontSize: 16, fontFamily: "Montserrat, sans-serif", color: "rgba(168,85,247,0.95)", fontWeight: "700", textAlign: "center", originX: "center", originY: "top", charSpacing: 300 },
+            ] },
+        ],
+    },
+
+// ─────────────────────────────────────────────────────────────────────
+// 53 — DJ Day Pool (DJ-1, sunset cyan + pool party brunch)
+//      Estética: gradiente sunset + acentos cyan + vibe diurna
+// ─────────────────────────────────────────────────────────────────────
+    {
+        id: 53,
+        title: "DJ Day Pool",
+        category: "Club / Discoteca",
+        image: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dj/Dj-1.png",
+        premium: false,
+        audience: ["productoras", "freelance"],
+        internalTags: ["complete"],
+        variants: [
+            { format: "portrait", width: 1080, height: 1350, layers: [
+                // FONDO base — naranja sunset
+                { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1350, fill: "#fb923c", selectable: false },
+                // Capa rosa coral arriba (gradiente simulado)
+                { id: "sunset-pink", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 500, fill: "#f472b6", opacity: 0.65, selectable: false },
+                // Capa amarilla en medio (gradiente simulado)
+                { id: "sunset-yellow", type: "shape", shape: "rect", x: 0, y: 350, width: 1080, height: 300, fill: "#fde047", opacity: 0.45, selectable: false },
+                // "Sol" — círculo cyan que representa pool/agua
+                { id: "sun", type: "shape", shape: "circle", x: 540, y: 950, width: 900, height: 900, radius: 450, fill: "#06b6d4", opacity: 0.85, originX: "center", originY: "center", selectable: false },
+                // Rayos de sol — barras blancas radiales (decoración)
+                { id: "ray-1", type: "shape", shape: "rect", x: 480, y: 50, width: 6, height: 120, fill: "#ffffff", opacity: 0.55, selectable: false },
+                { id: "ray-2", type: "shape", shape: "rect", x: 600, y: 50, width: 6, height: 120, fill: "#ffffff", opacity: 0.55, selectable: false },
+                { id: "ray-3", type: "shape", shape: "rect", x: 360, y: 80, width: 4, height: 90, fill: "#ffffff", opacity: 0.45, selectable: false },
+                { id: "ray-4", type: "shape", shape: "rect", x: 720, y: 80, width: 4, height: 90, fill: "#ffffff", opacity: 0.45, selectable: false },
+                // KICKER top
+                { id: "kicker", type: "text", text: "POOL PARTY  ·  DAY VIBES", x: 540, y: 200, width: 1080, fontSize: 18, fontFamily: "Montserrat, sans-serif", color: "#ffffff", fontWeight: "900", textAlign: "center", originX: "center", originY: "top", charSpacing: 600 },
+                // TÍTULO hero — SUNSET amarillo
+                { id: "title-1", type: "text", text: "SUNSET", x: 540, y: 250, width: 1080, fontSize: 130, fontFamily: "Anton, Impact, sans-serif", color: "#0c4a6e", fontWeight: "900", textAlign: "center", originX: "center", originY: "top", charSpacing: 60 },
+                // Subtítulo SESSION
+                { id: "title-2", type: "text", text: "SESSION", x: 540, y: 380, width: 1080, fontSize: 110, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", fontWeight: "900", textAlign: "center", originX: "center", originY: "top", charSpacing: 100 },
+                // DJ photo centrada — más abajo dentro del círculo cyan
+                { id: "dj-photo", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dj/Dj-1.png", x: 540, y: 580, scaleX: 1.05, scaleY: 1.05, originX: "center", originY: "top", shadow: { color: "rgba(255,255,255,0.85)", blur: 60, offsetX: 0, offsetY: 0 } },
+                // Banda inferior con info — fondo azul oscuro
+                { id: "info-band-bg", type: "shape", shape: "rect", x: 0, y: 1180, width: 1080, height: 170, fill: "#0c4a6e", selectable: false },
+                // DJ name hero
+                { id: "dj-name", type: "text", text: "DJ NOVA", x: 540, y: 1200, width: 1080, fontSize: 44, fontFamily: "Anton, Impact, sans-serif", color: "#fde047", fontWeight: "900", textAlign: "center", originX: "center", originY: "top", charSpacing: 200 },
+                // Fecha + hora
+                { id: "date", type: "text", text: "DOMINGO 7 JUL  ·  14:00 — 22:00", x: 540, y: 1260, width: 1080, fontSize: 22, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", fontWeight: "900", textAlign: "center", originX: "center", originY: "top", charSpacing: 150 },
+                // Lugar
+                { id: "venue", type: "text", text: "AZOTEA HOTEL ME  ·  MADRID  ·  20€", x: 540, y: 1300, width: 1080, fontSize: 17, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.85)", fontWeight: "600", textAlign: "center", originX: "center", originY: "top", charSpacing: 300 },
+            ] },
+        ],
+    },
+
+// ─────────────────────────────────────────────────────────────────────
+// 54 — DJ Festival Multi (3 DJs stacked horizontal, barras de color)
+//      Estética: 3 DJs en hilera con barra cromática debajo
+// ─────────────────────────────────────────────────────────────────────
+    {
+        id: 54,
+        title: "DJ Festival Multi",
+        category: "Festival",
+        image: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dj/Dj-1.png",
+        premium: false,
+        audience: ["productoras"],
+        internalTags: ["complete"],
+        variants: [
+            { format: "portrait", width: 1080, height: 1350, layers: [
+                // FONDO negro
+                { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1350, fill: "#0a0a14", selectable: false },
+                // Glow violeta top-right
+                { id: "glow-top", type: "shape", shape: "circle", x: 900, y: -50, width: 700, height: 700, radius: 350, fill: "#7B2FBE", opacity: 0.30, originX: "center", originY: "center", selectable: false },
+                // Glow rosa bottom-left
+                { id: "glow-bottom", type: "shape", shape: "circle", x: 100, y: 1300, width: 600, height: 600, radius: 300, fill: "#ec4899", opacity: 0.30, originX: "center", originY: "center", selectable: false },
+                // KICKER
+                { id: "kicker", type: "text", text: "M U L T I   D J   L I N E U P", x: 540, y: 70, width: 1080, fontSize: 16, fontFamily: "Montserrat, sans-serif", color: "#facc15", fontWeight: "700", textAlign: "center", originX: "center", originY: "top", charSpacing: 700 },
+                // TÍTULO hero "FESTIVAL"
+                { id: "title-1", type: "text", text: "FESTIVAL", x: 540, y: 115, width: 1080, fontSize: 130, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", fontWeight: "900", textAlign: "center", originX: "center", originY: "top", charSpacing: 40 },
+                // Subtítulo "NIGHTS"
+                { id: "title-2", type: "text", text: "NIGHTS", x: 540, y: 245, width: 1080, fontSize: 90, fontFamily: "Anton, Impact, sans-serif", color: "#facc15", fontWeight: "900", textAlign: "center", originX: "center", originY: "top", charSpacing: 250 },
+                // 3 DJs en fila — cada uno con su slot + color
+                // DJ 1 (izquierda) — DJ-1 con acento rojo
+                { id: "slot-1-bg", type: "shape", shape: "rect", x: 60, y: 400, width: 300, height: 400, fill: "#1a1a28", radius: 12, selectable: false },
+                { id: "dj-1-img", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dj/Dj-1.png", x: 210, y: 410, scaleX: 0.55, scaleY: 0.55, originX: "center", originY: "top", shadow: { color: "rgba(239,68,68,0.6)", blur: 35, offsetX: 0, offsetY: 0 } },
+                { id: "dj-1-bar", type: "shape", shape: "rect", x: 60, y: 750, width: 300, height: 6, fill: "#ef4444", selectable: false },
+                { id: "dj-1-name", type: "text", text: "DJ NOVA", x: 60, y: 765, width: 300, fontSize: 24, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", fontWeight: "900", textAlign: "center", originX: "left", originY: "top", charSpacing: 150 },
+                { id: "dj-1-genre", type: "text", text: "TECHNO", x: 60, y: 795, width: 300, fontSize: 12, fontFamily: "Montserrat, sans-serif", color: "#ef4444", fontWeight: "700", textAlign: "center", originX: "left", originY: "top", charSpacing: 400 },
+                // DJ 2 (centro) — DJ-2 con acento azul
+                { id: "slot-2-bg", type: "shape", shape: "rect", x: 390, y: 400, width: 300, height: 400, fill: "#1a1a28", radius: 12, selectable: false },
+                { id: "dj-2-img", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dj/Dj-2.png", x: 540, y: 410, scaleX: 0.55, scaleY: 0.55, originX: "center", originY: "top", shadow: { color: "rgba(59,130,246,0.6)", blur: 35, offsetX: 0, offsetY: 0 } },
+                { id: "dj-2-bar", type: "shape", shape: "rect", x: 390, y: 750, width: 300, height: 6, fill: "#3b82f6", selectable: false },
+                { id: "dj-2-name", type: "text", text: "DJ AXIS", x: 390, y: 765, width: 300, fontSize: 24, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", fontWeight: "900", textAlign: "center", originX: "left", originY: "top", charSpacing: 150 },
+                { id: "dj-2-genre", type: "text", text: "HOUSE", x: 390, y: 795, width: 300, fontSize: 12, fontFamily: "Montserrat, sans-serif", color: "#3b82f6", fontWeight: "700", textAlign: "center", originX: "left", originY: "top", charSpacing: 400 },
+                // DJ 3 (derecha) — DJ-3 con acento amarillo
+                { id: "slot-3-bg", type: "shape", shape: "rect", x: 720, y: 400, width: 300, height: 400, fill: "#1a1a28", radius: 12, selectable: false },
+                { id: "dj-3-img", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dj/Dj-3.png", x: 870, y: 410, scaleX: 0.55, scaleY: 0.55, originX: "center", originY: "top", shadow: { color: "rgba(250,204,21,0.6)", blur: 35, offsetX: 0, offsetY: 0 } },
+                { id: "dj-3-bar", type: "shape", shape: "rect", x: 720, y: 750, width: 300, height: 6, fill: "#facc15", selectable: false },
+                { id: "dj-3-name", type: "text", text: "DJ KAI", x: 720, y: 765, width: 300, fontSize: 24, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", fontWeight: "900", textAlign: "center", originX: "left", originY: "top", charSpacing: 150 },
+                { id: "dj-3-genre", type: "text", text: "REGGAETON", x: 720, y: 795, width: 300, fontSize: 12, fontFamily: "Montserrat, sans-serif", color: "#facc15", fontWeight: "700", textAlign: "center", originX: "left", originY: "top", charSpacing: 400 },
+                // Banda inferior con info — gradiente simulado violeta→rosa
+                { id: "info-band-bg", type: "shape", shape: "rect", x: 0, y: 900, width: 1080, height: 450, fill: "#1a0a1f", selectable: false },
+                { id: "info-band-accent", type: "shape", shape: "rect", x: 0, y: 900, width: 1080, height: 4, fill: "#facc15", selectable: false },
+                // Fecha grande
+                { id: "date-day", type: "text", text: "VIE 28  ·  SÁB 29", x: 540, y: 935, width: 1080, fontSize: 60, fontFamily: "Anton, Impact, sans-serif", color: "#facc15", fontWeight: "900", textAlign: "center", originX: "center", originY: "top", charSpacing: 200 },
+                { id: "date-month", type: "text", text: "JUNIO  ·  2026", x: 540, y: 1010, width: 1080, fontSize: 22, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", fontWeight: "900", textAlign: "center", originX: "center", originY: "top", charSpacing: 600 },
+                // Hora
+                { id: "time", type: "text", text: "23:00 — 06:00 H", x: 540, y: 1075, width: 1080, fontSize: 28, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.85)", fontWeight: "700", textAlign: "center", originX: "center", originY: "top", charSpacing: 250 },
+                // Sala
+                { id: "venue", type: "text", text: "RAZZMATAZZ  ·  BARCELONA", x: 540, y: 1130, width: 1080, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "#ffffff", fontWeight: "600", textAlign: "center", originX: "center", originY: "top", charSpacing: 400 },
+                // Precio + abono
+                { id: "price-bg", type: "shape", shape: "rect", x: 240, y: 1190, width: 600, height: 60, fill: "#facc15", radius: 30, selectable: false },
+                { id: "price", type: "text", text: "ABONO 2 DÍAS  ·  35€", x: 540, y: 1205, width: 600, fontSize: 22, fontFamily: "Anton, Impact, sans-serif", color: "#1a0a1f", fontWeight: "900", textAlign: "center", originX: "center", originY: "top", charSpacing: 200 },
+                // Tickets URL
+                { id: "tickets", type: "text", text: "ENTRADAS · ENTRADIUM.COM", x: 540, y: 1280, width: 1080, fontSize: 14, fontFamily: "Montserrat, sans-serif", color: "rgba(250,204,21,0.85)", fontWeight: "700", textAlign: "center", originX: "center", originY: "top", charSpacing: 500 },
+            ] },
+        ],
+    },
+
 ];
