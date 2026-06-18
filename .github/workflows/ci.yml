@@ -1,0 +1,68 @@
+name: CI
+
+# Gate de calidad en cada PR a main y en push directo a main.
+# Jobs bloqueantes: test (vitest) y build (next build). lint es informativo
+# por ahora — el repo arrastra ~108 errores de lint (sobre todo react-hooks)
+# que hay que limpiar antes de poder hacerlo bloqueante (ver más abajo).
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+# Cancela runs viejos del mismo branch cuando llega un push nuevo.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Unit tests (vitest)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+
+  build:
+    name: Build (next build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+        # Valores dummy SOLO para que el build no falle: Next evalúa los
+        # módulos (incl. el cliente admin de Supabase) al recolectar page data,
+        # y createClient lanza si la key está vacía. NO son secretos ni se usan
+        # en runtime — los valores reales viven en las env vars de Vercel.
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://dummy.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: dummy_anon_key
+          SUPABASE_SERVICE_ROLE_KEY: dummy_service_role_key
+          NEXT_PUBLIC_SITE_URL: https://artegenia.com
+          NEXT_PUBLIC_APP_URL: https://artegenia.com
+
+  lint:
+    name: Lint (eslint — informativo)
+    runs-on: ubuntu-latest
+    # NO bloquea el merge todavía. El repo tiene ~108 errores de lint
+    # pendientes de limpiar; cuando lleguen a 0, quitar esta línea para
+    # convertirlo en gate obligatorio.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
