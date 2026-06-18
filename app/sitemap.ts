@@ -48,6 +48,16 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.95, // pricing es página de conversión clave para SEO
     },
     {
+      // UX#8 — /quitar-fondo es el PRODUCTO DE ENTRADA según la estrategia.
+      // Keyword "quitar fondo gratis" tiene altísima intención de compra.
+      // Priority 0.95 (igual que pricing) — más alto que cualquier otra
+      // landing porque es el imán principal de tráfico orgánico.
+      url: `${SITE_URL}/quitar-fondo`,
+      lastModified: LAST_MODIFIED,
+      changeFrequency: "weekly",
+      priority: 0.95,
+    },
+    {
       url: `${SITE_URL}/colaboradores`,
       lastModified: LAST_MODIFIED,
       changeFrequency: "monthly",

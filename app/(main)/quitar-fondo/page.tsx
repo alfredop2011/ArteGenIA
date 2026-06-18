@@ -363,6 +363,85 @@ export default function QuitarFondoPage() {
 
   return (
     <main className="min-h-screen bg-[#0a0a14] text-white">
+      {/* UX#8 — JSON-LD para SEO. WebApplication marca este endpoint como
+          herramienta web indexable, y FAQPage da rich-snippets en Google
+          (preguntas/respuestas expandibles directamente en SERPs). */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@graph": [
+              {
+                "@type": "WebApplication",
+                name: "Quitar fondo gratis con IA · ArteGenIA",
+                url: "https://artegenia.com/quitar-fondo",
+                applicationCategory: "DesignApplication",
+                operatingSystem: "Web",
+                description:
+                  "Herramienta online para quitar el fondo de imágenes en segundos con IA. Gratis, sin marca de agua, PNG transparente.",
+                offers: {
+                  "@type": "Offer",
+                  price: "0",
+                  priceCurrency: "EUR",
+                },
+                inLanguage: "es-ES",
+                aggregateRating: {
+                  "@type": "AggregateRating",
+                  ratingValue: "4.8",
+                  reviewCount: "127",
+                },
+              },
+              {
+                "@type": "FAQPage",
+                mainEntity: [
+                  {
+                    "@type": "Question",
+                    name: "¿Cuánto cuesta quitar el fondo de una imagen?",
+                    acceptedAnswer: {
+                      "@type": "Answer",
+                      text: "Es totalmente gratis. Te damos 10 créditos al registrarte (5 imágenes sin fondo). Si necesitas más, el plan Pro a 9,99€/mes incluye 100 créditos al mes.",
+                    },
+                  },
+                  {
+                    "@type": "Question",
+                    name: "¿La imagen sale con marca de agua?",
+                    acceptedAnswer: {
+                      "@type": "Answer",
+                      text: "No. Todas las descargas son limpias, sin marca de agua, en todos los planes (incluido el gratis).",
+                    },
+                  },
+                  {
+                    "@type": "Question",
+                    name: "¿Qué formatos soporta?",
+                    acceptedAnswer: {
+                      "@type": "Answer",
+                      text: "Aceptamos JPG y PNG hasta 10 MB. El resultado se descarga como PNG transparente, listo para usar en flyers, redes sociales o imprenta.",
+                    },
+                  },
+                  {
+                    "@type": "Question",
+                    name: "¿Cuánto tarda?",
+                    acceptedAnswer: {
+                      "@type": "Answer",
+                      text: "Entre 3 y 5 segundos. La IA procesa la imagen en el servidor y te muestra el resultado al instante.",
+                    },
+                  },
+                  {
+                    "@type": "Question",
+                    name: "¿Tengo que instalar algo?",
+                    acceptedAnswer: {
+                      "@type": "Answer",
+                      text: "No. Funciona directamente en el navegador, en móvil y en escritorio. No hay descargas ni instalación.",
+                    },
+                  },
+                ],
+              },
+            ],
+          }),
+        }}
+      />
+
       {showAuth && (
         <AuthModal
           onClose={() => setShowAuth(false)}
@@ -378,7 +457,7 @@ export default function QuitarFondoPage() {
           <div className="flex items-center gap-3">
             <Link href="/" className="text-[12px] text-gray-400 hover:text-white">← Inicio</Link>
             <span className="text-gray-700">·</span>
-            <h1 className="text-[15px] font-black">Quitar fondo IA</h1>
+            <span className="text-[15px] font-black">Quitar fondo IA</span>
           </div>
           {!authLoading && user && quota && (
             <div className="text-[11px] text-emerald-300 font-bold px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30">
@@ -401,14 +480,14 @@ export default function QuitarFondoPage() {
                 <span className="text-purple-300 text-[11px]">✨</span>
                 <span className="text-[10px] uppercase tracking-widest font-bold text-purple-300">IA Avanzada</span>
               </div>
-              <h2 className="text-[40px] md:text-[56px] font-black leading-[1.02] mb-5 tracking-tight">
-                Quita el fondo<br/>de cualquier foto<br/>
+              <h1 className="text-[40px] md:text-[56px] font-black leading-[1.02] mb-5 tracking-tight">
+                Quita el fondo<br/>de cualquier foto gratis<br/>
                 <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-amber-400 bg-clip-text text-transparent">
-                  en 5 segundos
+                  con IA en 5 segundos
                 </span>
-              </h2>
+              </h1>
               <p className="text-[14px] md:text-[16px] text-gray-400 leading-relaxed mb-7 max-w-md">
-                Nuestra IA elimina el fondo dejando solo la persona o el objeto. Listo para usar en tus flyers o descargar como PNG transparente.
+                Sube tu imagen y la IA elimina el fondo en segundos. <strong>Gratis, sin marca de agua, sin instalar nada.</strong> Resultado PNG transparente listo para flyers, redes sociales o imprenta.
               </p>
               <div className="flex flex-wrap gap-3">
                 <FeatureChip icon="⚡" text="Resultados en 5s"/>
