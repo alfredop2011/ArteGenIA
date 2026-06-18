@@ -85,7 +85,7 @@ export async function applyTemplateLayers(
 
         // ── TEXT ───────────────────────────────────────────────────────────
         if (layer.type === "text") {
-            const tb = new Textbox(layer.text, {
+            addWithId(canvas, new Textbox(layer.text, {
                 left: layer.x * scale,
                 top: layer.y * scale,
                 width: layer.width * scale,
@@ -110,39 +110,7 @@ export async function applyTemplateLayers(
                 // cambia el comportamiento por defecto.
                 selectable: true,
                 evented: true,
-            });
-
-            // Auto-ajustar width al texto real cuando cabe en una sola línea.
-            // Sin esto, las plantillas declaran width: 1080 (todo el lienzo)
-            // para centrar el texto, y al seleccionar el objeto los handles
-            // aparecen pegados a los bordes del canvas en vez de pegados al
-            // texto visible — confundiendo al user ("la selección se sale").
-            // Solo se aplica si el texto no necesita wrap (1 línea).
-            // Para textos multi-línea respetamos el width declarado (necesario
-            // para el wrap correcto).
-            try {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const lines = (tb as any).textLines as string[] | undefined;
-                if (lines && lines.length === 1) {
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    const realWidth = (tb as any).calcTextWidth?.() as number | undefined;
-                    if (typeof realWidth === "number" && realWidth > 0) {
-                        // Pequeño padding (4px) para que los handles no peguen al glyph.
-                        const newWidth = Math.ceil(realWidth) + 4;
-                        // Solo achicar — nunca agrandar (si el width declarado era
-                        // menor que el texto, respetar el deseo del diseñador).
-                        if (newWidth < tb.width) {
-                            tb.set("width", newWidth);
-                            tb.setCoords();
-                        }
-                    }
-                }
-            } catch {
-                // Si Fabric cambia su API interna, fallback silencioso al
-                // comportamiento antiguo (bounding box = width declarado).
-            }
-
-            addWithId(canvas, tb, layer.id);
+            }), layer.id);
         }
 
         // ── IMAGE ──────────────────────────────────────────────────────────
