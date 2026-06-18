@@ -41,10 +41,12 @@ export const FEATURES = {
 
   /**
    * Panel "Elementos" separado en sidebar (shapes sueltas).
-   * Hidden porque solapa con "Imagenes" — el usuario no distingue entre
-   * "elemento" (forma) e "imagen" (foto). Unificamos en Imagenes.
+   * Activada: contiene 8 formas (Rect, Círculo, Triángulo, Estrella,
+   * Hexágono, Flecha, Línea, Marco) sin equivalente en Imágenes.
+   * El user reportó "no encuentro cómo añadir formas en desktop" — sin
+   * esta tab no hay forma de añadirlas. Mobile sí las tiene en sheet "add".
    */
-  elementsTab: false,
+  elementsTab: true,
 
   /**
    * Tab "Fondo" separado en sidebar.
