@@ -805,7 +805,14 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
         {filtered.length === 0 ? (
           <EmptyState onReset={resetFilters} />
         ) : view === "lista" ? (
-          <ListView grouped={grouped} favs={favs} onFav={toggleFav} onSelect={setSelected} />
+          <ListView
+            grouped={grouped}
+            favs={favs}
+            onFav={toggleFav}
+            onSelect={setSelected}
+            onBuy={trackClick}
+            onSeeDay={(d) => { setRange({ from: d, to: d }); setDateFilter("rango"); }}
+          />
         ) : (
           <CalendarView events={filtered} month={calMonth} onMonth={setCalMonth} onSelect={setSelected} />
         )}
@@ -944,24 +951,35 @@ function ListView({
   favs,
   onFav,
   onSelect,
+  onBuy,
+  onSeeDay,
 }: {
   grouped: [string, EventItem[]][];
   favs: Set<string>;
   onFav: (id: string) => void;
   onSelect: (e: EventItem) => void;
+  onBuy: (id: string) => void;
+  onSeeDay: (date: string) => void;
 }) {
   return (
     <div className="space-y-8">
       {grouped.map(([date, items]) => (
         <div key={date}>
-          <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold capitalize">
-            <CalendarIcon size={15} style={{ color: "var(--ag-brand)" }} />
-            {date === TODAY ? "Hoy · " : ""}
-            {fmtLong(date)}
-          </h3>
+          <div className="mb-3 flex items-center justify-between">
+            <h3 className="flex items-center gap-2 text-sm font-semibold capitalize">
+              <CalendarIcon size={15} style={{ color: "var(--ag-brand)" }} />
+              {date === TODAY ? "Hoy · " : ""}
+              {fmtLong(date)}
+            </h3>
+            {items.length > 3 && (
+              <button onClick={() => onSeeDay(date)} className="flex items-center gap-0.5 text-xs font-medium" style={{ color: "var(--ag-brand)" }}>
+                Ver todos <ChevronRight size={13} />
+              </button>
+            )}
+          </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {items.map((e) => (
-              <EventCard key={e.id} event={e} isFav={favs.has(e.id)} onFav={() => onFav(e.id)} onClick={() => onSelect(e)} />
+              <EventCard key={e.id} event={e} isFav={favs.has(e.id)} onFav={() => onFav(e.id)} onClick={() => onSelect(e)} onBuy={() => onBuy(e.id)} />
             ))}
           </div>
         </div>
@@ -975,49 +993,77 @@ function EventCard({
   isFav,
   onFav,
   onClick,
+  onBuy,
 }: {
   event: EventItem;
   isFav: boolean;
   onFav: () => void;
   onClick: () => void;
+  onBuy: () => void;
 }) {
   const Cat = CATEGORIES[event.category];
+  const canBuy = (event.hasSale ?? !!event.url) && !!event.url;
   return (
     <motion.div
       whileHover={{ y: -4 }}
-      className="group relative overflow-hidden rounded-2xl"
+      className="group relative flex flex-col overflow-hidden rounded-2xl"
       style={{ background: "var(--home-bg-soft)", border: "1px solid var(--home-card-border)" }}
     >
-      <button onClick={onClick} className="block w-full text-left">
-        <div className="relative h-32 w-full" style={{ background: event.image }}>
-          {event.cancelled && <CancelledSeal />}
-          <span className="absolute bottom-3 left-3 flex items-center gap-1 rounded-full bg-black/30 px-2 py-1 text-[11px] font-medium text-white backdrop-blur">
-            <Cat.icon size={11} /> {Cat.label}
-          </span>
-          <span className="absolute bottom-3 right-3 rounded-full bg-white/90 px-2 py-1 text-[11px] font-semibold text-gray-900">
-            {event.price == null
-              ? "Consultar"
-              : event.price === 0
-              ? "Gratis"
-              : `${event.priceInfo ? "desde " : ""}${event.price} €`}
-          </span>
-        </div>
+      {/* Imagen */}
+      <button onClick={onClick} className="relative block h-44 w-full" style={{ background: event.image }} aria-label={event.title}>
+        {event.cancelled && <CancelledSeal />}
+        <span className="absolute left-3 top-3 flex items-center gap-1 rounded-full bg-black/40 px-2.5 py-1 text-[11px] font-medium text-white backdrop-blur">
+          <Cat.icon size={11} /> {Cat.label}
+        </span>
+        <span className="absolute bottom-3 right-3 rounded-full bg-white/90 px-2 py-1 text-[11px] font-semibold text-gray-900">
+          {event.price == null ? "Consultar" : event.price === 0 ? "Gratis" : `${event.priceInfo ? "desde " : ""}${event.price} €`}
+        </span>
       </button>
-      {/* Botón guardar (no debe disparar el click de la card) */}
+      {/* Guardar (no dispara el click de la card) */}
       <button
         onClick={onFav}
         aria-label={isFav ? "Quitar de guardados" : "Guardar evento"}
-        className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-black/30 text-white backdrop-blur transition-transform hover:scale-110"
+        className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur transition-transform hover:scale-110"
       >
-        <Heart size={15} fill={isFav ? "#f87171" : "none"} stroke={isFav ? "#f87171" : "currentColor"} />
+        <Heart size={16} fill={isFav ? "#f87171" : "none"} stroke={isFav ? "#f87171" : "currentColor"} />
       </button>
-      <button onClick={onClick} className="block w-full p-4 text-left">
-        <h4 className="line-clamp-1 font-semibold">{event.title}</h4>
-        <div className="mt-2 space-y-1 text-xs" style={{ color: "var(--home-text-muted)" }}>
-          <p className="flex items-center gap-1.5"><Clock size={12} /> {event.time}</p>
-          <p className="flex items-center gap-1.5"><MapPin size={12} /> {event.venue}{event.neighborhood ? ` · ${event.neighborhood}` : ""}</p>
+      {/* Cuerpo */}
+      <div className="flex flex-1 flex-col p-4">
+        <button onClick={onClick} className="text-left">
+          <h4 className="line-clamp-2 text-base font-bold leading-snug">{event.title}</h4>
+          <div className="mt-2 space-y-1 text-xs" style={{ color: "var(--home-text-muted)" }}>
+            <p className="flex items-center gap-1.5"><Clock size={12} /> {event.time}</p>
+            <p className="flex items-center gap-1.5"><MapPin size={12} /> {event.venue}{event.neighborhood ? ` · ${event.neighborhood}` : ""}</p>
+          </div>
+        </button>
+        {/* CTA */}
+        <div className="mt-3">
+          {event.cancelled ? (
+            <div className="rounded-xl py-2.5 text-center text-sm font-semibold" style={{ background: "var(--ag-danger-bg)", color: "var(--ag-danger)" }}>
+              Cancelado
+            </div>
+          ) : canBuy ? (
+            <a
+              href={event.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={onBuy}
+              className="flex items-center justify-center gap-1.5 rounded-xl py-2.5 text-sm font-semibold text-white"
+              style={{ background: "var(--ag-brand)" }}
+            >
+              <Ticket size={15} /> Entradas
+            </a>
+          ) : (
+            <button
+              onClick={onClick}
+              className="flex w-full items-center justify-center gap-1 rounded-xl py-2.5 text-sm font-semibold"
+              style={{ border: "1px solid var(--ag-brand-border)", color: "var(--ag-brand)" }}
+            >
+              Ver evento <ChevronRight size={15} />
+            </button>
+          )}
         </div>
-      </button>
+      </div>
     </motion.div>
   );
 }
