@@ -38,12 +38,12 @@ Si está cogido: probar en este orden:
 ### Bio (límite 80 caracteres)
 
 ```
-🎨 Flyers DJ con IA · Español
-Plantillas pro · Sin Photoshop
-👇 Pruébalo gratis
+🎨 Flyers con IA + 📅 Eventos
+DJs · Workshops · Conciertos
+👇 Gratis
 ```
 
-Caracteres: 79 ✓
+Caracteres: 75 ✓
 
 ### Link en bio
 
@@ -101,25 +101,34 @@ Alternativa rápida: usa Canva → template "YouTube Banner" → reescribe texto
 ### Descripción canal (límite 5000 caracteres)
 
 ```
-🎨 ArteGenIA — Editor de flyers profesionales con IA en español
+🎨 ArteGenIA — 2 productos en uno para el mundo del entretenimiento:
 
-Plantillas para DJs, eventos, conciertos, workshops y academias.
-Sin Photoshop, sin curva de aprendizaje.
+1️⃣ EDITOR DE FLYERS CON IA
+Plantillas profesionales para DJs, eventos, conciertos, workshops
+y academias. Sin Photoshop, sin curva de aprendizaje.
+
+2️⃣ CALENDARIO PÚBLICO DE EVENTOS
+Promotoras, DJs y academias publican sus eventos.
+Tu público los descubre en artegenia.com/eventos.
+Filtros por ciudad, género y fecha.
 
 Lo que encontrarás en este canal:
 ✅ Tutoriales de 2-5 min ("Cómo hacer un flyer de fiesta")
 ✅ Casos reales: DJs y promoters usando ArteGenIA
-✅ Comparativas vs Canva, vs Photoshop
+✅ Comparativas vs Canva, vs Eventbrite, vs Resident Advisor
 ✅ Trucos de IA para diseño: quitar fondos, plantillas, etc.
+✅ Eventos destacados de la semana
 
 🆓 Plan gratis: 10 créditos IA al mes, sin tarjeta
+🆓 Publicar evento: gratis para todos los organizadores
 ⭐ Plan Pro: 9,99€/mes — IA ilimitada, PDF imprenta
 
 🔗 Web: artegenia.com
+📅 Eventos: artegenia.com/eventos
 📧 Email: hola@artegenia.com
 📱 Instagram: @artegenia_app
 
-#ArteGenIA #DJTools #FlyerDesign #DiseñoConIA
+#ArteGenIA #DJTools #FlyerDesign #DiseñoConIA #EventosMadrid
 ```
 
 ### Sections del canal
@@ -153,14 +162,13 @@ Crear estas 3 secciones:
 ### Bio (límite 160 caracteres)
 
 ```
-🎨 Editor flyers con IA en español
-🎧 Plantillas DJ pro, sin Photoshop
-🆓 Gratis para empezar
-🌍 Madrid · LATAM
+🎨 Editor flyers con IA + 📅 Calendario eventos
+🎧 DJs, workshops, conciertos · Sin Photoshop
+🆓 Gratis · 🌍 Madrid · LATAM
 👇
 ```
 
-Caracteres: 138 ✓
+Caracteres: 158 ✓
 
 ### Link
 
@@ -209,32 +217,33 @@ Madrid · LATAM
 ### Tagline (límite 120 caracteres)
 
 ```
-Editor de flyers con IA en español para DJs, productoras, academias y eventos. Sin Photoshop, gratis.
+Editor flyers IA + Calendario eventos. Para DJs, productoras, academias. Publica y diseña gratis.
 ```
 
-Caracteres: 102 ✓
+Caracteres: 99 ✓
 
 ### About (descripción larga)
 
 ```
-ArteGenIA es el editor de flyers profesionales con IA pensado para el mundo del entretenimiento y la formación: DJs, promotores de eventos, academias de baile, productoras y agencias.
+ArteGenIA es la plataforma 2-en-1 para el mundo del entretenimiento y la formación: DJs, promotores de eventos, academias de baile, productoras, salas de baile y agencias.
 
-🎨 Plantillas específicas por nicho
-Más de 55 plantillas para fiestas, workshops, conciertos y clases. Pensadas para tu evento, no genéricas como Canva.
+🎨 PRODUCTO 1 — Editor de flyers con IA
+Más de 55 plantillas para fiestas, workshops, conciertos y clases. Pensadas para tu evento, no genéricas como Canva. IA quita fondos, recorta personas y genera variantes en español. Sin Photoshop, sin curva de aprendizaje.
 
-🤖 IA en cada paso
-Quita fondos, recorta personas, genera variantes con IA. En español, con bordes precisos, sin curva de aprendizaje.
+📅 PRODUCTO 2 — Calendario público de eventos
+Organizadores publican sus eventos en artegenia.com/eventos. El público filtra por ciudad, género y fecha. Sin scraping, sin algoritmos opacos: tráfico orgánico real para tu sala/academia/fiesta.
 
 💰 Modelo simple
-Plan gratis (10 créditos/mes), plan Pro 9,99€/mes con IA ilimitada y PDF imprenta. Sin marca de agua incluso en gratis.
+Plan gratis (10 créditos IA/mes + publicar eventos ilimitado), plan Pro 9,99€/mes con IA ilimitada y PDF imprenta. Sin marca de agua incluso en gratis.
 
 🌍 Mercado
 Empezamos en España. Expandiendo a LATAM con foco en México, Argentina y Colombia donde el mercado DJ/baile crece más rápido.
 
 🎯 Para agencias y empresas
-Si gestionas eventos para clientes, ArteGenIA reduce el tiempo de producción de flyers de 2h a 5 min por evento.
+Si gestionas eventos para clientes, ArteGenIA reduce el tiempo de producción de flyers de 2h a 5 min por evento Y los publica en su calendario público (canal de distribución incluido).
 
 Web: artegenia.com
+Eventos: artegenia.com/eventos
 Demos: hola@artegenia.com
 ```
 
