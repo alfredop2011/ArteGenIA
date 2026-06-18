@@ -38,17 +38,17 @@ export async function POST(req: Request) {
     if (rl) return rl;
 
     const body = await req.json().catch(() => ({}));
-    const module = body.module as CreditModule | undefined;
+    const creditModule = body.module as CreditModule | undefined;
     const reason = String(body.reason || "client-render-failure").slice(0, 200);
 
-    if (!module || !(module in CREDIT_COST)) {
+    if (!creditModule || !(creditModule in CREDIT_COST)) {
       return NextResponse.json(
-        { error: "module inválido", got: module, allowed: Object.keys(CREDIT_COST) },
+        { error: "module inválido", got: creditModule, allowed: Object.keys(CREDIT_COST) },
         { status: 400 },
       );
     }
 
-    const cost = CREDIT_COST[module];
+    const cost = CREDIT_COST[creditModule];
     const supabaseAdmin = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -59,15 +59,15 @@ export async function POST(req: Request) {
       supabaseAdmin,
       user.id,
       cost,
-      `refund:client_${module}`,
+      `refund:client_${creditModule}`,
       { reason, ts: new Date().toISOString() },
     );
 
     console.log(
-      `[refund-client-failure] user=${user.id} module=${module} cost=${cost} reason="${reason}"`,
+      `[refund-client-failure] user=${user.id} module=${creditModule} cost=${cost} reason="${reason}"`,
     );
 
-    return NextResponse.json({ refunded: cost, module });
+    return NextResponse.json({ refunded: cost, module: creditModule });
   } catch (err) {
     console.error("[refund-client-failure] error inesperado:", err);
     return NextResponse.json(

@@ -15,7 +15,7 @@ import { getAllCategorySlugs } from "@/data/categorySEO";
  */
 
 const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ?? "https://artegenia.vercel.app";
+  process.env.NEXT_PUBLIC_SITE_URL ?? "https://artegenia.com";
 
 // Fecha de ultima actualizacion estructural del sitemap. Actualizar cuando
 // se añadan rutas publicas nuevas (no cuando cambie contenido dentro).

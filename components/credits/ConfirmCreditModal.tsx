@@ -237,7 +237,7 @@ export function ConfirmCreditModal({
                       Esta descarga llevará marca de agua
                     </p>
                     <p className="text-[11px] text-amber-100/80 leading-snug">
-                      Sello "Hecho con ArteGenIA" en una esquina.{" "}
+                      Sello &ldquo;Hecho con ArteGenIA&rdquo; en una esquina.{" "}
                       <Link href="/pricing"
                             onClick={() => trackUpgradeClicked({
                               source: "feature_gate",

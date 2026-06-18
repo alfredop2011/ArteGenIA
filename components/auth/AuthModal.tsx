@@ -59,8 +59,8 @@ export default function AuthModal({ onClose, title, subtitle, onAuthSuccess, nex
                 setAwaitingConfirmation(true);
                 pollStartRef.current = Date.now();
             }
-        } catch (e: any) {
-            setError(e.message || t("auth.error.generic"));
+        } catch (e) {
+            setError((e instanceof Error && e.message) || t("auth.error.generic"));
         } finally {
             setLoading(false);
         }
@@ -93,7 +93,7 @@ export default function AuthModal({ onClose, title, subtitle, onAuthSuccess, nex
                 }
                 // Error esperado mientras espera confirmación: "Email not confirmed"
                 // Cualquier otro error (password mal, rate limit) lo mostramos.
-                const msg = (signInErr as any)?.message ?? "";
+                const msg = (signInErr as { message?: string } | null)?.message ?? "";
                 const isNotConfirmed =
                     msg.toLowerCase().includes("not confirmed") ||
                     msg.toLowerCase().includes("no confirmado") ||

@@ -6,9 +6,10 @@ import type { MetadataRoute } from "next";
  * Permite indexacion completa EXCEPTO rutas privadas que no aportan SEO
  * y solo gastarian budget de crawl de Google:
  *  - /api/* — endpoints internos
- *  - /admin/* — panel privado
+ *  - /admin — panel privado
  *  - /editor-new — variante experimental
  *  - /projects, /history — vistas privadas del usuario
+ *  - /mis-creaciones, /mis-recursos, /preview — vistas privadas del usuario
  *  - /auth/callback — callback OAuth, no debe indexarse
  *  - /upload/* — flujo de upload de colaboradores via token
  *
@@ -23,7 +24,7 @@ import type { MetadataRoute } from "next";
  */
 
 const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ?? "https://artegenia.vercel.app";
+  process.env.NEXT_PUBLIC_SITE_URL ?? "https://artegenia.com";
 
 export default function robots(): MetadataRoute.Robots {
   return {
@@ -33,10 +34,13 @@ export default function robots(): MetadataRoute.Robots {
         allow: "/",
         disallow: [
           "/api/",
-          "/admin/",
+          "/admin",
           "/editor-new",
           "/projects",
           "/history",
+          "/mis-creaciones",
+          "/mis-recursos",
+          "/preview",
           "/auth/callback",
           "/upload/",
         ],
