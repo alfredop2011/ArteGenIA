@@ -410,19 +410,18 @@ export const templates: Template[] = [
             { id: "title-line1", type: "text", text: "CLASES DE", x: 540, y: 110, width: 1080, fontSize: 108, fontFamily: "Anton, Impact, sans-serif", color: "#FFFFFF", fontWeight: "900", textAlign: "center", originX: "center", originY: "top", charSpacing: -10 },
             // TÍTULO hero línea 2 (amarillo, sobre negro)
             { id: "title-line2", type: "text", text: "BAILE", x: 540, y: 210, width: 1080, fontSize: 108, fontFamily: "Anton, Impact, sans-serif", color: "#FFE600", fontWeight: "900", textAlign: "center", originX: "center", originY: "top", charSpacing: -10 },
-            // PAREJA de baile GRANDE centrada sobre el bloque amarillo
-            { id: "couple", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/07_lucia_mateo_pareja.png", x: 540, y: 340, scaleX: 0.95, scaleY: 0.95, originX: "center", originY: "top", shadow: { color: "rgba(124,47,190,0.7)", blur: 60, offsetX: 0, offsetY: 0 } },
+            // PAREJA recortada a medio cuerpo (crop torso+cabeza, no piernas)
+            // cropHeight=900: muestra desde y=0 hasta y=900 de la imagen original
+            // (asume imagen ~1080x1350 — si es más pequeña, se muestra entera sin romper)
+            { id: "couple", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/07_lucia_mateo_pareja.png", x: 540, y: 290, scaleX: 0.92, scaleY: 0.92, originX: "center", originY: "top", cropX: 0, cropY: 0, cropWidth: 1080, cropHeight: 900, shadow: { color: "rgba(124,47,190,0.7)", blur: 60, offsetX: 0, offsetY: 0 } },
+            // FRANJA decorativa negra inferior del bloque amarillo (disimula corte)
+            { id: "yellow-bottom-band", type: "shape", shape: "rect", x: 60, y: 1010, width: 960, height: 70, fill: "#0D0D0D", selectable: false },
+            // TEXTO sobre franja: tagline emocional
+            { id: "tagline", type: "text", text: "MUÉVETE · CONECTA · DISFRUTA", x: 540, y: 1032, width: 960, fontSize: 22, fontFamily: "Montserrat, sans-serif", color: "#FFE600", fontWeight: "800", textAlign: "center", originX: "center", originY: "top", charSpacing: 300 },
             // BADGE 'NUEVA' redondo arriba derecha del bloque amarillo
             { id: "badge-bg", type: "shape", shape: "circle", x: 920, y: 380, width: 120, height: 120, radius: 60, fill: "#0D0D0D", selectable: false },
-            { id: "badge-text-1", type: "text", text: "NUEVA", x: 920, y: 415, width: 120, fontSize: 18, fontFamily: "Anton, Impact, sans-serif", color: "#FFE600", fontWeight: "900", textAlign: "center", originX: "center", originY: "top", charSpacing: 80 },
-            { id: "badge-text-2", type: "text", text: "TEMPORADA", x: 920, y: 442, width: 120, fontSize: 12, fontFamily: "Montserrat, sans-serif", color: "#FFFFFF", fontWeight: "700", textAlign: "center", originX: "center", originY: "top", charSpacing: 50 },
-            // BENEFICIOS rápidos como chips
-            { id: "benefit-1-bg", type: "shape", shape: "rect", x: 100, y: 1020, width: 260, height: 38, fill: "#0D0D0D", radius: 19, selectable: false },
-            { id: "benefit-1-text", type: "text", text: "TODOS LOS NIVELES", x: 230, y: 1031, width: 260, fontSize: 16, fontFamily: "Anton, Impact, sans-serif", color: "#FFE600", fontWeight: "900", textAlign: "center", originX: "center", originY: "top", charSpacing: 60 },
-            { id: "benefit-2-bg", type: "shape", shape: "rect", x: 380, y: 1020, width: 200, height: 38, fill: "#0D0D0D", radius: 19, selectable: false },
-            { id: "benefit-2-text", type: "text", text: "SIN PAREJA", x: 480, y: 1031, width: 200, fontSize: 16, fontFamily: "Anton, Impact, sans-serif", color: "#FFE600", fontWeight: "900", textAlign: "center", originX: "center", originY: "top", charSpacing: 60 },
-            { id: "benefit-3-bg", type: "shape", shape: "rect", x: 600, y: 1020, width: 240, height: 38, fill: "#0D0D0D", radius: 19, selectable: false },
-            { id: "benefit-3-text", type: "text", text: "PRIMERA GRATIS", x: 720, y: 1031, width: 240, fontSize: 16, fontFamily: "Anton, Impact, sans-serif", color: "#FFE600", fontWeight: "900", textAlign: "center", originX: "center", originY: "top", charSpacing: 60 },
+            { id: "badge-text-1", type: "text", text: "NUEVA", x: 920, y: 410, width: 120, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "#FFE600", fontWeight: "900", textAlign: "center", originX: "center", originY: "top", charSpacing: 50 },
+            { id: "badge-text-2", type: "text", text: "TEMPORADA", x: 920, y: 442, width: 120, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "#FFFFFF", fontWeight: "700", textAlign: "center", originX: "center", originY: "top", charSpacing: 100 },
             // BOTTOM SECTION negra (la zona de info)
             { id: "bottom-bg", type: "shape", shape: "rect", x: 0, y: 1080, width: 1080, height: 270, fill: "#0D0D0D", selectable: false },
             // LÍNEA divisora amarilla
@@ -435,7 +434,7 @@ export const templates: Template[] = [
             { id: "venue", type: "text", text: "ESTUDIO DEL SOL · C/ TENERIFE 5 · MADRID", x: 540, y: 1262, width: 1080, fontSize: 18, fontFamily: "Montserrat, sans-serif", color: "#FFFFFF", fontWeight: "600", textAlign: "center", originX: "center", originY: "top", charSpacing: 200 },
             // PRECIO + WHATSAPP en chip amarillo ancho
             { id: "cta-chip", type: "shape", shape: "rect", x: 320, y: 1298, width: 440, height: 38, fill: "#FFE600", radius: 19, selectable: false },
-            { id: "cta-text", type: "text", text: "15€ · RESERVA WHATSAPP 600 222 333", x: 540, y: 1309, width: 440, fontSize: 16, fontFamily: "Anton, Impact, sans-serif", color: "#0D0D0D", fontWeight: "900", textAlign: "center", originX: "center", originY: "top", charSpacing: 60 },
+            { id: "cta-text", type: "text", text: "15€ · RESERVA WHATSAPP 600 222 333", x: 540, y: 1308, width: 440, fontSize: 15, fontFamily: "Montserrat, sans-serif", color: "#0D0D0D", fontWeight: "900", textAlign: "center", originX: "center", originY: "top", charSpacing: 100 },
         ] },
         ],
     },
