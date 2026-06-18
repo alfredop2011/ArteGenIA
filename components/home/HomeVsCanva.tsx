@@ -54,6 +54,11 @@ const ROWS: ComparisonRow[] = [
     artegenia: { label: "Sube cualquier flyer y conviértelo en plantilla con textos editables", included: true },
     canva: { label: "No existe. Tienes que recrear desde cero", included: false },
   },
+  {
+    feature: "Calendario público de eventos incluido",
+    artegenia: { label: "Diseñas el flyer Y lo publicas en /eventos. Tráfico orgánico real, sin coste extra", included: true },
+    canva: { label: "Solo editor. Eventbrite es aparte y cobra comisión por venta", included: false },
+  },
 ];
 
 export default function HomeVsCanva() {

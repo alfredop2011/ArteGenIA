@@ -95,9 +95,10 @@ Configuración → Perfil de empresa:
 Nombre:        ArteGenIA
 Categoría:     Diseño · Software · Servicios profesionales
 Dirección:     Madrid, España  (no des dirección real personal)
-Descripción:   Editor de flyers profesionales con IA en español.
-               Plantillas DJ, eventos y workshops.
-               9,99€/mes · Pruébalo gratis: artegenia.com
+Descripción:   2-en-1: Editor flyers IA + Calendario eventos.
+               Diseña tu cartel y publica tu evento en /eventos.
+               Plantillas DJ, workshops, conciertos.
+               Gratis para empezar: artegenia.com
 Horario:       Lun-Vie 10:00-19:00 (CET)
                Sáb-Dom: respondemos en 24h
 Email:         hola@artegenia.com
@@ -117,8 +118,9 @@ Te respondemos en menos de 4h en horario laboral
 (Lun-Vie 10:00-19:00 CET).
 
 Mientras tanto:
-✨ Prueba el editor gratis: artegenia.com
-🎨 Ve plantillas DJ/eventos: artegenia.com/templates
+🎨 Edita flyer gratis: artegenia.com
+📅 Mira eventos en tu ciudad: artegenia.com/eventos
+🎧 Publica tu evento (organizadores): artegenia.com/dashboard
 📖 Tutorial 5 min: artegenia.com/flyer-fiesta-5-minutos
 
 Cuéntanos en qué te ayudamos 👇
@@ -189,6 +191,30 @@ Email: hola@artegenia.com
 Instagram: @artegenia_app
 Web: artegenia.com
 WhatsApp: aquí mismo 👋
+```
+
+#### `/eventos`
+```
+ArteGenIA es 2-en-1:
+🎨 Editor de flyers con IA → artegenia.com
+📅 Calendario público de eventos → artegenia.com/eventos
+
+Filtra por ciudad, género y fecha. Fiestas DJ, workshops baile,
+conciertos. Actualizado por organizadores reales (no scraping).
+```
+
+#### `/publicar-evento`
+```
+Si organizas eventos (academia, productora, DJ, sala),
+puedes publicarlos GRATIS en artegenia.com/eventos.
+
+Solo necesitas cuenta como organizador:
+1. Cuenta gratis en artegenia.com
+2. Tipo de organizador: academia / productora / freelance / etc.
+3. Dashboard → Crear evento → publica
+
+El primer evento se aprueba manualmente (anti-spam),
+los siguientes son automáticos.
 ```
 
 ### Paso 7 — Catálogo de productos (opcional pero recomendado)

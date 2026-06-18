@@ -1,7 +1,8 @@
-# Plan de contenido TikTok/Reels — 4 vídeos virales
+# Plan de contenido TikTok/Reels — 6 vídeos virales
 
-> **Objetivo**: 4 vídeos cortos publicados en 2 semanas. Cada uno
+> **Objetivo**: 6 vídeos cortos publicados en 3 semanas. Cada uno
 > diseñado para captar DJs/promoters jóvenes en TikTok/Reels.
+> Mix: 4 vídeos sobre EDITOR + 2 vídeos sobre PLATAFORMA EVENTOS.
 >
 > **Coste**: 0€ (móvil + tiempo). 30-60 min por vídeo grabar+editar.
 > **ROI esperado**: 1 vídeo viral (50k+ views) en 4 = 50-200 signups orgánicos.
@@ -232,16 +233,127 @@ encajan con tu negocio o son genéricas.
 
 ---
 
-## Plan de publicación 2 semanas
+## Vídeo 5 — "Donde están las fiestas DJ esta semana" (PLATAFORMA)
+
+### Hook (segundos 0-3)
+**Visual**: scroll rápido por el calendario `/eventos` (tu pantalla móvil)
+**Texto pantalla**: "¿Cómo encuentras la fiesta DJ del finde?"
+
+### Desarrollo (segundos 3-22)
+
+| Sec | Acción visual | Texto pantalla |
+|---|---|---|
+| 3-5 | Abrir artegenia.com/eventos en móvil | "Hay una web nueva en España" |
+| 5-9 | Filtros: ciudad Madrid + género Techno → grid de eventos | "Filtras por ciudad y género" |
+| 9-13 | Tap en evento → modal con foto, hora, sala, precio, tickets | "Ves el flyer, hora, sala, precio" |
+| 13-16 | Click "Reservar" → abre página de tickets externa | "Reservas directamente" |
+| 16-20 | Volver al calendario, scroll por más eventos | "Sin Instagram, sin spam, sin scraping" |
+| 20-22 | Mostrar logo ArteGenIA | "artegenia.com/eventos" |
+
+### CTA final (segundos 22-25)
+
+**Texto pantalla**: "Eventos de verdad, publicados por organizadores reales"
+**Voiceover**: "Sin algoritmos raros — link en bio"
+
+### Tips de edición
+
+- **Velocidad normal** durante scroll calendar (es lo que vende)
+- **Speed-up x2** en filtros (es info pero no protagonista)
+- **Música**: tendencia "Discover" o algo nocturno-electrónico
+
+### Hashtags
+
+```
+#FiestasDJ #FiestasMadrid #FiestasBarcelona #EventosMadrid
+#ArteGenIA #CalendarioEventos #NightlifeSpain #DJSpain
+#DondeIrEsteFinde #PlanDeNoche #fyp
+```
+
+### Caption
+
+```
+Por fin una agenda de fiestas REALES.
+
+No Instagram (te pierdes posts).
+No grupos de Telegram (caos).
+No Resident Advisor (caro y solo grandes salas).
+
+artegenia.com/eventos → filtras por ciudad,
+género y fecha. Listo.
+
+🔗 Link en bio
+```
+
+---
+
+## Vídeo 6 — "Publico mi evento en 60 segundos" (PLATAFORMA — para organizadores)
+
+### Hook (segundos 0-3)
+**Visual**: cara preocupada con texto "Tengo evento en 1 semana y nadie lo sabe 😬"
+**Texto pantalla**: "Promotor DJ: cómo no morir en el silencio"
+
+### Desarrollo (segundos 3-22)
+
+| Sec | Acción visual | Texto pantalla |
+|---|---|---|
+| 3-6 | Entra a artegenia.com → "Login" | "Cuenta gratis en artegenia.com" |
+| 6-9 | Selecciono tipo organizador: "Productora" | "Tipo de organizador" |
+| 9-12 | Dashboard → "Crear evento" | "Dashboard → Nuevo evento" |
+| 12-16 | Form: título, fecha, lugar, género, precio, subir flyer | "Relleno datos básicos" |
+| 16-19 | "Publicar" → confirmación "Tu evento está en /eventos" | "Publicado" |
+| 19-22 | Vista pública del evento + URL para compartir | "Listo en /eventos · compartible" |
+
+### CTA final (segundos 22-25)
+
+**Texto pantalla**: "Gratis para organizadores reales"
+**Voiceover**: "DJs, academias, productoras — link en bio"
+
+### Tips de edición
+
+- **Énfasis en lo rápido del flow** (60 segundos reales)
+- Mostrar que solo necesitas info básica (no campos infinitos como Eventbrite)
+- **Música**: ritmo subiendo (energía construyendo)
+
+### Hashtags
+
+```
+#PromotorDJ #OrganizadorEventos #ArteGenIA #PublicaTuEvento
+#EventManagement #DJTools #ProductorMusical #FiestasMadrid
+#DJBusiness #ProductividadDJ #fyp
+```
+
+### Caption
+
+```
+Organizo fiestas y siempre el mismo dolor:
+"¿Dónde la promociono además del Instagram?"
+
+Probé Eventbrite → me cobra comisión.
+Probé crear web propia → carísimo + lento.
+Probé Resident Advisor → solo grandes clubs.
+
+Encontré artegenia.com/eventos.
+Cuenta gratis, publicas en 60 seg,
+te trae tráfico orgánico.
+
+🔗 Link en bio
+```
+
+---
+
+## Plan de publicación 3 semanas
 
 | Día | Vídeo | Hora pub | Por qué esa hora |
 |---|---|---|---|
 | Lun semana 1 | #1 "Flyer en 60s" | 19:00 CET | Pico engagement post-trabajo |
 | Mié semana 1 | #2 "Antes/Después" | 13:00 CET | Pico hora comida + LATAM tarde |
 | Vie semana 1 | (esperar reacciones, NO postear) | — | Día de fiesta, gente fuera |
-| Lun semana 2 | #3 "Reacción DJ" | 20:00 CET | Pico tarde noche |
-| Mié semana 2 | #4 "vs Canva" | 12:00 CET | Mediodía + LATAM mañana |
+| Lun semana 2 | #5 "Donde están las fiestas" | 20:00 CET | Pico nocturno + plan finde |
+| Mié semana 2 | #3 "Reacción DJ" | 20:00 CET | Pico tarde noche |
 | Vie semana 2 | (esperar feedback) | — | — |
+| Lun semana 3 | #6 "Publico evento 60s" | 13:00 CET | Hora comida B2B (promotores) |
+| Mié semana 3 | #4 "vs Canva" | 12:00 CET | Mediodía + LATAM mañana |
+| Vie semana 3 | (review métricas) | — | — |
 
 **Reglas**:
 - Postear el MISMO vídeo en TikTok + Instagram Reels + YouTube Shorts (max alcance)
