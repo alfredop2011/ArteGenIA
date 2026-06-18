@@ -18,12 +18,23 @@ export default async function EventosPage() {
   let initialEvents: ReturnType<typeof rowToEvent>[] = [];
   try {
     const supabase = await createSupabaseServerClient();
+    // Solo próximos (una agenda muestra lo que viene, no lo pasado).
+    const todayIso = new Date().toISOString().slice(0, 10);
     const { data } = await supabase
       .from("events")
       .select("*")
       .in("status", ["published", "cancelled"])
+      .gte("event_date", todayIso)
       .order("event_date", { ascending: true });
-    initialEvents = ((data as EventRow[]) ?? []).map(rowToEvent);
+    const mapped = ((data as EventRow[]) ?? []).map(rowToEvent);
+    // Dedup defensivo: colapsa duplicados (mismo título + fecha + ciudad + lugar).
+    const seen = new Set<string>();
+    initialEvents = mapped.filter((e) => {
+      const k = `${e.title.toLowerCase()}|${e.date}|${e.city}|${e.venue.toLowerCase()}`;
+      if (seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
   } catch {
     // Si Supabase falla, EventosClient cae a los ejemplos de muestra.
     initialEvents = [];

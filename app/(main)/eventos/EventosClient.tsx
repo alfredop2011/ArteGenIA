@@ -162,7 +162,9 @@ function parse(iso: string) {
 }
 function fmtLong(iso: string) {
   const d = parse(iso);
-  return `${d.getDate()} ${MONTHS[d.getMonth()]}`;
+  // Muestra el año solo si NO es el año en curso (evita "15 mayo" ambiguo).
+  const y = d.getFullYear() !== parse(TODAY).getFullYear() ? ` ${d.getFullYear()}` : "";
+  return `${d.getDate()} ${MONTHS[d.getMonth()]}${y}`;
 }
 function addDays(iso: string, n: number) {
   const d = parse(iso);
@@ -977,7 +979,7 @@ function EventCard({
         <h4 className="line-clamp-1 font-semibold">{event.title}</h4>
         <div className="mt-2 space-y-1 text-xs" style={{ color: "var(--home-text-muted)" }}>
           <p className="flex items-center gap-1.5"><Clock size={12} /> {event.time}</p>
-          <p className="flex items-center gap-1.5"><MapPin size={12} /> {event.venue} · {event.neighborhood}</p>
+          <p className="flex items-center gap-1.5"><MapPin size={12} /> {event.venue}{event.neighborhood ? ` · ${event.neighborhood}` : ""}</p>
         </div>
       </button>
     </motion.div>
@@ -1131,7 +1133,7 @@ function EventModal({
           <div className="mt-3 space-y-2 text-sm" style={{ color: "var(--home-text-muted)" }}>
             <p className="flex items-center gap-2"><CalendarIcon size={15} style={{ color: "var(--ag-brand)" }} /> <span className="capitalize">{fmtLong(event.date)}</span></p>
             <p className="flex items-center gap-2"><Clock size={15} style={{ color: "var(--ag-brand)" }} /> {event.time} h</p>
-            <p className="flex items-center gap-2"><MapPin size={15} style={{ color: "var(--ag-brand)" }} /> {event.venue} · {event.neighborhood}</p>
+            <p className="flex items-center gap-2"><MapPin size={15} style={{ color: "var(--ag-brand)" }} /> {event.venue}{event.neighborhood ? ` · ${event.neighborhood}` : ""}</p>
             <p className="flex items-center gap-2"><Ticket size={15} style={{ color: "var(--ag-brand)" }} /> {event.priceInfo ? event.priceInfo : event.price == null ? "Precio por confirmar" : event.price === 0 ? "Entrada gratuita" : `${event.price} €`}</p>
           </div>
 

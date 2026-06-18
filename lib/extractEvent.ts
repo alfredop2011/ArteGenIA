@@ -33,6 +33,7 @@ const SYSTEM = `Eres un extractor de datos de flyers de eventos. Recibes la imag
 {
   "title": string,                 // nombre del evento, conciso
   "event_date": string|null,       // "YYYY-MM-DD". REGLA DE AÑO abajo. null si no hay fecha clara
+  "date_has_year": boolean,        // true si el flyer MUESTRA el año explícitamente (ej. "MAY 2025")
   "event_time": string,            // "HH:mm" 24h. "20:00" si no aparece
   "city": string,                  // ciudad en minúsculas sin tildes: "madrid","barcelona","valencia","sevilla". "madrid" si no aparece
   "venue": string,                 // sala/lugar. "" si no aparece
@@ -99,10 +100,11 @@ export async function extractEventFromImage(
     const raw = JSON.parse(jsonStr);
 
     const category: EventCategory = VALID_CATS.includes(raw.category) ? raw.category : "fiesta";
-    // Red de seguridad: si la fecha quedó en el pasado (típico: el flyer no
-    // ponía año y el modelo adivinó mal), adelanta el año hasta que sea futura.
+    // Red de seguridad: si la fecha quedó en el pasado SIN año explícito en el
+    // flyer (el modelo adivinó mal el año), adelanta el año hasta que sea futura.
+    // Si el flyer SÍ mostraba el año (ej. "MAY 2025"), respetamos esa fecha.
     let eventDate = typeof raw.event_date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(raw.event_date) ? raw.event_date : null;
-    if (eventDate && eventDate < today) {
+    if (eventDate && eventDate < today && !raw.date_has_year) {
       const [y0, m, d] = eventDate.split("-").map(Number);
       let y = y0;
       const md = `-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
