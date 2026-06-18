@@ -1824,8 +1824,10 @@ export const templates: Template[] = [
                 // Hole central del disco
                 { id: "vinyl-hole", type: "shape", shape: "circle", x: 540, y: 1140, width: 20, height: 20, fill: "#0a0a0a", originX: "center", originY: "top", selectable: false },
 
-                // DJ emerge del disco
-                { id: "artist", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dj/Dj-2.png", x: 540, y: 380, scaleX: 1.55, scaleY: 1.55, originX: "center", originY: "top", shadow: { color: "rgba(0,0,0,0.65)", blur: 45, offsetX: 0, offsetY: 15 } },
+                // DJ emerge del disco (escala reducida para no tapar info y label rojo)
+                // Imagen real: 447×558, scale 1.05 → render 469×586 — cabe entre y:330 y y:916
+                // Deja libre la zona del vinyl-label (y:950-1350) para los textos release
+                { id: "artist", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dj/Dj-2.png", x: 540, y: 330, scaleX: 1.05, scaleY: 1.05, originX: "center", originY: "top", shadow: { color: "rgba(0,0,0,0.55)", blur: 30, offsetX: 0, offsetY: 10 } },
 
                 // SIDE A label
                 { id: "side-a-label", type: "text", text: "SIDE A", x: 80, y: 410, width: 200, fontSize: 19, fontFamily: "Anton, Impact, sans-serif", color: "#fef3c7", textAlign: "left", charSpacing: 600 },
@@ -1841,11 +1843,11 @@ export const templates: Template[] = [
                 { id: "side-b-2", type: "text", text: "05. Closing Set", x: 700, y: 470, width: 300, fontSize: 15, fontFamily: "Montserrat, sans-serif", color: "#fef3c7", fontWeight: "500", textAlign: "right" },
                 { id: "side-b-3", type: "text", text: "06. Sunrise Reprise", x: 700, y: 495, width: 300, fontSize: 15, fontFamily: "Montserrat, sans-serif", color: "#fef3c7", fontWeight: "500", textAlign: "right" },
 
-                // INFO en el label central del disco
-                { id: "release-by", type: "text", text: "A SET BY", x: 0, y: 990, width: 1080, fontSize: 19, fontFamily: "Montserrat, sans-serif", color: "rgba(254,243,199,0.7)", fontWeight: "700", textAlign: "center", charSpacing: 400 },
-                { id: "release-name", type: "text", text: "DJ MAVEN", x: 0, y: 1010, width: 1080, fontSize: 48, fontFamily: "Anton, Impact, sans-serif", color: "#fef3c7", textAlign: "center", charSpacing: 80 },
-                { id: "release-date", type: "text", text: "22 . AGO . 2026", x: 0, y: 1065, width: 1080, fontSize: 19, fontFamily: "Montserrat, sans-serif", color: "#fef3c7", fontWeight: "700", textAlign: "center", charSpacing: 350 },
-                { id: "release-venue", type: "text", text: "AZOTEA  ·  BARCELONA", x: 0, y: 1090, width: 1080, fontSize: 21, fontFamily: "Montserrat, sans-serif", color: "rgba(254,243,199,0.8)", fontWeight: "500", textAlign: "center", charSpacing: 280 },
+                // INFO en el label central del disco — fuentes más legibles
+                { id: "release-by", type: "text", text: "A SET BY", x: 0, y: 1010, width: 1080, fontSize: 22, fontFamily: "Montserrat, sans-serif", color: "rgba(254,243,199,0.85)", fontWeight: "700", textAlign: "center", charSpacing: 400 },
+                { id: "release-name", type: "text", text: "DJ MAVEN", x: 0, y: 1045, width: 1080, fontSize: 64, fontFamily: "Anton, Impact, sans-serif", color: "#fef3c7", textAlign: "center", charSpacing: 60 },
+                { id: "release-date", type: "text", text: "22 . AGO . 2026", x: 0, y: 1130, width: 1080, fontSize: 24, fontFamily: "Montserrat, sans-serif", color: "#fef3c7", fontWeight: "800", textAlign: "center", charSpacing: 250 },
+                { id: "release-venue", type: "text", text: "AZOTEA · BARCELONA", x: 0, y: 1170, width: 1080, fontSize: 22, fontFamily: "Montserrat, sans-serif", color: "rgba(254,243,199,0.95)", fontWeight: "600", textAlign: "center", charSpacing: 200 },
             ] },
         ],
     },
