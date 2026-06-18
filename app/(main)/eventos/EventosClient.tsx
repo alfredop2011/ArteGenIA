@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
@@ -36,7 +36,15 @@ import {
   Maximize2,
   Crosshair,
   SlidersHorizontal,
+  Send,
+  MessageCircle,
+  Mic,
+  Wand2,
 } from "lucide-react";
+
+// Usuario del bot de Telegram (sin @). Configurable por env para no hardcodear.
+// Ej: NEXT_PUBLIC_TELEGRAM_BOT_USERNAME=ArtegeniaBot
+const TELEGRAM_BOT = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || "";
 
 /**
  * /eventos — Agenda cultural PÚBLICA. Página de referencia para que cualquiera
@@ -255,10 +263,15 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
   const { user } = useAuth();
   const router = useRouter();
   const [showAuth, setShowAuth] = useState(false);
+  const [showPublish, setShowPublish] = useState(false);
   const organizerLabel = user ? "Publicar evento" : "Sube tu evento gratis";
   // Si hay sesión, directo al panel; si no, abrimos el modal de login y, tras
   // autenticarse, volvemos a /organizador (nextUrl para el flujo OAuth).
-  const goOrganizer = () => (user ? router.push("/organizador") : setShowAuth(true));
+  const goOrganizer = () => {
+    setShowPublish(false);
+    if (user) router.push("/organizador");
+    else setShowAuth(true);
+  };
 
   // "Cerca de mí": pide ubicación al navegador y elige la ciudad DISPONIBLE
   // (con eventos) más cercana. Solo se activa si el usuario lo pulsa.
@@ -489,7 +502,7 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
               va directo al panel; si no, abre el login con retorno a /organizador.
               En móvil acortamos el texto para que no se parta en dos líneas. */}
           <button
-            onClick={goOrganizer}
+            onClick={() => setShowPublish(true)}
             className="flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold"
             style={{ border: "1px solid var(--ag-brand-border)", color: "var(--ag-brand)" }}
           >
@@ -850,7 +863,7 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
             </p>
           </div>
           <button
-            onClick={goOrganizer}
+            onClick={() => setShowPublish(true)}
             className="inline-flex shrink-0 items-center gap-1.5 rounded-xl px-5 py-2.5 text-sm font-semibold text-white"
             style={{ background: "var(--ag-brand)" }}
           >
@@ -858,6 +871,17 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
           </button>
         </div>
       </section>
+
+      {/* Modal: ¿cómo quieres publicar? (web / Telegram / WhatsApp / voz) */}
+      <AnimatePresence>
+        {showPublish && (
+          <PublishOptionsModal
+            user={!!user}
+            onClose={() => setShowPublish(false)}
+            onWeb={goOrganizer}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Login de organizador (mismo patrón que el resto de la app) */}
       {showAuth && (
@@ -928,6 +952,127 @@ function CityAutocomplete({
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+// ─── Modal: cómo publicar un evento (vías rápidas) ─────────────────────────
+
+function PublishOptionsModal({
+  user,
+  onClose,
+  onWeb,
+}: {
+  user: boolean;
+  onClose: () => void;
+  onWeb: () => void;
+}) {
+  const telegramUrl = TELEGRAM_BOT ? `https://t.me/${TELEGRAM_BOT}` : "";
+  return (
+    <motion.div
+      className="fixed inset-0 z-[60] flex items-end justify-center sm:items-center"
+      style={{ background: "rgba(0,0,0,.55)" }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      onClick={onClose}
+    >
+      <motion.div
+        className="w-full max-w-md overflow-hidden rounded-t-3xl sm:rounded-3xl"
+        style={{ background: "var(--home-bg)", border: "1px solid var(--home-card-border)" }}
+        initial={{ y: 40, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        exit={{ y: 40, opacity: 0 }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-start justify-between p-5 pb-2">
+          <div>
+            <h3 className="text-lg font-bold" style={{ color: "var(--home-text)" }}>
+              {user ? "Publica tu evento" : "Sube tu evento gratis"}
+            </h3>
+            <p className="mt-0.5 text-sm" style={{ color: "var(--home-text-soft)" }}>
+              Elige la vía más rápida para ti. Mandas el flyer y nosotros leemos fecha, lugar y precio.
+            </p>
+          </div>
+          <button onClick={onClose} aria-label="Cerrar" className="rounded-full p-1.5" style={{ color: "var(--home-text-soft)" }}>
+            <X size={18} />
+          </button>
+        </div>
+
+        <div className="space-y-2.5 p-5 pt-3">
+          {/* 1) Web — asistente */}
+          <button
+            onClick={onWeb}
+            className="flex w-full items-center gap-3 rounded-2xl p-3.5 text-left transition-colors"
+            style={{ background: "var(--home-card-bg)", border: "1px solid var(--ag-brand-border)" }}
+          >
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white" style={{ background: "var(--ag-brand)" }}>
+              <Wand2 size={18} />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="flex items-center gap-2 font-semibold" style={{ color: "var(--home-text)" }}>
+                Aquí mismo (asistente)
+                <span className="rounded-full px-1.5 py-0.5 text-[10px] font-bold text-white" style={{ background: "var(--ag-brand)" }}>RÁPIDO</span>
+              </span>
+              <span className="block text-xs" style={{ color: "var(--home-text-soft)" }}>
+                Sube el flyer y se rellena solo. {user ? "Vas directo a tu panel." : "Creas tu cuenta gratis en segundos."}
+              </span>
+            </span>
+            <ChevronRight size={18} style={{ color: "var(--home-text-soft)" }} />
+          </button>
+
+          {/* 2) Telegram — bot, sin cuenta */}
+          {telegramUrl ? (
+            <a
+              href={telegramUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={onClose}
+              className="flex w-full items-center gap-3 rounded-2xl p-3.5 text-left transition-colors"
+              style={{ background: "var(--home-card-bg)", border: "1px solid var(--home-card-border)" }}
+            >
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white" style={{ background: "#229ED9" }}>
+                <Send size={18} />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="flex items-center gap-2 font-semibold" style={{ color: "var(--home-text)" }}>
+                  Por Telegram
+                  <span className="rounded-full px-1.5 py-0.5 text-[10px] font-bold" style={{ background: "var(--home-bg-soft)", color: "var(--home-text-soft)" }}>SIN CUENTA</span>
+                </span>
+                <span className="block text-xs" style={{ color: "var(--home-text-soft)" }}>
+                  Mándale el flyer al bot y se publica solo. Tus eventos te esperan si luego abres cuenta.
+                </span>
+              </span>
+              <ExternalLink size={16} style={{ color: "var(--home-text-soft)" }} />
+            </a>
+          ) : (
+            <SoonRow icon={<Send size={18} />} color="#229ED9" title="Por Telegram" desc="Activando el bot — disponible muy pronto." />
+          )}
+
+          {/* 3) WhatsApp — próximamente */}
+          <SoonRow icon={<MessageCircle size={18} />} color="#25D366" title="Por WhatsApp" desc="Próximamente: el mismo bot, en tu WhatsApp." />
+
+          {/* 4) Voz / audio — próximamente */}
+          <SoonRow icon={<Mic size={18} />} color="#7E2BFF" title="Por voz" desc="Próximamente: cuéntale tu evento con un audio." />
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+function SoonRow({ icon, color, title, desc }: { icon: ReactNode; color: string; title: string; desc: string }) {
+  return (
+    <div className="flex w-full items-center gap-3 rounded-2xl p-3.5 text-left opacity-55" style={{ background: "var(--home-card-bg)", border: "1px solid var(--home-card-border)" }}>
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white" style={{ background: color }}>
+        {icon}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="flex items-center gap-2 font-semibold" style={{ color: "var(--home-text)" }}>
+          {title}
+          <span className="rounded-full px-1.5 py-0.5 text-[10px] font-bold" style={{ background: "var(--home-bg-soft)", color: "var(--home-text-soft)" }}>PRONTO</span>
+        </span>
+        <span className="block text-xs" style={{ color: "var(--home-text-soft)" }}>{desc}</span>
+      </span>
     </div>
   );
 }
