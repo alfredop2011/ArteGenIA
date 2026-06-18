@@ -619,7 +619,7 @@ function EventForm({
                   />
                 </label>
                 <Link
-                  href="/create"
+                  href="/templates"
                   target="_blank"
                   className="flex items-center justify-center gap-1 text-xs font-medium"
                   style={{ color: "var(--home-text-muted)" }}
