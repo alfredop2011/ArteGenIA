@@ -139,6 +139,25 @@ async function loadBrainEvents(ref: string): Promise<BrainEvent[]> {
 // Ejecutor de acciones del cerebro — SIEMPRE limitado a los eventos de `ref`.
 function makeRunTool(ref: string) {
   return async (name: string, input: Record<string, unknown>): Promise<string> => {
+    // Búsqueda PÚBLICA de eventos (de cualquier organizador). No requiere id.
+    if (name === "buscar_eventos") {
+      let q = supabaseAdmin
+        .from("events")
+        .select("title,event_date,event_time,venue,city,price,status")
+        .eq("status", "published")
+        .order("event_date", { ascending: true })
+        .limit(20);
+      if (typeof input.ciudad === "string" && input.ciudad.trim()) q = q.eq("city", input.ciudad.toLowerCase().trim());
+      if (typeof input.desde === "string") q = q.gte("event_date", input.desde);
+      if (typeof input.hasta === "string") q = q.lte("event_date", input.hasta);
+      const { data } = await q;
+      const rows = (data as { title: string; event_date: string; event_time: string; venue: string; city: string; price: number | null }[]) ?? [];
+      if (rows.length === 0) return "No hay eventos públicos para esos filtros.";
+      return rows
+        .map((e) => `- "${e.title}" · ${e.event_date} ${e.event_time} · ${e.venue} (${e.city}) · ${e.price == null ? "consultar" : e.price === 0 ? "gratis" : e.price + "€"}`)
+        .join("\n");
+    }
+
     // Preferencia de avisos (no requiere id).
     if (name === "silenciar_avisos" || name === "activar_avisos") {
       const muted = name === "silenciar_avisos";

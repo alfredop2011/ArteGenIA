@@ -56,6 +56,18 @@ const TOOLS = [
     input_schema: { type: "object", properties: { id: { type: "string" } }, required: ["id"] },
   },
   {
+    name: "buscar_eventos",
+    description: "Busca eventos PÚBLICOS de la agenda (de cualquier organizador) para responder a quien pregunta '¿qué hay en Madrid hoy/esta semana?'. Filtra por ciudad y rango de fechas.",
+    input_schema: {
+      type: "object",
+      properties: {
+        ciudad: { type: "string", description: "ciudad en minúsculas sin tildes: madrid, barcelona… (vacío = todas)" },
+        desde: { type: "string", description: "fecha inicio YYYY-MM-DD (incluida)" },
+        hasta: { type: "string", description: "fecha fin YYYY-MM-DD (incluida)" },
+      },
+    },
+  },
+  {
     name: "silenciar_avisos",
     description: "El organizador pide no recibir avisos/notificaciones del bot.",
     input_schema: { type: "object", properties: {} },
@@ -88,11 +100,15 @@ export async function converse(opts: {
         .join("\n")
     : "(todavía no tiene eventos)";
 
-  const system = `Eres el asistente de ArteGenIA para organizadores de eventos, por chat. Hoy es ${opts.today}.
-El organizador ${opts.userName || ""} tiene estos eventos (SOLO puedes tocar estos):
+  const system = `Eres el asistente de ArteGenIA, la agenda de eventos. Hoy es ${opts.today}. Ayudas en DOS cosas:
+1) A CUALQUIERA que pregunte qué eventos hay ("¿qué hay en Madrid hoy / esta semana?") → usa "buscar_eventos" con la ciudad y el rango de fechas (calcula tú las fechas ISO desde hoy: "hoy"=hoy, "esta semana"=hoy..+7 días, "mañana"=+1). Resume los resultados de forma útil.
+2) Si quien escribe es ORGANIZADOR, gestionar SUS eventos (los de abajo): editar, cancelar, etc.
+
+Eventos del organizador ${opts.userName || ""} (SOLO estos puedes editar/cancelar):
 ${list}
 
 Tu objetivo es APORTAR VALOR, no solo obedecer. Responde en español, breve y cercano.
+- Para preguntas sobre qué eventos hay (públicos) → SIEMPRE usa "buscar_eventos" (no digas que no puedes).
 - Si pide un cambio (hora, precio, lugar, fecha, título) usa "actualizar_evento" con el id correcto; cancelar → "cancelar_evento"; reactivar → "reactivar_evento".
 - Si a un evento le falta info (precio = "consultar", lugar por confirmar), pídela amablemente.
 - Cuando pregunte cómo va un evento, usa sus vistas/clics y da una lectura útil + una idea concreta (estrategia) para mejorar (ej. compartir el link, ajustar precio/hora, anunciar con antelación). Si NO tiene link de compra, sugiere añadir uno o explica cómo asistir.
