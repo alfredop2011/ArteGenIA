@@ -392,35 +392,50 @@ export const templates: Template[] = [
         audience: ["academias"],
         variants: [
             { format: "portrait", width: 1080, height: 1350, layers: [
-            // FONDO amarillo neón
-            { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1350, fill: "#FFE600", selectable: false },
-            // FORMA decorativa morada rotada (esquina sup. derecha)
-            { id: "deco-purple-tr", type: "shape", shape: "rect", x: 720, y: -100, width: 520, height: 360, fill: "#7B2FBE", opacity: 0.95, angle: 18, selectable: false },
-            // FORMA decorativa morada (esquina inf. izquierda)
-            { id: "deco-purple-bl", type: "shape", shape: "rect", x: -120, y: 1150, width: 480, height: 280, fill: "#7B2FBE", opacity: 0.85, angle: -12, selectable: false },
-            // TOP BAND negra
-            { id: "top-band", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 240, fill: "#0D0D0D", selectable: false },
-            // KICKER pequeño arriba
-            { id: "kicker", type: "text", text: "ACADEMIA · TEMPORADA 2026", x: 540, y: 36, width: 1080, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "#FFE600", fontWeight: "700", textAlign: "center", originX: "center", originY: "top", charSpacing: 400 },
-            // TÍTULO hero línea 1
-            { id: "title-line1", type: "text", text: "CLASES DE", x: 540, y: 72, width: 1080, fontSize: 92, fontFamily: "Anton, Impact, sans-serif", color: "#FFFFFF", fontWeight: "900", textAlign: "center", originX: "center", originY: "top", charSpacing: -10 },
-            // TÍTULO hero línea 2
-            { id: "title-line2", type: "text", text: "BAILE", x: 540, y: 160, width: 1080, fontSize: 92, fontFamily: "Anton, Impact, sans-serif", color: "#FFE600", fontWeight: "900", textAlign: "center", originX: "center", originY: "top", charSpacing: -10 },
-            // PAREJA de baile centrada con halo blanco
-            { id: "couple", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/07_lucia_mateo_pareja.png", x: 540, y: 290, scaleX: 0.68, scaleY: 0.68, originX: "center", originY: "top", shadow: { color: "rgba(255,255,255,0.95)", blur: 50, offsetX: 0, offsetY: 0 } },
-            // BOTTOM BAND negra
-            { id: "bottom-band", type: "shape", shape: "rect", x: 0, y: 1090, width: 1080, height: 260, fill: "#0D0D0D", selectable: false },
+            // FONDO negro base
+            { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1350, fill: "#0D0D0D", selectable: false },
+            // BLOQUE amarillo central (no full canvas para dejar respirar)
+            { id: "yellow-block", type: "shape", shape: "rect", x: 60, y: 320, width: 960, height: 760, fill: "#FFE600", selectable: false },
+            // FORMAS moradas decorativas (visibles, no escondidas en esquinas)
+            { id: "deco-purple-1", type: "shape", shape: "rect", x: 780, y: 280, width: 280, height: 200, fill: "#7B2FBE", opacity: 0.95, angle: 18, selectable: false },
+            { id: "deco-purple-2", type: "shape", shape: "rect", x: 20, y: 920, width: 260, height: 180, fill: "#7B2FBE", opacity: 0.90, angle: -15, selectable: false },
+            { id: "deco-purple-3", type: "shape", shape: "circle", x: 880, y: 950, width: 120, height: 120, radius: 60, fill: "#7B2FBE", opacity: 0.80, selectable: false },
+            // PUNTOS decorativos en bloque amarillo (textura)
+            { id: "dot-1", type: "shape", shape: "circle", x: 120, y: 380, width: 16, height: 16, radius: 8, fill: "#0D0D0D", opacity: 0.6, selectable: false },
+            { id: "dot-2", type: "shape", shape: "circle", x: 150, y: 410, width: 10, height: 10, radius: 5, fill: "#0D0D0D", opacity: 0.4, selectable: false },
+            { id: "dot-3", type: "shape", shape: "circle", x: 920, y: 1020, width: 12, height: 12, radius: 6, fill: "#0D0D0D", opacity: 0.5, selectable: false },
+            // KICKER pequeño arriba (sobre negro)
+            { id: "kicker", type: "text", text: "ACADEMIA · TEMPORADA 2026", x: 540, y: 60, width: 1080, fontSize: 22, fontFamily: "Montserrat, sans-serif", color: "#FFE600", fontWeight: "700", textAlign: "center", originX: "center", originY: "top", charSpacing: 400 },
+            // TÍTULO hero línea 1 (blanco, sobre negro)
+            { id: "title-line1", type: "text", text: "CLASES DE", x: 540, y: 110, width: 1080, fontSize: 108, fontFamily: "Anton, Impact, sans-serif", color: "#FFFFFF", fontWeight: "900", textAlign: "center", originX: "center", originY: "top", charSpacing: -10 },
+            // TÍTULO hero línea 2 (amarillo, sobre negro)
+            { id: "title-line2", type: "text", text: "BAILE", x: 540, y: 210, width: 1080, fontSize: 108, fontFamily: "Anton, Impact, sans-serif", color: "#FFE600", fontWeight: "900", textAlign: "center", originX: "center", originY: "top", charSpacing: -10 },
+            // PAREJA de baile GRANDE centrada sobre el bloque amarillo
+            { id: "couple", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/07_lucia_mateo_pareja.png", x: 540, y: 340, scaleX: 0.95, scaleY: 0.95, originX: "center", originY: "top", shadow: { color: "rgba(124,47,190,0.7)", blur: 60, offsetX: 0, offsetY: 0 } },
+            // BADGE 'NUEVA' redondo arriba derecha del bloque amarillo
+            { id: "badge-bg", type: "shape", shape: "circle", x: 920, y: 380, width: 120, height: 120, radius: 60, fill: "#0D0D0D", selectable: false },
+            { id: "badge-text-1", type: "text", text: "NUEVA", x: 920, y: 415, width: 120, fontSize: 18, fontFamily: "Anton, Impact, sans-serif", color: "#FFE600", fontWeight: "900", textAlign: "center", originX: "center", originY: "top", charSpacing: 80 },
+            { id: "badge-text-2", type: "text", text: "TEMPORADA", x: 920, y: 442, width: 120, fontSize: 12, fontFamily: "Montserrat, sans-serif", color: "#FFFFFF", fontWeight: "700", textAlign: "center", originX: "center", originY: "top", charSpacing: 50 },
+            // BENEFICIOS rápidos como chips
+            { id: "benefit-1-bg", type: "shape", shape: "rect", x: 100, y: 1020, width: 260, height: 38, fill: "#0D0D0D", radius: 19, selectable: false },
+            { id: "benefit-1-text", type: "text", text: "TODOS LOS NIVELES", x: 230, y: 1031, width: 260, fontSize: 16, fontFamily: "Anton, Impact, sans-serif", color: "#FFE600", fontWeight: "900", textAlign: "center", originX: "center", originY: "top", charSpacing: 60 },
+            { id: "benefit-2-bg", type: "shape", shape: "rect", x: 380, y: 1020, width: 200, height: 38, fill: "#0D0D0D", radius: 19, selectable: false },
+            { id: "benefit-2-text", type: "text", text: "SIN PAREJA", x: 480, y: 1031, width: 200, fontSize: 16, fontFamily: "Anton, Impact, sans-serif", color: "#FFE600", fontWeight: "900", textAlign: "center", originX: "center", originY: "top", charSpacing: 60 },
+            { id: "benefit-3-bg", type: "shape", shape: "rect", x: 600, y: 1020, width: 240, height: 38, fill: "#0D0D0D", radius: 19, selectable: false },
+            { id: "benefit-3-text", type: "text", text: "PRIMERA GRATIS", x: 720, y: 1031, width: 240, fontSize: 16, fontFamily: "Anton, Impact, sans-serif", color: "#FFE600", fontWeight: "900", textAlign: "center", originX: "center", originY: "top", charSpacing: 60 },
+            // BOTTOM SECTION negra (la zona de info)
+            { id: "bottom-bg", type: "shape", shape: "rect", x: 0, y: 1080, width: 1080, height: 270, fill: "#0D0D0D", selectable: false },
             // LÍNEA divisora amarilla
-            { id: "div-line", type: "shape", shape: "rect", x: 440, y: 1110, width: 200, height: 4, fill: "#FFE600", selectable: false },
+            { id: "div-line", type: "shape", shape: "rect", x: 420, y: 1108, width: 240, height: 4, fill: "#FFE600", selectable: false },
             // FECHA
-            { id: "date", type: "text", text: "SÁBADO 15 · NOVIEMBRE", x: 540, y: 1135, width: 1080, fontSize: 30, fontFamily: "Anton, Impact, sans-serif", color: "#FFE600", fontWeight: "900", textAlign: "center", originX: "center", originY: "top", charSpacing: 100 },
+            { id: "date", type: "text", text: "SÁBADO 15 · NOVIEMBRE", x: 540, y: 1130, width: 1080, fontSize: 32, fontFamily: "Anton, Impact, sans-serif", color: "#FFE600", fontWeight: "900", textAlign: "center", originX: "center", originY: "top", charSpacing: 120 },
             // HORARIO grande
-            { id: "time", type: "text", text: "17:00 — 21:00 H", x: 540, y: 1180, width: 1080, fontSize: 56, fontFamily: "Anton, Impact, sans-serif", color: "#FFFFFF", fontWeight: "900", textAlign: "center", originX: "center", originY: "top", charSpacing: 30 },
+            { id: "time", type: "text", text: "17:00 — 21:00 H", x: 540, y: 1178, width: 1080, fontSize: 60, fontFamily: "Anton, Impact, sans-serif", color: "#FFFFFF", fontWeight: "900", textAlign: "center", originX: "center", originY: "top", charSpacing: 40 },
             // VENUE info
-            { id: "venue", type: "text", text: "ESTUDIO DEL SOL  ·  C/ TENERIFE 5  ·  MADRID", x: 540, y: 1265, width: 1080, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "#FFFFFF", fontWeight: "600", textAlign: "center", originX: "center", originY: "top", charSpacing: 200 },
-            // PRECIO en chip
-            { id: "price-chip", type: "shape", shape: "rect", x: 470, y: 1300, width: 140, height: 30, fill: "#FFE600", radius: 15, selectable: false },
-            { id: "price-text", type: "text", text: "15€ POR CLASE", x: 540, y: 1306, width: 140, fontSize: 16, fontFamily: "Montserrat, sans-serif", color: "#0D0D0D", fontWeight: "900", textAlign: "center", originX: "center", originY: "top", charSpacing: 80 },
+            { id: "venue", type: "text", text: "ESTUDIO DEL SOL · C/ TENERIFE 5 · MADRID", x: 540, y: 1262, width: 1080, fontSize: 18, fontFamily: "Montserrat, sans-serif", color: "#FFFFFF", fontWeight: "600", textAlign: "center", originX: "center", originY: "top", charSpacing: 200 },
+            // PRECIO + WHATSAPP en chip amarillo ancho
+            { id: "cta-chip", type: "shape", shape: "rect", x: 320, y: 1298, width: 440, height: 38, fill: "#FFE600", radius: 19, selectable: false },
+            { id: "cta-text", type: "text", text: "15€ · RESERVA WHATSAPP 600 222 333", x: 540, y: 1309, width: 440, fontSize: 16, fontFamily: "Anton, Impact, sans-serif", color: "#0D0D0D", fontWeight: "900", textAlign: "center", originX: "center", originY: "top", charSpacing: 60 },
         ] },
         ],
     },
