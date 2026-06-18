@@ -72,3 +72,13 @@ export async function trackPaymentFailed(
 ): Promise<void> {
   await capture(userId, "payment_failed", payload);
 }
+
+/** T.10 — User aceptó cupón de retención en el flow de cancelación del
+ *  Stripe Portal en lugar de cancelar. Métrica clave para optimizar
+ *  copy/descuento del cupón. */
+export async function trackRetentionCouponRedeemed(
+  userId: string,
+  payload: { coupon_id: string; percent_off?: number; duration_months?: number; plan?: string },
+): Promise<void> {
+  await capture(userId, "retention_coupon_redeemed", payload);
+}
