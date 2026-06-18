@@ -4426,4 +4426,187 @@ export const templates: Template[] = [
         ],
     },
 
+// ─────────────────────────────────────────────────────────────────────
+// 49 — DJ Urban Night (DJ-1, hombre joven con bomber jacket)
+//      Paleta: pink fucsia + amber + dark navy. Urban-vibe nocturno.
+//      Caso: club mediano, fiesta urbana de fin de semana.
+// ─────────────────────────────────────────────────────────────────────
+    {
+        id: 49,
+        title: "DJ Urban Night",
+        category: "Club / Discoteca",
+        image: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dj/Dj-1.png",
+        premium: false,
+        audience: ["productoras", "freelance"],
+        internalTags: ["beta"],
+        useCases: ["promote", "sellTickets", "announceArtist"],
+        variants: [
+            // ── Historia Instagram (1080×1920) — formato principal para DJs
+            { format: "story", width: 1080, height: 1920, layers: [
+                { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1920, fill: "#0a0612", selectable: false },
+                // Glows ambientales
+                { id: "glow-fucsia", type: "shape", shape: "circle", x: -100, y: 400, width: 900, height: 900, radius: 450, fill: "#ec4899", opacity: 0.22, selectable: false },
+                { id: "glow-amber", type: "shape", shape: "circle", x: 600, y: 1300, width: 800, height: 800, radius: 400, fill: "#f59e0b", opacity: 0.18, selectable: false },
+                // Foto DJ (centrado, grande, con sombra de glow)
+                { id: "dj-photo", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dj/Dj-1.png", x: 540, y: 1080, scaleX: 1.4, scaleY: 1.4, originX: "center", originY: "center", shadow: { color: "rgba(236,72,153,0.55)", blur: 60, offsetX: 0, offsetY: 0 } },
+                // Eyebrow superior
+                { id: "supra", type: "text", text: "URBAN NIGHT · DJ SET", x: 540, y: 200, width: 1000, fontSize: 28, fontFamily: "Montserrat, sans-serif", color: "#ec4899", fontWeight: "600", textAlign: "center", originX: "center", charSpacing: 500 },
+                // Titular gigante
+                { id: "title", type: "text", text: "DJ\nSHADOW", x: 540, y: 360, width: 1080, fontSize: 200, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", fontWeight: "900", textAlign: "center", originX: "center", originY: "top", lineHeight: 0.95 },
+                // Separador diagonal
+                { id: "diag-band", type: "shape", shape: "rect", x: -100, y: 1480, width: 1300, height: 4, fill: "#f59e0b", angle: -3, selectable: false },
+                // Bloque fecha + venue (parte inferior)
+                { id: "date-day", type: "text", text: "SAB 06 JUL", x: 540, y: 1560, width: 1000, fontSize: 72, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", fontWeight: "900", textAlign: "center", originX: "center", charSpacing: 300 },
+                { id: "venue", type: "text", text: "SALA APOLO · BARCELONA", x: 540, y: 1660, width: 1000, fontSize: 26, fontFamily: "Montserrat, sans-serif", color: "#f59e0b", fontWeight: "600", textAlign: "center", originX: "center", charSpacing: 500 },
+                { id: "doors", type: "text", text: "DOORS 23:30  ·  15€ ANT  ·  20€ PUERTA", x: 540, y: 1750, width: 1000, fontSize: 22, fontFamily: "Montserrat, sans-serif", color: "#d1d5db", fontWeight: "400", textAlign: "center", originX: "center", charSpacing: 300 },
+                // Botón CTA visual
+                { id: "cta-box", type: "shape", shape: "rect", x: 290, y: 1810, width: 500, height: 70, fill: "#ec4899", radius: 35, selectable: false },
+                { id: "cta-text", type: "text", text: "ENTRADAS  →", x: 540, y: 1830, width: 500, fontSize: 26, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", fontWeight: "900", textAlign: "center", originX: "center", charSpacing: 300 },
+            ] },
+            // ── Post Instagram cuadrado (1080×1080)
+            { format: "square", width: 1080, height: 1080, layers: [
+                { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1080, fill: "#0a0612", selectable: false },
+                { id: "glow-fucsia", type: "shape", shape: "circle", x: -50, y: 200, width: 700, height: 700, radius: 350, fill: "#ec4899", opacity: 0.22, selectable: false },
+                { id: "glow-amber", type: "shape", shape: "circle", x: 500, y: 700, width: 600, height: 600, radius: 300, fill: "#f59e0b", opacity: 0.18, selectable: false },
+                { id: "dj-photo", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dj/Dj-1.png", x: 800, y: 540, scaleX: 0.9, scaleY: 0.9, originX: "center", originY: "center", shadow: { color: "rgba(236,72,153,0.55)", blur: 50, offsetX: 0, offsetY: 0 } },
+                { id: "supra", type: "text", text: "URBAN · DJ SET", x: 60, y: 120, width: 600, fontSize: 24, fontFamily: "Montserrat, sans-serif", color: "#ec4899", fontWeight: "600", textAlign: "left", charSpacing: 400 },
+                { id: "title", type: "text", text: "DJ\nSHADOW", x: 60, y: 180, width: 600, fontSize: 130, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", fontWeight: "900", textAlign: "left", originY: "top", lineHeight: 0.95 },
+                { id: "date-day", type: "text", text: "SAB 06 JUL", x: 60, y: 580, width: 500, fontSize: 56, fontFamily: "Anton, Impact, sans-serif", color: "#f59e0b", fontWeight: "900", textAlign: "left", charSpacing: 200 },
+                { id: "venue", type: "text", text: "SALA APOLO · BARCELONA", x: 60, y: 660, width: 600, fontSize: 22, fontFamily: "Montserrat, sans-serif", color: "#ffffff", fontWeight: "600", textAlign: "left", charSpacing: 400 },
+                { id: "doors", type: "text", text: "DOORS 23:30  ·  15€ ANT", x: 60, y: 710, width: 600, fontSize: 18, fontFamily: "Montserrat, sans-serif", color: "#d1d5db", fontWeight: "400", textAlign: "left", charSpacing: 300 },
+                { id: "cta-box", type: "shape", shape: "rect", x: 60, y: 940, width: 320, height: 60, fill: "#ec4899", radius: 30, selectable: false },
+                { id: "cta-text", type: "text", text: "ENTRADAS  →", x: 220, y: 957, width: 320, fontSize: 22, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", fontWeight: "900", textAlign: "center", originX: "center", charSpacing: 300 },
+            ] },
+            // ── Post vertical (1080×1350)
+            { format: "portrait", width: 1080, height: 1350, layers: [
+                { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1350, fill: "#0a0612", selectable: false },
+                { id: "glow-fucsia", type: "shape", shape: "circle", x: -100, y: 250, width: 800, height: 800, radius: 400, fill: "#ec4899", opacity: 0.22, selectable: false },
+                { id: "glow-amber", type: "shape", shape: "circle", x: 550, y: 850, width: 700, height: 700, radius: 350, fill: "#f59e0b", opacity: 0.18, selectable: false },
+                { id: "dj-photo", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dj/Dj-1.png", x: 540, y: 780, scaleX: 1.15, scaleY: 1.15, originX: "center", originY: "center", shadow: { color: "rgba(236,72,153,0.55)", blur: 55, offsetX: 0, offsetY: 0 } },
+                { id: "supra", type: "text", text: "URBAN NIGHT · DJ SET", x: 540, y: 140, width: 1000, fontSize: 24, fontFamily: "Montserrat, sans-serif", color: "#ec4899", fontWeight: "600", textAlign: "center", originX: "center", charSpacing: 500 },
+                { id: "title", type: "text", text: "DJ\nSHADOW", x: 540, y: 250, width: 1080, fontSize: 170, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", fontWeight: "900", textAlign: "center", originX: "center", originY: "top", lineHeight: 0.95 },
+                { id: "diag-band", type: "shape", shape: "rect", x: -100, y: 1050, width: 1300, height: 4, fill: "#f59e0b", angle: -3, selectable: false },
+                { id: "date-day", type: "text", text: "SAB 06 JUL", x: 540, y: 1110, width: 1000, fontSize: 60, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", fontWeight: "900", textAlign: "center", originX: "center", charSpacing: 300 },
+                { id: "venue", type: "text", text: "SALA APOLO · BARCELONA", x: 540, y: 1195, width: 1000, fontSize: 22, fontFamily: "Montserrat, sans-serif", color: "#f59e0b", fontWeight: "600", textAlign: "center", originX: "center", charSpacing: 500 },
+                { id: "doors", type: "text", text: "DOORS 23:30  ·  15€ ANT  ·  20€ PUERTA", x: 540, y: 1240, width: 1000, fontSize: 18, fontFamily: "Montserrat, sans-serif", color: "#d1d5db", fontWeight: "400", textAlign: "center", originX: "center", charSpacing: 300 },
+                { id: "cta-box", type: "shape", shape: "rect", x: 390, y: 1280, width: 300, height: 50, fill: "#ec4899", radius: 25, selectable: false },
+                { id: "cta-text", type: "text", text: "ENTRADAS  →", x: 540, y: 1294, width: 300, fontSize: 20, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", fontWeight: "900", textAlign: "center", originX: "center", charSpacing: 300 },
+            ] },
+        ],
+    },
+
+// ─────────────────────────────────────────────────────────────────────
+// 50 — DJ Electronic Pulse (DJ-2, mujer rubia con auriculares)
+//      Paleta: cyan eléctrico + violeta + dark teal. Tech-house / EDM.
+//      Caso: festival electrónico, fiesta tech-house.
+// ─────────────────────────────────────────────────────────────────────
+    {
+        id: 50,
+        title: "DJ Electronic Pulse",
+        category: "Club / Discoteca",
+        image: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dj/Dj-2.png",
+        premium: false,
+        audience: ["productoras", "freelance"],
+        internalTags: ["beta"],
+        useCases: ["promote", "sellTickets", "announceArtist"],
+        variants: [
+            // ── Story (1080×1920)
+            { format: "story", width: 1080, height: 1920, layers: [
+                { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1920, fill: "#020817", selectable: false },
+                { id: "glow-cyan", type: "shape", shape: "circle", x: 540, y: 600, width: 1200, height: 1200, radius: 600, fill: "#06b6d4", opacity: 0.20, originX: "center", originY: "center", selectable: false },
+                { id: "glow-violet", type: "shape", shape: "circle", x: 200, y: 1600, width: 800, height: 800, radius: 400, fill: "#8b5cf6", opacity: 0.22, selectable: false },
+                // Grid wireframe (sutil, decorativo)
+                { id: "grid-line-1", type: "shape", shape: "rect", x: 0, y: 1300, width: 1080, height: 1, fill: "#06b6d4", opacity: 0.3, selectable: false },
+                { id: "grid-line-2", type: "shape", shape: "rect", x: 540, y: 1300, width: 1, height: 620, fill: "#06b6d4", opacity: 0.3, selectable: false, originX: "center" },
+                // Foto DJ
+                { id: "dj-photo", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dj/Dj-2.png", x: 540, y: 1100, scaleX: 1.5, scaleY: 1.5, originX: "center", originY: "center", shadow: { color: "rgba(6,182,212,0.65)", blur: 70, offsetX: 0, offsetY: 0 } },
+                // Etiqueta tipo "FREQUENCY: 128 BPM"
+                { id: "freq-tag", type: "text", text: "FREQUENCY: 128 BPM", x: 540, y: 180, width: 1000, fontSize: 22, fontFamily: "Space Mono, monospace", color: "#06b6d4", fontWeight: "400", textAlign: "center", originX: "center", charSpacing: 400 },
+                // Línea de subtítulo
+                { id: "supra", type: "text", text: "ELECTRONIC SESSION", x: 540, y: 240, width: 1000, fontSize: 26, fontFamily: "Montserrat, sans-serif", color: "#ffffff", fontWeight: "700", textAlign: "center", originX: "center", charSpacing: 700 },
+                // Titular masivo
+                { id: "title", type: "text", text: "PULSE", x: 540, y: 380, width: 1080, fontSize: 280, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", fontWeight: "900", textAlign: "center", originX: "center", originY: "top" },
+                { id: "subtitle", type: "text", text: "—  by  —", x: 540, y: 680, width: 1000, fontSize: 24, fontFamily: "Space Mono, monospace", color: "#8b5cf6", fontWeight: "400", textAlign: "center", originX: "center", charSpacing: 600 },
+                { id: "dj-name", type: "text", text: "LUNA NOVA", x: 540, y: 740, width: 1000, fontSize: 80, fontFamily: "Anton, Impact, sans-serif", color: "#06b6d4", fontWeight: "900", textAlign: "center", originX: "center", charSpacing: 400 },
+                // Bloque inferior fecha
+                { id: "date-day", type: "text", text: "VIE 12 JUL · 23H", x: 540, y: 1600, width: 1000, fontSize: 56, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", fontWeight: "900", textAlign: "center", originX: "center", charSpacing: 300 },
+                { id: "venue", type: "text", text: "RAZZMATAZZ · BARCELONA", x: 540, y: 1690, width: 1000, fontSize: 22, fontFamily: "Montserrat, sans-serif", color: "#06b6d4", fontWeight: "600", textAlign: "center", originX: "center", charSpacing: 500 },
+                { id: "doors", type: "text", text: "EARLY 12€ · GENERAL 18€", x: 540, y: 1750, width: 1000, fontSize: 20, fontFamily: "Space Mono, monospace", color: "#d1d5db", fontWeight: "400", textAlign: "center", originX: "center", charSpacing: 300 },
+                { id: "cta-box", type: "shape", shape: "rect", x: 240, y: 1810, width: 600, height: 70, fill: "transparent", stroke: "#06b6d4", strokeWidth: 2, radius: 0, selectable: false },
+                { id: "cta-text", type: "text", text: "[ TICKETS ONLINE ]", x: 540, y: 1830, width: 600, fontSize: 24, fontFamily: "Space Mono, monospace", color: "#06b6d4", fontWeight: "700", textAlign: "center", originX: "center", charSpacing: 400 },
+            ] },
+            // ── Square (1080×1080)
+            { format: "square", width: 1080, height: 1080, layers: [
+                { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1080, fill: "#020817", selectable: false },
+                { id: "glow-cyan", type: "shape", shape: "circle", x: 540, y: 540, width: 1100, height: 1100, radius: 550, fill: "#06b6d4", opacity: 0.18, originX: "center", originY: "center", selectable: false },
+                { id: "glow-violet", type: "shape", shape: "circle", x: 200, y: 900, width: 700, height: 700, radius: 350, fill: "#8b5cf6", opacity: 0.22, selectable: false },
+                { id: "dj-photo", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dj/Dj-2.png", x: 820, y: 540, scaleX: 0.95, scaleY: 0.95, originX: "center", originY: "center", shadow: { color: "rgba(6,182,212,0.6)", blur: 50, offsetX: 0, offsetY: 0 } },
+                { id: "freq-tag", type: "text", text: "FREQ: 128 BPM", x: 60, y: 130, width: 500, fontSize: 18, fontFamily: "Space Mono, monospace", color: "#06b6d4", fontWeight: "400", textAlign: "left", charSpacing: 400 },
+                { id: "supra", type: "text", text: "ELECTRONIC SESSION", x: 60, y: 170, width: 500, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "#ffffff", fontWeight: "700", textAlign: "left", charSpacing: 600 },
+                { id: "title", type: "text", text: "PULSE", x: 60, y: 240, width: 600, fontSize: 180, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", fontWeight: "900", textAlign: "left", originY: "top" },
+                { id: "dj-name", type: "text", text: "LUNA NOVA", x: 60, y: 470, width: 500, fontSize: 50, fontFamily: "Anton, Impact, sans-serif", color: "#06b6d4", fontWeight: "900", textAlign: "left", charSpacing: 300 },
+                { id: "date-day", type: "text", text: "VIE 12 JUL · 23H", x: 60, y: 720, width: 500, fontSize: 40, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", fontWeight: "900", textAlign: "left", charSpacing: 250 },
+                { id: "venue", type: "text", text: "RAZZMATAZZ · BARCELONA", x: 60, y: 780, width: 500, fontSize: 18, fontFamily: "Montserrat, sans-serif", color: "#06b6d4", fontWeight: "600", textAlign: "left", charSpacing: 400 },
+                { id: "doors", type: "text", text: "EARLY 12€ · GENERAL 18€", x: 60, y: 815, width: 500, fontSize: 16, fontFamily: "Space Mono, monospace", color: "#d1d5db", fontWeight: "400", textAlign: "left", charSpacing: 300 },
+                { id: "cta-box", type: "shape", shape: "rect", x: 60, y: 960, width: 380, height: 56, fill: "transparent", stroke: "#06b6d4", strokeWidth: 2, radius: 0, selectable: false },
+                { id: "cta-text", type: "text", text: "[ TICKETS ONLINE ]", x: 250, y: 977, width: 380, fontSize: 20, fontFamily: "Space Mono, monospace", color: "#06b6d4", fontWeight: "700", textAlign: "center", originX: "center", charSpacing: 400 },
+            ] },
+        ],
+    },
+
+// ─────────────────────────────────────────────────────────────────────
+// 51 — DJ Reggaeton Night (DJ-3, hombre con bomber + auriculares)
+//      Paleta: pink fucsia + lime neon + black. Reggaeton / latin urban.
+//      Caso: fiesta latina, perreo, urban night.
+// ─────────────────────────────────────────────────────────────────────
+    {
+        id: 51,
+        title: "DJ Reggaeton Night",
+        category: "Club / Discoteca",
+        image: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dj/Dj-3.png",
+        premium: false,
+        audience: ["productoras", "freelance"],
+        internalTags: ["beta"],
+        useCases: ["promote", "sellTickets", "announceArtist"],
+        variants: [
+            // ── Story (1080×1920)
+            { format: "story", width: 1080, height: 1920, layers: [
+                { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1920, fill: "#000000", selectable: false },
+                { id: "glow-pink", type: "shape", shape: "circle", x: 540, y: 900, width: 1100, height: 1100, radius: 550, fill: "#ec4899", opacity: 0.28, originX: "center", originY: "center", selectable: false },
+                { id: "glow-lime", type: "shape", shape: "circle", x: 800, y: 250, width: 600, height: 600, radius: 300, fill: "#84cc16", opacity: 0.25, selectable: false },
+                // Foto DJ (más grande, hero)
+                { id: "dj-photo", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dj/Dj-3.png", x: 540, y: 1100, scaleX: 1.45, scaleY: 1.45, originX: "center", originY: "center", shadow: { color: "rgba(236,72,153,0.7)", blur: 80, offsetX: 0, offsetY: 0 } },
+                // Eyebrow encima
+                { id: "supra", type: "text", text: "★  PERREO NIGHT  ★", x: 540, y: 180, width: 1000, fontSize: 26, fontFamily: "Montserrat, sans-serif", color: "#84cc16", fontWeight: "700", textAlign: "center", originX: "center", charSpacing: 500 },
+                // Titular gigante con stroke
+                { id: "title-1", type: "text", text: "REGGAE", x: 540, y: 280, width: 1080, fontSize: 200, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", fontWeight: "900", textAlign: "center", originX: "center", originY: "top" },
+                { id: "title-2", type: "text", text: "TON", x: 540, y: 470, width: 1080, fontSize: 240, fontFamily: "Anton, Impact, sans-serif", color: "#ec4899", fontWeight: "900", textAlign: "center", originX: "center", originY: "top" },
+                // Tag DJ
+                { id: "dj-tag", type: "text", text: "with  DJ  EL  GRINGO", x: 540, y: 770, width: 1000, fontSize: 32, fontFamily: "Montserrat, sans-serif", color: "#ffffff", fontWeight: "700", textAlign: "center", originX: "center", charSpacing: 400 },
+                // Banda inferior con info
+                { id: "info-band", type: "shape", shape: "rect", x: 0, y: 1550, width: 1080, height: 370, fill: "#ec4899", selectable: false },
+                { id: "date-day", type: "text", text: "SAB 20 JUL", x: 540, y: 1610, width: 1000, fontSize: 80, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", fontWeight: "900", textAlign: "center", originX: "center", charSpacing: 300 },
+                { id: "venue", type: "text", text: "SALA TOTEM · MADRID", x: 540, y: 1720, width: 1000, fontSize: 28, fontFamily: "Montserrat, sans-serif", color: "#000000", fontWeight: "700", textAlign: "center", originX: "center", charSpacing: 500 },
+                { id: "doors", type: "text", text: "DOORS 00:00  ·  CHICAS GRATIS HASTA 02H", x: 540, y: 1780, width: 1000, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(0,0,0,0.85)", fontWeight: "500", textAlign: "center", originX: "center", charSpacing: 300 },
+                { id: "cta-text", type: "text", text: "→  RESERVA EN @SALATOTEM  ←", x: 540, y: 1850, width: 1000, fontSize: 22, fontFamily: "Anton, Impact, sans-serif", color: "#84cc16", fontWeight: "900", textAlign: "center", originX: "center", charSpacing: 400 },
+            ] },
+            // ── Square (1080×1080)
+            { format: "square", width: 1080, height: 1080, layers: [
+                { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1080, fill: "#000000", selectable: false },
+                { id: "glow-pink", type: "shape", shape: "circle", x: 540, y: 540, width: 1000, height: 1000, radius: 500, fill: "#ec4899", opacity: 0.25, originX: "center", originY: "center", selectable: false },
+                { id: "glow-lime", type: "shape", shape: "circle", x: 800, y: 200, width: 500, height: 500, radius: 250, fill: "#84cc16", opacity: 0.25, selectable: false },
+                { id: "dj-photo", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dj/Dj-3.png", x: 800, y: 540, scaleX: 0.9, scaleY: 0.9, originX: "center", originY: "center", shadow: { color: "rgba(236,72,153,0.7)", blur: 60, offsetX: 0, offsetY: 0 } },
+                { id: "supra", type: "text", text: "★ PERREO NIGHT ★", x: 60, y: 130, width: 500, fontSize: 22, fontFamily: "Montserrat, sans-serif", color: "#84cc16", fontWeight: "700", textAlign: "left", charSpacing: 400 },
+                { id: "title-1", type: "text", text: "REGGAE", x: 60, y: 190, width: 600, fontSize: 130, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", fontWeight: "900", textAlign: "left", originY: "top" },
+                { id: "title-2", type: "text", text: "TON", x: 60, y: 325, width: 600, fontSize: 160, fontFamily: "Anton, Impact, sans-serif", color: "#ec4899", fontWeight: "900", textAlign: "left", originY: "top" },
+                { id: "dj-tag", type: "text", text: "with DJ EL GRINGO", x: 60, y: 540, width: 500, fontSize: 22, fontFamily: "Montserrat, sans-serif", color: "#ffffff", fontWeight: "700", textAlign: "left", charSpacing: 400 },
+                { id: "info-band", type: "shape", shape: "rect", x: 0, y: 850, width: 1080, height: 230, fill: "#ec4899", selectable: false },
+                { id: "date-day", type: "text", text: "SAB 20 JUL", x: 60, y: 880, width: 700, fontSize: 56, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", fontWeight: "900", textAlign: "left", charSpacing: 250 },
+                { id: "venue", type: "text", text: "SALA TOTEM · MADRID", x: 60, y: 960, width: 700, fontSize: 22, fontFamily: "Montserrat, sans-serif", color: "#000000", fontWeight: "700", textAlign: "left", charSpacing: 400 },
+                { id: "doors", type: "text", text: "DOORS 00:00 · CHICAS GRATIS HASTA 02H", x: 60, y: 1005, width: 700, fontSize: 14, fontFamily: "Montserrat, sans-serif", color: "rgba(0,0,0,0.85)", fontWeight: "500", textAlign: "left", charSpacing: 300 },
+                { id: "cta-text", type: "text", text: "→ @SALATOTEM", x: 60, y: 1040, width: 600, fontSize: 18, fontFamily: "Anton, Impact, sans-serif", color: "#84cc16", fontWeight: "900", textAlign: "left", charSpacing: 400 },
+            ] },
+        ],
+    },
+
 ];

@@ -1288,5 +1288,103 @@ export const templatesMeta: TemplateMeta[] = [
         "height": 1005
       }
     ]
+  },
+  {
+    "id": 49,
+    "title": "DJ Urban Night",
+    "category": "Club / Discoteca",
+    "image": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dj/Dj-1.png",
+    "premium": false,
+    "audience": [
+      "productoras",
+      "freelance"
+    ],
+    "internalTags": [
+      "beta"
+    ],
+    "useCases": [
+      "promote",
+      "sellTickets",
+      "announceArtist"
+    ],
+    "variants": [
+      {
+        "format": "story",
+        "width": 1080,
+        "height": 1920
+      },
+      {
+        "format": "square",
+        "width": 1080,
+        "height": 1080
+      },
+      {
+        "format": "portrait",
+        "width": 1080,
+        "height": 1350
+      }
+    ]
+  },
+  {
+    "id": 50,
+    "title": "DJ Electronic Pulse",
+    "category": "Club / Discoteca",
+    "image": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dj/Dj-2.png",
+    "premium": false,
+    "audience": [
+      "productoras",
+      "freelance"
+    ],
+    "internalTags": [
+      "beta"
+    ],
+    "useCases": [
+      "promote",
+      "sellTickets",
+      "announceArtist"
+    ],
+    "variants": [
+      {
+        "format": "story",
+        "width": 1080,
+        "height": 1920
+      },
+      {
+        "format": "square",
+        "width": 1080,
+        "height": 1080
+      }
+    ]
+  },
+  {
+    "id": 51,
+    "title": "DJ Reggaeton Night",
+    "category": "Club / Discoteca",
+    "image": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dj/Dj-3.png",
+    "premium": false,
+    "audience": [
+      "productoras",
+      "freelance"
+    ],
+    "internalTags": [
+      "beta"
+    ],
+    "useCases": [
+      "promote",
+      "sellTickets",
+      "announceArtist"
+    ],
+    "variants": [
+      {
+        "format": "story",
+        "width": 1080,
+        "height": 1920
+      },
+      {
+        "format": "square",
+        "width": 1080,
+        "height": 1080
+      }
+    ]
   }
 ];
