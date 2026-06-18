@@ -2354,14 +2354,18 @@ export const templates: Template[] = [
                 // Banda lateral izquierda granate (donde va la foto)
                 { id: "left-band", type: "shape", shape: "rect", x: 0, y: 0, width: 540, height: 1350, fill: "#7c1d2c", selectable: false },
 
-                // PROFE foto centrada en banda izquierda
-                { id: "profe", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/Profe-jean.png", x: 270, y: 130, scaleX: 0.82, scaleY: 0.82, originX: "center", originY: "top", shadow: { color: "rgba(0,0,0,0.45)", blur: 30, offsetX: 5, offsetY: 5 } },
+                // PROFE foto centrada en banda izquierda — scale aumentada para ocupar mejor
+                // Imagen real: 447×558. Scale 1.5 → render 670×837. y:120 → termina en y:957
+                // Deja 100px hasta "JEAN MARC" en y:1080 (subido desde y:1230)
+                { id: "profe", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/Profe-jean.png", x: 270, y: 120, scaleX: 1.5, scaleY: 1.5, originX: "center", originY: "top", shadow: { color: "rgba(0,0,0,0.55)", blur: 35, offsetX: 5, offsetY: 8 } },
 
                 // Sello vertical en banda izq abajo
-                { id: "side-vert", type: "text", text: "ACADEMIA  ·  TEMPORADA 2026 / 27", x: 50, y: 1100, width: 50, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.5)", fontWeight: "600", textAlign: "left", angle: -90, charSpacing: 400 },
-                // Nombre del profe en banda izq abajo
-                { id: "profe-name-l", type: "text", text: "JEAN MARC", x: 0, y: 1230, width: 540, fontSize: 38, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "center", charSpacing: 80 },
-                { id: "profe-role", type: "text", text: "Director artístico", x: 0, y: 1280, width: 540, fontSize: 19, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.7)", fontWeight: "500", textAlign: "center", fontStyle: "italic", charSpacing: 150 },
+                { id: "side-vert", type: "text", text: "ACADEMIA  ·  TEMPORADA 2026 / 27", x: 50, y: 1000, width: 50, fontSize: 18, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.45)", fontWeight: "600", textAlign: "left", angle: -90, charSpacing: 400 },
+                // FRANJA decorativa para enmascarar corte de imagen
+                { id: "profe-band", type: "shape", shape: "rect", x: 0, y: 980, width: 540, height: 50, fill: "rgba(0,0,0,0.35)", selectable: false },
+                // Nombre del profe en banda izq abajo (subido desde 1230)
+                { id: "profe-name-l", type: "text", text: "JEAN MARC", x: 0, y: 1080, width: 540, fontSize: 42, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "center", charSpacing: 80 },
+                { id: "profe-role", type: "text", text: "Director artístico", x: 0, y: 1135, width: 540, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.85)", fontWeight: "500", textAlign: "center", fontStyle: "italic", charSpacing: 150 },
 
                 // LADO DERECHO - info
                 // Kicker arriba
@@ -3214,8 +3218,10 @@ export const templates: Template[] = [
                 { id: "desc-1", type: "text", text: "Tradición porteña, abrazo cerrado", x: 60, y: 405, width: 480, fontSize: 20, fontFamily: "Cormorant Garamond, serif", color: "rgba(10,10,10,0.78)", fontStyle: "italic", textAlign: "left" },
                 { id: "desc-2", type: "text", text: "y caminata. Para todos los niveles.", x: 60, y: 435, width: 480, fontSize: 20, fontFamily: "Cormorant Garamond, serif", color: "rgba(10,10,10,0.78)", fontStyle: "italic", textAlign: "left" },
 
-                // FOTO pareja en lado derecho sobre fondo bordo
-                { id: "couple", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/07_lucia_mateo_pareja.png", x: 800, y: 200, scaleX: 0.78, scaleY: 0.78, originX: "center", originY: "top", shadow: { color: "rgba(180,134,11,0.55)", blur: 40, offsetX: 0, offsetY: 0 } },
+                // FOTO pareja en lado derecho sobre fondo bordo — más grande
+                // Imagen real: 500×500. Scale 1.05 → render 525×525, ocupa bien la zona bordo
+                // y:130 → termina en y:655, dejando espacio para plate IMPARTEN en y:760
+                { id: "couple", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/07_lucia_mateo_pareja.png", x: 800, y: 130, scaleX: 1.05, scaleY: 1.05, originX: "center", originY: "top", shadow: { color: "rgba(180,134,11,0.65)", blur: 50, offsetX: 0, offsetY: 0 } },
 
                 // Plate de nombres dentro del bordo
                 { id: "plate-bg", type: "shape", shape: "rect", x: 600, y: 760, width: 400, height: 100, fill: "rgba(245,240,232,0.92)", selectable: false },
