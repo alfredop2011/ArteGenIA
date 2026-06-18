@@ -18,7 +18,8 @@ export type EventItem = {
   city: string;
   category: Category;
   audience: Audience[];
-  price: number | null; // null = precio no indicado ("Consultar precio")
+  price: number | null; // null = precio no indicado ("Consultar precio"). Si hay tarifas = "desde"
+  priceInfo?: string | null; // detalle de tarifas múltiples
   url?: string;
   hasSale?: boolean;
   cancelled?: boolean;
@@ -54,6 +55,7 @@ export function rowToEvent(r: EventRow): EventItem {
     category: r.category as Category,
     audience: (r.audience ?? []) as Audience[],
     price: r.price == null ? null : Number(r.price),
+    priceInfo: r.price_info ?? null,
     url: r.ticket_url ?? undefined,
     hasSale: r.has_online_sale && !!r.ticket_url,
     cancelled: r.status === "cancelled",

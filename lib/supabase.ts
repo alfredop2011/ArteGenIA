@@ -59,6 +59,7 @@ export type EventRow = {
     submitter_channel: string | null;
     submitter_ref: string | null;
     submitter_name: string | null; // nombre del remitente (bot)
+    submitter_email: string | null; // contacto para avisar si falta algún dato
     claim_token: string | null;
     title: string;
     description: string | null;
@@ -70,7 +71,8 @@ export type EventRow = {
     neighborhood: string | null;
     category: EventCategory;
     audience: EventAudience[];
-    price: number | null; // null = precio no indicado ("Consultar")
+    price: number | null; // null = precio no indicado ("Consultar"). Si hay tarifas = precio "desde"
+    price_info: string | null; // detalle de tarifas múltiples ("Anticipada 12€ · Taquilla 15€")
     has_online_sale: boolean;
     ticket_url: string | null;
     image_url: string | null;

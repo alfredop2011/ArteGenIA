@@ -63,6 +63,30 @@ async function claimTokenFor(ref: string): Promise<string> {
   return data?.claim_token ?? crypto.randomUUID();
 }
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// Email que ya nos dio este chat (para reusarlo y no volver a pedirlo).
+async function emailFor(ref: string): Promise<string | null> {
+  const { data } = await supabaseAdmin
+    .from("events")
+    .select("submitter_email")
+    .eq("submitter_channel", "telegram")
+    .eq("submitter_ref", ref)
+    .not("submitter_email", "is", null)
+    .limit(1)
+    .maybeSingle();
+  return data?.submitter_email ?? null;
+}
+
+// Guarda el email en todos los eventos de ese remitente.
+async function saveEmail(ref: string, email: string) {
+  await supabaseAdmin
+    .from("events")
+    .update({ submitter_email: email })
+    .eq("submitter_channel", "telegram")
+    .eq("submitter_ref", ref);
+}
+
 export async function POST(req: NextRequest) {
   // Verificación del secreto del webhook (si está configurado).
   if (WEBHOOK_SECRET && req.headers.get("x-telegram-bot-api-secret-token") !== WEBHOOK_SECRET) {
@@ -83,8 +107,14 @@ export async function POST(req: NextRequest) {
     const fromName: string = msg.from?.first_name || msg.from?.username || "";
     const hi = fromName ? `${fromName}, ` : "";
 
-    // /start o texto sin foto → instrucciones (saludo personalizado).
+    // Texto sin foto: si es un email, lo guardamos como contacto; si no, instrucciones.
     if (!msg.photo) {
+      const text: string = (msg.text || "").trim();
+      if (EMAIL_RE.test(text)) {
+        await saveEmail(String(chatId), text);
+        await tgSend(chatId, `✉️ ¡Anotado! Te avisaré en <b>${text}</b> si a algún evento le falta algún dato.`);
+        return NextResponse.json({ ok: true });
+      }
       await tgSend(
         chatId,
         `👋 ¡Hola${fromName ? " " + fromName : ""}! Envíame el <b>flyer</b> de tu evento (como foto) y lo publico solo en la agenda. Leo la fecha, el lugar y el precio automáticamente.`
@@ -120,11 +150,13 @@ export async function POST(req: NextRequest) {
 
     const ref = String(chatId);
     const claimToken = await claimTokenFor(ref);
+    const knownEmail = await emailFor(ref);
     const { error } = await supabaseAdmin.from("events").insert({
       organizer_id: null,
       submitter_channel: "telegram",
       submitter_ref: ref,
       submitter_name: fromName || null,
+      submitter_email: knownEmail,
       claim_token: claimToken,
       source: "telegram",
       status: "published",
@@ -138,6 +170,7 @@ export async function POST(req: NextRequest) {
       neighborhood: extracted.neighborhood,
       category: extracted.category,
       price: extracted.price,
+      price_info: extracted.price_info,
       has_online_sale: extracted.has_online_sale,
       ticket_url: extracted.ticket_url,
       image_url: imageUrl,
@@ -151,19 +184,34 @@ export async function POST(req: NextRequest) {
     }
 
     const claimUrl = `${APP_URL}/organizador?claim=${claimToken}`;
-    const priceLine =
-      extracted.price == null
-        ? "💶 Precio: no lo vi en el flyer → sale como “Consultar”. Edítalo al reclamar.\n"
-        : extracted.price === 0
-        ? "💶 Entrada libre\n"
-        : `💶 ${extracted.price} €\n`;
+    const priceLine = extracted.price_info
+      ? `💶 ${extracted.price_info}\n`
+      : extracted.price == null
+      ? "💶 Precio: no lo vi en el flyer → sale como “Consultar”.\n"
+      : extracted.price === 0
+      ? "💶 Entrada libre\n"
+      : `💶 ${extracted.price} €\n`;
+
+    // Qué datos faltan (para avisar e invitar a completarlos).
+    const missing: string[] = [];
+    if (extracted.price == null && !extracted.price_info) missing.push("precio");
+    if (!extracted.venue) missing.push("lugar");
+    const missingLine = missing.length ? `\n⚠️ Faltan datos en el flyer: <b>${missing.join(", ")}</b>.` : "";
+
+    // Si no tenemos su email y falta algo, lo pedimos para avisarle.
+    const askEmail = missing.length && !knownEmail
+      ? "\n📧 Mándame tu email y te aviso para que lo completes (o regístrate abajo)."
+      : "";
+
     await tgSend(
       chatId,
       `✅ ${hi}publiqué <b>${extracted.title}</b> en la agenda\n` +
         `📅 ${extracted.event_date} · ${extracted.event_time}\n` +
         `📍 ${extracted.venue || "—"}\n` +
         priceLine +
-        `\nCuando quieras gestionarlo, abre tu cuenta y reclama tus eventos aquí:\n${claimUrl}`
+        missingLine +
+        askEmail +
+        `\n\nGestiona y completa tu evento aquí:\n${claimUrl}`
     );
     return NextResponse.json({ ok: true });
   } catch (err) {

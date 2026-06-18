@@ -940,7 +940,11 @@ function EventCard({
             <Cat.icon size={11} /> {Cat.label}
           </span>
           <span className="absolute bottom-3 right-3 rounded-full bg-white/90 px-2 py-1 text-[11px] font-semibold text-gray-900">
-            {event.price == null ? "Consultar" : event.price === 0 ? "Gratis" : `${event.price} €`}
+            {event.price == null
+              ? "Consultar"
+              : event.price === 0
+              ? "Gratis"
+              : `${event.priceInfo ? "desde " : ""}${event.price} €`}
           </span>
         </div>
       </button>
@@ -1099,7 +1103,7 @@ function EventModal({
             <p className="flex items-center gap-2"><CalendarIcon size={15} style={{ color: "var(--ag-brand)" }} /> <span className="capitalize">{fmtLong(event.date)}</span></p>
             <p className="flex items-center gap-2"><Clock size={15} style={{ color: "var(--ag-brand)" }} /> {event.time} h</p>
             <p className="flex items-center gap-2"><MapPin size={15} style={{ color: "var(--ag-brand)" }} /> {event.venue} · {event.neighborhood}</p>
-            <p className="flex items-center gap-2"><Ticket size={15} style={{ color: "var(--ag-brand)" }} /> {event.price == null ? "Precio por confirmar" : event.price === 0 ? "Entrada gratuita" : `${event.price} €`}</p>
+            <p className="flex items-center gap-2"><Ticket size={15} style={{ color: "var(--ag-brand)" }} /> {event.priceInfo ? event.priceInfo : event.price == null ? "Precio por confirmar" : event.price === 0 ? "Entrada gratuita" : `${event.price} €`}</p>
           </div>
 
           {/* Acciones secundarias: guardar + compartir */}

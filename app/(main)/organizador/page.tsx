@@ -75,6 +75,7 @@ type FormState = {
   category: EventCategory;
   audience: EventAudience[];
   price: string;
+  price_info: string;
   has_online_sale: boolean;
   ticket_url: string;
   image_url: string;
@@ -92,6 +93,7 @@ const EMPTY_FORM: FormState = {
   category: "fiesta",
   audience: [],
   price: "",
+  price_info: "",
   has_online_sale: false,
   ticket_url: "",
   image_url: "",
@@ -357,7 +359,7 @@ function EventRowCard({
           <span className="flex items-center gap-1"><MapPin size={12} /> {ev.venue}</span>
           <span>{ev.price == null ? "Consultar" : ev.price === 0 ? "Gratis" : `${ev.price} €`}</span>
           {ev.source !== "organizer" && (
-            <span style={{ color: "var(--ag-brand)" }}>📩 {ev.submitter_name || "anónimo"} · {ev.source}</span>
+            <span style={{ color: "var(--ag-brand)" }}>📩 {ev.submitter_name || "anónimo"}{ev.submitter_email ? ` · ${ev.submitter_email}` : ""} · {ev.source}</span>
           )}
         </div>
       </div>
@@ -406,6 +408,7 @@ function EventForm({
           category: initial.category,
           audience: initial.audience ?? [],
           price: initial.price == null ? "" : String(initial.price),
+          price_info: initial.price_info ?? "",
           has_online_sale: initial.has_online_sale ?? false,
           ticket_url: initial.ticket_url ?? "",
           image_url: initial.image_url ?? "",
@@ -459,6 +462,7 @@ function EventForm({
         neighborhood: f.neighborhood || (d?.neighborhood ?? ""),
         category: d?.category && f.category === "fiesta" ? d.category : f.category,
         price: f.price === "" && d?.price != null ? String(d.price) : f.price,
+        price_info: f.price_info || (d?.price_info ?? ""),
         has_online_sale: f.has_online_sale || Boolean(d?.has_online_sale),
         ticket_url: f.ticket_url || (d?.ticket_url ?? ""),
         description: f.description || (d?.description ?? ""),
@@ -491,6 +495,7 @@ function EventForm({
       audience: form.audience,
       // vacío = precio no indicado (null → "Consultar"); 0 = gratis.
       price: form.price.trim() === "" ? null : Number(form.price) || 0,
+      price_info: form.price_info.trim() || null,
       has_online_sale: form.has_online_sale,
       // Solo guardamos el link de compra si marcó venta online.
       ticket_url: form.has_online_sale ? form.ticket_url.trim() || null : null,
@@ -625,9 +630,14 @@ function EventForm({
             </div>
           </Field>
 
-          <Field label="Precio (€) — vacío = consultar · 0 = gratis">
-            <input type="number" min="0" step="0.01" value={form.price} onChange={(e) => set("price", e.target.value)} className="ag-input" placeholder="Sin precio = Consultar" />
-          </Field>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Precio (€) — vacío = consultar · 0 = gratis">
+              <input type="number" min="0" step="0.01" value={form.price} onChange={(e) => set("price", e.target.value)} className="ag-input" placeholder="desde…" />
+            </Field>
+            <Field label="Tarifas (si hay varias)">
+              <input value={form.price_info} onChange={(e) => set("price_info", e.target.value)} className="ag-input" placeholder="Anticipada 12€ · Taquilla 15€" />
+            </Field>
+          </div>
 
           {/* Venta online: si está activa, pedimos la página del evento / pago
               y la agenda muestra el botón "Comprar entradas online". */}
