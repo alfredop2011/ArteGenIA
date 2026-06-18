@@ -450,22 +450,73 @@ export const templates: Template[] = [
         audience: ["academias", "colegios"],
         variants: [
             { format: "portrait", width: 1080, height: 1350, layers: [
-            { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 2713, height: 3375, fill: "#0D0D0D", selectable: false },
-            { id: "stripes", type: "shape-pattern", shape: "rect", x: 1683, y: -150, width: 55, height: 850, fill: "#F5C518", count: 6, offsetX: 38, angle: -15 },
-            { id: "studio-bg", type: "shape", shape: "rect", x: 110, y: 130, width: 1306, height: 140, fill: "#F5C518", selectable: true },
-            { id: "studio-name", type: "text", text: "NOMBRE DEL ESTUDIO", x: 120, y: 150, width: 900, fontSize: 70, fontFamily: "Montserrat, sans-serif", color: "#0D0D0D", fontWeight: "800", textAlign: "left", charSpacing: 20 },
-            { id: "title1", type: "text", text: "CLASES DE", x: 121, y: 370, width: 800, fontSize: 180, fontFamily: "Anton, Impact, sans-serif", color: "#FFFFFF", fontWeight: "900", textAlign: "left", charSpacing: -8 },
-            { id: "title2", type: "text", text: "BAILE", x: 600, y: 550, width: 400, fontSize: 150, fontFamily: "Anton, Impact, sans-serif", color: "transparent", stroke: "#F5C518", strokeWidth: 10, fontWeight: "900", textAlign: "left", charSpacing: -8 },
-            { id: "description", type: "text", text: "Encuentra la libertad en el movimiento.\nÚnete a nuestra clase de baile.", x: 121, y: 700, width: 900, fontSize: 30, fontFamily: "Montserrat, sans-serif", color: "#FFFFFF", fontWeight: "400", textAlign: "left", lineHeight: 1.4 },
-            { id: "price-bg", type: "shape", shape: "rect", x: 0, y: 800, width: 450, height: 125, fill: "#F5C518", selectable: false },
-            { id: "price", type: "text", text: "75€", x: 201, y: 825, width: 200, fontSize: 60, fontFamily: "Anton, Impact, sans-serif", color: "#0D0D0D", fontWeight: "900", textAlign: "left" },
-            { id: "price-label", type: "text", text: "/ PERSONA", x: 180, y: 850, width: 450, fontSize: 35, fontFamily: "Montserrat, sans-serif", color: "#0D0D0D", fontWeight: "600", textAlign: "left" },
-            { id: "schedule-bg", type: "shape", shape: "rect", x: 723, y: 1800, width: 854, height: 250, fill: "#F5C518", selectable: false },
-            { id: "schedule", type: "text", text: "TODOS LOS DOMINGOS", x: 774, y: 1820, width: 804, fontSize: 55, fontFamily: "Montserrat, sans-serif", color: "#0D0D0D", fontWeight: "700", textAlign: "left" },
-            { id: "time", type: "text", text: "9:00 AM", x: 774, y: 1905, width: 804, fontSize: 111, fontFamily: "Anton, Impact, sans-serif", color: "#0D0D0D", fontWeight: "900", textAlign: "left" },
-            { id: "separator", type: "shape", shape: "rect", x: 0, y: 2125, width: 2713, height: 20, fill: "#F5C518", selectable: false },
-            { id: "website", type: "text", text: "www.tusitio.com", x: 1356, y: 2225, width: 2713, fontSize: 75, fontFamily: "Montserrat, sans-serif", color: "#F5C518", fontWeight: "600", textAlign: "center", originX: "center", originY: "top", underline: true },
-            { id: "arrow", type: "text", text: "<<<", x: 1356, y: 3175, width: 502, fontSize: 121, fontFamily: "Montserrat, sans-serif", color: "#F5C518", fontWeight: "900", textAlign: "center", originX: "center", originY: "top" },
+            // FONDO negro base
+            { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1350, fill: "#0D0D0D", selectable: false },
+            // Rayas amarillas decorativas esquina superior derecha
+            { id: "stripes", type: "shape-pattern", shape: "rect", x: 850, y: -60, width: 22, height: 340, fill: "#F5C518", count: 6, offsetX: 15, angle: -15 },
+
+            // STUDIO BAND amarilla arriba
+            { id: "studio-bg", type: "shape", shape: "rect", x: 60, y: 60, width: 700, height: 56, fill: "#F5C518", selectable: false },
+            { id: "studio-name", type: "text", text: "NOMBRE DEL ESTUDIO", x: 75, y: 76, width: 680, fontSize: 22, fontFamily: "Montserrat, sans-serif", color: "#0D0D0D", fontWeight: "800", textAlign: "left", charSpacing: 150 },
+
+            // TÍTULO hero 2 líneas
+            { id: "title1", type: "text", text: "CLASES DE", x: 60, y: 150, width: 1000, fontSize: 80, fontFamily: "Anton, Impact, sans-serif", color: "#FFFFFF", fontWeight: "900", textAlign: "left", charSpacing: -8 },
+            { id: "title2", type: "text", text: "BAILE", x: 60, y: 222, width: 1000, fontSize: 80, fontFamily: "Anton, Impact, sans-serif", color: "transparent", stroke: "#F5C518", strokeWidth: 3, fontWeight: "900", textAlign: "left", charSpacing: -8 },
+
+            // Descripción corta
+            { id: "description", type: "text", text: "Encuentra la libertad en el movimiento.", x: 60, y: 312, width: 1000, fontSize: 22, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.85)", fontWeight: "400", textAlign: "left", lineHeight: 1.3 },
+
+            // Divider amarillo
+            { id: "div-top", type: "shape", shape: "rect", x: 60, y: 360, width: 80, height: 3, fill: "#F5C518", selectable: false },
+
+            // ─── 3 PROFES en grid horizontal ───
+            // Cabecera "TUS PROFES"
+            { id: "profes-kicker", type: "text", text: "TUS PROFES · LIVE", x: 60, y: 400, width: 1000, fontSize: 18, fontFamily: "Montserrat, sans-serif", color: "#F5C518", fontWeight: "700", textAlign: "left", charSpacing: 400 },
+
+            // PROFE 1 — Damián (izquierda)
+            { id: "profe1-card", type: "shape", shape: "rect", x: 60, y: 450, width: 300, height: 380, fill: "#1a1a1a", radius: 8, selectable: false },
+            { id: "profe1-img", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/02_damian_reyes_perfil.png", x: 210, y: 460, scaleX: 0.23, scaleY: 0.23, originX: "center", originY: "top", shadow: { color: "rgba(245,197,24,0.4)", blur: 25, offsetX: 0, offsetY: 0 } },
+            { id: "profe1-name-band", type: "shape", shape: "rect", x: 60, y: 770, width: 300, height: 60, fill: "#F5C518", selectable: false },
+            { id: "profe1-name", type: "text", text: "DAMIÁN", x: 60, y: 783, width: 300, fontSize: 22, fontFamily: "Anton, Impact, sans-serif", color: "#0D0D0D", fontWeight: "900", textAlign: "center", charSpacing: 150 },
+            { id: "profe1-role", type: "text", text: "Bachata", x: 60, y: 808, width: 300, fontSize: 13, fontFamily: "Montserrat, sans-serif", color: "rgba(13,13,13,0.85)", fontWeight: "600", textAlign: "center", charSpacing: 100 },
+
+            // PROFE 2 — Nia (centro)
+            { id: "profe2-card", type: "shape", shape: "rect", x: 390, y: 450, width: 300, height: 380, fill: "#1a1a1a", radius: 8, selectable: false },
+            { id: "profe2-img", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/03_nia_batista_perfil.png", x: 540, y: 460, scaleX: 0.23, scaleY: 0.23, originX: "center", originY: "top", shadow: { color: "rgba(245,197,24,0.4)", blur: 25, offsetX: 0, offsetY: 0 } },
+            { id: "profe2-name-band", type: "shape", shape: "rect", x: 390, y: 770, width: 300, height: 60, fill: "#F5C518", selectable: false },
+            { id: "profe2-name", type: "text", text: "NIA", x: 390, y: 783, width: 300, fontSize: 22, fontFamily: "Anton, Impact, sans-serif", color: "#0D0D0D", fontWeight: "900", textAlign: "center", charSpacing: 150 },
+            { id: "profe2-role", type: "text", text: "Salsa Cubana", x: 390, y: 808, width: 300, fontSize: 13, fontFamily: "Montserrat, sans-serif", color: "rgba(13,13,13,0.85)", fontWeight: "600", textAlign: "center", charSpacing: 100 },
+
+            // PROFE 3 — Malik (derecha)
+            { id: "profe3-card", type: "shape", shape: "rect", x: 720, y: 450, width: 300, height: 380, fill: "#1a1a1a", radius: 8, selectable: false },
+            { id: "profe3-img", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/04_malik_santos_perfil.png", x: 870, y: 460, scaleX: 0.23, scaleY: 0.23, originX: "center", originY: "top", shadow: { color: "rgba(245,197,24,0.4)", blur: 25, offsetX: 0, offsetY: 0 } },
+            { id: "profe3-name-band", type: "shape", shape: "rect", x: 720, y: 770, width: 300, height: 60, fill: "#F5C518", selectable: false },
+            { id: "profe3-name", type: "text", text: "MALIK", x: 720, y: 783, width: 300, fontSize: 22, fontFamily: "Anton, Impact, sans-serif", color: "#0D0D0D", fontWeight: "900", textAlign: "center", charSpacing: 150 },
+            { id: "profe3-role", type: "text", text: "Hip-Hop", x: 720, y: 808, width: 300, fontSize: 13, fontFamily: "Montserrat, sans-serif", color: "rgba(13,13,13,0.85)", fontWeight: "600", textAlign: "center", charSpacing: 100 },
+
+            // ─── BOTTOM INFO ───
+            // Separador
+            { id: "separator", type: "shape", shape: "rect", x: 0, y: 880, width: 1080, height: 4, fill: "#F5C518", selectable: false },
+
+            // PRECIO chip izquierdo
+            { id: "price-bg", type: "shape", shape: "rect", x: 0, y: 920, width: 280, height: 90, fill: "#F5C518", selectable: false },
+            { id: "price", type: "text", text: "75€", x: 0, y: 935, width: 280, fontSize: 44, fontFamily: "Anton, Impact, sans-serif", color: "#0D0D0D", fontWeight: "900", textAlign: "center" },
+            { id: "price-label", type: "text", text: "/ PERSONA", x: 0, y: 985, width: 280, fontSize: 14, fontFamily: "Montserrat, sans-serif", color: "#0D0D0D", fontWeight: "700", textAlign: "center", charSpacing: 200 },
+
+            // FECHA y HORA derecha
+            { id: "schedule", type: "text", text: "TODOS LOS DOMINGOS", x: 320, y: 928, width: 740, fontSize: 18, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.7)", fontWeight: "700", textAlign: "left", charSpacing: 200 },
+            { id: "time", type: "text", text: "9:00 AM", x: 320, y: 955, width: 740, fontSize: 48, fontFamily: "Anton, Impact, sans-serif", color: "#F5C518", fontWeight: "900", textAlign: "left" },
+
+            // BOTTOM section venue + web
+            { id: "bottom-bg", type: "shape", shape: "rect", x: 0, y: 1050, width: 1080, height: 300, fill: "#1a1a1a", selectable: false },
+            { id: "venue-label", type: "text", text: "DÓNDE", x: 60, y: 1080, width: 600, fontSize: 14, fontFamily: "Montserrat, sans-serif", color: "#F5C518", fontWeight: "700", textAlign: "left", charSpacing: 400 },
+            { id: "venue", type: "text", text: "Estudio del Movimiento · C/ Goya 22 · Madrid", x: 60, y: 1105, width: 960, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "#FFFFFF", fontWeight: "600", textAlign: "left" },
+
+            { id: "reserva-label", type: "text", text: "RESERVA", x: 60, y: 1160, width: 600, fontSize: 14, fontFamily: "Montserrat, sans-serif", color: "#F5C518", fontWeight: "700", textAlign: "left", charSpacing: 400 },
+            { id: "reserva", type: "text", text: "+34 600 222 333 · WhatsApp", x: 60, y: 1185, width: 600, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "#FFFFFF", fontWeight: "600", textAlign: "left" },
+
+            { id: "web-divider", type: "shape", shape: "rect", x: 60, y: 1245, width: 80, height: 2, fill: "#F5C518", selectable: false },
+            { id: "website", type: "text", text: "www.tusitio.com", x: 60, y: 1265, width: 960, fontSize: 26, fontFamily: "Montserrat, sans-serif", color: "#F5C518", fontWeight: "700", textAlign: "left", underline: true, charSpacing: 50 },
         ] },
         ],
     },
