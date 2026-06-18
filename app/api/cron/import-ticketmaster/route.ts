@@ -18,6 +18,12 @@ export const maxDuration = 60;
 const CITIES = [
   { id: "madrid", name: "Madrid" },
   { id: "barcelona", name: "Barcelona" },
+  { id: "valencia", name: "Valencia" },
+  { id: "sevilla", name: "Sevilla" },
+  { id: "malaga", name: "Málaga" },
+  { id: "bilbao", name: "Bilbao" },
+  { id: "zaragoza", name: "Zaragoza" },
+  { id: "granada", name: "Granada" },
 ];
 
 export async function GET(req: NextRequest) {
@@ -54,6 +60,7 @@ export async function GET(req: NextRequest) {
         venue: c.venue,
         category: "conciertos",
         price: c.price,
+        price_info: c.price_info,
         has_online_sale: !!c.ticket_url,
         ticket_url: c.ticket_url,
         image_url: c.image_url,

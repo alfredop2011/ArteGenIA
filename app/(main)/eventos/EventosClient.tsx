@@ -86,8 +86,12 @@ const CITIES_BY_COUNTRY: Record<string, { id: string; label: string; available: 
     { id: "todas", label: "Todas las ciudades", available: true },
     { id: "madrid", label: "Madrid", available: true },
     { id: "barcelona", label: "Barcelona", available: true },
-    { id: "valencia", label: "Valencia", available: false },
-    { id: "sevilla", label: "Sevilla", available: false },
+    { id: "valencia", label: "Valencia", available: true },
+    { id: "sevilla", label: "Sevilla", available: true },
+    { id: "malaga", label: "Málaga", available: true },
+    { id: "bilbao", label: "Bilbao", available: true },
+    { id: "zaragoza", label: "Zaragoza", available: true },
+    { id: "granada", label: "Granada", available: true },
   ],
 };
 
@@ -97,6 +101,10 @@ const CITY_COORDS: Record<string, { country: string; lat: number; lng: number }>
   barcelona: { country: "es", lat: 41.3874, lng: 2.1686 },
   valencia: { country: "es", lat: 39.4699, lng: -0.3763 },
   sevilla: { country: "es", lat: 37.3891, lng: -5.9845 },
+  malaga: { country: "es", lat: 36.7213, lng: -4.4214 },
+  bilbao: { country: "es", lat: 43.263, lng: -2.935 },
+  zaragoza: { country: "es", lat: 41.6488, lng: -0.8891 },
+  granada: { country: "es", lat: 37.1773, lng: -3.5986 },
 };
 
 // Ciudades para el "ticker" del hero cuando el filtro está a nivel país

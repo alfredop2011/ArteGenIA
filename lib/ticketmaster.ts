@@ -14,6 +14,7 @@ export type TmEventRow = {
   image_url: string | null;
   ticket_url: string | null;
   price: number | null;
+  price_info: string | null;
 };
 
 type TmImage = { url: string; width: number; ratio?: string };
@@ -23,7 +24,7 @@ type TmEvent = {
   url?: string;
   images?: TmImage[];
   dates?: { start?: { localDate?: string; localTime?: string } };
-  priceRanges?: { min?: number }[];
+  priceRanges?: { min?: number; max?: number }[];
   _embedded?: { venues?: { name?: string }[] };
 };
 
@@ -52,6 +53,10 @@ export async function fetchTicketmasterConcerts(cityId: string, cityName: string
   for (const e of events) {
     const date = e.dates?.start?.localDate;
     if (!date) continue;
+    const pr = e.priceRanges?.[0];
+    const min = typeof pr?.min === "number" ? Math.round(pr.min) : null;
+    const max = typeof pr?.max === "number" ? Math.round(pr.max) : null;
+    const priceInfo = min != null && max != null && max > min ? `${min}–${max} €` : null;
     out.push({
       external_id: e.id,
       title: (e.name || "Concierto").slice(0, 120),
@@ -61,7 +66,8 @@ export async function fetchTicketmasterConcerts(cityId: string, cityName: string
       city: cityId,
       image_url: bestImage(e.images),
       ticket_url: e.url ?? null,
-      price: typeof e.priceRanges?.[0]?.min === "number" ? Math.round(e.priceRanges![0].min!) : null,
+      price: min,
+      price_info: priceInfo,
     });
   }
   return out;

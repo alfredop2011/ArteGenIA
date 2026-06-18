@@ -26,6 +26,7 @@ import type { NextConfig } from "next";
 
 const SUPABASE_URL = "https://tbuszlffgtjnbvkxhkti.supabase.co";
 const R2_URL       = "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev";
+const TICKETM_URL  = "https://*.ticketm.net https://*.ticketmaster.com";
 const FAL_URL      = "https://*.fal.media https://*.fal.run";
 const POSTHOG_URL  = "https://*.posthog.com https://eu.i.posthog.com";
 const SENTRY_URL   = "https://*.ingest.sentry.io";
@@ -44,7 +45,7 @@ const CSP = [
   // fonts: Google Fonts CDN
   `font-src 'self' data: https://fonts.gstatic.com`,
   // imagenes: nuestras + Supabase + R2 + Fal + avatars Google + data URLs
-  `img-src 'self' blob: data: ${SUPABASE_URL} ${R2_URL} ${FAL_URL} https://*.googleusercontent.com`,
+  `img-src 'self' blob: data: ${SUPABASE_URL} ${R2_URL} ${TICKETM_URL} ${FAL_URL} https://*.googleusercontent.com`,
   // conexiones XHR/fetch/websocket
   `connect-src 'self' ${SUPABASE_URL} ${R2_URL} ${FAL_URL} ${POSTHOG_URL} ${SENTRY_URL} wss://${SUPABASE_URL.replace("https://", "")}`,
   // workers: para Fabric.js
