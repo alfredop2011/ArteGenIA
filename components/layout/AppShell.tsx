@@ -50,7 +50,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     // el menú de flyers (Crear, Quitar fondo, Plantillas…) y la bottom nav
     // móvil para que se sienta como una agenda, no como la app de flyers.
     // La cabecera mantiene logo + idioma + tema + login (cuenta = organizador).
-    const isAgendaRoute = pathname.startsWith("/eventos") || pathname.startsWith("/organizador");
+    const isAgendaRoute = pathname.startsWith("/eventos") || pathname.startsWith("/organizador") || pathname.startsWith("/subir");
 
     // Lee localStorage al montar + escucha el evento custom para
     // re-renderizar cuando el user completa su primera descarga.

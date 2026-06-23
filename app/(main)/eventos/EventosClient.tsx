@@ -1236,6 +1236,13 @@ function EventCard({
       {/* Imagen */}
       <button onClick={onClick} className="relative block h-44 w-full" style={{ background: event.image }} aria-label={event.title}>
         {event.cancelled && <CancelledSeal />}
+        {/* Sin flyer: placeholder diseñado (icono grande) en vez de gradiente vacío. */}
+        {!event.flyerUrl && !event.cancelled && (
+          <span className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-1.5 text-white">
+            <Cat.icon size={42} strokeWidth={1.5} className="opacity-90 drop-shadow" />
+            <span className="text-[11px] font-semibold uppercase tracking-widest opacity-80">{t(Cat.labelKey)}</span>
+          </span>
+        )}
         <span className="absolute left-3 top-3 flex items-center gap-1 rounded-full bg-black/40 px-2.5 py-1 text-[11px] font-medium text-white backdrop-blur">
           <Cat.icon size={11} /> {t(Cat.labelKey)}
         </span>
