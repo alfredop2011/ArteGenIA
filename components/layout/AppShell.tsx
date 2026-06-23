@@ -171,6 +171,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                                 }`}>
                                 Sube tu evento
                             </Link>
+                            <Link href="/create"
+                                className="px-4 py-1.5 rounded-lg text-sm font-medium text-ag-muted transition-all hover:text-ag-primary">
+                                Crea Flyer
+                            </Link>
                         </nav>
                     ) : (
                         <nav className="hidden md:flex items-center gap-1">
