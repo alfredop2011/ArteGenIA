@@ -171,8 +171,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                                 }`}>
                                 Sube tu evento
                             </Link>
-                            <Link href="/create"
-                                className="px-4 py-1.5 rounded-lg text-sm font-medium text-ag-muted transition-all hover:text-ag-primary">
+                            <Link href="/templates"
+                                className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                                    pathname.startsWith("/templates")
+                                        ? "text-ag-active border-b-2 border-ag-active rounded-none"
+                                        : "text-ag-muted hover:text-ag-primary"
+                                }`}>
                                 Crea Flyer
                             </Link>
                         </nav>
