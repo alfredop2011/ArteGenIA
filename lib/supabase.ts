@@ -82,6 +82,7 @@ export type EventRow = {
     status: "draft" | "published" | "cancelled";
     view_count: number;
     click_count: number;
+    rsvp_count: number;
     created_at: string;
     updated_at: string;
 };

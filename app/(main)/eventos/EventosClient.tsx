@@ -1567,6 +1567,9 @@ function EventModal({
             </button>
           </div>
 
+          {/* RSVP: "Voy" + contador de asistentes (anónimo, recuerda en localStorage). */}
+          {!event.cancelled && <RsvpButton eventId={event.id} initialCount={event.rsvpCount ?? 0} />}
+
           {/* Acción principal: cómo asistir. Si el organizador marcó venta
               online y dejó link, redirige a su página del evento / pago. */}
           {(event.hasSale ?? !!event.url) && event.url ? (
@@ -1599,6 +1602,44 @@ function EventModal({
         )}
       </AnimatePresence>
     </motion.div>
+  );
+}
+
+// ─── RSVP "Voy" + contador de asistentes ─────────────────────────────────────
+
+function RsvpButton({ eventId, initialCount }: { eventId: string; initialCount: number }) {
+  const { t } = useLocale();
+  const isRealId = /^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(eventId);
+  const key = `ag-rsvp-${eventId}`;
+  // Init perezoso desde localStorage (sin effect → sin warning de set-state-in-effect).
+  const [going, setGoing] = useState(() => {
+    if (typeof window === "undefined") return false;
+    try { return window.localStorage.getItem(key) === "1"; } catch { return false; }
+  });
+  const [count, setCount] = useState(initialCount);
+
+  const toggle = async () => {
+    const next = !going;
+    setGoing(next);
+    setCount((c) => Math.max(0, c + (next ? 1 : -1)));
+    try { window.localStorage.setItem(key, next ? "1" : "0"); } catch { /* modo privado */ }
+    if (isRealId) {
+      try { await supabase.rpc("set_event_rsvp", { p_id: eventId, p_delta: next ? 1 : -1 }); } catch { /* RPC ausente: no romper */ }
+    }
+  };
+
+  return (
+    <button
+      onClick={toggle}
+      className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold transition-colors"
+      style={going
+        ? { background: "var(--ag-brand)", color: "#fff" }
+        : { background: "var(--ag-brand-bg)", color: "var(--ag-brand)", border: "1px solid var(--ag-brand-border)" }}
+    >
+      <Users size={16} fill={going ? "currentColor" : "none"} />
+      {going ? t("eventos.rsvp.joined") : t("eventos.rsvp.join")}
+      {count > 0 && <span className="opacity-80">· {t("eventos.rsvp.count").replace("{n}", String(count))}</span>}
+    </button>
   );
 }
 

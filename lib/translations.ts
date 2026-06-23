@@ -839,6 +839,9 @@ export type TranslationKey =
   | "eventos.card.seeEvent"
   | "eventos.cal.more"
   | "eventos.cal.legend"
+  | "eventos.rsvp.join"
+  | "eventos.rsvp.joined"
+  | "eventos.rsvp.count"
   | "eventos.modal.seeFlyer"
   | "eventos.modal.priceTbc"
   | "eventos.modal.priceFree"
@@ -1758,6 +1761,9 @@ const es: Dict = {
   "eventos.card.seeEvent": "Ver evento",
   "eventos.cal.more": "+{n} más",
   "eventos.cal.legend": "Leyenda",
+  "eventos.rsvp.join": "Voy",
+  "eventos.rsvp.joined": "¡Vas!",
+  "eventos.rsvp.count": "{n} asistirán",
   "eventos.modal.seeFlyer": "Ver flyer",
   "eventos.modal.priceTbc": "Precio por confirmar",
   "eventos.modal.priceFree": "Entrada gratuita",
@@ -2663,6 +2669,9 @@ const en: Dict = {
   "eventos.card.seeEvent": "See event",
   "eventos.cal.more": "+{n} more",
   "eventos.cal.legend": "Legend",
+  "eventos.rsvp.join": "I'm going",
+  "eventos.rsvp.joined": "You're in!",
+  "eventos.rsvp.count": "{n} attending",
   "eventos.modal.seeFlyer": "View flyer",
   "eventos.modal.priceTbc": "Price to be confirmed",
   "eventos.modal.priceFree": "Free entry",
@@ -3568,6 +3577,9 @@ const fr: Dict = {
   "eventos.card.seeEvent": "Voir l'événement",
   "eventos.cal.more": "+{n} de plus",
   "eventos.cal.legend": "Légende",
+  "eventos.rsvp.join": "J'y vais",
+  "eventos.rsvp.joined": "Tu y es !",
+  "eventos.rsvp.count": "{n} participants",
   "eventos.modal.seeFlyer": "Voir le flyer",
   "eventos.modal.priceTbc": "Prix à confirmer",
   "eventos.modal.priceFree": "Entrée gratuite",
@@ -4473,6 +4485,9 @@ const pt: Dict = {
   "eventos.card.seeEvent": "Ver evento",
   "eventos.cal.more": "+{n} mais",
   "eventos.cal.legend": "Legenda",
+  "eventos.rsvp.join": "Eu vou",
+  "eventos.rsvp.joined": "Confirmado!",
+  "eventos.rsvp.count": "{n} vão",
   "eventos.modal.seeFlyer": "Ver flyer",
   "eventos.modal.priceTbc": "Preço por confirmar",
   "eventos.modal.priceFree": "Entrada gratuita",

@@ -25,6 +25,7 @@ export type EventItem = {
   cancelled?: boolean;
   image: string; // gradiente CSS o url(...) del flyer (fondo de la card)
   flyerUrl?: string | null; // URL cruda del flyer (para visor a tamaño completo)
+  rsvpCount?: number; // cuánta gente ha pulsado "Voy"
 };
 
 // Gradiente por categoría (fondo de la card cuando no hay flyer).
@@ -64,5 +65,6 @@ export function rowToEvent(r: EventRow): EventItem {
     cancelled: r.status === "cancelled",
     image: bgFor(r.category as Category, r.image_url),
     flyerUrl: r.image_url ?? null,
+    rsvpCount: r.rsvp_count ?? 0,
   };
 }
