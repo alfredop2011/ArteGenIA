@@ -305,6 +305,7 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
   const [showAuth, setShowAuth] = useState(false);
   const [showPublish, setShowPublish] = useState(false);
   const [showStats, setShowStats] = useState(false);
+  const [page, setPage] = useState(1); // paginación de la lista
   const organizerLabel = user ? t("eventos.organizer.publish") : t("eventos.organizer.uploadFree");
   // Si hay sesión, directo al panel; si no, abrimos el modal de login y, tras
   // autenticarse, volvemos a /organizador (nextUrl para el flujo OAuth).
@@ -517,14 +518,19 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
     }).sort((a, b) => (a.date === b.date ? a.time.localeCompare(b.time) : a.date.localeCompare(b.date)));
   }, [events, query, dateFilter, range, activeCats, activeAuds, onlyFree, country, city, showFavs, favs, t]);
 
+  // Paginación de la vista Lista (la del calendario muestra el mes entero).
+  const PER_PAGE = 24;
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
+  const curPage = Math.min(page, totalPages); // clamp si los filtros reducen resultados
   const grouped = useMemo(() => {
+    const start = (curPage - 1) * PER_PAGE;
     const map = new Map<string, EventItem[]>();
-    for (const e of filtered) {
+    for (const e of filtered.slice(start, start + PER_PAGE)) {
       if (!map.has(e.date)) map.set(e.date, []);
       map.get(e.date)!.push(e);
     }
     return Array.from(map.entries());
-  }, [filtered]);
+  }, [filtered, curPage]);
 
   const resetFilters = () => {
     setQuery("");
@@ -940,14 +946,35 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
         {filtered.length === 0 ? (
           <EmptyState onReset={resetFilters} />
         ) : view === "lista" ? (
-          <ListView
-            grouped={grouped}
-            favs={favs}
-            onFav={toggleFav}
-            onSelect={setSelected}
-            onBuy={trackClick}
-            onSeeDay={(d) => { setRange({ from: d, to: d }); setDateFilter("rango"); }}
-          />
+          <>
+            <ListView
+              grouped={grouped}
+              favs={favs}
+              onFav={toggleFav}
+              onSelect={setSelected}
+              onBuy={trackClick}
+              onSeeDay={(d) => { setRange({ from: d, to: d }); setDateFilter("rango"); }}
+            />
+            {totalPages > 1 && (
+              <div className="mt-6 flex items-center justify-center gap-3">
+                <button
+                  onClick={() => { setPage(Math.max(1, curPage - 1)); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                  disabled={curPage <= 1}
+                  className="flex h-9 w-9 items-center justify-center rounded-full disabled:opacity-30"
+                  style={{ background: "var(--home-card-bg)", color: "var(--ag-brand)" }}
+                  aria-label="Anterior"
+                ><ChevronLeft size={18} /></button>
+                <span className="text-sm font-medium" style={{ color: "var(--home-text-muted)" }}>{curPage} / {totalPages}</span>
+                <button
+                  onClick={() => { setPage(Math.min(totalPages, curPage + 1)); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                  disabled={curPage >= totalPages}
+                  className="flex h-9 w-9 items-center justify-center rounded-full disabled:opacity-30"
+                  style={{ background: "var(--home-card-bg)", color: "var(--ag-brand)" }}
+                  aria-label="Siguiente"
+                ><ChevronRight size={18} /></button>
+              </div>
+            )}
+          </>
         ) : (
           // Vista calendario: SOLO si hay eventos HOY mostramos el carrusel 3D
           // (destacado izq + calendario der, lado a lado en escritorio). Si HOY

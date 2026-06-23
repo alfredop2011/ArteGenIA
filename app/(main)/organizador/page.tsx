@@ -21,6 +21,8 @@ import {
   Ticket,
   Ban,
   RotateCcw,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useLocale } from "@/hooks/useLocale";
@@ -115,6 +117,7 @@ export default function OrganizadorPage() {
   const [editing, setEditing] = useState<EventRow | "new" | null>(null);
   const [showAuth, setShowAuth] = useState(false);
   const [claimMsg, setClaimMsg] = useState<string | null>(null);
+  const [upPage, setUpPage] = useState(1); // paginación de "Próximos"
 
   const admin = isAdmin(user?.email);
 
@@ -198,6 +201,11 @@ export default function OrganizadorPage() {
   const past = useMemo(() => events.filter((e) => e.status === "published" && e.event_date < todayIso), [events, todayIso]);
   const drafts = useMemo(() => events.filter((e) => e.status === "draft"), [events]);
   const cancelled = useMemo(() => events.filter((e) => e.status === "cancelled"), [events]);
+  // Paginación de "Próximos" (la lista que más crece).
+  const UP_PER = 20;
+  const upTotal = Math.max(1, Math.ceil(upcoming.length / UP_PER));
+  const upCur = Math.min(upPage, upTotal);
+  const upcomingPage = upcoming.slice((upCur - 1) * UP_PER, upCur * UP_PER);
 
   // Conteo por serie: cuántas fechas tiene cada serie (para agrupar/etiquetar).
   const seriesCounts = useMemo(() => {
@@ -301,9 +309,18 @@ export default function OrganizadorPage() {
               {upcoming.length === 0 ? (
                 <p className="text-sm" style={{ color: "var(--home-text-soft)" }}>{t("org.section.upcomingEmpty")}</p>
               ) : (
-                upcoming.map((e) => (
-                  <EventRowCard key={e.id} ev={e} onEdit={() => setEditing(e)} onDelete={() => remove(e)} onToggle={() => togglePublish(e)} onCancel={() => toggleCancel(e)} seriesCount={seriesCountOf(e)} />
-                ))
+                <>
+                  {upcomingPage.map((e) => (
+                    <EventRowCard key={e.id} ev={e} onEdit={() => setEditing(e)} onDelete={() => remove(e)} onToggle={() => togglePublish(e)} onCancel={() => toggleCancel(e)} seriesCount={seriesCountOf(e)} />
+                  ))}
+                  {upTotal > 1 && (
+                    <div className="mt-2 flex items-center justify-center gap-3 pt-2">
+                      <button onClick={() => setUpPage(Math.max(1, upCur - 1))} disabled={upCur <= 1} className="flex h-9 w-9 items-center justify-center rounded-full disabled:opacity-30" style={{ background: "var(--home-card-bg)", color: "var(--ag-brand)" }} aria-label="Anterior"><ChevronLeft size={18} /></button>
+                      <span className="text-sm font-medium" style={{ color: "var(--home-text-soft)" }}>{upCur} / {upTotal}</span>
+                      <button onClick={() => setUpPage(Math.min(upTotal, upCur + 1))} disabled={upCur >= upTotal} className="flex h-9 w-9 items-center justify-center rounded-full disabled:opacity-30" style={{ background: "var(--home-card-bg)", color: "var(--ag-brand)" }} aria-label="Siguiente"><ChevronRight size={18} /></button>
+                    </div>
+                  )}
+                </>
               )}
             </Section>
             {past.length > 0 && (
