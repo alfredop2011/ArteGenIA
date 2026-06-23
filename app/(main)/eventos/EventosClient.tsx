@@ -354,7 +354,8 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
   const [moreFilters, setMoreFilters] = useState(false); // panel "Más filtros"
   const [onlyFree, setOnlyFree] = useState(false);
   const [view, setView] = useState<"lista" | "calendario">("lista");
-  const [calMonth, setCalMonth] = useState(5); // junio (0-indexed)
+  // Índice de mes ABSOLUTO (año*12 + mes) para el calendario; arranca en el mes actual.
+  const [calMonth, setCalMonth] = useState(() => { const d = new Date(); return d.getFullYear() * 12 + d.getMonth(); });
   const [selected, setSelected] = useState<EventItem | null>(null);
   const [favs, setFavs] = useState<Set<string>>(new Set());
   const [showFavs, setShowFavs] = useState(false);
@@ -1342,40 +1343,49 @@ function CalendarView({
   onSelect: (e: EventItem) => void;
 }) {
   const { t, locale } = useLocale();
-  const year = 2026;
-  const firstDay = (new Date(year, month, 1).getDay() + 6) % 7; // 0 = lunes
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  // `month` es un índice ABSOLUTO (año*12 + mes 0-11) para que el calendario
+  // distinga años: antes comparaba solo el mes y un evento de junio de 2027 se
+  // colaba en junio de 2026.
+  const year = Math.floor(month / 12);
+  const mIdx = ((month % 12) + 12) % 12; // mes 0-11
+  const firstDay = (new Date(year, mIdx, 1).getDay() + 6) % 7; // 0 = lunes
+  const daysInMonth = new Date(year, mIdx + 1, 0).getDate();
 
   const byDay = useMemo(() => {
     const map = new Map<number, EventItem[]>();
     for (const e of events) {
       const d = parse(e.date);
-      if (d.getMonth() !== month) continue;
+      if (d.getFullYear() !== year || d.getMonth() !== mIdx) continue;
       const day = d.getDate();
       if (!map.has(day)) map.set(day, []);
       map.get(day)!.push(e);
     }
     return map;
-  }, [events, month]);
+  }, [events, year, mIdx]);
 
   const cells: (number | null)[] = [...Array(firstDay).fill(null), ...Array.from({ length: daysInMonth }, (_, i) => i + 1)];
-  const todayDay = parse(TODAY).getMonth() === month ? parse(TODAY).getDate() : -1;
+  const td = parse(TODAY);
+  const todayDay = td.getFullYear() === year && td.getMonth() === mIdx ? td.getDate() : -1;
+  const todayAbs = td.getFullYear() * 12 + td.getMonth();
 
   // Leyenda: categorías presentes en el mes (lo estándar es colorear por tipo).
   const legendCats = useMemo(() => {
     const set = new Set<Category>();
-    for (const e of events) if (parse(e.date).getMonth() === month) set.add(e.category);
+    for (const e of events) {
+      const d = parse(e.date);
+      if (d.getFullYear() === year && d.getMonth() === mIdx) set.add(e.category);
+    }
     return (Object.keys(CATEGORIES) as Category[]).filter((c) => set.has(c));
-  }, [events, month]);
+  }, [events, year, mIdx]);
 
   return (
     <div className="rounded-2xl p-3 sm:p-5" style={{ background: "var(--home-bg-soft)", border: "1px solid var(--home-card-border)" }}>
       <div className="mb-4 flex items-center justify-between">
-        <button onClick={() => onMonth(Math.max(0, month - 1))} disabled={month <= 0} className="rounded-lg p-2 hover:bg-ag-card disabled:opacity-30">
+        <button onClick={() => onMonth(month - 1)} disabled={month <= todayAbs} className="rounded-lg p-2 hover:bg-ag-card disabled:opacity-30">
           <ChevronLeft size={18} />
         </button>
-        <h3 className="text-base font-semibold capitalize">{monthYear(month, year, locale)}</h3>
-        <button onClick={() => onMonth(Math.min(11, month + 1))} disabled={month >= 11} className="rounded-lg p-2 hover:bg-ag-card disabled:opacity-30">
+        <h3 className="text-base font-semibold capitalize">{monthYear(mIdx, year, locale)}</h3>
+        <button onClick={() => onMonth(month + 1)} disabled={month >= todayAbs + 24} className="rounded-lg p-2 hover:bg-ag-card disabled:opacity-30">
           <ChevronRight size={18} />
         </button>
       </div>
