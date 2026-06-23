@@ -120,6 +120,12 @@ const CITY_LABELS: Record<string, string> = {
 const titleCaseCity = (s: string) => s.split(" ").map((w) => (w ? w[0].toUpperCase() + w.slice(1) : w)).join(" ");
 const cityLabelFor = (id: string) => CITY_LABELS[id] ?? titleCaseCity(id);
 
+// Foto de fondo del hero por ciudad (skyline nocturno). Vacío por ahora; para
+// activarla, sube la imagen a R2 (CORS ya configurado) y pon aquí su URL:
+//   madrid: `${process.env.NEXT_PUBLIC_R2_PUBLIC_URL}/hero/madrid.jpg`, …
+// Si una ciudad no tiene foto, el hero usa solo el degradado oscuro + glows.
+const CITY_HERO: Record<string, string> = {};
+
 // Coordenadas para "Cerca de mí" (detección por GPS → ciudad más cercana).
 const CITY_COORDS: Record<string, { country: string; lat: number; lng: number }> = {
   madrid: { country: "es", lat: 40.4168, lng: -3.7038 },
@@ -387,6 +393,7 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
   // rota entre las ciudades del país seleccionado (cambia cada 2 s, ver effect).
   const rotCities = ROTATING_CITIES[country] ?? [countryLabel];
   const heroWord = city === "todas" ? rotCities[rotIdx % rotCities.length] ?? countryLabel : cityLabel;
+  const cityHero = CITY_HERO[city] || "";
 
   // Favoritos: cargar / persistir en localStorage.
   useEffect(() => {
@@ -557,13 +564,28 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
         </div>
       </div>
 
-      {/* ── HERO ─────────────────────────────────────────────── */}
-      {/* sin overflow-hidden: recortaba el menú de los desplegables país/ciudad. */}
-      <section className="relative">
-        <div
-          className="absolute inset-0 -z-10 opacity-60"
-          style={{ background: "radial-gradient(60% 80% at 50% 0%, var(--ag-brand-bg), transparent 70%)" }}
-        />
+      {/* ── HERO (oscuro, estilo "noche" premium) ────────────── */}
+      {/* Fondo oscuro fijo (no depende del tema) + glows neón. Si la ciudad
+          tiene foto (CITY_HERO), se pinta detrás con máscara oscura. */}
+      <section className="relative isolate overflow-hidden">
+        {/* base oscura */}
+        <div className="absolute inset-0 -z-30" style={{ background: "linear-gradient(180deg,#0b0b13 0%,#120a1f 55%,#0b0b13 100%)" }} />
+        {/* foto de la ciudad (si existe), desvanecida arriba-derecha */}
+        {cityHero && (
+          <div
+            className="absolute inset-y-0 right-0 -z-20 w-full sm:w-3/5"
+            style={{
+              backgroundImage: `linear-gradient(90deg,#0b0b13 0%,rgba(11,11,19,.65) 35%,rgba(11,11,19,.15) 100%), url('${cityHero}')`,
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              maskImage: "linear-gradient(180deg,#000 0%,#000 60%,transparent 100%)",
+              WebkitMaskImage: "linear-gradient(180deg,#000 0%,#000 60%,transparent 100%)",
+            }}
+          />
+        )}
+        {/* glows neón */}
+        <div className="absolute -left-24 top-0 -z-10 h-72 w-72 rounded-full opacity-40 blur-3xl" style={{ background: "radial-gradient(circle,#7E2BFF,transparent 70%)" }} />
+        <div className="absolute right-0 top-10 -z-10 h-72 w-72 rounded-full opacity-30 blur-3xl" style={{ background: "radial-gradient(circle,#FF1EA8,transparent 70%)" }} />
         <div className="mx-auto max-w-6xl px-4 pt-5 pb-4 sm:pt-10 sm:pb-8">
           {/* initial=false: render directo a su estado final. Antes usaba una
               animación de entrada (opacity 0→1) que en SSR/hidratación se podía
@@ -577,10 +599,10 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
             >
               <Sparkles size={13} /> {t("eventos.hero.badge")}
             </span>
-            <h1 className="mx-auto max-w-3xl text-2xl font-bold tracking-tight sm:text-5xl">
+            <h1 className="mx-auto max-w-3xl text-2xl font-bold tracking-tight text-white sm:text-5xl">
               <span className="sm:hidden">{t("eventos.hero.titleMobile")}</span>
               <span className="hidden sm:inline">{t("eventos.hero.titleDesktop")}</span>
-              <span className="relative inline-flex items-baseline" style={{ color: "var(--ag-brand)" }}>
+              <span className="relative inline-flex items-baseline" style={{ background: "linear-gradient(90deg,#a855f7,#ec4899)", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent" }}>
                 <AnimatePresence mode="wait">
                   <motion.span
                     key={heroWord}
@@ -596,7 +618,7 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
               </span>
               <span className="hidden sm:inline">?</span>
             </h1>
-            <p className="mx-auto mt-1.5 max-w-xl text-sm sm:mt-3 sm:text-lg" style={{ color: "var(--home-text-muted)" }}>
+            <p className="mx-auto mt-1.5 max-w-xl text-sm sm:mt-3 sm:text-lg" style={{ color: "rgba(255,255,255,.72)" }}>
               {t("eventos.hero.subtitle")}
             </p>
           </motion.div>
@@ -662,13 +684,13 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
             </div>
             {/* Búsqueda libre + botón de ubicación (◎) */}
             <div className="relative flex-1">
-              <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2" style={{ color: "var(--home-text-soft)" }} />
+              <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2" style={{ color: "rgba(255,255,255,.5)" }} />
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder={t("eventos.search.placeholder")}
-                className="h-12 w-full rounded-xl pl-11 pr-20 text-sm outline-none"
-                style={{ background: "var(--home-bg-soft)", border: "1px solid var(--home-card-border)", color: "var(--home-text)" }}
+                className="h-12 w-full rounded-xl pl-11 pr-20 text-sm text-white outline-none placeholder:text-white/50"
+                style={{ background: "rgba(255,255,255,.07)", border: "1px solid rgba(255,255,255,.14)", backdropFilter: "blur(8px)" }}
               />
               {query && (
                 <button onClick={() => setQuery("")} className="absolute right-11 top-1/2 -translate-y-1/2" style={{ color: "var(--home-text-soft)" }}>
@@ -1149,11 +1171,11 @@ function Dropdown({
     <div className="relative">
       <button
         onClick={() => setOpen((o) => !o)}
-        className="flex h-12 w-full items-center justify-between gap-2 rounded-xl px-4 text-sm font-medium sm:w-auto sm:min-w-[160px]"
-        style={{ background: "var(--home-bg-soft)", border: "1px solid var(--home-card-border)" }}
+        className="flex h-12 w-full items-center justify-between gap-2 rounded-xl px-4 text-sm font-medium text-white sm:w-auto sm:min-w-[160px]"
+        style={{ background: "rgba(255,255,255,.07)", border: "1px solid rgba(255,255,255,.14)", backdropFilter: "blur(8px)" }}
       >
         <span className="flex items-center gap-2 truncate">{icon}<span className="truncate">{label}</span></span>
-        <ChevronDown size={15} className={`shrink-0 transition-transform ${open ? "rotate-180" : ""}`} style={{ color: "var(--home-text-soft)" }} />
+        <ChevronDown size={15} className={`shrink-0 transition-transform ${open ? "rotate-180" : ""}`} style={{ color: "rgba(255,255,255,.6)" }} />
       </button>
       {/* div plano (sin animación de opacidad): una animación de entrada de
           framer se quedaba atascada a media opacidad y el menú salía
