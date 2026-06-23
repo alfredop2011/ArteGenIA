@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
       .from("events")
       .insert({
         organizer_id: null,
-        source: "web",
+        source: "organizer", // el CHECK de events.source solo admite organizer/telegram/whatsapp/auto
         status: "published",
         submitter_channel: "web",
         submitter_ref: email || claimToken,

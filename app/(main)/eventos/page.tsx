@@ -25,11 +25,12 @@ export default async function EventosPage() {
       .select("*")
       .in("status", ["published", "cancelled"])
       .gte("event_date", todayIso)
-      // Solo eventos CON foto: las fuentes sin imagen (p.ej. Open Data Madrid)
-      // no se muestran — preferimos una agenda con cartel real a tarjetas vacías.
-      .not("image_url", "is", null)
       .order("event_date", { ascending: true });
-    const mapped = ((data as EventRow[]) ?? []).map(rowToEvent);
+    // Solo ocultamos los AUTO-importados sin foto (p.ej. Open Data Madrid, que
+    // dan tarjetas vacías). Los eventos curados (manual/web/bot/Ticketmaster) se
+    // muestran SIEMPRE, aunque aún no tengan cartel (placeholder por categoría).
+    const visible = ((data as EventRow[]) ?? []).filter((r) => r.image_url || r.source !== "auto");
+    const mapped = visible.map(rowToEvent);
     // Dedup defensivo: colapsa duplicados (mismo título + fecha + ciudad + lugar).
     const seen = new Set<string>();
     initialEvents = mapped.filter((e) => {

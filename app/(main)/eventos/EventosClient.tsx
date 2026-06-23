@@ -361,8 +361,8 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
   const [query, setQuery] = useState("");
   const [dateFilter, setDateFilter] = useState<DateFilter>("todos");
   const [range, setRange] = useState({ from: "", to: "" });
-  // Por defecto mostramos Conciertos + Bailes sociales (el foco de la escena).
-  const [activeCats, setActiveCats] = useState<Set<Category>>(new Set<Category>(["conciertos", "social"]));
+  // Por defecto: Clases de baile + Bailes sociales + Conciertos (foco del circuito).
+  const [activeCats, setActiveCats] = useState<Set<Category>>(new Set<Category>(["clases", "social", "conciertos"]));
   const [activeAuds, setActiveAuds] = useState<Set<Audience>>(new Set());
   const [moreFilters, setMoreFilters] = useState(false); // panel "Más filtros"
   const [onlyFree, setOnlyFree] = useState(false);
@@ -955,7 +955,10 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
           <div className="space-y-6">
             <div className="grid items-start gap-4 lg:grid-cols-2">
               {(() => {
-                const populars = filtered.slice(0, 5);
+                // Carrusel 3D = eventos de HOY (llaman la atención). Si hoy no
+                // hay, cae a los más próximos para no quedar vacío.
+                const hoy = filtered.filter((e) => e.date === TODAY);
+                const populars = (hoy.length ? hoy : filtered).slice(0, 5);
                 return populars.length ? <PopularCarousel events={populars} onSelect={setSelected} onBuy={trackClick} /> : <div />;
               })()}
               <CalendarView events={filtered} month={calMonth} onMonth={setCalMonth} onSelect={setSelected} />
