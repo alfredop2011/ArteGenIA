@@ -272,6 +272,46 @@ export async function sendTrialEndingEmail(
   });
 }
 
+// ─── 7. COLLABORATOR PHOTO RECEIVED ─────────────────────────────────────
+// Se envía al owner cuando un colaborador completa el upload de una foto
+// solicitada desde el editor (botón "Solicitar foto"). El email incluye
+// CTA directo al proyecto para que el owner abra y vea el resultado.
+export async function sendCollaboratorPhotoReceivedEmail(
+  to: string,
+  ownerName: string | null,
+  collaboratorName: string,
+  projectName: string,
+  projectId: string,
+  autoApplied: boolean,
+): Promise<void> {
+  const displayName = ownerName?.split(" ")[0] || "creador";
+  const ctaText = autoApplied ? "Ver el flyer actualizado →" : "Abrir colaboradores →";
+  const ctaHref = autoApplied
+    ? `${APP_URL}/editor/${projectId}`
+    : `${APP_URL}/mis-recursos?tab=colaboradores`;
+  const bodyApplied = `
+    <p>Hola ${displayName},</p>
+    <p><b>${collaboratorName}</b> acaba de subir su foto para el flyer <b>${projectName}</b>.</p>
+    <p style="margin-top: 16px;">Ya la hemos colocado automáticamente en el sitio que la pediste. Solo tienes que abrir el editor y ajustar lo que necesites antes de exportar.</p>
+  `;
+  const bodyOnlySaved = `
+    <p>Hola ${displayName},</p>
+    <p><b>${collaboratorName}</b> acaba de subir su foto para el flyer <b>${projectName}</b>.</p>
+    <p style="margin-top: 16px;">La foto está guardada en tu sección de Colaboradores. Ábrela y arrástrala al flyer cuando quieras.</p>
+  `;
+  await send({
+    to,
+    subject: `${collaboratorName} ha subido su foto`,
+    html: template({
+      heading: `Foto recibida de ${collaboratorName}`,
+      preheader: `Lista para tu flyer ${projectName}.`,
+      body: autoApplied ? bodyApplied : bodyOnlySaved,
+      ctaText,
+      ctaHref,
+    }),
+  });
+}
+
 export async function sendCancelSurveyEmail(to: string): Promise<void> {
   await send({
     to,

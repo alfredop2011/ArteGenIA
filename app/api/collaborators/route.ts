@@ -3,6 +3,57 @@ import sharp from "sharp";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { uploadToR2, deleteFromR2 } from "@/lib/r2";
+import { sendCollaboratorPhotoReceivedEmail } from "@/lib/email";
+
+/**
+ * Auto-actualiza el fabric_json de un project reemplazando el `src` del
+ * layer cuyo `customId === targetLayerId`. Se invoca cuando un invite
+ * "contextual" (generado desde el editor) completa la subida del colaborador.
+ *
+ * - Idempotente: si el layer no se encuentra, devuelve false sin error.
+ * - Defensivo: cualquier excepción se loguea pero NO rompe el flujo
+ *   principal de POST /api/collaborators (el colaborador ya está guardado
+ *   y queda accesible desde /mis-recursos).
+ */
+async function patchProjectLayer(
+  projectId: string,
+  targetLayerId: string,
+  newUrl: string,
+): Promise<boolean> {
+  try {
+    const { data: project, error } = await supabaseAdmin
+      .from("projects")
+      .select("id, fabric_json")
+      .eq("id", projectId)
+      .maybeSingle();
+    if (error || !project?.fabric_json) return false;
+
+    const fj = project.fabric_json as { objects?: Array<Record<string, unknown>> };
+    if (!Array.isArray(fj.objects)) return false;
+
+    let touched = false;
+    for (const obj of fj.objects) {
+      if (obj.customId === targetLayerId && obj.type === "image") {
+        obj.src = newUrl;
+        touched = true;
+      }
+    }
+    if (!touched) return false;
+
+    const { error: updErr } = await supabaseAdmin
+      .from("projects")
+      .update({ fabric_json: fj, updated_at: new Date().toISOString() })
+      .eq("id", projectId);
+    if (updErr) {
+      console.error("[collaborators auto-patch] update failed", updErr);
+      return false;
+    }
+    return true;
+  } catch (e) {
+    console.error("[collaborators auto-patch] exception", e);
+    return false;
+  }
+}
 
 /**
  * POST /api/collaborators
@@ -60,10 +111,10 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Validar token
+    // Validar token (incluye contexto editor: project_id + target_layer_id)
     const { data: invite, error: inviteErr } = await supabaseAdmin
       .from("collaborator_invites")
-      .select("token, owner_id, expires_at, used_at, updates_collaborator_id")
+      .select("token, owner_id, expires_at, used_at, updates_collaborator_id, project_id, target_layer_id")
       .eq("token", token)
       .maybeSingle();
 
@@ -230,7 +281,53 @@ export async function POST(req: NextRequest) {
       })
       .eq("token", token);
 
-    return NextResponse.json({ ok: true, collaboratorId: collabId });
+    // ── Invite contextual: auto-actualizar fabric_json del project + email ──
+    // Esto solo se ejecuta si el invite fue generado desde el editor con el
+    // botón "Solicitar foto". Todo va en best-effort: si falla, el colaborador
+    // ya está guardado y el owner puede insertar la foto manualmente desde
+    // /mis-recursos.
+    let projectPatched = false;
+    if (invite.project_id && invite.target_layer_id) {
+      // photoUrl ya está disponible: es la URL pública R2 retornada por
+      // uploadToR2() arriba en este mismo handler.
+      projectPatched = await patchProjectLayer(
+        invite.project_id,
+        invite.target_layer_id,
+        photoUrl,
+      );
+
+      // Email al owner (best-effort, no rompe si falla)
+      try {
+        const { data: ownerProfile } = await supabaseAdmin
+          .from("profiles")
+          .select("email, name")
+          .eq("id", invite.owner_id)
+          .maybeSingle();
+        const { data: proj } = await supabaseAdmin
+          .from("projects")
+          .select("id, name")
+          .eq("id", invite.project_id)
+          .maybeSingle();
+        if (ownerProfile?.email) {
+          await sendCollaboratorPhotoReceivedEmail(
+            ownerProfile.email,
+            ownerProfile.name,
+            artistName,
+            proj?.name || "tu flyer",
+            invite.project_id,
+            projectPatched,
+          );
+        }
+      } catch (mailErr) {
+        console.warn("[collaborators POST] email owner failed:", mailErr);
+      }
+    }
+
+    return NextResponse.json({
+      ok: true,
+      collaboratorId: collabId,
+      projectPatched,
+    });
   } catch (e) {
     console.error("[collaborators POST]", e);
     return NextResponse.json({ error: "Error procesando la solicitud" }, { status: 500 });
