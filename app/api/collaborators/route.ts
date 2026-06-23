@@ -313,15 +313,21 @@ export async function POST(req: NextRequest) {
           .maybeSingle();
         const { data: proj } = await supabaseAdmin
           .from("projects")
-          .select("id, name")
+          .select("id, title")
           .eq("id", invite.project_id)
           .maybeSingle();
         if (ownerProfile?.email) {
+          // proj.title puede ser "Diseño sin título" si el usuario no
+          // renombró. En ese caso pasamos null para que el email use
+          // un copy más natural ("tu flyer" sin entrecomillar nombre).
+          const realTitle = proj?.title && proj.title !== "Diseño sin título"
+            ? proj.title
+            : null;
           await sendCollaboratorPhotoReceivedEmail(
             ownerProfile.email,
             ownerProfile.name,
             artistName,
-            proj?.name || "tu flyer",
+            realTitle,
             invite.project_id,
             projectPatched,
           );

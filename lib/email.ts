@@ -280,23 +280,35 @@ export async function sendCollaboratorPhotoReceivedEmail(
   to: string,
   ownerName: string | null,
   collaboratorName: string,
-  projectName: string,
+  projectName: string | null,
   projectId: string,
   autoApplied: boolean,
 ): Promise<void> {
-  const displayName = ownerName?.split(" ")[0] || "creador";
+  // Fallback robusto: si el nombre es vacío o tiene <2 chars (ej. iniciales
+  // sueltas como "c"), caemos a un saludo neutro en vez de "Hola c,".
+  const firstName = ownerName?.trim().split(" ")[0] ?? "";
+  const displayName = firstName.length >= 2 ? firstName : "hola";
+  const greeting = displayName === "hola" ? "¡Hola!" : `Hola ${displayName},`;
+
+  // Si no hay título real del proyecto, usamos "tu flyer" sin <b>
+  // (entrecomillarlo como nombre quedaba raro: "para el flyer tu flyer").
+  const flyerLabel = projectName
+    ? `el flyer <b>${projectName}</b>`
+    : `tu flyer`;
+  const preheaderFlyer = projectName ? `tu flyer ${projectName}` : "tu flyer";
+
   const ctaText = autoApplied ? "Ver el flyer actualizado →" : "Abrir colaboradores →";
   const ctaHref = autoApplied
     ? `${APP_URL}/editor/${projectId}`
     : `${APP_URL}/mis-recursos?tab=colaboradores`;
   const bodyApplied = `
-    <p>Hola ${displayName},</p>
-    <p><b>${collaboratorName}</b> acaba de subir su foto para el flyer <b>${projectName}</b>.</p>
+    <p>${greeting}</p>
+    <p><b>${collaboratorName}</b> acaba de subir su foto para ${flyerLabel}.</p>
     <p style="margin-top: 16px;">Ya la hemos colocado automáticamente en el sitio que la pediste. Solo tienes que abrir el editor y ajustar lo que necesites antes de exportar.</p>
   `;
   const bodyOnlySaved = `
-    <p>Hola ${displayName},</p>
-    <p><b>${collaboratorName}</b> acaba de subir su foto para el flyer <b>${projectName}</b>.</p>
+    <p>${greeting}</p>
+    <p><b>${collaboratorName}</b> acaba de subir su foto para ${flyerLabel}.</p>
     <p style="margin-top: 16px;">La foto está guardada en tu sección de Colaboradores. Ábrela y arrástrala al flyer cuando quieras.</p>
   `;
   await send({
@@ -304,7 +316,7 @@ export async function sendCollaboratorPhotoReceivedEmail(
     subject: `${collaboratorName} ha subido su foto`,
     html: template({
       heading: `Foto recibida de ${collaboratorName}`,
-      preheader: `Lista para tu flyer ${projectName}.`,
+      preheader: `Lista para ${preheaderFlyer}.`,
       body: autoApplied ? bodyApplied : bodyOnlySaved,
       ctaText,
       ctaHref,
