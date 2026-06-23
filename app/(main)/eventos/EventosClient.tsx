@@ -677,9 +677,10 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
       {/* ── BARRA DE FILTROS (sticky) ───────────────────────────── */}
       <div className="sticky top-0 z-10 backdrop-blur" style={{ background: "var(--header-bg)", borderBottom: "1px solid var(--header-border)" }}>
         <div className="mx-auto max-w-6xl px-4 py-3">
-          <div className="flex items-center justify-between gap-3">
-            {/* Chips rápidos (scroll horizontal en móvil) */}
-            <div className="flex flex-1 gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            {/* Chips rápidos: se ajustan en varias líneas para que SIEMPRE se
+                vean todos (antes "Cerca de mí" y "Más filtros" se recortaban). */}
+            <div className="flex flex-wrap items-center gap-2">
               {(["hoy", "finde"] as DateFilter[]).map((id) => {
                 const f = DATE_FILTERS.find((x) => x.id === id)!;
                 const on = dateFilter === id;
