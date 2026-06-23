@@ -1675,7 +1675,7 @@ function PopularCarousel({ events, onSelect, onBuy }: { events: EventItem[]; onS
   const e = events[active % n];
   const Cat = CATEGORIES[e.category];
   const canBuy = (e.hasSale ?? !!e.url) && !!e.url;
-  const gap = Math.min(w * 0.16, 64);
+  const gap = Math.min(w * 0.08, 34);
   const up = gap * 0.55;
   // Pila 3D: el activo al frente, anterior a la izq (rotado), siguiente a la der.
   const imgStyle = (i: number): CSSProperties => {
@@ -1691,8 +1691,9 @@ function PopularCarousel({ events, onSelect, onBuy }: { events: EventItem[]; onS
     // Ancho completo, layout horizontal como el demo: imágenes apiladas izq + info der.
     <div className="rounded-2xl" style={{ background: "var(--home-bg-soft)", border: "1px solid var(--home-card-border)" }}>
       <div className="grid items-center gap-6 p-5 md:grid-cols-2 md:p-8">
-        {/* IMÁGENES apiladas (izquierda) */}
-        <div ref={ref} className="relative h-64 sm:h-80" style={{ perspective: 1000 }}>
+        {/* IMÁGENES apiladas (izquierda) — overflow-hidden + padding para que la
+            pila NO se salga de su columna ni tape el texto de la derecha. */}
+        <div ref={ref} className="relative h-64 overflow-hidden rounded-2xl px-6 py-2 sm:h-80" style={{ perspective: 1000 }}>
           {events.map((ev, i) => (
             <button
               key={ev.id}
