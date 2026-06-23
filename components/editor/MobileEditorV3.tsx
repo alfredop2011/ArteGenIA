@@ -68,7 +68,8 @@ import { useCredits } from "@/hooks/useCredits";
 import { CREDIT_COST, type CreditModule } from "@/lib/credits";
 // Z.17 — Borrador mágico/manual full-screen reutilizable desktop+mobile
 import BrushEraserModal from "@/components/editor/BrushEraserModal";
-import { Save, FolderOpen, Share2, Link2, Mail, MessageCircle, Send, Plus, Layers, Lock, Unlock, Eye, EyeOff, Circle as CircleIcon, Square as SquareIcon, Triangle, Heart, Star, AlignHorizontalJustifyCenter, Clipboard, ClipboardPaste } from "lucide-react";
+import { Save, FolderOpen, Share2, Link2, Mail, MessageCircle, Send, Plus, Layers, Lock, Unlock, Eye, EyeOff, Circle as CircleIcon, Square as SquareIcon, Triangle, Heart, Star, AlignHorizontalJustifyCenter, Clipboard, ClipboardPaste, UserPlus } from "lucide-react";
+import RequestPhotoModal from "@/components/editor/RequestPhotoModal";
 
 type Props = {
   templateId?: number;
@@ -262,7 +263,7 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
     const fc = fabricRef.current;
     if (!fc) return;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const snap = (fc.toJSON as any)(["customId"]) as object;
+    const snap = (fc.toJSON as any)(["customId", "collaboratorReceivedAt", "collaboratorName"]) as object;
     const h = historyRef.current;
     // trunca futuro si estabamos en medio del stack
     h.stack = h.stack.slice(0, h.index + 1);
@@ -503,7 +504,7 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
       // Push estado inicial al history (index 0). Asi el primer cambio
       // permite undo de vuelta al inicio.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const snap = (fc.toJSON as any)(["customId"]) as object;
+      const snap = (fc.toJSON as any)(["customId", "collaboratorReceivedAt", "collaboratorName"]) as object;
       historyRef.current = { stack: [snap], index: 0 };
       recomputeCanUndoRedo();
     };
@@ -1122,6 +1123,9 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
   // el src del FabricImage por la version sin fondo (PNG transparente).
   // Auth + rate limit aplicados en el endpoint.
   const [removingBg, setRemovingBg] = useState(false);
+  // Modal "Solicitar foto al colaborador" — invite contextual desde el editor.
+  // Guarda el customId del layer activo para vincular el invite a ESA capa.
+  const [requestPhotoLayerId, setRequestPhotoLayerId] = useState<string | null>(null);
   /** Captura la imagen al abrir el subtool "Quitar fondo" para evitar
    *  perderla si Fabric deselecciona por interacciones con la UI. */
   const removeBgTargetRef = useRef<FabricImage | null>(null);
@@ -1539,7 +1543,7 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
   }, [template, formatId, blocks, pushHistory, toast]);
 
   // Ref a doSave para usar desde callbacks declaradas ANTES de doSave
-  const doSaveRef = useRef<((silent?: boolean) => Promise<void>) | null>(null);
+  const doSaveRef = useRef<((silent?: boolean) => Promise<string | null>) | null>(null);
 
   // ─── Cambiar formato en vivo (Fase M.1) ────────────────────────────────
   // Si el proyecto esta guardado, lo guardamos primero (con cambios actuales)
@@ -1884,9 +1888,9 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
   // Serializa el canvas (incluyendo customId), genera thumbnail JPEG inline
   // y guarda o actualiza en Supabase. Si es nuevo, redirige URL a /editor/<uuid>
   // sin recargar (replaceState).
-  const doSave = useCallback(async (silent = false) => {
+  const doSave = useCallback(async (silent = false): Promise<string | null> => {
     const fc = fabricRef.current;
-    if (!fc || !loaded) return;
+    if (!fc || !loaded) return null;
     setSaveState("saving");
     try {
       // Multi-página: si hay más de 1 página o el proyecto ya está en
@@ -1896,7 +1900,7 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const fabricJson: object = pages.pageCount > 1
         ? (pages.serializeForSave(fc, canvasSize.w, canvasSize.h) as unknown as object)
-        : ((fc.toJSON as any)(["customId"]) as object);
+        : ((fc.toJSON as any)(["customId", "collaboratorReceivedAt", "collaboratorName"]) as object);
       // Thumbnail JPEG ~320px
       let thumbnailUrl: string | null = null;
       try {
@@ -1929,14 +1933,17 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
         }
         setSaveState("saved");
         if (!silent) toast.success(t("mobileEditor.toast.savedOk"));
+        return typeof result === "string" ? result : currentProjectId;
       } else {
         setSaveState("unsaved");
         if (!silent) toast.error(t("mobileEditor.toast.savedFail"));
+        return null;
       }
     } catch (e) {
       console.error("save error", e);
       setSaveState("unsaved");
       if (!silent) toast.error(t("mobileEditor.toast.savedError"));
+      return null;
     }
   }, [loaded, currentProjectId, docTitle, templateId, template, formatId, canvasSize, saveProject, toast, t]);
 
@@ -2964,6 +2971,32 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
             )}
             {selectedType === "image" && (
               <>
+                {/* Badge "Foto recibida" — solo si la capa fue auto-rellenada
+                    por un colaborador via /api/collaborators. Click → quita
+                    el flag, marca como unsaved. */}
+                {(() => {
+                  const img = getActiveImage();
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  const o = img as any;
+                  if (!o?.collaboratorReceivedAt) return null;
+                  return (
+                    <button
+                      onClick={() => {
+                        delete o.collaboratorReceivedAt;
+                        delete o.collaboratorName;
+                        setSaveState("unsaved");
+                        toast.success("Foto marcada como vista");
+                      }}
+                      className="flex flex-col items-center justify-center min-w-[60px] px-2 py-1 rounded-lg bg-emerald-500/30 text-emerald-100 border border-emerald-400/40 animate-pulse"
+                    >
+                      <Sparkles size={16} strokeWidth={2.4} />
+                      <span className="text-[9px] font-bold mt-0.5 truncate max-w-[60px]">
+                        {o.collaboratorName ? o.collaboratorName.split(" ")[0] : "Recibida"}
+                      </span>
+                    </button>
+                  );
+                })()}
+
                 <SubToolBtnIcon node={<Replace size={18} strokeWidth={2.2}/>} label={t("mobileEditor.subtool.replace")} active={activeSubTool === "reemplazar"} onClick={() => setActiveSubTool(s => s === "reemplazar" ? null : "reemplazar")}/>
                 <SubToolBtnIcon node={<Crop size={18} strokeWidth={2.2}/>} label={t("mobileEditor.subtool.crop")} active={activeSubTool === "recortar"} onClick={() => setActiveSubTool(s => s === "recortar" ? null : "recortar")}/>
                 <SubToolBtnIcon node={<Sliders size={18} strokeWidth={2.2}/>} label={t("mobileEditor.subtool.filters")} active={activeSubTool === "filtros"} onClick={() => setActiveSubTool(s => s === "filtros" ? null : "filtros")}/>
@@ -2985,6 +3018,47 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
                 }}/>
                 {/* Z.17 — Borrador mágico/manual full-screen */}
                 <SubToolBtnIcon node={<Brush size={18} strokeWidth={2.2}/>} label="Refinar" active={false} onClick={() => { void openBrushEraser(); }}/>
+                {/* Solicitar foto al colaborador — SIEMPRE pasa por
+                    requireAuth (el invite necesita owner_id; si la cookie
+                    expiró, el POST fallaría). Si encima no hay project
+                    guardado, hacemos auto-save antes de abrir el modal. */}
+                <SubToolBtnIcon
+                  node={<UserPlus size={18} strokeWidth={2.2}/>}
+                  label="Solicitar"
+                  active={false}
+                  onClick={async () => {
+                    const img = getActiveImage();
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    const customId = (img as any)?.customId as string | undefined;
+                    if (!customId) {
+                      toast.error("Esta capa no tiene identificador. Recarga e intenta de nuevo.");
+                      return;
+                    }
+                    // Verificación de sesión contra Supabase (no el state
+                    // local de useAuth, que durante hidratación puede ser
+                    // null y abrir AuthModal por error → OAuth Google saca
+                    // al user de la plantilla).
+                    const { data: { user: realUser } } = await supabase.auth.getUser();
+                    const proceed = async () => {
+                      let id = currentProjectId;
+                      if (!id) {
+                        id = await doSave(false);
+                        if (!id) return;
+                      }
+                      setRequestPhotoLayerId(customId);
+                    };
+                    if (realUser) {
+                      await proceed();
+                    } else {
+                      setAuthModalConfig({
+                        title: "Inicia sesión para pedir esta foto",
+                        subtitle: "Guardamos tu flyer y generamos un link único para tu colaborador.",
+                        onSuccess: () => { void proceed(); },
+                      });
+                    }
+                  }}
+                />
+                {/* Espacio dummy intencional para mantener ritmo visual */}
                 {/* Capas Mágicas (Fase V.1) — convierte foto en plantilla editable.
                     Badge muestra cuota restante para Free; nada para Pro/Enterprise. */}
                 <SubToolBtnIcon
@@ -3569,6 +3643,16 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
           subtitle={authModalConfig.subtitle}
           onAuthSuccess={authModalConfig.onSuccess}
           onClose={() => setAuthModalConfig(null)}
+        />
+      )}
+
+      {/* Solicitar foto al colaborador — invite contextual desde mobile. */}
+      {requestPhotoLayerId && currentProjectId && (
+        <RequestPhotoModal
+          projectId={currentProjectId}
+          targetLayerId={requestPhotoLayerId}
+          projectName={docTitle || template?.title || null}
+          onClose={() => setRequestPhotoLayerId(null)}
         />
       )}
 

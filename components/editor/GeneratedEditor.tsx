@@ -37,6 +37,8 @@ import {
   Brush,
   // Z.25 — Dropdown cambiar formato (ChevronDown ya importado arriba)
   Check,
+  // Solicitar foto al colaborador (invite contextual desde toolbar)
+  UserPlus,
 } from "lucide-react";
 import type { Canvas as FabricCanvas, FabricObject, IText } from "fabric";
 import {
@@ -52,6 +54,7 @@ import { templates, type Template, type TemplateVariant, type AudienceId, getVar
 import { type FormatId, getFormatByDimensions, FORMATS, PUBLIC_FORMATS } from "@/data/formats";
 import { applyTemplateLayers } from "@/lib/fabricApplyTemplateLayers";
 import { ArtistLibraryModal, type ArtistEntry } from "@/components/wizard/ArtistLibrary";
+import RequestPhotoModal from "@/components/editor/RequestPhotoModal";
 import { useProjects } from "@/hooks/useProjects";
 import { useUndoRedo } from "@/hooks/useUndoRedo";
 import { useTemplateDrafts } from "@/hooks/useTemplateDrafts";
@@ -101,7 +104,7 @@ type ImageProps = {
 };
 
 type SaveState = "saved" | "saving" | "unsaved";
-type LeftTool = "design" | "elements" | "text" | "photos" | "background" | "layers" | "ai" | "brand" | "favorites" | "myAssets";
+type LeftTool = "design" | "elements" | "text" | "photos" | "background" | "layers" | "ai" | "brand" | "favorites" | "myAssets" | "request-photo";
 
 // Z.8.1 — Asset de "Mis Recursos" cargado desde /api/assets para reusar
 // en el editor sin tener que subir el archivo otra vez.
@@ -385,6 +388,9 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
   const [artistsModalOpen, setArtistsModalOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  // Modal "Solicitar foto al colaborador" — guarda el customId del layer
+  // activo para que RequestPhotoModal genere un invite con contexto.
+  const [requestPhotoLayerId, setRequestPhotoLayerId] = useState<string | null>(null);
   // PostDownload modal — guarda dataURL para reuso en compartir/copiar
   const [postDownload, setPostDownload] = useState<{ dataUrl: string; format: "png" | "jpg" } | null>(null);
   /** P1.1 — Gate Pro para PDF/SVG. Mismo patrón que MobileEditorV3.
@@ -2574,15 +2580,15 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
   // Logica pura de guardado en Supabase. NO checkea sesion (eso lo hace
   // el wrapper publico `handleSave` via requireAuth + useProjects ya valida
   // de nuevo en el server).
-  const doSave = useCallback(async () => {
+  const doSave = useCallback(async (): Promise<string | null> => {
     const canvas = fabricRef.current;
-    if (!canvas) return;
+    if (!canvas) return null;
     setSavingProject(true);
     setSaveState("saving");
     try {
       // Serializar el canvas a JSON. Incluimos customId para reidentificar capas al cargar.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const fabricJson = (canvas.toJSON as any)(["customId"]) as object;
+      const fabricJson = (canvas.toJSON as any)(["customId", "collaboratorReceivedAt", "collaboratorName"]) as object;
 
       // Generar thumbnail JPEG ~320px de ancho como data URL para guardar inline en BD
       // Cambiamos zoom temporal a tamaño real para que el export sea fiel
@@ -2618,14 +2624,17 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
         }
         setSaveState("saved");
         toast.success("Diseño guardado");
+        return typeof result === "string" ? result : currentProjectId;
       } else {
         setSaveState("unsaved");
         toast.error("No se pudo guardar. ¿Has iniciado sesión?");
+        return null;
       }
     } catch (e) {
       console.error("Error guardando:", e);
       setSaveState("unsaved");
       toast.error("Error al guardar el diseño");
+      return null;
     } finally {
       setSavingProject(false);
     }
@@ -2645,6 +2654,47 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
 
   // Sync ref so the Cmd+S keyboard handler always calls the latest version
   useEffect(() => { handleSaveRef.current = handleSave; }, [handleSave]);
+
+  // ─── Solicitar foto al colaborador ───────────────────────────────────────
+  // Helper compartido entre el botón floating, el sidebar y el dock. Encapsula:
+  //  1. Validación del layer activo (debe ser tipo image con customId)
+  //  2. Verificación de sesión REAL (supabase.auth.getUser) para evitar el
+  //     race condition de useAuth durante hidratación inicial
+  //  3. Auto-guardar el proyecto si no tiene projectId
+  //  4. Abrir el RequestPhotoModal con el customId capturado
+  const handleRequestPhoto = useCallback(async () => {
+    const obj = fabricRef.current?.getActiveObject();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const o = obj as any;
+    const isImage = obj?.type === "image";
+    const customId = o?.customId as string | undefined;
+    if (!obj || !isImage) {
+      toast.error("Selecciona la foto que quieres solicitar (un placeholder de imagen).");
+      return;
+    }
+    if (!customId) {
+      toast.error("Esta capa no tiene identificador. Recarga e intenta de nuevo.");
+      return;
+    }
+    const { data: { user: realUser } } = await supabase.auth.getUser();
+    const proceed = async () => {
+      let id = currentProjectId;
+      if (!id) {
+        id = await doSave();
+        if (!id) return;
+      }
+      setRequestPhotoLayerId(customId);
+    };
+    if (realUser) {
+      await proceed();
+    } else {
+      setAuthModalConfig({
+        title: "Inicia sesión para pedir esta foto",
+        subtitle: "Guardamos tu flyer y generamos un link único para tu colaborador (DJ, artista, marca).",
+        onSuccess: () => { void proceed(); },
+      });
+    }
+  }, [currentProjectId, doSave, toast]);
 
   // ─── ADMIN: SAVE DRAFT + PUBLISH ──────────────────────────────────────────
   // Serializa el canvas Fabric a una TemplateVariant compatible con applyTemplateLayers,
@@ -2846,7 +2896,7 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
   // brand/favorites/layers bajo flags. La funcionalidad SUBYACENTE sigue
   // accesible: shapes via "Imagenes", background via click directo en canvas,
   // capas via floating toolbar contextual.
-  const ALL_TOOLS: Array<{ id: LeftTool; label: string; icon: React.ReactNode; comingSoon?: boolean; hidden?: boolean }> = [
+  const ALL_TOOLS: Array<{ id: LeftTool; label: string; icon: React.ReactNode; comingSoon?: boolean; hidden?: boolean; tooltip?: string }> = [
     { id: "design",    label: t("editor.tool.design"),     icon: <LayoutGrid className="w-5 h-5" strokeWidth={1.5} /> },
     { id: "text",      label: t("editor.tool.text"),       icon: <Type className="w-5 h-5" strokeWidth={1.5} /> },
     { id: "elements",  label: t("editor.tool.elements"),   icon: <SparklesIcon className="w-5 h-5" strokeWidth={1.5} />, hidden: !FEATURES.elementsTab },
@@ -2856,6 +2906,9 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
     { id: "ai",        label: t("editor.tool.ai"),         icon: <Wand2 className="w-5 h-5" strokeWidth={1.5} /> },
     // Z.8.1 — Panel de assets reutilizables de "Mis Recursos"
     { id: "myAssets",  label: "Mis recursos",              icon: <FolderOpen className="w-5 h-5" strokeWidth={1.5} /> },
+    // Acción rápida: pedir foto al colaborador. NO abre panel — ejecuta
+    // directamente handleRequestPhoto (igual que "photos" abre modal).
+    { id: "request-photo", label: "Solicitar", icon: <UserPlus className="w-5 h-5" strokeWidth={1.5} />, tooltip: "Enviar nueva solicitud de foto a un colaborador" },
     { id: "brand",     label: t("editor.tool.brand"),      icon: <Tag className="w-5 h-5" strokeWidth={1.5} />, comingSoon: true, hidden: !FEATURES.brandKit },
     { id: "favorites", label: t("editor.tool.favorites"),  icon: <Heart className="w-5 h-5" strokeWidth={1.5} />, comingSoon: true, hidden: !FEATURES.favorites },
   ];
@@ -3244,10 +3297,11 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
                   onClick={() => {
                     if (tool.comingSoon) return;
                     if (tool.id === "photos") { setArtistsModalOpen(true); return; }
+                    if (tool.id === "request-photo") { void handleRequestPhoto(); return; }
                     setActiveTool(tool.id);
                     if (tool.id === "text") addText();
                   }}
-                  title={tool.comingSoon ? `${tool.label} · próximamente` : tool.label}
+                  title={tool.comingSoon ? `${tool.label} · próximamente` : (tool.tooltip ?? tool.label)}
                   className={`relative w-12 h-12 rounded-2xl flex flex-col items-center justify-center gap-0.5 transition-all text-[9px] font-medium ag-sidebar-btn ${
                     isActive
                       ? "bg-gradient-to-br from-purple-600/30 to-fuchsia-600/20 text-purple-300 border border-purple-500/40 shadow-lg shadow-purple-500/20"
@@ -3965,13 +4019,14 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
           }
           flex items-center gap-1.5 ${isMobile ? "justify-around" : ""}
         `}>
-          {TOOLS.filter(t => ["design","text","photos","layers","ai","background"].includes(t.id)).map(tool => {
+          {TOOLS.filter(t => ["design","text","photos","layers","ai","background","request-photo"].includes(t.id)).map(tool => {
             const isActive = activeTool === tool.id;
             return (
               <button key={tool.id}
                 onClick={() => {
                   if (tool.comingSoon) return;
                   if (tool.id === "photos") { setArtistsModalOpen(true); return; }
+                  if (tool.id === "request-photo") { void handleRequestPhoto(); return; }
                   if (tool.id === "layers" && isMobile) {
                     setMobilePanelOpen(mobilePanelOpen === "layers" ? null : "layers");
                     return;
@@ -3979,7 +4034,7 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
                   setActiveTool(tool.id);
                   if (tool.id === "text") addText();
                 }}
-                title={tool.comingSoon ? `${tool.label} · próximamente` : tool.label}
+                title={tool.comingSoon ? `${tool.label} · próximamente` : (tool.tooltip ?? tool.label)}
                 className={`group relative ${isMobile ? "w-11 h-11" : "w-12 h-12"} rounded-2xl flex items-center justify-center transition-all ${
                   isActive
                     ? "bg-gradient-to-br from-purple-600/30 to-fuchsia-600/20 text-purple-300 border border-purple-500/40 shadow-lg shadow-purple-500/30"
@@ -4256,6 +4311,34 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
 
             {isRealImage && (
               <>
+                {/* Badge "Foto recibida" — aparece SOLO si esta capa recibió
+                    foto via colaborador (lo marca patchProjectLayer en backend).
+                    Click → borra el flag y marca el proyecto como unsaved
+                    para que se persista en el próximo save. */}
+                {(() => {
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  const o = activeObj as any;
+                  if (!o?.collaboratorReceivedAt) return null;
+                  return (
+                    <button
+                      onClick={() => {
+                        delete o.collaboratorReceivedAt;
+                        delete o.collaboratorName;
+                        setSaveState("unsaved");
+                        updateFloatingToolbar();
+                        toast.success("Foto marcada como vista");
+                      }}
+                      title="Click para marcar como vista"
+                      className="ag-fab-btn bg-emerald-500/30 text-emerald-100 hover:bg-emerald-500/40 border border-emerald-400/40 animate-pulse"
+                    >
+                      <SparklesIcon className="w-4 h-4" strokeWidth={2.4} />
+                      <span className="font-bold">
+                        {o.collaboratorName ? `Recibida de ${o.collaboratorName}` : "Foto recibida"}
+                      </span>
+                    </button>
+                  );
+                })()}
+
                 {/* Reemplazar imagen — BOTON PROMINENTE (antes escondido en Edit) */}
                 <button
                   onClick={() => {
@@ -4297,6 +4380,20 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
                     <Eraser className="w-4 h-4" strokeWidth={2.2} />
                   )}
                   <span>Quitar fondo</span>
+                </button>
+
+                {/* Solicitar foto al colaborador — genera invite contextual
+                    para que el DJ/artista suba SU foto y se inserte sola en
+                    este layer. Visible siempre que sea imagen real; si el
+                    proyecto aún no está guardado, el click muestra toast
+                    pidiendo guardar primero (necesitamos project_id para
+                    vincular el invite al fabric_json). */}
+                <button
+                  onClick={() => { void handleRequestPhoto(); }}
+                  title="Enviar nueva solicitud de foto a un colaborador"
+                  className="ag-fab-btn bg-emerald-600/20 text-emerald-200 hover:bg-emerald-600/30">
+                  <UserPlus className="w-4 h-4" strokeWidth={2.2} />
+                  <span>Solicitar</span>
                 </button>
 
                 {/* Recortar a forma — abre seccion del panel */}
@@ -4584,6 +4681,18 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
             void addArtistsFromLibrary(entries);
           }}
           onClose={() => setArtistsModalOpen(false)}
+        />
+      )}
+
+      {/* Solicitar foto al colaborador. Solo se monta si hay un projectId
+          guardado y un layer seleccionado con customId. El modal genera
+          un invite contextual y muestra link + botón WhatsApp. */}
+      {requestPhotoLayerId && currentProjectId && (
+        <RequestPhotoModal
+          projectId={currentProjectId}
+          targetLayerId={requestPhotoLayerId}
+          projectName={adminTitle || null}
+          onClose={() => setRequestPhotoLayerId(null)}
         />
       )}
 
