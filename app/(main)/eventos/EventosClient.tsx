@@ -923,7 +923,7 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
         {view === "lista" && !query && dateFilter === "todos" && filtered.length > 2 && (
           <div className="mb-7 space-y-5">
             <StatsStrip events={filtered} />
-            <DestacadosRail events={filtered} favs={favs} onFav={toggleFav} onSelect={setSelected} onBuy={trackClick} />
+            <DestacadosRail events={filtered} onSelect={setSelected} />
           </div>
         )}
 
@@ -952,7 +952,7 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
               <CalendarView events={filtered} month={calMonth} onMonth={setCalMonth} onSelect={setSelected} />
             </div>
             <StatsStrip events={filtered} />
-            <DestacadosRail events={filtered} favs={favs} onFav={toggleFav} onSelect={setSelected} onBuy={trackClick} />
+            <DestacadosRail events={filtered} onSelect={setSelected} />
           </div>
         )}
       </section>
@@ -1746,18 +1746,35 @@ function StatsStrip({ events }: { events: EventItem[] }) {
   );
 }
 
-function DestacadosRail({ events, favs, onFav, onSelect, onBuy }: { events: EventItem[]; favs: Set<string>; onFav: (id: string) => void; onSelect: (e: EventItem) => void; onBuy: (id: string) => void }) {
-  const { t } = useLocale();
+function DestacadosRail({ events, onSelect }: { events: EventItem[]; onSelect: (e: EventItem) => void }) {
+  const { t, locale } = useLocale();
   if (events.length === 0) return null;
   return (
     <div>
-      <h3 className="mb-3 text-base font-bold">{t("eventos.featured.title")}</h3>
-      <div className="-mx-4 flex gap-4 overflow-x-auto px-4 pb-2" style={{ scrollbarWidth: "none" }}>
-        {events.slice(0, 8).map((e) => (
-          <div key={e.id} className="w-[280px] shrink-0">
-            <EventCard event={e} isFav={favs.has(e.id)} onFav={() => onFav(e.id)} onClick={() => onSelect(e)} onBuy={() => onBuy(e.id)} />
-          </div>
-        ))}
+      <h3 className="mb-2.5 text-sm font-bold">{t("eventos.featured.title")}</h3>
+      {/* Tarjetas MINI horizontales (miniatura + título + fecha): ocupan poco. */}
+      <div className="-mx-4 flex gap-2.5 overflow-x-auto px-4 pb-1" style={{ scrollbarWidth: "none" }}>
+        {events.slice(0, 10).map((e) => {
+          const Cat = CATEGORIES[e.category];
+          return (
+            <button
+              key={e.id}
+              onClick={() => onSelect(e)}
+              className="flex w-[248px] shrink-0 items-center gap-2.5 rounded-xl p-2 text-left transition-colors hover:bg-ag-card"
+              style={{ background: "var(--home-bg-soft)", border: "1px solid var(--home-card-border)" }}
+            >
+              <span className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg" style={{ background: e.image, backgroundSize: "cover", backgroundPosition: "center" }}>
+                {!e.flyerUrl && <span className="absolute inset-0 flex items-center justify-center text-white"><Cat.icon size={16} /></span>}
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-sm font-semibold" style={{ color: "var(--home-text)" }}>{e.title}</span>
+                <span className="block truncate text-xs" style={{ color: "var(--home-text-soft)" }}>
+                  <span className="capitalize">{e.date === TODAY ? t("eventos.list.today") : fmtLong(e.date, locale)}</span> · {e.time}
+                </span>
+              </span>
+            </button>
+          );
+        })}
       </div>
     </div>
   );
