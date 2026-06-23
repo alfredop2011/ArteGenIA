@@ -381,17 +381,24 @@ export async function POST(req: NextRequest) {
     };
 
     let error;
+    let eventId: string | undefined = existing?.id as string | undefined;
     if (existing) {
       // Actualiza la ocurrencia existente (no toca organizer_id ni claim_token).
       ({ error } = await supabaseAdmin.from("events").update(payload).eq("id", existing.id));
     } else {
-      ({ error } = await supabaseAdmin.from("events").insert({
-        ...payload,
-        organizer_id: null,
-        submitter_channel: "telegram",
-        submitter_ref: ref,
-        claim_token: claimToken,
-      }));
+      const ins = await supabaseAdmin
+        .from("events")
+        .insert({
+          ...payload,
+          organizer_id: null,
+          submitter_channel: "telegram",
+          submitter_ref: ref,
+          claim_token: claimToken,
+        })
+        .select("id")
+        .single();
+      error = ins.error;
+      eventId = ins.data?.id as string | undefined;
     }
 
     if (error) {
@@ -401,6 +408,7 @@ export async function POST(req: NextRequest) {
     }
 
     const claimUrl = `${APP_URL}/organizador?claim=${claimToken}`;
+    const publicUrl = eventId ? `${APP_URL}/eventos?evento=${eventId}` : `${APP_URL}/eventos`;
     // Encabezado según el caso: cancelado / actualizado / nuevo.
     const head = extracted.is_cancelled
       ? `🚫 ${hi}marqué como <b>CANCELADO</b> «${extracted.title}»`
@@ -432,12 +440,19 @@ export async function POST(req: NextRequest) {
       ? "\n📧 Si me dejas tu email, te aviso cuando a un evento le falte algún dato."
       : "";
 
+    // Link público del evento: lo que de verdad engancha — verlo en vivo y
+    // compartirlo. Solo si está publicado (no en cancelaciones).
+    const liveLine = !extracted.is_cancelled
+      ? `\n🔗 <b>Ya está en vivo</b> — míralo y compártelo:\n${publicUrl}\n`
+      : "";
+
     await tgSend(
       chatId,
       `${head}\n` +
         `📅 ${extracted.event_date} · ${extracted.event_time}\n` +
         `📍 ${extracted.venue || "—"}\n` +
         priceLine +
+        liveLine +
         completeLine +
         askEmail +
         `\n\n✨ <b>Gratis</b>: cambia lo que quieras del flyer, configura varios eventos, planifica todo el año y mira lo que publican otros organizadores 👉\n${claimUrl}`
