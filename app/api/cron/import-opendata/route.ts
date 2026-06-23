@@ -44,7 +44,11 @@ export async function GET(req: NextRequest) {
         seen.add(k);
         return true;
       })
-      .map(openDataToInsert);
+      .map(openDataToInsert)
+      // Solo insertamos eventos CON foto (la agenda oculta los que no tienen).
+      // Madrid open data no trae imágenes → de facto no inserta nada, pero el
+      // importador queda listo para fuentes/ciudades que sí incluyan cartel.
+      .filter((n) => !!n.image_url);
 
     if (nuevos.length > 0) {
       const { error } = await supabaseAdmin.from("events").insert(nuevos);

@@ -25,6 +25,9 @@ export default async function EventosPage() {
       .select("*")
       .in("status", ["published", "cancelled"])
       .gte("event_date", todayIso)
+      // Solo eventos CON foto: las fuentes sin imagen (p.ej. Open Data Madrid)
+      // no se muestran — preferimos una agenda con cartel real a tarjetas vacías.
+      .not("image_url", "is", null)
       .order("event_date", { ascending: true });
     const mapped = ((data as EventRow[]) ?? []).map(rowToEvent);
     // Dedup defensivo: colapsa duplicados (mismo título + fecha + ciudad + lugar).
