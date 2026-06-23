@@ -223,7 +223,10 @@ function weekdayInitials(locale: string) {
 function addDays(iso: string, n: number) {
   const d = parse(iso);
   d.setDate(d.getDate() + n);
-  return d.toISOString().slice(0, 10);
+  // OJO: NO usar toISOString() — convierte a UTC y en husos UTC+ resta un día,
+  // lo que rompía "Mañana", "Esta semana" y "Este finde" (sacaba Jue+Vie en vez
+  // de Sáb+Dom). Formateamos la fecha LOCAL a YYYY-MM-DD.
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 function startOfWeek(iso: string) {
   const d = parse(iso);
@@ -947,7 +950,14 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
             onSeeDay={(d) => { setRange({ from: d, to: d }); setDateFilter("rango"); }}
           />
         ) : (
-          <CalendarView events={filtered} month={calMonth} onMonth={setCalMonth} onSelect={setSelected} />
+          // Vista calendario estilo mockup: "Popular hoy" + calendario al lado.
+          <div className="grid gap-4 lg:grid-cols-2">
+            {(() => {
+              const popular = filtered.find((e) => e.date === TODAY) ?? filtered[0];
+              return popular ? <FeaturedCard event={popular} onClick={() => setSelected(popular)} onBuy={() => trackClick(popular.id)} /> : null;
+            })()}
+            <CalendarView events={filtered} month={calMonth} onMonth={setCalMonth} onSelect={setSelected} />
+          </div>
         )}
       </section>
 
@@ -1431,30 +1441,31 @@ function CalendarView({
 
   return (
     <div className="rounded-2xl p-3 sm:p-5" style={{ background: "var(--home-bg-soft)", border: "1px solid var(--home-card-border)" }}>
-      <div className="mb-4 flex items-center justify-between">
-        <button onClick={() => onMonth(month - 1)} disabled={month <= todayAbs} className="rounded-lg p-2 hover:bg-ag-card disabled:opacity-30">
-          <ChevronLeft size={18} />
-        </button>
-        <h3 className="text-base font-semibold capitalize">{monthYear(mIdx, year, locale)}</h3>
-        <button onClick={() => onMonth(month + 1)} disabled={month >= todayAbs + 24} className="rounded-lg p-2 hover:bg-ag-card disabled:opacity-30">
-          <ChevronRight size={18} />
-        </button>
-      </div>
-
-      {/* Leyenda de colores por categoría (arriba, como referencia rápida) */}
-      {legendCats.length > 0 && (
-        <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1.5">
-          {legendCats.map((c) => {
-            const Cat = CATEGORIES[c];
-            return (
-              <span key={c} className="flex items-center gap-1.5 text-[11px]" style={{ color: "var(--home-text-muted)" }}>
-                <span className="h-2.5 w-2.5 rounded-full" style={{ background: Cat.grad }} />
-                {t(Cat.labelKey)}
-              </span>
-            );
-          })}
+      {/* Cabecera: navegación de mes (izq) + leyenda de colores (der), como el mockup */}
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-1">
+          <button onClick={() => onMonth(month - 1)} disabled={month <= todayAbs} className="rounded-lg p-2 hover:bg-ag-card disabled:opacity-30">
+            <ChevronLeft size={18} />
+          </button>
+          <h3 className="text-base font-semibold capitalize">{monthYear(mIdx, year, locale)}</h3>
+          <button onClick={() => onMonth(month + 1)} disabled={month >= todayAbs + 24} className="rounded-lg p-2 hover:bg-ag-card disabled:opacity-30">
+            <ChevronRight size={18} />
+          </button>
         </div>
-      )}
+        {legendCats.length > 0 && (
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+            {legendCats.map((c) => {
+              const Cat = CATEGORIES[c];
+              return (
+                <span key={c} className="flex items-center gap-1.5 text-[11px]" style={{ color: "var(--home-text-muted)" }}>
+                  <span className="h-2.5 w-2.5 rounded-full" style={{ background: Cat.grad }} />
+                  {t(Cat.labelKey)}
+                </span>
+              );
+            })}
+          </div>
+        )}
+      </div>
 
       <div className="mb-2 grid grid-cols-7 gap-1 text-center text-[11px] font-medium" style={{ color: "var(--home-text-soft)" }}>
         {weekdayInitials(locale).map((d, i) => <div key={i}>{d}</div>)}
@@ -1631,6 +1642,54 @@ function EventModal({
         )}
       </AnimatePresence>
     </motion.div>
+  );
+}
+
+// ─── Tarjeta "Popular hoy" (destacado junto al calendario) ───────────────────
+
+function FeaturedCard({ event, onClick, onBuy }: { event: EventItem; onClick: () => void; onBuy: () => void }) {
+  const { t, locale } = useLocale();
+  const Cat = CATEGORIES[event.category];
+  const canBuy = (event.hasSale ?? !!event.url) && !!event.url;
+  return (
+    <div className="flex flex-col overflow-hidden rounded-2xl" style={{ background: "var(--home-bg-soft)", border: "1px solid var(--home-card-border)" }}>
+      <button onClick={onClick} className="relative block h-48 w-full" style={{ background: event.image }} aria-label={event.title}>
+        {!event.flyerUrl && (
+          <span className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-1.5 text-white">
+            <Cat.icon size={44} strokeWidth={1.5} className="opacity-90 drop-shadow" />
+          </span>
+        )}
+        <span className="absolute left-3 top-3 flex items-center gap-1.5 rounded-full bg-black/45 px-2.5 py-1 text-xs font-semibold text-white backdrop-blur">
+          🔥 {t("eventos.featured.popular")}
+        </span>
+      </button>
+      <div className="flex flex-1 flex-col p-4">
+        <span className="mb-2 inline-flex w-fit items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-medium" style={{ background: "var(--ag-brand-bg)", color: "var(--ag-brand)" }}>
+          <Cat.icon size={12} /> {t(Cat.labelKey)}
+        </span>
+        <h3 className="text-lg font-bold leading-snug">{event.title}</h3>
+        <div className="mt-2 space-y-1 text-sm" style={{ color: "var(--home-text-muted)" }}>
+          <p className="flex items-center gap-1.5"><CalendarIcon size={14} style={{ color: "var(--ag-brand)" }} /> <span className="capitalize">{event.date === TODAY ? t("eventos.list.today") : fmtLong(event.date, locale)}</span> · {event.time}</p>
+          <p className="flex items-center gap-1.5"><MapPin size={14} style={{ color: "var(--ag-brand)" }} /> {event.venue}</p>
+        </div>
+        <div className="mt-auto flex items-center justify-between gap-2 pt-4">
+          {(event.rsvpCount ?? 0) > 0 ? (
+            <span className="flex items-center gap-1.5 text-xs font-medium" style={{ color: "var(--home-text-soft)" }}>
+              <Users size={14} /> {t("eventos.rsvp.count").replace("{n}", String(event.rsvpCount))}
+            </span>
+          ) : <span />}
+          {canBuy ? (
+            <a href={event.url} target="_blank" rel="noopener noreferrer" onClick={onBuy} className="inline-flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-semibold text-white" style={{ background: "var(--ag-brand)" }}>
+              {t("eventos.featured.see")} <ExternalLink size={14} />
+            </a>
+          ) : (
+            <button onClick={onClick} className="inline-flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-semibold text-white" style={{ background: "var(--ag-brand)" }}>
+              {t("eventos.featured.see")} <ChevronRight size={14} />
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
 

@@ -846,6 +846,8 @@ export type TranslationKey =
   | "eventos.stats.free"
   | "eventos.stats.attending"
   | "eventos.featured.title"
+  | "eventos.featured.popular"
+  | "eventos.featured.see"
   | "eventos.modal.seeFlyer"
   | "eventos.modal.priceTbc"
   | "eventos.modal.priceFree"
@@ -1772,6 +1774,8 @@ const es: Dict = {
   "eventos.stats.free": "gratis",
   "eventos.stats.attending": "asistirán",
   "eventos.featured.title": "Próximos destacados",
+  "eventos.featured.popular": "Popular hoy",
+  "eventos.featured.see": "Ver evento",
   "eventos.modal.seeFlyer": "Ver flyer",
   "eventos.modal.priceTbc": "Precio por confirmar",
   "eventos.modal.priceFree": "Entrada gratuita",
@@ -2684,6 +2688,8 @@ const en: Dict = {
   "eventos.stats.free": "free",
   "eventos.stats.attending": "attending",
   "eventos.featured.title": "Featured soon",
+  "eventos.featured.popular": "Popular today",
+  "eventos.featured.see": "View event",
   "eventos.modal.seeFlyer": "View flyer",
   "eventos.modal.priceTbc": "Price to be confirmed",
   "eventos.modal.priceFree": "Free entry",
@@ -3596,6 +3602,8 @@ const fr: Dict = {
   "eventos.stats.free": "gratuits",
   "eventos.stats.attending": "participants",
   "eventos.featured.title": "À la une",
+  "eventos.featured.popular": "Populaire aujourd'hui",
+  "eventos.featured.see": "Voir l'événement",
   "eventos.modal.seeFlyer": "Voir le flyer",
   "eventos.modal.priceTbc": "Prix à confirmer",
   "eventos.modal.priceFree": "Entrée gratuite",
@@ -4508,6 +4516,8 @@ const pt: Dict = {
   "eventos.stats.free": "grátis",
   "eventos.stats.attending": "vão",
   "eventos.featured.title": "Em destaque",
+  "eventos.featured.popular": "Popular hoje",
+  "eventos.featured.see": "Ver evento",
   "eventos.modal.seeFlyer": "Ver flyer",
   "eventos.modal.priceTbc": "Preço por confirmar",
   "eventos.modal.priceFree": "Entrada gratuita",
