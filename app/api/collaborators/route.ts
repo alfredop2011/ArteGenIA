@@ -304,11 +304,12 @@ export async function POST(req: NextRequest) {
         artistName,
       );
 
-      // Email al owner (best-effort, no rompe si falla)
+      // Notificar al owner — email (siempre que pref esté activa) +
+      // WhatsApp (cuando esté lista la integración + pref activa + tel verif).
       try {
         const { data: ownerProfile } = await supabaseAdmin
           .from("profiles")
-          .select("email, name")
+          .select("email, name, phone, phone_verified_at, notification_prefs")
           .eq("id", invite.owner_id)
           .maybeSingle();
         const { data: proj } = await supabaseAdmin
@@ -316,13 +317,20 @@ export async function POST(req: NextRequest) {
           .select("id, title")
           .eq("id", invite.project_id)
           .maybeSingle();
-        if (ownerProfile?.email) {
-          // proj.title puede ser "Diseño sin título" si el usuario no
-          // renombró. En ese caso pasamos null para que el email use
-          // un copy más natural ("tu flyer" sin entrecomillar nombre).
-          const realTitle = proj?.title && proj.title !== "Diseño sin título"
-            ? proj.title
-            : null;
+        const realTitle = proj?.title && proj.title !== "Diseño sin título"
+          ? proj.title
+          : null;
+
+        // Defaults defensivos para perfiles legacy sin notification_prefs
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const prefs = (ownerProfile?.notification_prefs as any) ?? {
+          email: { foto_recibida: true },
+          whatsapp: { foto_recibida: false },
+        };
+        const wantsEmail = prefs?.email?.foto_recibida !== false;
+        const wantsWhatsapp = prefs?.whatsapp?.foto_recibida === true;
+
+        if (wantsEmail && ownerProfile?.email) {
           await sendCollaboratorPhotoReceivedEmail(
             ownerProfile.email,
             ownerProfile.name,
@@ -332,8 +340,17 @@ export async function POST(req: NextRequest) {
             projectPatched,
           );
         }
+
+        // WhatsApp: stub hasta que integremos provider (Twilio/Cloud API).
+        // Por ahora solo logueamos para que quede traza de que la pref
+        // está activa y sabemos a quién deberíamos haber notificado.
+        if (wantsWhatsapp && ownerProfile?.phone && ownerProfile?.phone_verified_at) {
+          console.log("[collaborators POST] would send WhatsApp to", ownerProfile.phone, "for project", invite.project_id);
+          // TODO(whatsapp): cuando esté el provider, llamar:
+          //   await sendCollaboratorPhotoReceivedWhatsapp(phone, name, artist, title, projectId)
+        }
       } catch (mailErr) {
-        console.warn("[collaborators POST] email owner failed:", mailErr);
+        console.warn("[collaborators POST] notification owner failed:", mailErr);
       }
     }
 
