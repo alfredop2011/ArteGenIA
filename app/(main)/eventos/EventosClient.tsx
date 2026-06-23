@@ -44,6 +44,7 @@ import {
   Wand2,
   ArrowLeft,
   ArrowRight,
+  BarChart3,
 } from "lucide-react";
 
 // Usuario del bot de Telegram (sin @). Configurable por env para no hardcodear.
@@ -303,6 +304,7 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
   const router = useRouter();
   const [showAuth, setShowAuth] = useState(false);
   const [showPublish, setShowPublish] = useState(false);
+  const [showStats, setShowStats] = useState(false);
   const organizerLabel = user ? t("eventos.organizer.publish") : t("eventos.organizer.uploadFree");
   // Si hay sesión, directo al panel; si no, abrimos el modal de login y, tras
   // autenticarse, volvemos a /organizador (nextUrl para el flujo OAuth).
@@ -905,24 +907,32 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
 
       {/* ── CONTENIDO ───────────────────────────────────────────── */}
       <section className="mx-auto max-w-6xl px-4 py-6">
-        <p className="mb-4 text-sm" style={{ color: "var(--home-text-soft)" }}>
-          {filtered.length} {filtered.length === 1 ? t("eventos.count.one") : t("eventos.count.many")} {t("eventos.count.in")} {placeLabel}
-          {usingMock && (
-            <span
-              className="ml-2 rounded-full px-2 py-0.5 text-[11px]"
-              style={{ background: "var(--ag-warning-bg)", color: "var(--ag-warning)" }}
-            >
-              {t("eventos.count.mockBadge")}
-            </span>
-          )}
-        </p>
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <p className="text-sm" style={{ color: "var(--home-text-soft)" }}>
+            {filtered.length} {filtered.length === 1 ? t("eventos.count.one") : t("eventos.count.many")} {t("eventos.count.in")} {placeLabel}
+            {usingMock && (
+              <span
+                className="ml-2 rounded-full px-2 py-0.5 text-[11px]"
+                style={{ background: "var(--ag-warning-bg)", color: "var(--ag-warning)" }}
+              >
+                {t("eventos.count.mockBadge")}
+              </span>
+            )}
+          </p>
+          <button
+            onClick={() => setShowStats(true)}
+            className="flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium"
+            style={{ background: "var(--home-card-bg)", color: "var(--ag-brand)" }}
+          >
+            <BarChart3 size={14} /> {t("eventos.stats.summary")}
+          </button>
+        </div>
 
         {/* Sección de DESCUBRIMIENTO (estilo mockup): stats + carrusel de
             destacados. Solo en vista Lista y sin filtros/búsqueda activos, como
             cabecera de descubrimiento (no se duplica al filtrar). */}
         {view === "lista" && !query && dateFilter === "todos" && filtered.length > 2 && (
-          <div className="mb-7 space-y-5">
-            <StatsStrip events={filtered} />
+          <div className="mb-7">
             <DestacadosRail events={filtered} onSelect={setSelected} />
           </div>
         )}
@@ -948,7 +958,6 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
               return populars.length ? <PopularCarousel events={populars} onSelect={setSelected} onBuy={trackClick} /> : null;
             })()}
             <CalendarView events={filtered} month={calMonth} onMonth={setCalMonth} onSelect={setSelected} />
-            <StatsStrip events={filtered} />
             <DestacadosRail events={filtered} onSelect={setSelected} />
           </div>
         )}
@@ -985,6 +994,11 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
             onWeb={goOrganizer}
           />
         )}
+      </AnimatePresence>
+
+      {/* Modal: resumen (stats) — antes ocupaba espacio en la página */}
+      <AnimatePresence>
+        {showStats && <StatsModal events={filtered} place={placeLabel} onClose={() => setShowStats(false)} />}
       </AnimatePresence>
 
       {/* Login de organizador (mismo patrón que el resto de la app) */}
@@ -1726,26 +1740,36 @@ function PopularCarousel({ events, onSelect, onBuy }: { events: EventItem[]; onS
   );
 }
 
-// ─── Tira de stats + carrusel "Próximos destacados" (reutilizables) ──────────
+// ─── Modal de resumen (stats) + carrusel "Próximos destacados" ───────────────
 
-function StatsStrip({ events }: { events: EventItem[] }) {
+function StatsModal({ events, place, onClose }: { events: EventItem[]; place: string; onClose: () => void }) {
   const { t } = useLocale();
   const stats = [
     { n: events.filter((e) => e.date <= addDays(TODAY, 6)).length, label: t("eventos.stats.week"), icon: CalendarIcon },
     { n: events.filter((e) => e.price === 0).length, label: t("eventos.stats.free"), icon: Ticket },
     { n: events.reduce((s, e) => s + (e.rsvpCount ?? 0), 0), label: t("eventos.stats.attending"), icon: Users },
   ];
-  // Barra fina e inline (antes eran 3 tarjetas grandes).
   return (
-    <div className="flex flex-wrap items-center gap-x-5 gap-y-2 rounded-xl px-4 py-2.5 text-sm" style={{ background: "var(--home-bg-soft)", border: "1px solid var(--home-card-border)" }}>
-      {stats.map((s, i) => (
-        <span key={i} className="flex items-center gap-1.5">
-          <s.icon size={15} style={{ color: "var(--ag-brand)" }} />
-          <b className="font-bold">{s.n}</b>
-          <span style={{ color: "var(--home-text-soft)" }}>{s.label}</span>
-        </span>
-      ))}
-    </div>
+    <motion.div className="fixed inset-0 z-[60] flex items-end justify-center sm:items-center" style={{ background: "rgba(0,0,0,.55)" }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}>
+      <motion.div className="w-full max-w-md overflow-hidden rounded-t-3xl sm:rounded-3xl" style={{ background: "var(--home-bg)", border: "1px solid var(--home-card-border)" }} initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 40, opacity: 0 }} onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between p-5 pb-3">
+          <div>
+            <h3 className="text-lg font-bold" style={{ color: "var(--home-text)" }}>{t("eventos.stats.summary")}</h3>
+            <p className="text-sm" style={{ color: "var(--home-text-soft)" }}>{events.length} {events.length === 1 ? t("eventos.count.one") : t("eventos.count.many")} {t("eventos.count.in")} {place}</p>
+          </div>
+          <button onClick={onClose} aria-label="Cerrar" className="rounded-full p-1.5" style={{ color: "var(--home-text-soft)" }}><X size={18} /></button>
+        </div>
+        <div className="grid grid-cols-3 gap-3 p-5 pt-0">
+          {stats.map((s, i) => (
+            <div key={i} className="flex flex-col items-center gap-1 rounded-2xl p-4 text-center" style={{ background: "var(--home-bg-soft)", border: "1px solid var(--home-card-border)" }}>
+              <s.icon size={20} style={{ color: "var(--ag-brand)" }} />
+              <span className="text-2xl font-bold leading-none">{s.n}</span>
+              <span className="text-[11px]" style={{ color: "var(--home-text-soft)" }}>{s.label}</span>
+            </div>
+          ))}
+        </div>
+      </motion.div>
+    </motion.div>
   );
 }
 

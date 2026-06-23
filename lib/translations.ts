@@ -845,6 +845,7 @@ export type TranslationKey =
   | "eventos.stats.week"
   | "eventos.stats.free"
   | "eventos.stats.attending"
+  | "eventos.stats.summary"
   | "eventos.featured.title"
   | "eventos.featured.popular"
   | "eventos.featured.see"
@@ -1773,6 +1774,7 @@ const es: Dict = {
   "eventos.stats.week": "esta semana",
   "eventos.stats.free": "gratis",
   "eventos.stats.attending": "asistirán",
+  "eventos.stats.summary": "Resumen",
   "eventos.featured.title": "Próximos destacados",
   "eventos.featured.popular": "Popular hoy",
   "eventos.featured.see": "Ver evento",
@@ -2687,6 +2689,7 @@ const en: Dict = {
   "eventos.stats.week": "this week",
   "eventos.stats.free": "free",
   "eventos.stats.attending": "attending",
+  "eventos.stats.summary": "Summary",
   "eventos.featured.title": "Featured soon",
   "eventos.featured.popular": "Popular today",
   "eventos.featured.see": "View event",
@@ -3601,6 +3604,7 @@ const fr: Dict = {
   "eventos.stats.week": "cette semaine",
   "eventos.stats.free": "gratuits",
   "eventos.stats.attending": "participants",
+  "eventos.stats.summary": "Résumé",
   "eventos.featured.title": "À la une",
   "eventos.featured.popular": "Populaire aujourd'hui",
   "eventos.featured.see": "Voir l'événement",
@@ -4515,6 +4519,7 @@ const pt: Dict = {
   "eventos.stats.week": "esta semana",
   "eventos.stats.free": "grátis",
   "eventos.stats.attending": "vão",
+  "eventos.stats.summary": "Resumo",
   "eventos.featured.title": "Em destaque",
   "eventos.featured.popular": "Popular hoje",
   "eventos.featured.see": "Ver evento",
