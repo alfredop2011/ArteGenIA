@@ -949,15 +949,17 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
             onSeeDay={(d) => { setRange({ from: d, to: d }); setDateFilter("rango"); }}
           />
         ) : (
-          // Vista calendario: carrusel destacado a ANCHO COMPLETO arriba
-          // (imágenes apiladas + info al lado), calendario debajo, y stats +
-          // "Próximos destacados" al final.
+          // Vista calendario tipo mockup: destacado (izq) + calendario (der)
+          // lado a lado en escritorio = panorama rápido; apilado en móvil.
+          // Debajo, "Próximos destacados" mini.
           <div className="space-y-6">
-            {(() => {
-              const populars = filtered.slice(0, 5);
-              return populars.length ? <PopularCarousel events={populars} onSelect={setSelected} onBuy={trackClick} /> : null;
-            })()}
-            <CalendarView events={filtered} month={calMonth} onMonth={setCalMonth} onSelect={setSelected} />
+            <div className="grid items-start gap-4 lg:grid-cols-2">
+              {(() => {
+                const populars = filtered.slice(0, 5);
+                return populars.length ? <PopularCarousel events={populars} onSelect={setSelected} onBuy={trackClick} /> : <div />;
+              })()}
+              <CalendarView events={filtered} month={calMonth} onMonth={setCalMonth} onSelect={setSelected} />
+            </div>
             <DestacadosRail events={filtered} onSelect={setSelected} />
           </div>
         )}
@@ -1675,66 +1677,61 @@ function PopularCarousel({ events, onSelect, onBuy }: { events: EventItem[]; onS
   const e = events[active % n];
   const Cat = CATEGORIES[e.category];
   const canBuy = (e.hasSale ?? !!e.url) && !!e.url;
-  const gap = Math.min(w * 0.08, 34);
-  const up = gap * 0.55;
+  const gap = Math.min(w * 0.1, 44);
+  const up = gap * 0.5;
   // Pila 3D: el activo al frente, anterior a la izq (rotado), siguiente a la der.
   const imgStyle = (i: number): CSSProperties => {
     const base: CSSProperties = { transition: "all .7s cubic-bezier(.4,2,.3,1)", background: events[i].image, backgroundSize: "cover", backgroundPosition: "center" };
     const isLeft = (active - 1 + n) % n === i;
     const isRight = (active + 1) % n === i;
     if (i === active) return { ...base, zIndex: 3, opacity: 1, transform: "translateX(0) translateY(0) scale(1) rotateY(0deg)" };
-    if (n > 1 && isRight) return { ...base, zIndex: 2, opacity: 1, transform: `translateX(${gap}px) translateY(-${up}px) scale(.86) rotateY(-12deg)` };
-    if (n > 2 && isLeft) return { ...base, zIndex: 2, opacity: 1, transform: `translateX(-${gap}px) translateY(-${up}px) scale(.86) rotateY(12deg)` };
+    if (n > 1 && isRight) return { ...base, zIndex: 2, opacity: 1, transform: `translateX(${gap}px) translateY(-${up}px) scale(.9) rotateY(-10deg)` };
+    if (n > 2 && isLeft) return { ...base, zIndex: 2, opacity: 1, transform: `translateX(-${gap}px) translateY(-${up}px) scale(.9) rotateY(10deg)` };
     return { ...base, zIndex: 1, opacity: 0 };
   };
+  // Vertical y compacto: pila 3D arriba + info debajo. Cabe al lado del
+  // calendario (escritorio) y se apila en móvil.
   return (
-    // Ancho completo, layout horizontal como el demo: imágenes apiladas izq + info der.
-    <div className="rounded-2xl" style={{ background: "var(--home-bg-soft)", border: "1px solid var(--home-card-border)" }}>
-      <div className="grid items-center gap-6 p-5 md:grid-cols-2 md:p-8">
-        {/* IMÁGENES apiladas (izquierda) — overflow-hidden + padding para que la
-            pila NO se salga de su columna ni tape el texto de la derecha. */}
-        <div ref={ref} className="relative h-64 overflow-hidden rounded-2xl px-6 py-2 sm:h-80" style={{ perspective: 1000 }}>
-          {events.map((ev, i) => (
-            <button
-              key={ev.id}
-              onClick={() => (i === active ? onSelect(ev) : setActive(i))}
-              aria-label={ev.title}
-              className="absolute inset-0 overflow-hidden rounded-2xl shadow-xl"
-              style={imgStyle(i)}
-            >
-              {!ev.flyerUrl && i === active && (
-                <span className="pointer-events-none absolute inset-0 flex items-center justify-center text-white"><Cat.icon size={48} strokeWidth={1.5} /></span>
-              )}
-            </button>
-          ))}
-          <span className="pointer-events-none absolute left-3 top-3 z-[4] flex items-center gap-1.5 rounded-full bg-black/45 px-2.5 py-1 text-xs font-semibold text-white backdrop-blur">🔥 {t("eventos.featured.popular")}</span>
-        </div>
-        {/* INFO (derecha) */}
-        <div className="flex flex-col">
-          <span className="mb-3 inline-flex w-fit items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-medium" style={{ background: "var(--ag-brand-bg)", color: "var(--ag-brand)" }}><Cat.icon size={12} /> {t(Cat.labelKey)}</span>
-          <AnimatePresence mode="wait">
-            <motion.div key={e.id} initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -14 }} transition={{ duration: 0.3 }}>
-              <h3 className="text-2xl font-bold leading-tight">{e.title}</h3>
-              <div className="mt-3 space-y-1.5 text-sm" style={{ color: "var(--home-text-muted)" }}>
-                <p className="flex items-center gap-2"><CalendarIcon size={16} style={{ color: "var(--ag-brand)" }} /> <span className="capitalize">{e.date === TODAY ? t("eventos.list.today") : fmtLong(e.date, locale)}</span> · {e.time}</p>
-                <p className="flex items-center gap-2"><MapPin size={16} style={{ color: "var(--ag-brand)" }} /> {e.venue}</p>
-                {(e.rsvpCount ?? 0) > 0 && <p className="flex items-center gap-2"><Users size={16} style={{ color: "var(--ag-brand)" }} /> {t("eventos.rsvp.count").replace("{n}", String(e.rsvpCount))}</p>}
-              </div>
-            </motion.div>
-          </AnimatePresence>
-          <div className="mt-7 flex items-center gap-4">
-            {n > 1 && (
-              <div className="flex items-center gap-3">
-                <button onClick={() => setActive((p) => (p - 1 + n) % n)} aria-label="Anterior" className="flex h-11 w-11 items-center justify-center rounded-full text-white transition-transform hover:scale-105" style={{ background: "var(--ag-brand)" }}><ArrowLeft size={18} /></button>
-                <button onClick={() => setActive((p) => (p + 1) % n)} aria-label="Siguiente" className="flex h-11 w-11 items-center justify-center rounded-full text-white transition-transform hover:scale-105" style={{ background: "var(--ag-brand)" }}><ArrowRight size={18} /></button>
-              </div>
+    <div className="flex flex-col overflow-hidden rounded-2xl" style={{ background: "var(--home-bg-soft)", border: "1px solid var(--home-card-border)" }}>
+      <div ref={ref} className="relative h-52 overflow-hidden sm:h-60" style={{ perspective: 1000 }}>
+        {events.map((ev, i) => (
+          <button
+            key={ev.id}
+            onClick={() => (i === active ? onSelect(ev) : setActive(i))}
+            aria-label={ev.title}
+            className="absolute inset-3 overflow-hidden rounded-xl shadow-lg"
+            style={imgStyle(i)}
+          >
+            {!ev.flyerUrl && i === active && (
+              <span className="pointer-events-none absolute inset-0 flex items-center justify-center text-white"><Cat.icon size={44} strokeWidth={1.5} /></span>
             )}
-            {canBuy ? (
-              <a href={e.url} target="_blank" rel="noopener noreferrer" onClick={() => onBuy(e.id)} className="inline-flex items-center gap-1.5 rounded-xl px-5 py-2.5 text-sm font-semibold" style={{ background: "var(--ag-brand-bg)", color: "var(--ag-brand)", border: "1px solid var(--ag-brand-border)" }}>{t("eventos.featured.see")} <ExternalLink size={15} /></a>
-            ) : (
-              <button onClick={() => onSelect(e)} className="inline-flex items-center gap-1.5 rounded-xl px-5 py-2.5 text-sm font-semibold" style={{ background: "var(--ag-brand-bg)", color: "var(--ag-brand)", border: "1px solid var(--ag-brand-border)" }}>{t("eventos.featured.see")} <ChevronRight size={15} /></button>
-            )}
-          </div>
+          </button>
+        ))}
+        <span className="pointer-events-none absolute left-3 top-3 z-[4] flex items-center gap-1.5 rounded-full bg-black/45 px-2.5 py-1 text-xs font-semibold text-white backdrop-blur">🔥 {t("eventos.featured.popular")}</span>
+      </div>
+      <div className="flex flex-1 flex-col p-4">
+        <span className="mb-2 inline-flex w-fit items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-medium" style={{ background: "var(--ag-brand-bg)", color: "var(--ag-brand)" }}><Cat.icon size={12} /> {t(Cat.labelKey)}</span>
+        <AnimatePresence mode="wait">
+          <motion.div key={e.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.28 }}>
+            <h3 className="line-clamp-2 text-lg font-bold leading-snug">{e.title}</h3>
+            <div className="mt-2 space-y-1 text-sm" style={{ color: "var(--home-text-muted)" }}>
+              <p className="flex items-center gap-2"><CalendarIcon size={15} style={{ color: "var(--ag-brand)" }} /> <span className="capitalize">{e.date === TODAY ? t("eventos.list.today") : fmtLong(e.date, locale)}</span> · {e.time}</p>
+              <p className="flex items-center gap-2"><MapPin size={15} style={{ color: "var(--ag-brand)" }} /> <span className="truncate">{e.venue}</span></p>
+            </div>
+          </motion.div>
+        </AnimatePresence>
+        <div className="mt-auto flex items-center justify-between gap-2 pt-4">
+          {n > 1 ? (
+            <div className="flex items-center gap-2">
+              <button onClick={() => setActive((p) => (p - 1 + n) % n)} aria-label="Anterior" className="flex h-9 w-9 items-center justify-center rounded-full text-white" style={{ background: "var(--ag-brand)" }}><ArrowLeft size={16} /></button>
+              <button onClick={() => setActive((p) => (p + 1) % n)} aria-label="Siguiente" className="flex h-9 w-9 items-center justify-center rounded-full text-white" style={{ background: "var(--ag-brand)" }}><ArrowRight size={16} /></button>
+            </div>
+          ) : <span />}
+          {canBuy ? (
+            <a href={e.url} target="_blank" rel="noopener noreferrer" onClick={() => onBuy(e.id)} className="inline-flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-semibold text-white" style={{ background: "var(--ag-brand)" }}>{t("eventos.featured.see")} <ExternalLink size={14} /></a>
+          ) : (
+            <button onClick={() => onSelect(e)} className="inline-flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-semibold text-white" style={{ background: "var(--ag-brand)" }}>{t("eventos.featured.see")} <ChevronRight size={14} /></button>
+          )}
         </div>
       </div>
     </div>
