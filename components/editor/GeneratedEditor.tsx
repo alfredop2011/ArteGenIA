@@ -4323,18 +4323,21 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
                       toast.error("Esta capa no tiene identificador. Recarga e intenta de nuevo.");
                       return;
                     }
-                    // Si ya está guardado, abrir modal directo.
-                    if (currentProjectId) {
-                      setRequestPhotoLayerId(customId);
-                      return;
-                    }
-                    // Auto-guardar primero. Requiere sesión: si no hay,
-                    // requireAuth abre AuthModal y reintenta tras login.
+                    // Solicitar foto SIEMPRE requiere sesión: el invite se
+                    // crea con owner_id y queda asociado a la cuenta del
+                    // usuario. Por eso envolvemos TODO en requireAuth,
+                    // incluso si ya hay currentProjectId (la cookie puede
+                    // haber expirado entre tabs).
                     requireAuth(
                       async () => {
-                        const id = await doSave();
-                        if (id) setRequestPhotoLayerId(customId);
-                        // Si doSave devolvió null, ya mostró toast de error.
+                        // Si no hay project guardado, lo guardamos primero
+                        // para tener un project_id que vincular al invite.
+                        let id = currentProjectId;
+                        if (!id) {
+                          id = await doSave();
+                          if (!id) return; // doSave ya mostró toast de error
+                        }
+                        setRequestPhotoLayerId(customId);
                       },
                       {
                         title: "Inicia sesión para pedir esta foto",

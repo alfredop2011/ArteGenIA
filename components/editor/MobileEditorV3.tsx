@@ -2992,9 +2992,10 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
                 }}/>
                 {/* Z.17 — Borrador mágico/manual full-screen */}
                 <SubToolBtnIcon node={<Brush size={18} strokeWidth={2.2}/>} label="Refinar" active={false} onClick={() => { void openBrushEraser(); }}/>
-                {/* Solicitar foto al colaborador — si el proyecto no
-                    está guardado, hacemos auto-save (con login si hace
-                    falta) y luego abrimos el modal. UX sin fricción. */}
+                {/* Solicitar foto al colaborador — SIEMPRE pasa por
+                    requireAuth (el invite necesita owner_id; si la cookie
+                    expiró, el POST fallaría). Si encima no hay project
+                    guardado, hacemos auto-save antes de abrir el modal. */}
                 <SubToolBtnIcon
                   node={<UserPlus size={18} strokeWidth={2.2}/>}
                   label="Solicitar"
@@ -3007,14 +3008,14 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
                       toast.error("Esta capa no tiene identificador. Recarga e intenta de nuevo.");
                       return;
                     }
-                    if (currentProjectId) {
-                      setRequestPhotoLayerId(customId);
-                      return;
-                    }
                     requireAuth(
                       async () => {
-                        const id = await doSave(false);
-                        if (id) setRequestPhotoLayerId(customId);
+                        let id = currentProjectId;
+                        if (!id) {
+                          id = await doSave(false);
+                          if (!id) return;
+                        }
+                        setRequestPhotoLayerId(customId);
                       },
                       {
                         title: "Inicia sesión para pedir esta foto",
