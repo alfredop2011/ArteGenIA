@@ -31,6 +31,7 @@ type Form = {
   event_time: string;
   city: string;
   venue: string;
+  neighborhood: string; // dirección / zona / barrio
   category: string;
   price: string; // "" = consultar, "0" = gratis
   price_info: string;
@@ -41,7 +42,7 @@ type Form = {
 };
 
 const EMPTY: Form = {
-  title: "", event_date: "", event_time: "20:00", city: "madrid", venue: "", category: "social",
+  title: "", event_date: "", event_time: "20:00", city: "madrid", venue: "", neighborhood: "", category: "social",
   price: "", price_info: "", ticket_url: "", description: "", submitter_name: "", submitter_email: "",
 };
 
@@ -86,6 +87,7 @@ export default function SubirEventoPage() {
           event_time: d.event_time || "20:00",
           city: CITIES.includes((d.city || "").toLowerCase()) ? d.city.toLowerCase() : "madrid",
           venue: d.venue || "",
+          neighborhood: d.neighborhood || "",
           category: CATS.some((c) => c.id === d.category) ? d.category : "social",
           price: d.price == null ? "" : String(d.price),
           price_info: d.price_info || "",
@@ -208,10 +210,11 @@ export default function SubirEventoPage() {
           <Field label="Tipo"><select className={inp} value={form.category} onChange={(e) => set({ category: e.target.value })}>{CATS.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}</select></Field>
           <Field label="Ciudad"><select className={inp} value={form.city} onChange={(e) => set({ city: e.target.value })}>{CITIES.map((c) => <option key={c} value={c}>{c[0].toUpperCase() + c.slice(1)}</option>)}</select></Field>
         </div>
-        <Field label="Lugar / sala" hint="elige una guardada o escribe una nueva">
-          <input className={inp} value={form.venue} onChange={(e) => set({ venue: e.target.value })} placeholder="Nombre del local" list="salas-guardadas" autoComplete="off" />
+        <Field label="Sala / lugar" hint="elige una guardada o escribe una nueva">
+          <input className={inp} value={form.venue} onChange={(e) => set({ venue: e.target.value })} placeholder="Ej. Orishas Dance, Sala Pirandello…" list="salas-guardadas" autoComplete="off" />
           <datalist id="salas-guardadas">{venues.map((v) => <option key={v} value={v} />)}</datalist>
         </Field>
+        <Field label="Dirección / zona" hint="opcional"><input className={inp} value={form.neighborhood} onChange={(e) => set({ neighborhood: e.target.value })} placeholder="Calle, barrio o metro" /></Field>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Precio (€)" hint="vacío = consultar · 0 = gratis"><input type="number" min={0} className={inp} value={form.price} onChange={(e) => set({ price: e.target.value })} placeholder="Consultar" /></Field>
           <Field label="Link de entradas"><input className={inp} value={form.ticket_url} onChange={(e) => set({ ticket_url: e.target.value })} placeholder="https://…" /></Field>
