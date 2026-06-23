@@ -949,22 +949,25 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
             onSeeDay={(d) => { setRange({ from: d, to: d }); setDateFilter("rango"); }}
           />
         ) : (
-          // Vista calendario tipo mockup: destacado (izq) + calendario (der)
-          // lado a lado en escritorio = panorama rápido; apilado en móvil.
-          // Debajo, "Próximos destacados" mini.
-          <div className="space-y-6">
-            <div className="grid items-start gap-4 lg:grid-cols-2">
-              {(() => {
-                // Carrusel 3D = eventos de HOY (llaman la atención). Si hoy no
-                // hay, cae a los más próximos para no quedar vacío.
-                const hoy = filtered.filter((e) => e.date === TODAY);
-                const populars = (hoy.length ? hoy : filtered).slice(0, 5);
-                return populars.length ? <PopularCarousel events={populars} onSelect={setSelected} onBuy={trackClick} /> : <div />;
-              })()}
-              <CalendarView events={filtered} month={calMonth} onMonth={setCalMonth} onSelect={setSelected} />
-            </div>
-            <DestacadosRail events={filtered} onSelect={setSelected} />
-          </div>
+          // Vista calendario: SOLO si hay eventos HOY mostramos el carrusel 3D
+          // (destacado izq + calendario der, lado a lado en escritorio). Si HOY
+          // no hay eventos, el calendario va a ANCHO COMPLETO (no medio vacío).
+          (() => {
+            const hoy = filtered.filter((e) => e.date === TODAY).slice(0, 5);
+            return (
+              <div className="space-y-6">
+                {hoy.length > 0 ? (
+                  <div className="grid items-start gap-4 lg:grid-cols-2">
+                    <PopularCarousel events={hoy} onSelect={setSelected} onBuy={trackClick} />
+                    <CalendarView events={filtered} month={calMonth} onMonth={setCalMonth} onSelect={setSelected} />
+                  </div>
+                ) : (
+                  <CalendarView events={filtered} month={calMonth} onMonth={setCalMonth} onSelect={setSelected} />
+                )}
+                <DestacadosRail events={filtered} onSelect={setSelected} />
+              </div>
+            );
+          })()
         )}
       </section>
 
