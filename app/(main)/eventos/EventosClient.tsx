@@ -570,25 +570,31 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
       {/* ── HERO (oscuro, estilo "noche" premium) ────────────── */}
       {/* Fondo oscuro fijo (no depende del tema) + glows neón. Si la ciudad
           tiene foto (CITY_HERO), se pinta detrás con máscara oscura. */}
-      <section className="relative isolate overflow-hidden">
-        {/* base oscura */}
-        <div className="absolute inset-0 -z-30" style={{ background: "linear-gradient(180deg,#0b0b13 0%,#120a1f 55%,#0b0b13 100%)" }} />
-        {/* foto de la ciudad (si existe), desvanecida arriba-derecha */}
-        {cityHero && (
-          <div
-            className="absolute inset-y-0 right-0 -z-20 w-full sm:w-3/5"
-            style={{
-              backgroundImage: `linear-gradient(90deg,#0b0b13 0%,rgba(11,11,19,.65) 35%,rgba(11,11,19,.15) 100%), url('${cityHero}')`,
-              backgroundSize: "cover",
-              backgroundPosition: "center",
-              maskImage: "linear-gradient(180deg,#000 0%,#000 60%,transparent 100%)",
-              WebkitMaskImage: "linear-gradient(180deg,#000 0%,#000 60%,transparent 100%)",
-            }}
-          />
-        )}
-        {/* glows neón */}
-        <div className="absolute -left-24 top-0 -z-10 h-72 w-72 rounded-full opacity-40 blur-3xl" style={{ background: "radial-gradient(circle,#7E2BFF,transparent 70%)" }} />
-        <div className="absolute right-0 top-10 -z-10 h-72 w-72 rounded-full opacity-30 blur-3xl" style={{ background: "radial-gradient(circle,#FF1EA8,transparent 70%)" }} />
+      {/* z-20 (> barra de filtros sticky z-10) y SIN overflow-hidden/isolate en la
+          sección: así el menú de los desplegables país/ciudad no se recorta ni
+          queda detrás de los chips. Las capas de fondo se recortan en su propio
+          contenedor interno. */}
+      <section className="relative z-20">
+        <div className="absolute inset-0 -z-10 overflow-hidden">
+          {/* base oscura */}
+          <div className="absolute inset-0" style={{ background: "linear-gradient(180deg,#0b0b13 0%,#120a1f 55%,#0b0b13 100%)" }} />
+          {/* foto de la ciudad (si existe), desvanecida arriba-derecha */}
+          {cityHero && (
+            <div
+              className="absolute inset-y-0 right-0 w-full sm:w-3/5"
+              style={{
+                backgroundImage: `linear-gradient(90deg,#0b0b13 0%,rgba(11,11,19,.65) 35%,rgba(11,11,19,.15) 100%), url('${cityHero}')`,
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+                maskImage: "linear-gradient(180deg,#000 0%,#000 60%,transparent 100%)",
+                WebkitMaskImage: "linear-gradient(180deg,#000 0%,#000 60%,transparent 100%)",
+              }}
+            />
+          )}
+          {/* glows neón */}
+          <div className="absolute -left-24 top-0 h-72 w-72 rounded-full opacity-40 blur-3xl" style={{ background: "radial-gradient(circle,#7E2BFF,transparent 70%)" }} />
+          <div className="absolute right-0 top-10 h-72 w-72 rounded-full opacity-30 blur-3xl" style={{ background: "radial-gradient(circle,#FF1EA8,transparent 70%)" }} />
+        </div>
         <div className="mx-auto max-w-6xl px-4 pt-5 pb-4 sm:pt-10 sm:pb-8">
           {/* initial=false: render directo a su estado final. Antes usaba una
               animación de entrada (opacity 0→1) que en SSR/hidratación se podía
