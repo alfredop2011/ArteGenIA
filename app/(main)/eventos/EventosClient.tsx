@@ -181,7 +181,10 @@ const MOCK_EVENTS: EventItem[] = [
   { id: "b4", title: "Festival Rumba del Raval", date: "2026-06-28", time: "19:30", venue: "Plaça del Raval", neighborhood: "El Raval", country: "es", city: "barcelona", category: "festival", audience: ["instituciones"], price: 0, cancelled: true, image: CATEGORIES.festival.grad },
 ];
 
-const TODAY = "2026-06-18"; // referencia fija (mock) = currentDate del proyecto
+// Fecha de HOY real (local), formato YYYY-MM-DD. Antes estaba fija a una fecha
+// del mock, lo que rompía los filtros Hoy/Mañana/Finde/Semana/Mes y la etiqueta
+// "Hoy" de las cabeceras (buscaban un día que ya había pasado).
+const TODAY = new Date().toLocaleDateString("en-CA");
 const FAV_KEY = "ag_eventos_fav";
 
 // ─── Helpers de fecha ─────────────────────────────────────────────────────
