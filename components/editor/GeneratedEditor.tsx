@@ -37,6 +37,8 @@ import {
   Brush,
   // Z.25 — Dropdown cambiar formato (ChevronDown ya importado arriba)
   Check,
+  // Solicitar foto al colaborador (invite contextual desde toolbar)
+  UserPlus,
 } from "lucide-react";
 import type { Canvas as FabricCanvas, FabricObject, IText } from "fabric";
 import {
@@ -52,6 +54,7 @@ import { templates, type Template, type TemplateVariant, type AudienceId, getVar
 import { type FormatId, getFormatByDimensions, FORMATS, PUBLIC_FORMATS } from "@/data/formats";
 import { applyTemplateLayers } from "@/lib/fabricApplyTemplateLayers";
 import { ArtistLibraryModal, type ArtistEntry } from "@/components/wizard/ArtistLibrary";
+import RequestPhotoModal from "@/components/editor/RequestPhotoModal";
 import { useProjects } from "@/hooks/useProjects";
 import { useUndoRedo } from "@/hooks/useUndoRedo";
 import { useTemplateDrafts } from "@/hooks/useTemplateDrafts";
@@ -385,6 +388,9 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
   const [artistsModalOpen, setArtistsModalOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  // Modal "Solicitar foto al colaborador" — guarda el customId del layer
+  // activo para que RequestPhotoModal genere un invite con contexto.
+  const [requestPhotoLayerId, setRequestPhotoLayerId] = useState<string | null>(null);
   // PostDownload modal — guarda dataURL para reuso en compartir/copiar
   const [postDownload, setPostDownload] = useState<{ dataUrl: string; format: "png" | "jpg" } | null>(null);
   /** P1.1 — Gate Pro para PDF/SVG. Mismo patrón que MobileEditorV3.
@@ -4299,6 +4305,30 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
                   <span>Quitar fondo</span>
                 </button>
 
+                {/* Solicitar foto al colaborador — genera invite contextual
+                    para que el DJ/artista suba SU foto y se inserte sola en
+                    este layer. Solo aparece si el proyecto está guardado
+                    (currentProjectId no es null), porque sin project_id no
+                    podemos vincular el invite al fabric_json. */}
+                {currentProjectId && (
+                  <button
+                    onClick={() => {
+                      const obj = fabricRef.current?.getActiveObject();
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                      const customId = (obj as any)?.customId as string | undefined;
+                      if (!customId) {
+                        toast.error("Esta capa no se puede compartir todavía. Guarda el proyecto y vuelve a intentar.");
+                        return;
+                      }
+                      setRequestPhotoLayerId(customId);
+                    }}
+                    title="Pedir la foto a un colaborador (DJ, artista, marca…)"
+                    className="ag-fab-btn bg-emerald-600/20 text-emerald-200 hover:bg-emerald-600/30">
+                    <UserPlus className="w-4 h-4" strokeWidth={2.2} />
+                    <span>Solicitar</span>
+                  </button>
+                )}
+
                 {/* Recortar a forma — abre seccion del panel */}
                 <button
                   onClick={() => setOpenSections(p => ({ ...p, crop: true, style: true, "remove-bg": true }))}
@@ -4584,6 +4614,18 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
             void addArtistsFromLibrary(entries);
           }}
           onClose={() => setArtistsModalOpen(false)}
+        />
+      )}
+
+      {/* Solicitar foto al colaborador. Solo se monta si hay un projectId
+          guardado y un layer seleccionado con customId. El modal genera
+          un invite contextual y muestra link + botón WhatsApp. */}
+      {requestPhotoLayerId && currentProjectId && (
+        <RequestPhotoModal
+          projectId={currentProjectId}
+          targetLayerId={requestPhotoLayerId}
+          projectName={adminTitle || null}
+          onClose={() => setRequestPhotoLayerId(null)}
         />
       )}
 

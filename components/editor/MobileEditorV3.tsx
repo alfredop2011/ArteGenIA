@@ -68,7 +68,8 @@ import { useCredits } from "@/hooks/useCredits";
 import { CREDIT_COST, type CreditModule } from "@/lib/credits";
 // Z.17 — Borrador mágico/manual full-screen reutilizable desktop+mobile
 import BrushEraserModal from "@/components/editor/BrushEraserModal";
-import { Save, FolderOpen, Share2, Link2, Mail, MessageCircle, Send, Plus, Layers, Lock, Unlock, Eye, EyeOff, Circle as CircleIcon, Square as SquareIcon, Triangle, Heart, Star, AlignHorizontalJustifyCenter, Clipboard, ClipboardPaste } from "lucide-react";
+import { Save, FolderOpen, Share2, Link2, Mail, MessageCircle, Send, Plus, Layers, Lock, Unlock, Eye, EyeOff, Circle as CircleIcon, Square as SquareIcon, Triangle, Heart, Star, AlignHorizontalJustifyCenter, Clipboard, ClipboardPaste, UserPlus } from "lucide-react";
+import RequestPhotoModal from "@/components/editor/RequestPhotoModal";
 
 type Props = {
   templateId?: number;
@@ -1122,6 +1123,9 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
   // el src del FabricImage por la version sin fondo (PNG transparente).
   // Auth + rate limit aplicados en el endpoint.
   const [removingBg, setRemovingBg] = useState(false);
+  // Modal "Solicitar foto al colaborador" — invite contextual desde el editor.
+  // Guarda el customId del layer activo para vincular el invite a ESA capa.
+  const [requestPhotoLayerId, setRequestPhotoLayerId] = useState<string | null>(null);
   /** Captura la imagen al abrir el subtool "Quitar fondo" para evitar
    *  perderla si Fabric deselecciona por interacciones con la UI. */
   const removeBgTargetRef = useRef<FabricImage | null>(null);
@@ -2985,6 +2989,26 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
                 }}/>
                 {/* Z.17 — Borrador mágico/manual full-screen */}
                 <SubToolBtnIcon node={<Brush size={18} strokeWidth={2.2}/>} label="Refinar" active={false} onClick={() => { void openBrushEraser(); }}/>
+                {/* Solicitar foto al colaborador — genera invite contextual
+                    que auto-coloca la foto en este layer cuando el DJ/artista
+                    la suba. Requiere proyecto guardado (currentProjectId). */}
+                {currentProjectId && (
+                  <SubToolBtnIcon
+                    node={<UserPlus size={18} strokeWidth={2.2}/>}
+                    label="Solicitar"
+                    active={false}
+                    onClick={() => {
+                      const img = getActiveImage();
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                      const customId = (img as any)?.customId as string | undefined;
+                      if (!customId) {
+                        toast.error("Esta capa no se puede compartir todavía. Guarda y vuelve a intentar.");
+                        return;
+                      }
+                      setRequestPhotoLayerId(customId);
+                    }}
+                  />
+                )}
                 {/* Capas Mágicas (Fase V.1) — convierte foto en plantilla editable.
                     Badge muestra cuota restante para Free; nada para Pro/Enterprise. */}
                 <SubToolBtnIcon
@@ -3569,6 +3593,16 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
           subtitle={authModalConfig.subtitle}
           onAuthSuccess={authModalConfig.onSuccess}
           onClose={() => setAuthModalConfig(null)}
+        />
+      )}
+
+      {/* Solicitar foto al colaborador — invite contextual desde mobile. */}
+      {requestPhotoLayerId && currentProjectId && (
+        <RequestPhotoModal
+          projectId={currentProjectId}
+          targetLayerId={requestPhotoLayerId}
+          projectName={docTitle || template?.title || null}
+          onClose={() => setRequestPhotoLayerId(null)}
         />
       )}
 
