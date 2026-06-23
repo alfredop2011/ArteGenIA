@@ -1361,6 +1361,13 @@ function CalendarView({
   const cells: (number | null)[] = [...Array(firstDay).fill(null), ...Array.from({ length: daysInMonth }, (_, i) => i + 1)];
   const todayDay = parse(TODAY).getMonth() === month ? parse(TODAY).getDate() : -1;
 
+  // Leyenda: categorías presentes en el mes (lo estándar es colorear por tipo).
+  const legendCats = useMemo(() => {
+    const set = new Set<Category>();
+    for (const e of events) if (parse(e.date).getMonth() === month) set.add(e.category);
+    return (Object.keys(CATEGORIES) as Category[]).filter((c) => set.has(c));
+  }, [events, month]);
+
   return (
     <div className="rounded-2xl p-3 sm:p-5" style={{ background: "var(--home-bg-soft)", border: "1px solid var(--home-card-border)" }}>
       <div className="mb-4 flex items-center justify-between">
@@ -1412,6 +1419,24 @@ function CalendarView({
           );
         })}
       </div>
+
+      {/* Leyenda de colores por categoría (solo las presentes en el mes) */}
+      {legendCats.length > 0 && (
+        <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 border-t pt-3" style={{ borderColor: "var(--home-divider)" }}>
+          <span className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: "var(--home-text-soft)" }}>
+            {t("eventos.cal.legend")}
+          </span>
+          {legendCats.map((c) => {
+            const Cat = CATEGORIES[c];
+            return (
+              <span key={c} className="flex items-center gap-1.5 text-xs" style={{ color: "var(--home-text-muted)" }}>
+                <span className="h-3 w-3 rounded-full" style={{ background: Cat.grad }} />
+                <Cat.icon size={12} /> {t(Cat.labelKey)}
+              </span>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

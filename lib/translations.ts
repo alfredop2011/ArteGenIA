@@ -838,6 +838,7 @@ export type TranslationKey =
   | "eventos.card.tickets"
   | "eventos.card.seeEvent"
   | "eventos.cal.more"
+  | "eventos.cal.legend"
   | "eventos.modal.seeFlyer"
   | "eventos.modal.priceTbc"
   | "eventos.modal.priceFree"
@@ -1756,6 +1757,7 @@ const es: Dict = {
   "eventos.card.tickets": "Entradas",
   "eventos.card.seeEvent": "Ver evento",
   "eventos.cal.more": "+{n} más",
+  "eventos.cal.legend": "Leyenda",
   "eventos.modal.seeFlyer": "Ver flyer",
   "eventos.modal.priceTbc": "Precio por confirmar",
   "eventos.modal.priceFree": "Entrada gratuita",
@@ -2660,6 +2662,7 @@ const en: Dict = {
   "eventos.card.tickets": "Tickets",
   "eventos.card.seeEvent": "See event",
   "eventos.cal.more": "+{n} more",
+  "eventos.cal.legend": "Legend",
   "eventos.modal.seeFlyer": "View flyer",
   "eventos.modal.priceTbc": "Price to be confirmed",
   "eventos.modal.priceFree": "Free entry",
@@ -3564,6 +3567,7 @@ const fr: Dict = {
   "eventos.card.tickets": "Billets",
   "eventos.card.seeEvent": "Voir l'événement",
   "eventos.cal.more": "+{n} de plus",
+  "eventos.cal.legend": "Légende",
   "eventos.modal.seeFlyer": "Voir le flyer",
   "eventos.modal.priceTbc": "Prix à confirmer",
   "eventos.modal.priceFree": "Entrée gratuite",
@@ -4468,6 +4472,7 @@ const pt: Dict = {
   "eventos.card.tickets": "Bilhetes",
   "eventos.card.seeEvent": "Ver evento",
   "eventos.cal.more": "+{n} mais",
+  "eventos.cal.legend": "Legenda",
   "eventos.modal.seeFlyer": "Ver flyer",
   "eventos.modal.priceTbc": "Preço por confirmar",
   "eventos.modal.priceFree": "Entrada gratuita",
