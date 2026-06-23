@@ -2989,26 +2989,29 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
                 }}/>
                 {/* Z.17 — Borrador mágico/manual full-screen */}
                 <SubToolBtnIcon node={<Brush size={18} strokeWidth={2.2}/>} label="Refinar" active={false} onClick={() => { void openBrushEraser(); }}/>
-                {/* Solicitar foto al colaborador — genera invite contextual
-                    que auto-coloca la foto en este layer cuando el DJ/artista
-                    la suba. Requiere proyecto guardado (currentProjectId). */}
-                {currentProjectId && (
-                  <SubToolBtnIcon
-                    node={<UserPlus size={18} strokeWidth={2.2}/>}
-                    label="Solicitar"
-                    active={false}
-                    onClick={() => {
-                      const img = getActiveImage();
-                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                      const customId = (img as any)?.customId as string | undefined;
-                      if (!customId) {
-                        toast.error("Esta capa no se puede compartir todavía. Guarda y vuelve a intentar.");
-                        return;
-                      }
-                      setRequestPhotoLayerId(customId);
-                    }}
-                  />
-                )}
+                {/* Solicitar foto al colaborador — visible siempre que la
+                    capa sea imagen real; el click pide guardar si aún no
+                    hay project_id (necesario para vincular el invite). */}
+                <SubToolBtnIcon
+                  node={<UserPlus size={18} strokeWidth={2.2}/>}
+                  label="Solicitar"
+                  active={false}
+                  onClick={() => {
+                    if (!currentProjectId) {
+                      toast.error("Guarda el proyecto primero para pedir esta foto a un colaborador.");
+                      return;
+                    }
+                    const img = getActiveImage();
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    const customId = (img as any)?.customId as string | undefined;
+                    if (!customId) {
+                      toast.error("Esta capa no tiene identificador. Guarda el proyecto y vuelve a intentar.");
+                      return;
+                    }
+                    setRequestPhotoLayerId(customId);
+                  }}
+                />
+                {/* Espacio dummy intencional para mantener ritmo visual */}
                 {/* Capas Mágicas (Fase V.1) — convierte foto en plantilla editable.
                     Badge muestra cuota restante para Free; nada para Pro/Enterprise. */}
                 <SubToolBtnIcon

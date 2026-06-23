@@ -4307,27 +4307,30 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
 
                 {/* Solicitar foto al colaborador — genera invite contextual
                     para que el DJ/artista suba SU foto y se inserte sola en
-                    este layer. Solo aparece si el proyecto está guardado
-                    (currentProjectId no es null), porque sin project_id no
-                    podemos vincular el invite al fabric_json. */}
-                {currentProjectId && (
-                  <button
-                    onClick={() => {
-                      const obj = fabricRef.current?.getActiveObject();
-                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                      const customId = (obj as any)?.customId as string | undefined;
-                      if (!customId) {
-                        toast.error("Esta capa no se puede compartir todavía. Guarda el proyecto y vuelve a intentar.");
-                        return;
-                      }
-                      setRequestPhotoLayerId(customId);
-                    }}
-                    title="Pedir la foto a un colaborador (DJ, artista, marca…)"
-                    className="ag-fab-btn bg-emerald-600/20 text-emerald-200 hover:bg-emerald-600/30">
-                    <UserPlus className="w-4 h-4" strokeWidth={2.2} />
-                    <span>Solicitar</span>
-                  </button>
-                )}
+                    este layer. Visible siempre que sea imagen real; si el
+                    proyecto aún no está guardado, el click muestra toast
+                    pidiendo guardar primero (necesitamos project_id para
+                    vincular el invite al fabric_json). */}
+                <button
+                  onClick={() => {
+                    if (!currentProjectId) {
+                      toast.error("Guarda el proyecto primero (botón Guardar arriba) para poder pedir esta foto a un colaborador.");
+                      return;
+                    }
+                    const obj = fabricRef.current?.getActiveObject();
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    const customId = (obj as any)?.customId as string | undefined;
+                    if (!customId) {
+                      toast.error("Esta capa no tiene identificador. Guarda el proyecto y vuelve a intentar.");
+                      return;
+                    }
+                    setRequestPhotoLayerId(customId);
+                  }}
+                  title="Pedir la foto a un colaborador (DJ, artista, marca…)"
+                  className="ag-fab-btn bg-emerald-600/20 text-emerald-200 hover:bg-emerald-600/30">
+                  <UserPlus className="w-4 h-4" strokeWidth={2.2} />
+                  <span>Solicitar</span>
+                </button>
 
                 {/* Recortar a forma — abre seccion del panel */}
                 <button
