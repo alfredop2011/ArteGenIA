@@ -204,8 +204,8 @@ export default function CollaboratorSignupPage({
                   <User size={22} strokeWidth={1.8} />
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-base font-bold text-white mb-0.5">Soy una persona</h3>
-                  <p className="text-xs text-gray-500">Artista, DJ, profesor, ponente…</p>
+                  <h3 className="text-base font-bold text-white mb-0.5">Artista</h3>
+                  <p className="text-xs text-gray-500">DJ, profesor, ponente, performer…</p>
                 </div>
               </div>
             </button>
