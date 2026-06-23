@@ -842,6 +842,10 @@ export type TranslationKey =
   | "eventos.rsvp.join"
   | "eventos.rsvp.joined"
   | "eventos.rsvp.count"
+  | "eventos.stats.week"
+  | "eventos.stats.free"
+  | "eventos.stats.attending"
+  | "eventos.featured.title"
   | "eventos.modal.seeFlyer"
   | "eventos.modal.priceTbc"
   | "eventos.modal.priceFree"
@@ -1764,6 +1768,10 @@ const es: Dict = {
   "eventos.rsvp.join": "Voy",
   "eventos.rsvp.joined": "¡Vas!",
   "eventos.rsvp.count": "{n} asistirán",
+  "eventos.stats.week": "esta semana",
+  "eventos.stats.free": "gratis",
+  "eventos.stats.attending": "asistirán",
+  "eventos.featured.title": "Próximos destacados",
   "eventos.modal.seeFlyer": "Ver flyer",
   "eventos.modal.priceTbc": "Precio por confirmar",
   "eventos.modal.priceFree": "Entrada gratuita",
@@ -2672,6 +2680,10 @@ const en: Dict = {
   "eventos.rsvp.join": "I'm going",
   "eventos.rsvp.joined": "You're in!",
   "eventos.rsvp.count": "{n} attending",
+  "eventos.stats.week": "this week",
+  "eventos.stats.free": "free",
+  "eventos.stats.attending": "attending",
+  "eventos.featured.title": "Featured soon",
   "eventos.modal.seeFlyer": "View flyer",
   "eventos.modal.priceTbc": "Price to be confirmed",
   "eventos.modal.priceFree": "Free entry",
@@ -3580,6 +3592,10 @@ const fr: Dict = {
   "eventos.rsvp.join": "J'y vais",
   "eventos.rsvp.joined": "Tu y es !",
   "eventos.rsvp.count": "{n} participants",
+  "eventos.stats.week": "cette semaine",
+  "eventos.stats.free": "gratuits",
+  "eventos.stats.attending": "participants",
+  "eventos.featured.title": "À la une",
   "eventos.modal.seeFlyer": "Voir le flyer",
   "eventos.modal.priceTbc": "Prix à confirmer",
   "eventos.modal.priceFree": "Entrée gratuite",
@@ -4488,6 +4504,10 @@ const pt: Dict = {
   "eventos.rsvp.join": "Eu vou",
   "eventos.rsvp.joined": "Confirmado!",
   "eventos.rsvp.count": "{n} vão",
+  "eventos.stats.week": "esta semana",
+  "eventos.stats.free": "grátis",
+  "eventos.stats.attending": "vão",
+  "eventos.featured.title": "Em destaque",
   "eventos.modal.seeFlyer": "Ver flyer",
   "eventos.modal.priceTbc": "Preço por confirmar",
   "eventos.modal.priceFree": "Entrada gratuita",

@@ -906,6 +906,35 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
           )}
         </p>
 
+        {/* Sección de DESCUBRIMIENTO (estilo mockup): stats + carrusel de
+            destacados. Solo en vista Lista y sin filtros/búsqueda activos, como
+            cabecera de descubrimiento (no se duplica al filtrar). */}
+        {view === "lista" && !query && dateFilter === "todos" && filtered.length > 2 && (
+          <div className="mb-7">
+            <div className="mb-5 grid grid-cols-3 gap-3">
+              {[
+                { n: filtered.filter((e) => e.date <= addDays(TODAY, 6)).length, label: t("eventos.stats.week"), icon: CalendarIcon },
+                { n: filtered.filter((e) => e.price === 0).length, label: t("eventos.stats.free"), icon: Ticket },
+                { n: filtered.reduce((s, e) => s + (e.rsvpCount ?? 0), 0), label: t("eventos.stats.attending"), icon: Users },
+              ].map((s, i) => (
+                <div key={i} className="flex flex-col items-center gap-1 rounded-2xl p-4 text-center" style={{ background: "var(--home-bg-soft)", border: "1px solid var(--home-card-border)" }}>
+                  <s.icon size={18} style={{ color: "var(--ag-brand)" }} />
+                  <span className="text-2xl font-bold leading-none">{s.n}</span>
+                  <span className="text-[11px]" style={{ color: "var(--home-text-soft)" }}>{s.label}</span>
+                </div>
+              ))}
+            </div>
+            <h3 className="mb-3 text-base font-bold">{t("eventos.featured.title")}</h3>
+            <div className="-mx-4 flex gap-4 overflow-x-auto px-4 pb-2" style={{ scrollbarWidth: "none" }}>
+              {filtered.slice(0, 8).map((e) => (
+                <div key={e.id} className="w-[280px] shrink-0">
+                  <EventCard event={e} isFav={favs.has(e.id)} onFav={() => toggleFav(e.id)} onClick={() => setSelected(e)} onBuy={() => trackClick(e.id)} />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {filtered.length === 0 ? (
           <EmptyState onReset={resetFilters} />
         ) : view === "lista" ? (
