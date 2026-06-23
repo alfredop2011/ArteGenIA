@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { UploadCloud, Loader2, CheckCircle2, ExternalLink, Copy, Sparkles, CalendarPlus } from "lucide-react";
 
 /**
@@ -54,6 +54,11 @@ export default function SubirEventoPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [done, setDone] = useState<{ publicUrl: string } | null>(null);
+  const [venues, setVenues] = useState<string[]>([]); // salas guardadas (autocompletar)
+  useEffect(() => {
+    // setState va en el callback async (no en el cuerpo del effect) → OK.
+    fetch("/api/eventos/venues").then((r) => r.json()).then((d) => setVenues(d.venues ?? [])).catch(() => {});
+  }, []);
   const [copied, setCopied] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -203,7 +208,10 @@ export default function SubirEventoPage() {
           <Field label="Tipo"><select className={inp} value={form.category} onChange={(e) => set({ category: e.target.value })}>{CATS.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}</select></Field>
           <Field label="Ciudad"><select className={inp} value={form.city} onChange={(e) => set({ city: e.target.value })}>{CITIES.map((c) => <option key={c} value={c}>{c[0].toUpperCase() + c.slice(1)}</option>)}</select></Field>
         </div>
-        <Field label="Lugar / sala"><input className={inp} value={form.venue} onChange={(e) => set({ venue: e.target.value })} placeholder="Nombre del local" /></Field>
+        <Field label="Lugar / sala" hint="elige una guardada o escribe una nueva">
+          <input className={inp} value={form.venue} onChange={(e) => set({ venue: e.target.value })} placeholder="Nombre del local" list="salas-guardadas" autoComplete="off" />
+          <datalist id="salas-guardadas">{venues.map((v) => <option key={v} value={v} />)}</datalist>
+        </Field>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Precio (€)" hint="vacío = consultar · 0 = gratis"><input type="number" min={0} className={inp} value={form.price} onChange={(e) => set({ price: e.target.value })} placeholder="Consultar" /></Field>
           <Field label="Link de entradas"><input className={inp} value={form.ticket_url} onChange={(e) => set({ ticket_url: e.target.value })} placeholder="https://…" /></Field>
