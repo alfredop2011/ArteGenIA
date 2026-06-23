@@ -741,7 +741,208 @@ export type TranslationKey =
   | "mobileEditor.onb.step4Body"
   | "mobileEditor.onb.skip"
   | "mobileEditor.onb.next"
-  | "mobileEditor.onb.start";
+  | "mobileEditor.onb.start"
+  // ── AGENDA EVENTOS ──
+  | "eventos.cat.fiesta"
+  | "eventos.cat.conciertos"
+  | "eventos.cat.festival"
+  | "eventos.cat.clases"
+  | "eventos.cat.club"
+  | "eventos.cat.corporativo"
+  | "eventos.cat.social"
+  | "eventos.cat.teatro"
+  | "eventos.aud.academias"
+  | "eventos.aud.productoras"
+  | "eventos.aud.freelance"
+  | "eventos.aud.instituciones"
+  | "eventos.aud.agencias"
+  | "eventos.aud.colegios"
+  | "eventos.city.todas"
+  | "eventos.date.todos"
+  | "eventos.date.hoy"
+  | "eventos.date.manana"
+  | "eventos.date.finde"
+  | "eventos.date.semana"
+  | "eventos.date.mes"
+  | "eventos.date.rango"
+  | "eventos.topbar.brand"
+  | "eventos.topbar.shareAria"
+  | "eventos.topbar.shareCopied"
+  | "eventos.topbar.share"
+  | "eventos.topbar.publishShort"
+  | "eventos.topbar.uploadShort"
+  | "eventos.organizer.publish"
+  | "eventos.organizer.uploadFree"
+  | "eventos.hero.badge"
+  | "eventos.hero.titleMobile"
+  | "eventos.hero.titleDesktop"
+  | "eventos.hero.subtitle"
+  | "eventos.country.soon"
+  | "eventos.search.placeholder"
+  | "eventos.search.nearMe"
+  | "eventos.geo.unsupported"
+  | "eventos.geo.showing"
+  | "eventos.geo.noneNearby"
+  | "eventos.geo.failed"
+  | "eventos.geo.errorPrompt"
+  | "eventos.filters.free"
+  | "eventos.filters.nearMe"
+  | "eventos.filters.more"
+  | "eventos.view.lista"
+  | "eventos.view.calendario"
+  | "eventos.filters.whenLabel"
+  | "eventos.filters.categoryLabel"
+  | "eventos.filters.audienceLabel"
+  | "eventos.filters.saved"
+  | "eventos.range.from"
+  | "eventos.range.to"
+  | "eventos.count.one"
+  | "eventos.count.many"
+  | "eventos.count.in"
+  | "eventos.count.mockBadge"
+  | "eventos.cityauto.placeholder"
+  | "eventos.cityauto.empty"
+  | "eventos.band.titleHas"
+  | "eventos.band.titleOrg"
+  | "eventos.band.descHas"
+  | "eventos.band.descOrg"
+  | "eventos.band.ctaHas"
+  | "eventos.band.ctaOrg"
+  | "eventos.auth.title"
+  | "eventos.auth.subtitle"
+  | "eventos.publish.titleHas"
+  | "eventos.publish.titleOrg"
+  | "eventos.publish.subtitle"
+  | "eventos.publish.close"
+  | "eventos.publish.web.title"
+  | "eventos.publish.web.fast"
+  | "eventos.publish.web.descHas"
+  | "eventos.publish.web.descOrg"
+  | "eventos.publish.telegram.title"
+  | "eventos.publish.telegram.noAccount"
+  | "eventos.publish.telegram.desc"
+  | "eventos.publish.telegram.soonDesc"
+  | "eventos.publish.whatsapp.title"
+  | "eventos.publish.whatsapp.desc"
+  | "eventos.publish.voice.title"
+  | "eventos.publish.voice.desc"
+  | "eventos.publish.soonBadge"
+  | "eventos.list.today"
+  | "eventos.list.seeAll"
+  | "eventos.card.consult"
+  | "eventos.card.free"
+  | "eventos.card.priceFrom"
+  | "eventos.card.removeFav"
+  | "eventos.card.addFav"
+  | "eventos.card.cancelled"
+  | "eventos.card.tickets"
+  | "eventos.card.seeEvent"
+  | "eventos.cal.more"
+  | "eventos.modal.seeFlyer"
+  | "eventos.modal.priceTbc"
+  | "eventos.modal.priceFree"
+  | "eventos.modal.timeSuffix"
+  | "eventos.modal.saved"
+  | "eventos.modal.save"
+  | "eventos.modal.copied"
+  | "eventos.modal.share"
+  | "eventos.modal.buyOnline"
+  | "eventos.modal.freeEntry"
+  | "eventos.modal.consultOrganizer"
+  | "eventos.modal.boxOffice"
+  | "eventos.lightbox.close"
+  | "eventos.seal.cancelled"
+  | "eventos.empty.title"
+  | "eventos.empty.body"
+  | "eventos.empty.reset"
+  // ── PANEL ORGANIZADOR ──
+  | "org.cat.fiesta"
+  | "org.cat.conciertos"
+  | "org.cat.festival"
+  | "org.cat.clases"
+  | "org.cat.club"
+  | "org.cat.corporativo"
+  | "org.cat.social"
+  | "org.cat.teatro"
+  | "org.aud.academias"
+  | "org.aud.productoras"
+  | "org.aud.freelance"
+  | "org.aud.instituciones"
+  | "org.aud.agencias"
+  | "org.aud.colegios"
+  | "org.claim.success"
+  | "org.gate.titleClaim"
+  | "org.gate.titlePublish"
+  | "org.gate.bodyClaim"
+  | "org.gate.bodyPublish"
+  | "org.gate.signIn"
+  | "org.gate.back"
+  | "org.gate.authClaim"
+  | "org.gate.authPublish"
+  | "org.auth.subtitle"
+  | "org.header.backLink"
+  | "org.header.titleAdmin"
+  | "org.header.titleMine"
+  | "org.header.adminBadge"
+  | "org.header.descAdmin"
+  | "org.header.descMine"
+  | "org.header.newEvent"
+  | "org.loading"
+  | "org.section.drafts"
+  | "org.section.draftsHint"
+  | "org.section.upcoming"
+  | "org.section.upcomingHint"
+  | "org.section.upcomingEmpty"
+  | "org.section.past"
+  | "org.section.pastHint"
+  | "org.section.cancelled"
+  | "org.section.cancelledHint"
+  | "org.row.cancelShort"
+  | "org.row.consult"
+  | "org.row.free"
+  | "org.row.series"
+  | "org.row.anon"
+  | "org.row.unpublish"
+  | "org.row.publish"
+  | "org.row.reactivate"
+  | "org.row.markCancelled"
+  | "org.row.edit"
+  | "org.row.delete"
+  | "org.delete.confirm"
+  | "org.form.titleEdit"
+  | "org.form.titleNew"
+  | "org.form.errRequired"
+  | "org.form.errUpload"
+  | "org.form.errUploadGeneric"
+  | "org.form.labelTitle"
+  | "org.form.phTitle"
+  | "org.form.labelDate"
+  | "org.form.labelTime"
+  | "org.form.labelCity"
+  | "org.form.labelCategory"
+  | "org.form.labelAudience"
+  | "org.form.labelVenue"
+  | "org.form.phVenue"
+  | "org.form.labelNeighborhood"
+  | "org.form.phNeighborhood"
+  | "org.form.labelFlyer"
+  | "org.form.uploading"
+  | "org.form.changeFlyer"
+  | "org.form.uploadFlyer"
+  | "org.form.noFlyer"
+  | "org.form.labelPrice"
+  | "org.form.phPrice"
+  | "org.form.labelPriceInfo"
+  | "org.form.phPriceInfo"
+  | "org.form.onlineSale"
+  | "org.form.phTicketUrl"
+  | "org.form.labelDescription"
+  | "org.form.phDescription"
+  | "org.form.saveDraft"
+  | "org.form.publish"
+  | "org.empty.title"
+  | "org.empty.body"
+  | "org.empty.create";
 
 type Dict = Record<TranslationKey, string>;
 
@@ -1459,6 +1660,207 @@ const es: Dict = {
   "mobileEditor.onb.skip": "Saltar",
   "mobileEditor.onb.next": "Siguiente",
   "mobileEditor.onb.start": "Empezar",
+  // ── AGENDA EVENTOS ──
+  "eventos.cat.fiesta": "Fiesta",
+  "eventos.cat.conciertos": "Conciertos",
+  "eventos.cat.festival": "Festival",
+  "eventos.cat.clases": "Clases de baile",
+  "eventos.cat.club": "Club / Discoteca",
+  "eventos.cat.corporativo": "Corporativo",
+  "eventos.cat.social": "Bailes sociales",
+  "eventos.cat.teatro": "Teatro",
+  "eventos.aud.academias": "Academias",
+  "eventos.aud.productoras": "Productoras",
+  "eventos.aud.freelance": "Freelance",
+  "eventos.aud.instituciones": "Instituciones",
+  "eventos.aud.agencias": "Agencias",
+  "eventos.aud.colegios": "Colegios",
+  "eventos.city.todas": "Todas las ciudades",
+  "eventos.date.todos": "Todos",
+  "eventos.date.hoy": "Hoy",
+  "eventos.date.manana": "Mañana",
+  "eventos.date.finde": "Este finde",
+  "eventos.date.semana": "Esta semana",
+  "eventos.date.mes": "Este mes",
+  "eventos.date.rango": "Rango",
+  "eventos.topbar.brand": "Agenda",
+  "eventos.topbar.shareAria": "Compartir la agenda",
+  "eventos.topbar.shareCopied": "¡Enlace copiado!",
+  "eventos.topbar.share": "Compartir",
+  "eventos.topbar.publishShort": "Publicar",
+  "eventos.topbar.uploadShort": "Sube tu evento",
+  "eventos.organizer.publish": "Publicar evento",
+  "eventos.organizer.uploadFree": "Sube tu evento gratis",
+  "eventos.hero.badge": "Agenda cultural pública",
+  "eventos.hero.titleMobile": "Planes culturales en ",
+  "eventos.hero.titleDesktop": "¿Qué planes hay en ",
+  "eventos.hero.subtitle": "Conciertos, exposiciones, teatro y más cerca de ti.",
+  "eventos.country.soon": "pronto",
+  "eventos.search.placeholder": "Busca eventos, salas o barrios",
+  "eventos.search.nearMe": "Cerca de mí",
+  "eventos.geo.unsupported": "Tu navegador no permite ubicación",
+  "eventos.geo.showing": "Mostrando {place}",
+  "eventos.geo.noneNearby": "Aún no hay eventos cerca de ti",
+  "eventos.geo.failed": "No pudimos obtener tu ubicación",
+  "eventos.geo.errorPrompt": "{msg} · escribe tu ciudad:",
+  "eventos.filters.free": "Gratis",
+  "eventos.filters.nearMe": "Cerca de mí",
+  "eventos.filters.more": "Más filtros",
+  "eventos.view.lista": "Lista",
+  "eventos.view.calendario": "Calendario",
+  "eventos.filters.whenLabel": "Cuándo",
+  "eventos.filters.categoryLabel": "Categoría",
+  "eventos.filters.audienceLabel": "Para quién es",
+  "eventos.filters.saved": "Guardados",
+  "eventos.range.from": "Desde",
+  "eventos.range.to": "hasta",
+  "eventos.count.one": "evento",
+  "eventos.count.many": "eventos",
+  "eventos.count.in": "en",
+  "eventos.count.mockBadge": "ejemplos de muestra",
+  "eventos.cityauto.placeholder": "Escribe tu ciudad…",
+  "eventos.cityauto.empty": "Aún no tenemos eventos ahí. Prueba Madrid, Barcelona, Valencia…",
+  "eventos.band.titleHas": "¿Tienes un nuevo evento?",
+  "eventos.band.titleOrg": "¿Organizas eventos?",
+  "eventos.band.descHas": "Publícalo en la agenda y crea su flyer en minutos con tu cuenta.",
+  "eventos.band.descOrg": "Publica tu evento en la agenda y crea su flyer en minutos. Gratis para empezar.",
+  "eventos.band.ctaHas": "Publicar evento",
+  "eventos.band.ctaOrg": "Sube tu evento gratis",
+  "eventos.auth.title": "Publica tu evento",
+  "eventos.auth.subtitle": "Crea tu cuenta de organizador. Es gratis para empezar.",
+  "eventos.publish.titleHas": "Publica tu evento",
+  "eventos.publish.titleOrg": "Sube tu evento gratis",
+  "eventos.publish.subtitle": "Elige la vía más rápida para ti. Mandas el flyer y nosotros leemos fecha, lugar y precio.",
+  "eventos.publish.close": "Cerrar",
+  "eventos.publish.web.title": "Aquí mismo (asistente)",
+  "eventos.publish.web.fast": "RÁPIDO",
+  "eventos.publish.web.descHas": "Sube el flyer y se rellena solo. Vas directo a tu panel.",
+  "eventos.publish.web.descOrg": "Sube el flyer y se rellena solo. Creas tu cuenta gratis en segundos.",
+  "eventos.publish.telegram.title": "Por Telegram",
+  "eventos.publish.telegram.noAccount": "SIN CUENTA",
+  "eventos.publish.telegram.desc": "Mándale el flyer al bot y se publica solo. Tus eventos te esperan si luego abres cuenta.",
+  "eventos.publish.telegram.soonDesc": "Activando el bot — disponible muy pronto.",
+  "eventos.publish.whatsapp.title": "Por WhatsApp",
+  "eventos.publish.whatsapp.desc": "Próximamente: el mismo bot, en tu WhatsApp.",
+  "eventos.publish.voice.title": "Por voz",
+  "eventos.publish.voice.desc": "Próximamente: cuéntale tu evento con un audio.",
+  "eventos.publish.soonBadge": "PRONTO",
+  "eventos.list.today": "Hoy · ",
+  "eventos.list.seeAll": "Ver todos",
+  "eventos.card.consult": "Consultar",
+  "eventos.card.free": "Gratis",
+  "eventos.card.priceFrom": "desde ",
+  "eventos.card.removeFav": "Quitar de guardados",
+  "eventos.card.addFav": "Guardar evento",
+  "eventos.card.cancelled": "Cancelado",
+  "eventos.card.tickets": "Entradas",
+  "eventos.card.seeEvent": "Ver evento",
+  "eventos.cal.more": "+{n} más",
+  "eventos.modal.seeFlyer": "Ver flyer",
+  "eventos.modal.priceTbc": "Precio por confirmar",
+  "eventos.modal.priceFree": "Entrada gratuita",
+  "eventos.modal.timeSuffix": "h",
+  "eventos.modal.saved": "Guardado",
+  "eventos.modal.save": "Guardar",
+  "eventos.modal.copied": "¡Copiado!",
+  "eventos.modal.share": "Compartir",
+  "eventos.modal.buyOnline": "Comprar entradas online",
+  "eventos.modal.freeEntry": "Entrada libre — no necesitas reservar",
+  "eventos.modal.consultOrganizer": "Consulta el precio con el organizador",
+  "eventos.modal.boxOffice": "Entradas en taquilla",
+  "eventos.lightbox.close": "Cerrar",
+  "eventos.seal.cancelled": "Cancelado",
+  "eventos.empty.title": "No hay eventos con esos filtros",
+  "eventos.empty.body": "Prueba a cambiar la ciudad, las fechas o quita algún filtro.",
+  "eventos.empty.reset": "Limpiar filtros",
+  // ── PANEL ORGANIZADOR ──
+  "org.cat.fiesta": "Fiesta",
+  "org.cat.conciertos": "Conciertos",
+  "org.cat.festival": "Festival",
+  "org.cat.clases": "Clases de baile",
+  "org.cat.club": "Club / Discoteca",
+  "org.cat.corporativo": "Corporativo",
+  "org.cat.social": "Bailes sociales",
+  "org.cat.teatro": "Teatro",
+  "org.aud.academias": "Academias",
+  "org.aud.productoras": "Productoras",
+  "org.aud.freelance": "Freelance",
+  "org.aud.instituciones": "Instituciones",
+  "org.aud.agencias": "Agencias",
+  "org.aud.colegios": "Colegios",
+  "org.claim.success": "✅ Has reclamado {n} {events} enviados por el bot.",
+  "org.gate.titleClaim": "Inicia sesión para reclamar tus eventos",
+  "org.gate.titlePublish": "Inicia sesión para publicar eventos",
+  "org.gate.bodyClaim": "Los flyers que enviaste por el bot ya están publicados. Abre tu cuenta para gestionarlos.",
+  "org.gate.bodyPublish": "Crea tu cuenta de organizador para añadir eventos a la agenda y diseñar sus flyers.",
+  "org.gate.signIn": "Iniciar sesión",
+  "org.gate.back": "← Volver a la agenda",
+  "org.gate.authClaim": "Reclama tus eventos",
+  "org.gate.authPublish": "Publica tu evento",
+  "org.auth.subtitle": "Crea tu cuenta de organizador. Es gratis para empezar.",
+  "org.header.backLink": "← Agenda pública",
+  "org.header.titleAdmin": "Todos los eventos",
+  "org.header.titleMine": "Mis eventos",
+  "org.header.adminBadge": "Admin",
+  "org.header.descAdmin": "Gestiona cualquier evento (incluidos los del bot sin dueño).",
+  "org.header.descMine": "Publica eventos en la agenda y diseña sus flyers.",
+  "org.header.newEvent": "Nuevo evento",
+  "org.loading": "Cargando tus eventos…",
+  "org.section.drafts": "Borradores",
+  "org.section.draftsHint": "Solo tú los ves. Publícalos para que aparezcan en la agenda.",
+  "org.section.upcoming": "Próximos ({n})",
+  "org.section.upcomingHint": "Publicados y aún por celebrarse — visibles en la agenda.",
+  "org.section.upcomingEmpty": "No tienes eventos próximos. Pulsa “Nuevo evento” o envía un flyer al bot.",
+  "org.section.past": "Vencidos ({n})",
+  "org.section.pastHint": "Ya pasaron. No aparecen en la agenda pública.",
+  "org.section.cancelled": "Cancelados ({n})",
+  "org.section.cancelledHint": "Siguen visibles en la agenda con el sello CANCELADO. Puedes reactivarlos.",
+  "org.row.cancelShort": "Cancel.",
+  "org.row.consult": "Consultar",
+  "org.row.free": "Gratis",
+  "org.row.series": "🔁 serie · {n} fechas",
+  "org.row.anon": "anónimo",
+  "org.row.unpublish": "Despublicar",
+  "org.row.publish": "Publicar",
+  "org.row.reactivate": "Reactivar evento",
+  "org.row.markCancelled": "Marcar cancelado",
+  "org.row.edit": "Editar",
+  "org.row.delete": "Borrar",
+  "org.delete.confirm": "¿Borrar \"{title}\"? Esta acción no se puede deshacer.",
+  "org.form.titleEdit": "Editar evento",
+  "org.form.titleNew": "Nuevo evento",
+  "org.form.errRequired": "Rellena al menos título, fecha y lugar.",
+  "org.form.errUpload": "No se pudo subir el flyer",
+  "org.form.errUploadGeneric": "Error al subir el flyer",
+  "org.form.labelTitle": "Título *",
+  "org.form.phTitle": "Ej. Concierto de verano",
+  "org.form.labelDate": "Fecha *",
+  "org.form.labelTime": "Hora",
+  "org.form.labelCity": "Ciudad",
+  "org.form.labelCategory": "Categoría",
+  "org.form.labelAudience": "Para quién es (opcional)",
+  "org.form.labelVenue": "Lugar / sala *",
+  "org.form.phVenue": "Ej. Sala La Riviera",
+  "org.form.labelNeighborhood": "Barrio / zona",
+  "org.form.phNeighborhood": "Ej. Centro",
+  "org.form.labelFlyer": "Flyer del evento",
+  "org.form.uploading": "Subiendo…",
+  "org.form.changeFlyer": "Cambiar flyer",
+  "org.form.uploadFlyer": "Subir flyer",
+  "org.form.noFlyer": "¿No tienes flyer? Créalo aquí",
+  "org.form.labelPrice": "Precio (€) — vacío = consultar · 0 = gratis",
+  "org.form.phPrice": "desde…",
+  "org.form.labelPriceInfo": "Tarifas (si hay varias)",
+  "org.form.phPriceInfo": "Anticipada 12€ · Taquilla 15€",
+  "org.form.onlineSale": "¿Venta de entradas online?",
+  "org.form.phTicketUrl": "https://… página del evento o pago",
+  "org.form.labelDescription": "Descripción",
+  "org.form.phDescription": "Detalles del evento…",
+  "org.form.saveDraft": "Guardar borrador",
+  "org.form.publish": "Publicar",
+  "org.empty.title": "Aún no tienes eventos",
+  "org.empty.body": "Crea tu primer evento y publícalo en la agenda pública en menos de un minuto.",
+  "org.empty.create": "Crear evento",
 };
 
 const en: Dict = {
@@ -2162,6 +2564,207 @@ const en: Dict = {
   "mobileEditor.onb.skip": "Skip",
   "mobileEditor.onb.next": "Next",
   "mobileEditor.onb.start": "Start",
+  // ── AGENDA EVENTOS ──
+  "eventos.cat.fiesta": "Party",
+  "eventos.cat.conciertos": "Concerts",
+  "eventos.cat.festival": "Festival",
+  "eventos.cat.clases": "Dance classes",
+  "eventos.cat.club": "Club",
+  "eventos.cat.corporativo": "Corporate",
+  "eventos.cat.social": "Social dancing",
+  "eventos.cat.teatro": "Theatre",
+  "eventos.aud.academias": "Academies",
+  "eventos.aud.productoras": "Production companies",
+  "eventos.aud.freelance": "Freelance",
+  "eventos.aud.instituciones": "Institutions",
+  "eventos.aud.agencias": "Agencies",
+  "eventos.aud.colegios": "Schools",
+  "eventos.city.todas": "All cities",
+  "eventos.date.todos": "All",
+  "eventos.date.hoy": "Today",
+  "eventos.date.manana": "Tomorrow",
+  "eventos.date.finde": "This weekend",
+  "eventos.date.semana": "This week",
+  "eventos.date.mes": "This month",
+  "eventos.date.rango": "Range",
+  "eventos.topbar.brand": "Agenda",
+  "eventos.topbar.shareAria": "Share the agenda",
+  "eventos.topbar.shareCopied": "Link copied!",
+  "eventos.topbar.share": "Share",
+  "eventos.topbar.publishShort": "Publish",
+  "eventos.topbar.uploadShort": "Add your event",
+  "eventos.organizer.publish": "Publish event",
+  "eventos.organizer.uploadFree": "Add your event for free",
+  "eventos.hero.badge": "Public cultural agenda",
+  "eventos.hero.titleMobile": "Cultural plans in ",
+  "eventos.hero.titleDesktop": "What's happening in ",
+  "eventos.hero.subtitle": "Concerts, exhibitions, theatre and more near you.",
+  "eventos.country.soon": "soon",
+  "eventos.search.placeholder": "Search events, venues or neighbourhoods",
+  "eventos.search.nearMe": "Near me",
+  "eventos.geo.unsupported": "Your browser doesn't allow location",
+  "eventos.geo.showing": "Showing {place}",
+  "eventos.geo.noneNearby": "No events near you yet",
+  "eventos.geo.failed": "We couldn't get your location",
+  "eventos.geo.errorPrompt": "{msg} · type your city:",
+  "eventos.filters.free": "Free",
+  "eventos.filters.nearMe": "Near me",
+  "eventos.filters.more": "More filters",
+  "eventos.view.lista": "List",
+  "eventos.view.calendario": "Calendar",
+  "eventos.filters.whenLabel": "When",
+  "eventos.filters.categoryLabel": "Category",
+  "eventos.filters.audienceLabel": "Who it's for",
+  "eventos.filters.saved": "Saved",
+  "eventos.range.from": "From",
+  "eventos.range.to": "to",
+  "eventos.count.one": "event",
+  "eventos.count.many": "events",
+  "eventos.count.in": "in",
+  "eventos.count.mockBadge": "sample examples",
+  "eventos.cityauto.placeholder": "Type your city…",
+  "eventos.cityauto.empty": "We don't have events there yet. Try Madrid, Barcelona, Valencia…",
+  "eventos.band.titleHas": "Got a new event?",
+  "eventos.band.titleOrg": "Do you organise events?",
+  "eventos.band.descHas": "Publish it on the agenda and create its flyer in minutes with your account.",
+  "eventos.band.descOrg": "Publish your event on the agenda and create its flyer in minutes. Free to start.",
+  "eventos.band.ctaHas": "Publish event",
+  "eventos.band.ctaOrg": "Add your event for free",
+  "eventos.auth.title": "Publish your event",
+  "eventos.auth.subtitle": "Create your organiser account. It's free to start.",
+  "eventos.publish.titleHas": "Publish your event",
+  "eventos.publish.titleOrg": "Add your event for free",
+  "eventos.publish.subtitle": "Choose the fastest way for you. Send the flyer and we'll read the date, place and price.",
+  "eventos.publish.close": "Close",
+  "eventos.publish.web.title": "Right here (assistant)",
+  "eventos.publish.web.fast": "FAST",
+  "eventos.publish.web.descHas": "Upload the flyer and it fills itself in. You go straight to your dashboard.",
+  "eventos.publish.web.descOrg": "Upload the flyer and it fills itself in. Create your free account in seconds.",
+  "eventos.publish.telegram.title": "Via Telegram",
+  "eventos.publish.telegram.noAccount": "NO ACCOUNT",
+  "eventos.publish.telegram.desc": "Send the flyer to the bot and it publishes itself. Your events wait for you if you open an account later.",
+  "eventos.publish.telegram.soonDesc": "Activating the bot — available very soon.",
+  "eventos.publish.whatsapp.title": "Via WhatsApp",
+  "eventos.publish.whatsapp.desc": "Coming soon: the same bot, on your WhatsApp.",
+  "eventos.publish.voice.title": "By voice",
+  "eventos.publish.voice.desc": "Coming soon: tell us about your event with an audio.",
+  "eventos.publish.soonBadge": "SOON",
+  "eventos.list.today": "Today · ",
+  "eventos.list.seeAll": "See all",
+  "eventos.card.consult": "Ask",
+  "eventos.card.free": "Free",
+  "eventos.card.priceFrom": "from ",
+  "eventos.card.removeFav": "Remove from saved",
+  "eventos.card.addFav": "Save event",
+  "eventos.card.cancelled": "Cancelled",
+  "eventos.card.tickets": "Tickets",
+  "eventos.card.seeEvent": "See event",
+  "eventos.cal.more": "+{n} more",
+  "eventos.modal.seeFlyer": "View flyer",
+  "eventos.modal.priceTbc": "Price to be confirmed",
+  "eventos.modal.priceFree": "Free entry",
+  "eventos.modal.timeSuffix": "h",
+  "eventos.modal.saved": "Saved",
+  "eventos.modal.save": "Save",
+  "eventos.modal.copied": "Copied!",
+  "eventos.modal.share": "Share",
+  "eventos.modal.buyOnline": "Buy tickets online",
+  "eventos.modal.freeEntry": "Free admission — no booking needed",
+  "eventos.modal.consultOrganizer": "Ask the organiser about the price",
+  "eventos.modal.boxOffice": "Tickets at the box office",
+  "eventos.lightbox.close": "Close",
+  "eventos.seal.cancelled": "Cancelled",
+  "eventos.empty.title": "No events with those filters",
+  "eventos.empty.body": "Try changing the city, the dates or removing a filter.",
+  "eventos.empty.reset": "Clear filters",
+  // ── PANEL ORGANIZADOR ──
+  "org.cat.fiesta": "Party",
+  "org.cat.conciertos": "Concerts",
+  "org.cat.festival": "Festival",
+  "org.cat.clases": "Dance classes",
+  "org.cat.club": "Club",
+  "org.cat.corporativo": "Corporate",
+  "org.cat.social": "Social dancing",
+  "org.cat.teatro": "Theatre",
+  "org.aud.academias": "Academies",
+  "org.aud.productoras": "Production companies",
+  "org.aud.freelance": "Freelance",
+  "org.aud.instituciones": "Institutions",
+  "org.aud.agencias": "Agencies",
+  "org.aud.colegios": "Schools",
+  "org.claim.success": "✅ You've claimed {n} {events} sent by the bot.",
+  "org.gate.titleClaim": "Sign in to claim your events",
+  "org.gate.titlePublish": "Sign in to publish events",
+  "org.gate.bodyClaim": "The flyers you sent through the bot are already published. Open your account to manage them.",
+  "org.gate.bodyPublish": "Create your organiser account to add events to the agenda and design their flyers.",
+  "org.gate.signIn": "Sign in",
+  "org.gate.back": "← Back to the agenda",
+  "org.gate.authClaim": "Claim your events",
+  "org.gate.authPublish": "Publish your event",
+  "org.auth.subtitle": "Create your organiser account. It's free to start.",
+  "org.header.backLink": "← Public agenda",
+  "org.header.titleAdmin": "All events",
+  "org.header.titleMine": "My events",
+  "org.header.adminBadge": "Admin",
+  "org.header.descAdmin": "Manage any event (including ownerless ones from the bot).",
+  "org.header.descMine": "Publish events on the agenda and design their flyers.",
+  "org.header.newEvent": "New event",
+  "org.loading": "Loading your events…",
+  "org.section.drafts": "Drafts",
+  "org.section.draftsHint": "Only you see them. Publish them so they appear on the agenda.",
+  "org.section.upcoming": "Upcoming ({n})",
+  "org.section.upcomingHint": "Published and still to come — visible on the agenda.",
+  "org.section.upcomingEmpty": "You have no upcoming events. Press “New event” or send a flyer to the bot.",
+  "org.section.past": "Past ({n})",
+  "org.section.pastHint": "Already happened. They don't appear on the public agenda.",
+  "org.section.cancelled": "Cancelled ({n})",
+  "org.section.cancelledHint": "Still visible on the agenda with the CANCELLED seal. You can reactivate them.",
+  "org.row.cancelShort": "Cancel.",
+  "org.row.consult": "Ask",
+  "org.row.free": "Free",
+  "org.row.series": "🔁 series · {n} dates",
+  "org.row.anon": "anonymous",
+  "org.row.unpublish": "Unpublish",
+  "org.row.publish": "Publish",
+  "org.row.reactivate": "Reactivate event",
+  "org.row.markCancelled": "Mark as cancelled",
+  "org.row.edit": "Edit",
+  "org.row.delete": "Delete",
+  "org.delete.confirm": "Delete \"{title}\"? This action can't be undone.",
+  "org.form.titleEdit": "Edit event",
+  "org.form.titleNew": "New event",
+  "org.form.errRequired": "Fill in at least the title, date and place.",
+  "org.form.errUpload": "Couldn't upload the flyer",
+  "org.form.errUploadGeneric": "Error uploading the flyer",
+  "org.form.labelTitle": "Title *",
+  "org.form.phTitle": "E.g. Summer concert",
+  "org.form.labelDate": "Date *",
+  "org.form.labelTime": "Time",
+  "org.form.labelCity": "City",
+  "org.form.labelCategory": "Category",
+  "org.form.labelAudience": "Who it's for (optional)",
+  "org.form.labelVenue": "Venue *",
+  "org.form.phVenue": "E.g. Sala La Riviera",
+  "org.form.labelNeighborhood": "Neighbourhood / area",
+  "org.form.phNeighborhood": "E.g. Centre",
+  "org.form.labelFlyer": "Event flyer",
+  "org.form.uploading": "Uploading…",
+  "org.form.changeFlyer": "Change flyer",
+  "org.form.uploadFlyer": "Upload flyer",
+  "org.form.noFlyer": "No flyer? Create it here",
+  "org.form.labelPrice": "Price (€) — empty = ask · 0 = free",
+  "org.form.phPrice": "from…",
+  "org.form.labelPriceInfo": "Rates (if there are several)",
+  "org.form.phPriceInfo": "Advance 12€ · Box office 15€",
+  "org.form.onlineSale": "Online ticket sales?",
+  "org.form.phTicketUrl": "https://… event or payment page",
+  "org.form.labelDescription": "Description",
+  "org.form.phDescription": "Event details…",
+  "org.form.saveDraft": "Save draft",
+  "org.form.publish": "Publish",
+  "org.empty.title": "You don't have any events yet",
+  "org.empty.body": "Create your first event and publish it on the public agenda in under a minute.",
+  "org.empty.create": "Create event",
 };
 
 const fr: Dict = {
@@ -2865,6 +3468,207 @@ const fr: Dict = {
   "mobileEditor.onb.skip": "Passer",
   "mobileEditor.onb.next": "Suivant",
   "mobileEditor.onb.start": "Commencer",
+  // ── AGENDA EVENTOS ──
+  "eventos.cat.fiesta": "Fête",
+  "eventos.cat.conciertos": "Concerts",
+  "eventos.cat.festival": "Festival",
+  "eventos.cat.clases": "Cours de danse",
+  "eventos.cat.club": "Club / Discothèque",
+  "eventos.cat.corporativo": "Entreprise",
+  "eventos.cat.social": "Bals sociaux",
+  "eventos.cat.teatro": "Théâtre",
+  "eventos.aud.academias": "Académies",
+  "eventos.aud.productoras": "Sociétés de production",
+  "eventos.aud.freelance": "Freelance",
+  "eventos.aud.instituciones": "Institutions",
+  "eventos.aud.agencias": "Agences",
+  "eventos.aud.colegios": "Écoles",
+  "eventos.city.todas": "Toutes les villes",
+  "eventos.date.todos": "Tous",
+  "eventos.date.hoy": "Aujourd'hui",
+  "eventos.date.manana": "Demain",
+  "eventos.date.finde": "Ce week-end",
+  "eventos.date.semana": "Cette semaine",
+  "eventos.date.mes": "Ce mois-ci",
+  "eventos.date.rango": "Période",
+  "eventos.topbar.brand": "Agenda",
+  "eventos.topbar.shareAria": "Partager l'agenda",
+  "eventos.topbar.shareCopied": "Lien copié !",
+  "eventos.topbar.share": "Partager",
+  "eventos.topbar.publishShort": "Publier",
+  "eventos.topbar.uploadShort": "Ajoute ton événement",
+  "eventos.organizer.publish": "Publier l'événement",
+  "eventos.organizer.uploadFree": "Ajoute ton événement gratuitement",
+  "eventos.hero.badge": "Agenda culturel public",
+  "eventos.hero.titleMobile": "Sorties culturelles à ",
+  "eventos.hero.titleDesktop": "Que faire à ",
+  "eventos.hero.subtitle": "Concerts, expositions, théâtre et plus près de toi.",
+  "eventos.country.soon": "bientôt",
+  "eventos.search.placeholder": "Cherche des événements, salles ou quartiers",
+  "eventos.search.nearMe": "Près de moi",
+  "eventos.geo.unsupported": "Ton navigateur n'autorise pas la localisation",
+  "eventos.geo.showing": "Affichage de {place}",
+  "eventos.geo.noneNearby": "Pas encore d'événements près de toi",
+  "eventos.geo.failed": "Impossible d'obtenir ta localisation",
+  "eventos.geo.errorPrompt": "{msg} · saisis ta ville :",
+  "eventos.filters.free": "Gratuit",
+  "eventos.filters.nearMe": "Près de moi",
+  "eventos.filters.more": "Plus de filtres",
+  "eventos.view.lista": "Liste",
+  "eventos.view.calendario": "Calendrier",
+  "eventos.filters.whenLabel": "Quand",
+  "eventos.filters.categoryLabel": "Catégorie",
+  "eventos.filters.audienceLabel": "Pour qui",
+  "eventos.filters.saved": "Enregistrés",
+  "eventos.range.from": "Du",
+  "eventos.range.to": "au",
+  "eventos.count.one": "événement",
+  "eventos.count.many": "événements",
+  "eventos.count.in": "à",
+  "eventos.count.mockBadge": "exemples de démonstration",
+  "eventos.cityauto.placeholder": "Saisis ta ville…",
+  "eventos.cityauto.empty": "Pas encore d'événements là-bas. Essaie Madrid, Barcelone, Valence…",
+  "eventos.band.titleHas": "Un nouvel événement ?",
+  "eventos.band.titleOrg": "Tu organises des événements ?",
+  "eventos.band.descHas": "Publie-le sur l'agenda et crée son flyer en quelques minutes avec ton compte.",
+  "eventos.band.descOrg": "Publie ton événement sur l'agenda et crée son flyer en quelques minutes. Gratuit pour commencer.",
+  "eventos.band.ctaHas": "Publier l'événement",
+  "eventos.band.ctaOrg": "Ajoute ton événement gratuitement",
+  "eventos.auth.title": "Publie ton événement",
+  "eventos.auth.subtitle": "Crée ton compte organisateur. C'est gratuit pour commencer.",
+  "eventos.publish.titleHas": "Publie ton événement",
+  "eventos.publish.titleOrg": "Ajoute ton événement gratuitement",
+  "eventos.publish.subtitle": "Choisis la voie la plus rapide pour toi. Envoie le flyer et on lit la date, le lieu et le prix.",
+  "eventos.publish.close": "Fermer",
+  "eventos.publish.web.title": "Ici même (assistant)",
+  "eventos.publish.web.fast": "RAPIDE",
+  "eventos.publish.web.descHas": "Téléverse le flyer et tout se remplit tout seul. Tu vas directement à ton tableau de bord.",
+  "eventos.publish.web.descOrg": "Téléverse le flyer et tout se remplit tout seul. Crée ton compte gratuit en quelques secondes.",
+  "eventos.publish.telegram.title": "Par Telegram",
+  "eventos.publish.telegram.noAccount": "SANS COMPTE",
+  "eventos.publish.telegram.desc": "Envoie le flyer au bot et il se publie tout seul. Tes événements t'attendent si tu ouvres un compte plus tard.",
+  "eventos.publish.telegram.soonDesc": "Activation du bot — disponible très bientôt.",
+  "eventos.publish.whatsapp.title": "Par WhatsApp",
+  "eventos.publish.whatsapp.desc": "Bientôt : le même bot, sur ton WhatsApp.",
+  "eventos.publish.voice.title": "Par la voix",
+  "eventos.publish.voice.desc": "Bientôt : raconte ton événement avec un audio.",
+  "eventos.publish.soonBadge": "BIENTÔT",
+  "eventos.list.today": "Aujourd'hui · ",
+  "eventos.list.seeAll": "Voir tout",
+  "eventos.card.consult": "À confirmer",
+  "eventos.card.free": "Gratuit",
+  "eventos.card.priceFrom": "à partir de ",
+  "eventos.card.removeFav": "Retirer des enregistrés",
+  "eventos.card.addFav": "Enregistrer l'événement",
+  "eventos.card.cancelled": "Annulé",
+  "eventos.card.tickets": "Billets",
+  "eventos.card.seeEvent": "Voir l'événement",
+  "eventos.cal.more": "+{n} de plus",
+  "eventos.modal.seeFlyer": "Voir le flyer",
+  "eventos.modal.priceTbc": "Prix à confirmer",
+  "eventos.modal.priceFree": "Entrée gratuite",
+  "eventos.modal.timeSuffix": "h",
+  "eventos.modal.saved": "Enregistré",
+  "eventos.modal.save": "Enregistrer",
+  "eventos.modal.copied": "Copié !",
+  "eventos.modal.share": "Partager",
+  "eventos.modal.buyOnline": "Acheter des billets en ligne",
+  "eventos.modal.freeEntry": "Entrée libre — pas besoin de réserver",
+  "eventos.modal.consultOrganizer": "Demande le prix à l'organisateur",
+  "eventos.modal.boxOffice": "Billets à la caisse",
+  "eventos.lightbox.close": "Fermer",
+  "eventos.seal.cancelled": "Annulé",
+  "eventos.empty.title": "Aucun événement avec ces filtres",
+  "eventos.empty.body": "Essaie de changer la ville, les dates ou de retirer un filtre.",
+  "eventos.empty.reset": "Réinitialiser les filtres",
+  // ── PANEL ORGANIZADOR ──
+  "org.cat.fiesta": "Fête",
+  "org.cat.conciertos": "Concerts",
+  "org.cat.festival": "Festival",
+  "org.cat.clases": "Cours de danse",
+  "org.cat.club": "Club / Discothèque",
+  "org.cat.corporativo": "Entreprise",
+  "org.cat.social": "Bals sociaux",
+  "org.cat.teatro": "Théâtre",
+  "org.aud.academias": "Académies",
+  "org.aud.productoras": "Sociétés de production",
+  "org.aud.freelance": "Freelance",
+  "org.aud.instituciones": "Institutions",
+  "org.aud.agencias": "Agences",
+  "org.aud.colegios": "Écoles",
+  "org.claim.success": "✅ Tu as réclamé {n} {events} envoyés par le bot.",
+  "org.gate.titleClaim": "Connecte-toi pour réclamer tes événements",
+  "org.gate.titlePublish": "Connecte-toi pour publier des événements",
+  "org.gate.bodyClaim": "Les flyers que tu as envoyés via le bot sont déjà publiés. Ouvre ton compte pour les gérer.",
+  "org.gate.bodyPublish": "Crée ton compte organisateur pour ajouter des événements à l'agenda et concevoir leurs flyers.",
+  "org.gate.signIn": "Se connecter",
+  "org.gate.back": "← Retour à l'agenda",
+  "org.gate.authClaim": "Réclame tes événements",
+  "org.gate.authPublish": "Publie ton événement",
+  "org.auth.subtitle": "Crée ton compte organisateur. C'est gratuit pour commencer.",
+  "org.header.backLink": "← Agenda public",
+  "org.header.titleAdmin": "Tous les événements",
+  "org.header.titleMine": "Mes événements",
+  "org.header.adminBadge": "Admin",
+  "org.header.descAdmin": "Gère n'importe quel événement (y compris ceux du bot sans propriétaire).",
+  "org.header.descMine": "Publie des événements sur l'agenda et conçois leurs flyers.",
+  "org.header.newEvent": "Nouvel événement",
+  "org.loading": "Chargement de tes événements…",
+  "org.section.drafts": "Brouillons",
+  "org.section.draftsHint": "Toi seul les vois. Publie-les pour qu'ils apparaissent sur l'agenda.",
+  "org.section.upcoming": "À venir ({n})",
+  "org.section.upcomingHint": "Publiés et encore à venir — visibles sur l'agenda.",
+  "org.section.upcomingEmpty": "Tu n'as aucun événement à venir. Appuie sur « Nouvel événement » ou envoie un flyer au bot.",
+  "org.section.past": "Passés ({n})",
+  "org.section.pastHint": "Déjà passés. Ils n'apparaissent pas sur l'agenda public.",
+  "org.section.cancelled": "Annulés ({n})",
+  "org.section.cancelledHint": "Toujours visibles sur l'agenda avec le tampon ANNULÉ. Tu peux les réactiver.",
+  "org.row.cancelShort": "Annul.",
+  "org.row.consult": "À confirmer",
+  "org.row.free": "Gratuit",
+  "org.row.series": "🔁 série · {n} dates",
+  "org.row.anon": "anonyme",
+  "org.row.unpublish": "Dépublier",
+  "org.row.publish": "Publier",
+  "org.row.reactivate": "Réactiver l'événement",
+  "org.row.markCancelled": "Marquer comme annulé",
+  "org.row.edit": "Modifier",
+  "org.row.delete": "Supprimer",
+  "org.delete.confirm": "Supprimer « {title} » ? Cette action est irréversible.",
+  "org.form.titleEdit": "Modifier l'événement",
+  "org.form.titleNew": "Nouvel événement",
+  "org.form.errRequired": "Renseigne au moins le titre, la date et le lieu.",
+  "org.form.errUpload": "Impossible de téléverser le flyer",
+  "org.form.errUploadGeneric": "Erreur lors du téléversement du flyer",
+  "org.form.labelTitle": "Titre *",
+  "org.form.phTitle": "Ex. Concert d'été",
+  "org.form.labelDate": "Date *",
+  "org.form.labelTime": "Heure",
+  "org.form.labelCity": "Ville",
+  "org.form.labelCategory": "Catégorie",
+  "org.form.labelAudience": "Pour qui (facultatif)",
+  "org.form.labelVenue": "Lieu / salle *",
+  "org.form.phVenue": "Ex. Sala La Riviera",
+  "org.form.labelNeighborhood": "Quartier / zone",
+  "org.form.phNeighborhood": "Ex. Centre",
+  "org.form.labelFlyer": "Flyer de l'événement",
+  "org.form.uploading": "Téléversement…",
+  "org.form.changeFlyer": "Changer le flyer",
+  "org.form.uploadFlyer": "Téléverser un flyer",
+  "org.form.noFlyer": "Pas de flyer ? Crée-le ici",
+  "org.form.labelPrice": "Prix (€) — vide = à confirmer · 0 = gratuit",
+  "org.form.phPrice": "à partir de…",
+  "org.form.labelPriceInfo": "Tarifs (s'il y en a plusieurs)",
+  "org.form.phPriceInfo": "Prévente 12€ · Caisse 15€",
+  "org.form.onlineSale": "Vente de billets en ligne ?",
+  "org.form.phTicketUrl": "https://… page de l'événement ou de paiement",
+  "org.form.labelDescription": "Description",
+  "org.form.phDescription": "Détails de l'événement…",
+  "org.form.saveDraft": "Enregistrer le brouillon",
+  "org.form.publish": "Publier",
+  "org.empty.title": "Tu n'as pas encore d'événements",
+  "org.empty.body": "Crée ton premier événement et publie-le sur l'agenda public en moins d'une minute.",
+  "org.empty.create": "Créer un événement",
 };
 
 const pt: Dict = {
@@ -3568,6 +4372,207 @@ const pt: Dict = {
   "mobileEditor.onb.skip": "Saltar",
   "mobileEditor.onb.next": "Seguinte",
   "mobileEditor.onb.start": "Começar",
+  // ── AGENDA EVENTOS ──
+  "eventos.cat.fiesta": "Festa",
+  "eventos.cat.conciertos": "Concertos",
+  "eventos.cat.festival": "Festival",
+  "eventos.cat.clases": "Aulas de dança",
+  "eventos.cat.club": "Club / Discoteca",
+  "eventos.cat.corporativo": "Corporativo",
+  "eventos.cat.social": "Bailes sociais",
+  "eventos.cat.teatro": "Teatro",
+  "eventos.aud.academias": "Academias",
+  "eventos.aud.productoras": "Produtoras",
+  "eventos.aud.freelance": "Freelance",
+  "eventos.aud.instituciones": "Instituições",
+  "eventos.aud.agencias": "Agências",
+  "eventos.aud.colegios": "Escolas",
+  "eventos.city.todas": "Todas as cidades",
+  "eventos.date.todos": "Todos",
+  "eventos.date.hoy": "Hoje",
+  "eventos.date.manana": "Amanhã",
+  "eventos.date.finde": "Este fim de semana",
+  "eventos.date.semana": "Esta semana",
+  "eventos.date.mes": "Este mês",
+  "eventos.date.rango": "Intervalo",
+  "eventos.topbar.brand": "Agenda",
+  "eventos.topbar.shareAria": "Partilhar a agenda",
+  "eventos.topbar.shareCopied": "Link copiado!",
+  "eventos.topbar.share": "Partilhar",
+  "eventos.topbar.publishShort": "Publicar",
+  "eventos.topbar.uploadShort": "Publica o teu evento",
+  "eventos.organizer.publish": "Publicar evento",
+  "eventos.organizer.uploadFree": "Publica o teu evento grátis",
+  "eventos.hero.badge": "Agenda cultural pública",
+  "eventos.hero.titleMobile": "Planos culturais em ",
+  "eventos.hero.titleDesktop": "Que planos há em ",
+  "eventos.hero.subtitle": "Concertos, exposições, teatro e mais perto de ti.",
+  "eventos.country.soon": "em breve",
+  "eventos.search.placeholder": "Procura eventos, salas ou bairros",
+  "eventos.search.nearMe": "Perto de mim",
+  "eventos.geo.unsupported": "O teu navegador não permite localização",
+  "eventos.geo.showing": "A mostrar {place}",
+  "eventos.geo.noneNearby": "Ainda não há eventos perto de ti",
+  "eventos.geo.failed": "Não conseguimos obter a tua localização",
+  "eventos.geo.errorPrompt": "{msg} · escreve a tua cidade:",
+  "eventos.filters.free": "Grátis",
+  "eventos.filters.nearMe": "Perto de mim",
+  "eventos.filters.more": "Mais filtros",
+  "eventos.view.lista": "Lista",
+  "eventos.view.calendario": "Calendário",
+  "eventos.filters.whenLabel": "Quando",
+  "eventos.filters.categoryLabel": "Categoria",
+  "eventos.filters.audienceLabel": "Para quem é",
+  "eventos.filters.saved": "Guardados",
+  "eventos.range.from": "De",
+  "eventos.range.to": "até",
+  "eventos.count.one": "evento",
+  "eventos.count.many": "eventos",
+  "eventos.count.in": "em",
+  "eventos.count.mockBadge": "exemplos de amostra",
+  "eventos.cityauto.placeholder": "Escreve a tua cidade…",
+  "eventos.cityauto.empty": "Ainda não temos eventos aí. Experimenta Madrid, Barcelona, Valência…",
+  "eventos.band.titleHas": "Tens um novo evento?",
+  "eventos.band.titleOrg": "Organizas eventos?",
+  "eventos.band.descHas": "Publica-o na agenda e cria o seu flyer em minutos com a tua conta.",
+  "eventos.band.descOrg": "Publica o teu evento na agenda e cria o seu flyer em minutos. Grátis para começar.",
+  "eventos.band.ctaHas": "Publicar evento",
+  "eventos.band.ctaOrg": "Publica o teu evento grátis",
+  "eventos.auth.title": "Publica o teu evento",
+  "eventos.auth.subtitle": "Cria a tua conta de organizador. É grátis para começar.",
+  "eventos.publish.titleHas": "Publica o teu evento",
+  "eventos.publish.titleOrg": "Publica o teu evento grátis",
+  "eventos.publish.subtitle": "Escolhe a via mais rápida para ti. Envias o flyer e nós lemos a data, o local e o preço.",
+  "eventos.publish.close": "Fechar",
+  "eventos.publish.web.title": "Aqui mesmo (assistente)",
+  "eventos.publish.web.fast": "RÁPIDO",
+  "eventos.publish.web.descHas": "Carrega o flyer e preenche-se sozinho. Vais direto ao teu painel.",
+  "eventos.publish.web.descOrg": "Carrega o flyer e preenche-se sozinho. Cria a tua conta grátis em segundos.",
+  "eventos.publish.telegram.title": "Por Telegram",
+  "eventos.publish.telegram.noAccount": "SEM CONTA",
+  "eventos.publish.telegram.desc": "Envia o flyer ao bot e ele publica-se sozinho. Os teus eventos esperam por ti se abrires conta depois.",
+  "eventos.publish.telegram.soonDesc": "A ativar o bot — disponível muito em breve.",
+  "eventos.publish.whatsapp.title": "Por WhatsApp",
+  "eventos.publish.whatsapp.desc": "Em breve: o mesmo bot, no teu WhatsApp.",
+  "eventos.publish.voice.title": "Por voz",
+  "eventos.publish.voice.desc": "Em breve: conta o teu evento com um áudio.",
+  "eventos.publish.soonBadge": "EM BREVE",
+  "eventos.list.today": "Hoje · ",
+  "eventos.list.seeAll": "Ver todos",
+  "eventos.card.consult": "Consultar",
+  "eventos.card.free": "Grátis",
+  "eventos.card.priceFrom": "desde ",
+  "eventos.card.removeFav": "Remover dos guardados",
+  "eventos.card.addFav": "Guardar evento",
+  "eventos.card.cancelled": "Cancelado",
+  "eventos.card.tickets": "Bilhetes",
+  "eventos.card.seeEvent": "Ver evento",
+  "eventos.cal.more": "+{n} mais",
+  "eventos.modal.seeFlyer": "Ver flyer",
+  "eventos.modal.priceTbc": "Preço por confirmar",
+  "eventos.modal.priceFree": "Entrada gratuita",
+  "eventos.modal.timeSuffix": "h",
+  "eventos.modal.saved": "Guardado",
+  "eventos.modal.save": "Guardar",
+  "eventos.modal.copied": "Copiado!",
+  "eventos.modal.share": "Partilhar",
+  "eventos.modal.buyOnline": "Comprar bilhetes online",
+  "eventos.modal.freeEntry": "Entrada livre — não precisas de reservar",
+  "eventos.modal.consultOrganizer": "Consulta o preço com o organizador",
+  "eventos.modal.boxOffice": "Bilhetes na bilheteira",
+  "eventos.lightbox.close": "Fechar",
+  "eventos.seal.cancelled": "Cancelado",
+  "eventos.empty.title": "Não há eventos com esses filtros",
+  "eventos.empty.body": "Tenta mudar a cidade, as datas ou retira algum filtro.",
+  "eventos.empty.reset": "Limpar filtros",
+  // ── PANEL ORGANIZADOR ──
+  "org.cat.fiesta": "Festa",
+  "org.cat.conciertos": "Concertos",
+  "org.cat.festival": "Festival",
+  "org.cat.clases": "Aulas de dança",
+  "org.cat.club": "Club / Discoteca",
+  "org.cat.corporativo": "Corporativo",
+  "org.cat.social": "Bailes sociais",
+  "org.cat.teatro": "Teatro",
+  "org.aud.academias": "Academias",
+  "org.aud.productoras": "Produtoras",
+  "org.aud.freelance": "Freelance",
+  "org.aud.instituciones": "Instituições",
+  "org.aud.agencias": "Agências",
+  "org.aud.colegios": "Escolas",
+  "org.claim.success": "✅ Reclamaste {n} {events} enviados pelo bot.",
+  "org.gate.titleClaim": "Inicia sessão para reclamar os teus eventos",
+  "org.gate.titlePublish": "Inicia sessão para publicar eventos",
+  "org.gate.bodyClaim": "Os flyers que enviaste pelo bot já estão publicados. Abre a tua conta para os gerir.",
+  "org.gate.bodyPublish": "Cria a tua conta de organizador para adicionar eventos à agenda e desenhar os seus flyers.",
+  "org.gate.signIn": "Iniciar sessão",
+  "org.gate.back": "← Voltar à agenda",
+  "org.gate.authClaim": "Reclama os teus eventos",
+  "org.gate.authPublish": "Publica o teu evento",
+  "org.auth.subtitle": "Cria a tua conta de organizador. É grátis para começar.",
+  "org.header.backLink": "← Agenda pública",
+  "org.header.titleAdmin": "Todos os eventos",
+  "org.header.titleMine": "Os meus eventos",
+  "org.header.adminBadge": "Admin",
+  "org.header.descAdmin": "Gere qualquer evento (incluindo os do bot sem dono).",
+  "org.header.descMine": "Publica eventos na agenda e desenha os seus flyers.",
+  "org.header.newEvent": "Novo evento",
+  "org.loading": "A carregar os teus eventos…",
+  "org.section.drafts": "Rascunhos",
+  "org.section.draftsHint": "Só tu os vês. Publica-os para que apareçam na agenda.",
+  "org.section.upcoming": "Próximos ({n})",
+  "org.section.upcomingHint": "Publicados e ainda por realizar — visíveis na agenda.",
+  "org.section.upcomingEmpty": "Não tens eventos próximos. Carrega em “Novo evento” ou envia um flyer ao bot.",
+  "org.section.past": "Terminados ({n})",
+  "org.section.pastHint": "Já passaram. Não aparecem na agenda pública.",
+  "org.section.cancelled": "Cancelados ({n})",
+  "org.section.cancelledHint": "Continuam visíveis na agenda com o selo CANCELADO. Podes reativá-los.",
+  "org.row.cancelShort": "Cancel.",
+  "org.row.consult": "Consultar",
+  "org.row.free": "Grátis",
+  "org.row.series": "🔁 série · {n} datas",
+  "org.row.anon": "anónimo",
+  "org.row.unpublish": "Despublicar",
+  "org.row.publish": "Publicar",
+  "org.row.reactivate": "Reativar evento",
+  "org.row.markCancelled": "Marcar como cancelado",
+  "org.row.edit": "Editar",
+  "org.row.delete": "Eliminar",
+  "org.delete.confirm": "Eliminar \"{title}\"? Esta ação não pode ser anulada.",
+  "org.form.titleEdit": "Editar evento",
+  "org.form.titleNew": "Novo evento",
+  "org.form.errRequired": "Preenche pelo menos o título, a data e o local.",
+  "org.form.errUpload": "Não foi possível carregar o flyer",
+  "org.form.errUploadGeneric": "Erro ao carregar o flyer",
+  "org.form.labelTitle": "Título *",
+  "org.form.phTitle": "Ex. Concerto de verão",
+  "org.form.labelDate": "Data *",
+  "org.form.labelTime": "Hora",
+  "org.form.labelCity": "Cidade",
+  "org.form.labelCategory": "Categoria",
+  "org.form.labelAudience": "Para quem é (opcional)",
+  "org.form.labelVenue": "Local / sala *",
+  "org.form.phVenue": "Ex. Sala La Riviera",
+  "org.form.labelNeighborhood": "Bairro / zona",
+  "org.form.phNeighborhood": "Ex. Centro",
+  "org.form.labelFlyer": "Flyer do evento",
+  "org.form.uploading": "A carregar…",
+  "org.form.changeFlyer": "Mudar flyer",
+  "org.form.uploadFlyer": "Carregar flyer",
+  "org.form.noFlyer": "Não tens flyer? Cria-o aqui",
+  "org.form.labelPrice": "Preço (€) — vazio = consultar · 0 = grátis",
+  "org.form.phPrice": "desde…",
+  "org.form.labelPriceInfo": "Tarifas (se houver várias)",
+  "org.form.phPriceInfo": "Antecipada 12€ · Bilheteira 15€",
+  "org.form.onlineSale": "Venda de bilhetes online?",
+  "org.form.phTicketUrl": "https://… página do evento ou pagamento",
+  "org.form.labelDescription": "Descrição",
+  "org.form.phDescription": "Detalhes do evento…",
+  "org.form.saveDraft": "Guardar rascunho",
+  "org.form.publish": "Publicar",
+  "org.empty.title": "Ainda não tens eventos",
+  "org.empty.body": "Cria o teu primeiro evento e publica-o na agenda pública em menos de um minuto.",
+  "org.empty.create": "Criar evento",
 };
 
 export const TRANSLATIONS: Record<Locale, Dict> = { es, en, fr, pt };

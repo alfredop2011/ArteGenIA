@@ -23,6 +23,8 @@ import {
   RotateCcw,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useLocale } from "@/hooks/useLocale";
+import type { TranslationKey } from "@/lib/translations";
 import { supabase, type EventRow, type EventCategory, type EventAudience } from "@/lib/supabase";
 import { isAdmin } from "@/lib/admin";
 import { seriesKeyFromTitle } from "@/lib/eventSeries";
@@ -41,24 +43,24 @@ import AuthModal from "@/components/auth/AuthModal";
  * Todo va contra la tabla `events` con RLS (cada quien solo toca lo suyo).
  */
 
-const CATEGORIES: { id: EventCategory; label: string }[] = [
-  { id: "fiesta", label: "Fiesta" },
-  { id: "conciertos", label: "Conciertos" },
-  { id: "festival", label: "Festival" },
-  { id: "clases", label: "Clases de baile" },
-  { id: "club", label: "Club / Discoteca" },
-  { id: "corporativo", label: "Corporativo" },
-  { id: "social", label: "Bailes sociales" },
-  { id: "teatro", label: "Teatro" },
+const CATEGORIES: { id: EventCategory; labelKey: TranslationKey }[] = [
+  { id: "fiesta", labelKey: "org.cat.fiesta" },
+  { id: "conciertos", labelKey: "org.cat.conciertos" },
+  { id: "festival", labelKey: "org.cat.festival" },
+  { id: "clases", labelKey: "org.cat.clases" },
+  { id: "club", labelKey: "org.cat.club" },
+  { id: "corporativo", labelKey: "org.cat.corporativo" },
+  { id: "social", labelKey: "org.cat.social" },
+  { id: "teatro", labelKey: "org.cat.teatro" },
 ];
 
-const AUDIENCES: { id: EventAudience; label: string }[] = [
-  { id: "academias", label: "Academias" },
-  { id: "productoras", label: "Productoras" },
-  { id: "freelance", label: "Freelance" },
-  { id: "instituciones", label: "Instituciones" },
-  { id: "agencias", label: "Agencias" },
-  { id: "colegios", label: "Colegios" },
+const AUDIENCES: { id: EventAudience; labelKey: TranslationKey }[] = [
+  { id: "academias", labelKey: "org.aud.academias" },
+  { id: "productoras", labelKey: "org.aud.productoras" },
+  { id: "freelance", labelKey: "org.aud.freelance" },
+  { id: "instituciones", labelKey: "org.aud.instituciones" },
+  { id: "agencias", labelKey: "org.aud.agencias" },
+  { id: "colegios", labelKey: "org.aud.colegios" },
 ];
 
 const CITIES = [
@@ -106,6 +108,7 @@ const EMPTY_FORM: FormState = {
 
 export default function OrganizadorPage() {
   const { user, loading: authLoading } = useAuth();
+  const { t } = useLocale();
   const [events, setEvents] = useState<EventRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -152,7 +155,11 @@ export default function OrganizadorPage() {
         });
         const json = await res.json();
         if (res.ok && json.claimed > 0) {
-          setClaimMsg(`✅ Has reclamado ${json.claimed} ${json.claimed === 1 ? "evento" : "eventos"} enviados por el bot.`);
+          setClaimMsg(
+            t("org.claim.success")
+              .replace("{n}", String(json.claimed))
+              .replace("{events}", json.claimed === 1 ? t("eventos.count.one") : t("eventos.count.many"))
+          );
           load();
         }
       } catch {}
@@ -176,7 +183,7 @@ export default function OrganizadorPage() {
   const toggleCancel = (ev: EventRow) => setStatus(ev, ev.status === "cancelled" ? "published" : "cancelled");
 
   const remove = async (ev: EventRow) => {
-    if (!confirm(`¿Borrar "${ev.title}"? Esta acción no se puede deshacer.`)) return;
+    if (!confirm(t("org.delete.confirm").replace("{title}", ev.title))) return;
     setEvents((list) => list.filter((e) => e.id !== ev.id));
     const { error } = await supabase.from("events").delete().eq("id", ev.id);
     if (error) {
@@ -211,23 +218,21 @@ export default function OrganizadorPage() {
         <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl" style={{ background: "var(--ag-brand-bg)", color: "var(--ag-brand)", border: "1px solid var(--ag-brand-border)" }}>
           <Lock size={28} strokeWidth={1.8} />
         </div>
-        <h2 className="mb-2 text-2xl font-black">{claimToken ? "Inicia sesión para reclamar tus eventos" : "Inicia sesión para publicar eventos"}</h2>
+        <h2 className="mb-2 text-2xl font-black">{claimToken ? t("org.gate.titleClaim") : t("org.gate.titlePublish")}</h2>
         <p className="mb-6 max-w-md" style={{ color: "var(--home-text-muted)" }}>
-          {claimToken
-            ? "Los flyers que enviaste por el bot ya están publicados. Abre tu cuenta para gestionarlos."
-            : "Crea tu cuenta de organizador para añadir eventos a la agenda y diseñar sus flyers."}
+          {claimToken ? t("org.gate.bodyClaim") : t("org.gate.bodyPublish")}
         </p>
         <button onClick={() => setShowAuth(true)} className="rounded-xl px-6 py-3 font-bold text-white" style={{ background: "var(--ag-brand)" }}>
-          Iniciar sesión
+          {t("org.gate.signIn")}
         </button>
         <Link href="/eventos" className="mt-3 text-sm underline" style={{ color: "var(--home-text-soft)" }}>
-          ← Volver a la agenda
+          {t("org.gate.back")}
         </Link>
         {showAuth && (
           <AuthModal
             onClose={() => setShowAuth(false)}
-            title={claimToken ? "Reclama tus eventos" : "Publica tu evento"}
-            subtitle="Crea tu cuenta de organizador. Es gratis para empezar."
+            title={claimToken ? t("org.gate.authClaim") : t("org.gate.authPublish")}
+            subtitle={t("org.auth.subtitle")}
             nextUrl={authNext}
           />
         )}
@@ -242,18 +247,18 @@ export default function OrganizadorPage() {
         <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <Link href="/eventos" className="text-xs underline" style={{ color: "var(--home-text-soft)" }}>
-              ← Agenda pública
+              {t("org.header.backLink")}
             </Link>
             <h1 className="mt-1 flex items-center gap-2 text-2xl font-black sm:text-3xl">
-              {admin ? "Todos los eventos" : "Mis eventos"}
+              {admin ? t("org.header.titleAdmin") : t("org.header.titleMine")}
               {admin && (
                 <span className="rounded-full px-2 py-0.5 text-[11px] font-bold uppercase" style={{ background: "var(--ag-brand-bg)", color: "var(--ag-brand)", border: "1px solid var(--ag-brand-border)" }}>
-                  Admin
+                  {t("org.header.adminBadge")}
                 </span>
               )}
             </h1>
             <p className="text-sm" style={{ color: "var(--home-text-muted)" }}>
-              {admin ? "Gestiona cualquier evento (incluidos los del bot sin dueño)." : "Publica eventos en la agenda y diseña sus flyers."}
+              {admin ? t("org.header.descAdmin") : t("org.header.descMine")}
             </p>
           </div>
           <button
@@ -261,7 +266,7 @@ export default function OrganizadorPage() {
             className="inline-flex items-center justify-center gap-1.5 rounded-xl px-5 py-2.5 text-sm font-semibold text-white"
             style={{ background: "var(--ag-brand)" }}
           >
-            <Plus size={16} /> Nuevo evento
+            <Plus size={16} /> {t("org.header.newEvent")}
           </button>
         </div>
 
@@ -279,22 +284,22 @@ export default function OrganizadorPage() {
 
         {loading ? (
           <div className="flex items-center gap-2 py-16 text-sm" style={{ color: "var(--home-text-soft)" }}>
-            <Loader2 size={16} className="animate-spin" /> Cargando tus eventos…
+            <Loader2 size={16} className="animate-spin" /> {t("org.loading")}
           </div>
         ) : events.length === 0 ? (
           <EmptyState onCreate={() => setEditing("new")} />
         ) : (
           <div className="space-y-8">
             {drafts.length > 0 && (
-              <Section title="Borradores" hint="Solo tú los ves. Publícalos para que aparezcan en la agenda.">
+              <Section title={t("org.section.drafts")} hint={t("org.section.draftsHint")}>
                 {drafts.map((e) => (
                   <EventRowCard key={e.id} ev={e} onEdit={() => setEditing(e)} onDelete={() => remove(e)} onToggle={() => togglePublish(e)} onCancel={() => toggleCancel(e)} seriesCount={seriesCountOf(e)} />
                 ))}
               </Section>
             )}
-            <Section title={`Próximos (${upcoming.length})`} hint="Publicados y aún por celebrarse — visibles en la agenda.">
+            <Section title={t("org.section.upcoming").replace("{n}", String(upcoming.length))} hint={t("org.section.upcomingHint")}>
               {upcoming.length === 0 ? (
-                <p className="text-sm" style={{ color: "var(--home-text-soft)" }}>No tienes eventos próximos. Pulsa “Nuevo evento” o envía un flyer al bot.</p>
+                <p className="text-sm" style={{ color: "var(--home-text-soft)" }}>{t("org.section.upcomingEmpty")}</p>
               ) : (
                 upcoming.map((e) => (
                   <EventRowCard key={e.id} ev={e} onEdit={() => setEditing(e)} onDelete={() => remove(e)} onToggle={() => togglePublish(e)} onCancel={() => toggleCancel(e)} seriesCount={seriesCountOf(e)} />
@@ -302,14 +307,14 @@ export default function OrganizadorPage() {
               )}
             </Section>
             {past.length > 0 && (
-              <Section title={`Vencidos (${past.length})`} hint="Ya pasaron. No aparecen en la agenda pública.">
+              <Section title={t("org.section.past").replace("{n}", String(past.length))} hint={t("org.section.pastHint")}>
                 {past.map((e) => (
                   <EventRowCard key={e.id} ev={e} onEdit={() => setEditing(e)} onDelete={() => remove(e)} onToggle={() => togglePublish(e)} onCancel={() => toggleCancel(e)} seriesCount={seriesCountOf(e)} />
                 ))}
               </Section>
             )}
             {cancelled.length > 0 && (
-              <Section title={`Cancelados (${cancelled.length})`} hint="Siguen visibles en la agenda con el sello CANCELADO. Puedes reactivarlos.">
+              <Section title={t("org.section.cancelled").replace("{n}", String(cancelled.length))} hint={t("org.section.cancelledHint")}>
                 {cancelled.map((e) => (
                   <EventRowCard key={e.id} ev={e} onEdit={() => setEditing(e)} onDelete={() => remove(e)} onToggle={() => togglePublish(e)} onCancel={() => toggleCancel(e)} seriesCount={seriesCountOf(e)} />
                 ))}
@@ -365,6 +370,7 @@ function EventRowCard({
   onCancel: () => void;
   seriesCount?: number;
 }) {
+  const { t } = useLocale();
   const isPub = ev.status === "published";
   const isCancelled = ev.status === "cancelled";
   return (
@@ -373,35 +379,35 @@ function EventRowCard({
         className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl"
         style={{ background: ev.image_url ? `url('${ev.image_url}') center/cover no-repeat` : "var(--ag-brand-bg)" }}
       >
-        {isCancelled && <span className="absolute inset-0 flex items-center justify-center text-[8px] font-bold uppercase text-white" style={{ background: "rgba(220,38,38,0.75)" }}>Cancel.</span>}
+        {isCancelled && <span className="absolute inset-0 flex items-center justify-center text-[8px] font-bold uppercase text-white" style={{ background: "rgba(220,38,38,0.75)" }}>{t("org.row.cancelShort")}</span>}
       </div>
       <div className="min-w-0 flex-1">
         <p className={`truncate font-semibold ${isCancelled ? "line-through opacity-70" : ""}`}>{ev.title}</p>
         <div className="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 text-xs" style={{ color: "var(--home-text-muted)" }}>
           <span className="flex items-center gap-1"><CalendarDays size={12} /> {ev.event_date} · {ev.event_time}</span>
           <span className="flex items-center gap-1"><MapPin size={12} /> {ev.venue}</span>
-          <span>{ev.price == null ? "Consultar" : ev.price === 0 ? "Gratis" : `${ev.price} €`}</span>
+          <span>{ev.price == null ? t("org.row.consult") : ev.price === 0 ? t("org.row.free") : `${ev.price} €`}</span>
           {seriesCount > 1 && (
-            <span style={{ color: "var(--ag-brand)" }}>🔁 serie · {seriesCount} fechas</span>
+            <span style={{ color: "var(--ag-brand)" }}>{t("org.row.series").replace("{n}", String(seriesCount))}</span>
           )}
           {ev.source !== "organizer" && (
-            <span style={{ color: "var(--ag-brand)" }}>📩 {ev.submitter_name || "anónimo"}{ev.submitter_email ? ` · ${ev.submitter_email}` : ""} · {ev.source}</span>
+            <span style={{ color: "var(--ag-brand)" }}>📩 {ev.submitter_name || t("org.row.anon")}{ev.submitter_email ? ` · ${ev.submitter_email}` : ""} · {ev.source}</span>
           )}
         </div>
       </div>
       <div className="flex shrink-0 items-center gap-1">
         {!isCancelled && (
-          <button onClick={onToggle} title={isPub ? "Despublicar" : "Publicar"} className="rounded-lg p-2 hover:bg-ag-card" style={{ color: isPub ? "var(--ag-success)" : "var(--home-text-soft)" }}>
+          <button onClick={onToggle} title={isPub ? t("org.row.unpublish") : t("org.row.publish")} className="rounded-lg p-2 hover:bg-ag-card" style={{ color: isPub ? "var(--ag-success)" : "var(--home-text-soft)" }}>
             {isPub ? <Eye size={16} /> : <EyeOff size={16} />}
           </button>
         )}
-        <button onClick={onCancel} title={isCancelled ? "Reactivar evento" : "Marcar cancelado"} className="rounded-lg p-2 hover:bg-ag-card" style={{ color: isCancelled ? "var(--ag-success)" : "var(--ag-warning)" }}>
+        <button onClick={onCancel} title={isCancelled ? t("org.row.reactivate") : t("org.row.markCancelled")} className="rounded-lg p-2 hover:bg-ag-card" style={{ color: isCancelled ? "var(--ag-success)" : "var(--ag-warning)" }}>
           {isCancelled ? <RotateCcw size={16} /> : <Ban size={16} />}
         </button>
-        <button onClick={onEdit} title="Editar" className="rounded-lg p-2 hover:bg-ag-card" style={{ color: "var(--home-text-muted)" }}>
+        <button onClick={onEdit} title={t("org.row.edit")} className="rounded-lg p-2 hover:bg-ag-card" style={{ color: "var(--home-text-muted)" }}>
           <Pencil size={16} />
         </button>
-        <button onClick={onDelete} title="Borrar" className="rounded-lg p-2 hover:bg-ag-card" style={{ color: "var(--ag-danger)" }}>
+        <button onClick={onDelete} title={t("org.row.delete")} className="rounded-lg p-2 hover:bg-ag-card" style={{ color: "var(--ag-danger)" }}>
           <Trash2 size={16} />
         </button>
       </div>
@@ -422,6 +428,7 @@ function EventForm({
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const { t } = useLocale();
   const [form, setForm] = useState<FormState>(
     initial
       ? {
@@ -472,7 +479,7 @@ function EventForm({
         fetch("/api/events/from-flyer", { method: "POST", body: ex }),
       ]);
       const uploadJson = await uploadRes.json();
-      if (!uploadRes.ok) throw new Error(uploadJson.error || "No se pudo subir el flyer");
+      if (!uploadRes.ok) throw new Error(uploadJson.error || t("org.form.errUpload"));
 
       const d = extractRes.ok ? (await extractRes.json()).data : null;
       setForm((f) => ({
@@ -494,7 +501,7 @@ function EventForm({
         description: f.description || (d?.description ?? ""),
       }));
     } catch (e) {
-      setErr(e instanceof Error ? e.message : "Error al subir el flyer");
+      setErr(e instanceof Error ? e.message : t("org.form.errUploadGeneric"));
     } finally {
       setUploading(false);
     }
@@ -502,7 +509,7 @@ function EventForm({
 
   const save = async (status: "draft" | "published") => {
     if (!form.title.trim() || !form.event_date || !form.venue.trim()) {
-      setErr("Rellena al menos título, fecha y lugar.");
+      setErr(t("org.form.errRequired"));
       return;
     }
     setSaving(true);
@@ -555,7 +562,7 @@ function EventForm({
         style={{ background: "var(--home-bg-soft)", color: "var(--home-text)" }}
       >
         <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-lg font-bold">{initial ? "Editar evento" : "Nuevo evento"}</h3>
+          <h3 className="text-lg font-bold">{initial ? t("org.form.titleEdit") : t("org.form.titleNew")}</h3>
           <button onClick={onClose} className="rounded-lg p-1.5 hover:bg-ag-card"><X size={18} /></button>
         </div>
 
@@ -564,33 +571,33 @@ function EventForm({
         )}
 
         <div className="space-y-3">
-          <Field label="Título *">
-            <input value={form.title} onChange={(e) => set("title", e.target.value)} className="ag-input" placeholder="Ej. Concierto de verano" />
+          <Field label={t("org.form.labelTitle")}>
+            <input value={form.title} onChange={(e) => set("title", e.target.value)} className="ag-input" placeholder={t("org.form.phTitle")} />
           </Field>
 
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Fecha *">
+            <Field label={t("org.form.labelDate")}>
               <input type="date" value={form.event_date} onChange={(e) => set("event_date", e.target.value)} className="ag-input" />
             </Field>
-            <Field label="Hora">
+            <Field label={t("org.form.labelTime")}>
               <input type="time" value={form.event_time} onChange={(e) => set("event_time", e.target.value)} className="ag-input" />
             </Field>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Ciudad">
+            <Field label={t("org.form.labelCity")}>
               <select value={form.city} onChange={(e) => set("city", e.target.value)} className="ag-input">
                 {CITIES.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
               </select>
             </Field>
-            <Field label="Categoría">
+            <Field label={t("org.form.labelCategory")}>
               <select value={form.category} onChange={(e) => set("category", e.target.value as EventCategory)} className="ag-input">
-                {CATEGORIES.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
+                {CATEGORIES.map((c) => <option key={c.id} value={c.id}>{t(c.labelKey)}</option>)}
               </select>
             </Field>
           </div>
 
-          <Field label="Para quién es (opcional)">
+          <Field label={t("org.form.labelAudience")}>
             <div className="flex flex-wrap gap-2">
               {AUDIENCES.map((a) => {
                 const on = form.audience.includes(a.id);
@@ -602,7 +609,7 @@ function EventForm({
                     className="rounded-full px-3 py-1.5 text-xs font-medium transition-all"
                     style={on ? { background: "var(--ag-brand-bg)", color: "var(--ag-brand)", border: "1px solid var(--ag-brand-border)" } : { background: "transparent", color: "var(--home-text-muted)", border: "1px solid var(--home-card-border)" }}
                   >
-                    {a.label}
+                    {t(a.labelKey)}
                   </button>
                 );
               })}
@@ -610,16 +617,16 @@ function EventForm({
           </Field>
 
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Lugar / sala *">
-              <input value={form.venue} onChange={(e) => set("venue", e.target.value)} className="ag-input" placeholder="Ej. Sala La Riviera" />
+            <Field label={t("org.form.labelVenue")}>
+              <input value={form.venue} onChange={(e) => set("venue", e.target.value)} className="ag-input" placeholder={t("org.form.phVenue")} />
             </Field>
-            <Field label="Barrio / zona">
-              <input value={form.neighborhood} onChange={(e) => set("neighborhood", e.target.value)} className="ag-input" placeholder="Ej. Centro" />
+            <Field label={t("org.form.labelNeighborhood")}>
+              <input value={form.neighborhood} onChange={(e) => set("neighborhood", e.target.value)} className="ag-input" placeholder={t("org.form.phNeighborhood")} />
             </Field>
           </div>
 
           {/* Flyer del evento: se sube a R2 y se refleja en la agenda. */}
-          <Field label="Flyer del evento">
+          <Field label={t("org.form.labelFlyer")}>
             <div className="flex items-center gap-3">
               <div
                 className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-xl"
@@ -636,7 +643,7 @@ function EventForm({
                   style={{ border: "1px solid var(--ag-brand-border)", color: "var(--ag-brand)" }}
                 >
                   {uploading ? <Loader2 size={15} className="animate-spin" /> : <Upload size={15} />}
-                  {uploading ? "Subiendo…" : form.image_url ? "Cambiar flyer" : "Subir flyer"}
+                  {uploading ? t("org.form.uploading") : form.image_url ? t("org.form.changeFlyer") : t("org.form.uploadFlyer")}
                   <input
                     type="file"
                     accept="image/png,image/jpeg,image/webp"
@@ -651,18 +658,18 @@ function EventForm({
                   className="flex items-center justify-center gap-1 text-xs font-medium"
                   style={{ color: "var(--home-text-muted)" }}
                 >
-                  <Sparkles size={12} /> ¿No tienes flyer? Créalo aquí <ExternalLink size={10} />
+                  <Sparkles size={12} /> {t("org.form.noFlyer")} <ExternalLink size={10} />
                 </Link>
               </div>
             </div>
           </Field>
 
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Precio (€) — vacío = consultar · 0 = gratis">
-              <input type="number" min="0" step="0.01" value={form.price} onChange={(e) => set("price", e.target.value)} className="ag-input" placeholder="desde…" />
+            <Field label={t("org.form.labelPrice")}>
+              <input type="number" min="0" step="0.01" value={form.price} onChange={(e) => set("price", e.target.value)} className="ag-input" placeholder={t("org.form.phPrice")} />
             </Field>
-            <Field label="Tarifas (si hay varias)">
-              <input value={form.price_info} onChange={(e) => set("price_info", e.target.value)} className="ag-input" placeholder="Anticipada 12€ · Taquilla 15€" />
+            <Field label={t("org.form.labelPriceInfo")}>
+              <input value={form.price_info} onChange={(e) => set("price_info", e.target.value)} className="ag-input" placeholder={t("org.form.phPriceInfo")} />
             </Field>
           </div>
 
@@ -675,7 +682,7 @@ function EventForm({
               className="flex w-full items-center justify-between"
             >
               <span className="flex items-center gap-2 text-sm font-medium">
-                <Ticket size={15} style={{ color: "var(--ag-brand)" }} /> ¿Venta de entradas online?
+                <Ticket size={15} style={{ color: "var(--ag-brand)" }} /> {t("org.form.onlineSale")}
               </span>
               <span
                 className="relative h-6 w-11 rounded-full transition-colors"
@@ -692,13 +699,13 @@ function EventForm({
                 value={form.ticket_url}
                 onChange={(e) => set("ticket_url", e.target.value)}
                 className="ag-input mt-3"
-                placeholder="https://… página del evento o pago"
+                placeholder={t("org.form.phTicketUrl")}
               />
             )}
           </div>
 
-          <Field label="Descripción">
-            <textarea value={form.description} onChange={(e) => set("description", e.target.value)} rows={3} className="ag-input resize-none" placeholder="Detalles del evento…" />
+          <Field label={t("org.form.labelDescription")}>
+            <textarea value={form.description} onChange={(e) => set("description", e.target.value)} rows={3} className="ag-input resize-none" placeholder={t("org.form.phDescription")} />
           </Field>
         </div>
 
@@ -709,7 +716,7 @@ function EventForm({
             className="flex-1 rounded-xl py-3 text-sm font-semibold disabled:opacity-50"
             style={{ background: "var(--home-card-bg)", color: "var(--home-text)" }}
           >
-            Guardar borrador
+            {t("org.form.saveDraft")}
           </button>
           <button
             disabled={saving}
@@ -717,7 +724,7 @@ function EventForm({
             className="flex flex-1 items-center justify-center gap-1.5 rounded-xl py-3 text-sm font-semibold text-white disabled:opacity-50"
             style={{ background: "var(--ag-brand)" }}
           >
-            {saving ? <Loader2 size={15} className="animate-spin" /> : <Eye size={15} />} Publicar
+            {saving ? <Loader2 size={15} className="animate-spin" /> : <Eye size={15} />} {t("org.form.publish")}
           </button>
         </div>
       </motion.div>
@@ -754,17 +761,18 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 // ─── Estado vacío ─────────────────────────────────────────────────────────
 
 function EmptyState({ onCreate }: { onCreate: () => void }) {
+  const { t } = useLocale();
   return (
     <div className="flex flex-col items-center justify-center rounded-2xl py-16 text-center" style={{ background: "var(--home-bg-soft)", border: "1px dashed var(--home-card-border)" }}>
       <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-full" style={{ background: "var(--ag-brand-bg)" }}>
         <CalendarDays size={24} style={{ color: "var(--ag-brand)" }} />
       </div>
-      <h3 className="text-lg font-semibold">Aún no tienes eventos</h3>
+      <h3 className="text-lg font-semibold">{t("org.empty.title")}</h3>
       <p className="mt-1 max-w-xs text-sm" style={{ color: "var(--home-text-muted)" }}>
-        Crea tu primer evento y publícalo en la agenda pública en menos de un minuto.
+        {t("org.empty.body")}
       </p>
       <button onClick={onCreate} className="mt-4 inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold text-white" style={{ background: "var(--ag-brand)" }}>
-        <Plus size={16} /> Crear evento
+        <Plus size={16} /> {t("org.empty.create")}
       </button>
     </div>
   );

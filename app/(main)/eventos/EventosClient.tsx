@@ -4,6 +4,8 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
+import { useLocale } from "@/hooks/useLocale";
+import type { TranslationKey } from "@/lib/translations";
 import { supabase } from "@/lib/supabase";
 import AuthModal from "@/components/auth/AuthModal";
 import { type Category, type Audience, type EventItem, CATEGORY_GRAD } from "./eventData";
@@ -67,24 +69,26 @@ const TELEGRAM_BOT = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || "";
 // (Category, Audience, EventItem y CATEGORY_GRAD viven en ./eventData para
 //  poder reusarlos desde el Server Component que carga los eventos en SSR.)
 
-const CATEGORIES: Record<Category, { label: string; icon: typeof Music; grad: string }> = {
-  fiesta: { label: "Fiesta", icon: PartyPopper, grad: CATEGORY_GRAD.fiesta },
-  conciertos: { label: "Conciertos", icon: Music, grad: CATEGORY_GRAD.conciertos },
-  festival: { label: "Festival", icon: Tent, grad: CATEGORY_GRAD.festival },
-  clases: { label: "Clases de baile", icon: Footprints, grad: CATEGORY_GRAD.clases },
-  club: { label: "Club / Discoteca", icon: Disc3, grad: CATEGORY_GRAD.club },
-  corporativo: { label: "Corporativo", icon: Briefcase, grad: CATEGORY_GRAD.corporativo },
-  social: { label: "Bailes sociales", icon: Users, grad: CATEGORY_GRAD.social },
-  teatro: { label: "Teatro", icon: Drama, grad: CATEGORY_GRAD.teatro },
+// `labelKey` = clave i18n (se resuelve con t(...) en el render). El icono y el
+// gradiente no cambian con el idioma.
+const CATEGORIES: Record<Category, { labelKey: TranslationKey; icon: typeof Music; grad: string }> = {
+  fiesta: { labelKey: "eventos.cat.fiesta", icon: PartyPopper, grad: CATEGORY_GRAD.fiesta },
+  conciertos: { labelKey: "eventos.cat.conciertos", icon: Music, grad: CATEGORY_GRAD.conciertos },
+  festival: { labelKey: "eventos.cat.festival", icon: Tent, grad: CATEGORY_GRAD.festival },
+  clases: { labelKey: "eventos.cat.clases", icon: Footprints, grad: CATEGORY_GRAD.clases },
+  club: { labelKey: "eventos.cat.club", icon: Disc3, grad: CATEGORY_GRAD.club },
+  corporativo: { labelKey: "eventos.cat.corporativo", icon: Briefcase, grad: CATEGORY_GRAD.corporativo },
+  social: { labelKey: "eventos.cat.social", icon: Users, grad: CATEGORY_GRAD.social },
+  teatro: { labelKey: "eventos.cat.teatro", icon: Drama, grad: CATEGORY_GRAD.teatro },
 };
 
-const AUDIENCES: { id: Audience; label: string }[] = [
-  { id: "academias", label: "Academias" },
-  { id: "productoras", label: "Productoras" },
-  { id: "freelance", label: "Freelance" },
-  { id: "instituciones", label: "Instituciones" },
-  { id: "agencias", label: "Agencias" },
-  { id: "colegios", label: "Colegios" },
+const AUDIENCES: { id: Audience; labelKey: TranslationKey }[] = [
+  { id: "academias", labelKey: "eventos.aud.academias" },
+  { id: "productoras", labelKey: "eventos.aud.productoras" },
+  { id: "freelance", labelKey: "eventos.aud.freelance" },
+  { id: "instituciones", labelKey: "eventos.aud.instituciones" },
+  { id: "agencias", labelKey: "eventos.aud.agencias" },
+  { id: "colegios", labelKey: "eventos.aud.colegios" },
 ];
 
 const COUNTRIES = [
@@ -174,18 +178,30 @@ const FAV_KEY = "ag_eventos_fav";
 
 // ─── Helpers de fecha ─────────────────────────────────────────────────────
 
-const MONTHS = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
-const WEEKDAYS = ["L", "M", "X", "J", "V", "S", "D"];
+// Etiqueta BCP-47 por locale para formatear fechas con Intl (meses/días en el
+// idioma activo, sin mantener arrays a mano).
+const LOCALE_TAG: Record<string, string> = { es: "es-ES", en: "en-GB", fr: "fr-FR", pt: "pt-PT" };
+const tag = (locale: string) => LOCALE_TAG[locale] ?? "es-ES";
 
 function parse(iso: string) {
   const [y, m, d] = iso.split("-").map(Number);
   return new Date(y, m - 1, d);
 }
-function fmtLong(iso: string) {
+function fmtLong(iso: string, locale = "es") {
   const d = parse(iso);
   // Muestra el año solo si NO es el año en curso (evita "15 mayo" ambiguo).
   const y = d.getFullYear() !== parse(TODAY).getFullYear() ? ` ${d.getFullYear()}` : "";
-  return `${d.getDate()} ${MONTHS[d.getMonth()]}${y}`;
+  const month = new Intl.DateTimeFormat(tag(locale), { month: "long" }).format(d);
+  return `${d.getDate()} ${month}${y}`;
+}
+// Cabecera del calendario: "junio 2026" / "June 2026" según idioma.
+function monthYear(month: number, year: number, locale = "es") {
+  return new Intl.DateTimeFormat(tag(locale), { month: "long", year: "numeric" }).format(new Date(year, month, 1));
+}
+// Iniciales de los días, empezando en lunes, en el idioma activo (L M X J V S D).
+function weekdayInitials(locale: string) {
+  const fmt = new Intl.DateTimeFormat(tag(locale), { weekday: "narrow" });
+  return [1, 2, 3, 4, 5, 6, 7].map((day) => fmt.format(new Date(2024, 0, day)).toUpperCase());
 }
 function addDays(iso: string, n: number) {
   const d = parse(iso);
@@ -200,14 +216,14 @@ function startOfWeek(iso: string) {
 
 type DateFilter = "todos" | "hoy" | "manana" | "finde" | "semana" | "mes" | "rango";
 
-const DATE_FILTERS: { id: DateFilter; label: string }[] = [
-  { id: "todos", label: "Todos" },
-  { id: "hoy", label: "Hoy" },
-  { id: "manana", label: "Mañana" },
-  { id: "finde", label: "Este finde" },
-  { id: "semana", label: "Esta semana" },
-  { id: "mes", label: "Este mes" },
-  { id: "rango", label: "Rango" },
+const DATE_FILTERS: { id: DateFilter; labelKey: TranslationKey }[] = [
+  { id: "todos", labelKey: "eventos.date.todos" },
+  { id: "hoy", labelKey: "eventos.date.hoy" },
+  { id: "manana", labelKey: "eventos.date.manana" },
+  { id: "finde", labelKey: "eventos.date.finde" },
+  { id: "semana", labelKey: "eventos.date.semana" },
+  { id: "mes", labelKey: "eventos.date.mes" },
+  { id: "rango", labelKey: "eventos.date.rango" },
 ];
 
 function matchesDate(iso: string, filter: DateFilter, range: { from: string; to: string }): boolean {
@@ -261,10 +277,11 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
   // llevamos directo a crear/publicar. Si no, le mandamos al login y volvemos
   // a /create tras autenticarse.
   const { user } = useAuth();
+  const { t, locale } = useLocale();
   const router = useRouter();
   const [showAuth, setShowAuth] = useState(false);
   const [showPublish, setShowPublish] = useState(false);
-  const organizerLabel = user ? "Publicar evento" : "Sube tu evento gratis";
+  const organizerLabel = user ? t("eventos.organizer.publish") : t("eventos.organizer.uploadFree");
   // Si hay sesión, directo al panel; si no, abrimos el modal de login y, tras
   // autenticarse, volvemos a /organizador (nextUrl para el flujo OAuth).
   const goOrganizer = () => {
@@ -277,7 +294,7 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
   // (con eventos) más cercana. Solo se activa si el usuario lo pulsa.
   const detectLocation = () => {
     if (typeof navigator === "undefined" || !navigator.geolocation) {
-      setGeo({ status: "error", msg: "Tu navegador no permite ubicación" });
+      setGeo({ status: "error", msg: t("eventos.geo.unsupported") });
       return;
     }
     setGeo({ status: "locating" });
@@ -298,12 +315,12 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
         if (best) {
           setCountry(best.country);
           setCity(best.id);
-          setGeo({ status: "done", msg: `Mostrando ${best.label}` });
+          setGeo({ status: "done", msg: t("eventos.geo.showing").replace("{place}", best.label) });
         } else {
-          setGeo({ status: "error", msg: "Aún no hay eventos cerca de ti" });
+          setGeo({ status: "error", msg: t("eventos.geo.noneNearby") });
         }
       },
-      () => setGeo({ status: "error", msg: "No pudimos obtener tu ubicación" }),
+      () => setGeo({ status: "error", msg: t("eventos.geo.failed") }),
       { timeout: 8000 }
     );
   };
@@ -334,8 +351,11 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
   const [rotIdx, setRotIdx] = useState(0); // índice del "ticker" de ciudades del hero
 
   const countryLabel = COUNTRIES.find((c) => c.id === country)?.label ?? "España";
+  // El label "Todas las ciudades" es chrome de UI (se traduce); los nombres de
+  // ciudades son nombres propios y se dejan tal cual.
+  const cityLabelOf = (c: { id: string; label: string }) => (c.id === "todas" ? t("eventos.city.todas") : c.label);
   const cities = CITIES_BY_COUNTRY[country] ?? [{ id: "todas", label: "Todas las ciudades", available: true }];
-  const cityLabel = cities.find((c) => c.id === city)?.label ?? "Todas las ciudades";
+  const cityLabel = cityLabelOf(cities.find((c) => c.id === city) ?? { id: "todas", label: "" });
   // placeLabel = etiqueta "estable" para contador/compartir (país si es "todas").
   const placeLabel = city === "todas" ? countryLabel : cityLabel;
 
@@ -434,8 +454,8 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
   const sharePage = () =>
     shareContent(
       {
-        title: `Agenda de eventos en ${placeLabel}`,
-        text: `Mira qué eventos hay en ${placeLabel}`,
+        title: `${t("eventos.topbar.brand")} · ${placeLabel}`,
+        text: `${t("eventos.hero.titleDesktop")}${placeLabel}`.trim(),
         url: typeof window !== "undefined" ? window.location.href : "",
       },
       () => setCopied(true)
@@ -452,12 +472,12 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
       if (activeAuds.size > 0 && !e.audience.some((a) => activeAuds.has(a))) return false;
       if (onlyFree && e.price !== 0) return false;
       if (q) {
-        const hay = `${e.title} ${e.venue} ${e.neighborhood} ${CATEGORIES[e.category].label}`.toLowerCase();
+        const hay = `${e.title} ${e.venue} ${e.neighborhood} ${t(CATEGORIES[e.category].labelKey)}`.toLowerCase();
         if (!hay.includes(q)) return false;
       }
       return true;
     }).sort((a, b) => (a.date === b.date ? a.time.localeCompare(b.time) : a.date.localeCompare(b.date)));
-  }, [events, query, dateFilter, range, activeCats, activeAuds, onlyFree, country, city, showFavs, favs]);
+  }, [events, query, dateFilter, range, activeCats, activeAuds, onlyFree, country, city, showFavs, favs, t]);
 
   const grouped = useMemo(() => {
     const map = new Map<string, EventItem[]>();
@@ -486,17 +506,17 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
           <span className="flex h-7 w-7 items-center justify-center rounded-lg text-white" style={{ background: "var(--ag-brand)" }}>
             <CalendarIcon size={16} />
           </span>
-          Agenda
+          {t("eventos.topbar.brand")}
         </span>
         <div className="flex items-center gap-2">
           <button
             onClick={sharePage}
-            aria-label="Compartir la agenda"
+            aria-label={t("eventos.topbar.shareAria")}
             className="flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs font-medium sm:px-3"
             style={{ background: "var(--home-card-bg)", color: "var(--home-text-muted)" }}
           >
             <Share2 size={14} />
-            <span className="hidden sm:inline">{copied ? "¡Enlace copiado!" : "Compartir"}</span>
+            <span className="hidden sm:inline">{copied ? t("eventos.topbar.shareCopied") : t("eventos.topbar.share")}</span>
           </button>
           {/* Organizadores: acción CLARA pero secundaria. Si ya hay sesión,
               va directo al panel; si no, abre el login con retorno a /organizador.
@@ -507,7 +527,7 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
             style={{ border: "1px solid var(--ag-brand-border)", color: "var(--ag-brand)" }}
           >
             <Sparkles size={14} />
-            <span className="sm:hidden">{user ? "Publicar" : "Sube tu evento"}</span>
+            <span className="sm:hidden">{user ? t("eventos.topbar.publishShort") : t("eventos.topbar.uploadShort")}</span>
             <span className="hidden sm:inline">{organizerLabel}</span>
           </button>
         </div>
@@ -525,11 +545,11 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
               className="mb-3 hidden items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium sm:inline-flex"
               style={{ background: "var(--ag-brand-bg)", color: "var(--ag-brand)", border: "1px solid var(--ag-brand-border)" }}
             >
-              <Sparkles size={13} /> Agenda cultural pública
+              <Sparkles size={13} /> {t("eventos.hero.badge")}
             </span>
             <h1 className="mx-auto max-w-3xl text-2xl font-bold tracking-tight sm:text-5xl">
-              <span className="sm:hidden">Planes culturales en </span>
-              <span className="hidden sm:inline">¿Qué planes hay en </span>
+              <span className="sm:hidden">{t("eventos.hero.titleMobile")}</span>
+              <span className="hidden sm:inline">{t("eventos.hero.titleDesktop")}</span>
               <span className="relative inline-flex items-baseline" style={{ color: "var(--ag-brand)" }}>
                 <AnimatePresence mode="wait">
                   <motion.span
@@ -547,7 +567,7 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
               <span className="hidden sm:inline">?</span>
             </h1>
             <p className="mx-auto mt-1.5 max-w-xl text-sm sm:mt-3 sm:text-lg" style={{ color: "var(--home-text-muted)" }}>
-              Conciertos, exposiciones, teatro y más cerca de ti.
+              {t("eventos.hero.subtitle")}
             </p>
           </motion.div>
 
@@ -577,7 +597,7 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
                     setCity("todas");
                     setCountryOpen(false);
                   }}
-                  right={!c.available ? "pronto" : undefined}
+                  right={!c.available ? t("eventos.country.soon") : undefined}
                 >
                   {c.flag} {c.label}
                 </DropdownItem>
@@ -601,9 +621,9 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
                     setCity(c.id);
                     setCityOpen(false);
                   }}
-                  right={!c.available ? "pronto" : undefined}
+                  right={!c.available ? t("eventos.country.soon") : undefined}
                 >
-                  {c.label}
+                  {cityLabelOf(c)}
                 </DropdownItem>
               ))}
             </Dropdown>
@@ -615,7 +635,7 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Busca eventos, salas o barrios"
+                placeholder={t("eventos.search.placeholder")}
                 className="h-12 w-full rounded-xl pl-11 pr-20 text-sm outline-none"
                 style={{ background: "var(--home-bg-soft)", border: "1px solid var(--home-card-border)", color: "var(--home-text)" }}
               />
@@ -627,8 +647,8 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
               <button
                 onClick={detectLocation}
                 disabled={geo.status === "locating"}
-                title="Cerca de mí"
-                aria-label="Cerca de mí"
+                title={t("eventos.search.nearMe")}
+                aria-label={t("eventos.search.nearMe")}
                 className="absolute right-3 top-1/2 -translate-y-1/2 disabled:opacity-60"
                 style={{ color: "var(--ag-brand)" }}
               >
@@ -638,13 +658,13 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
           </motion.div>
           {geo.status === "error" ? (
             <div className="mx-auto mt-2 max-w-sm text-center">
-              <p className="text-xs" style={{ color: "var(--ag-warning)" }}>{geo.msg} · escribe tu ciudad:</p>
+              <p className="text-xs" style={{ color: "var(--ag-warning)" }}>{t("eventos.geo.errorPrompt").replace("{msg}", geo.msg ?? "")}</p>
               <CityAutocomplete
                 cities={cities}
                 onPick={(id) => {
                   const lbl = cities.find((c) => c.id === id)?.label ?? "";
                   setCity(id);
-                  setGeo({ status: "done", msg: `Mostrando ${lbl}` });
+                  setGeo({ status: "done", msg: t("eventos.geo.showing").replace("{place}", lbl) });
                 }}
               />
             </div>
@@ -670,7 +690,7 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
                     className="shrink-0 rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors"
                     style={on ? { background: "var(--ag-brand)", color: "#fff" } : { background: "var(--home-card-bg)", color: "var(--home-text-muted)" }}
                   >
-                    {f.label}
+                    {t(f.labelKey)}
                   </button>
                 );
               })}
@@ -679,7 +699,7 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
                 className="flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all"
                 style={onlyFree ? { background: "var(--ag-success-bg)", color: "var(--ag-success)", border: "1px solid var(--ag-success-border)" } : { background: "var(--home-card-bg)", color: "var(--home-text-muted)" }}
               >
-                <Ticket size={13} /> Gratis
+                <Ticket size={13} /> {t("eventos.filters.free")}
               </button>
               {(["conciertos", "teatro", "social"] as Category[]).map((c) => {
                 const Cat = CATEGORIES[c];
@@ -691,7 +711,7 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
                     className="flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all"
                     style={on ? { background: "var(--ag-brand-bg)", color: "var(--ag-brand)", border: "1px solid var(--ag-brand-border)" } : { background: "var(--home-card-bg)", color: "var(--home-text-muted)" }}
                   >
-                    <Cat.icon size={13} /> {Cat.label}
+                    <Cat.icon size={13} /> {t(Cat.labelKey)}
                   </button>
                 );
               })}
@@ -700,21 +720,21 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
                 className="flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all"
                 style={{ background: "var(--home-card-bg)", color: "var(--ag-brand)" }}
               >
-                <Navigation size={13} /> Cerca de mí
+                <Navigation size={13} /> {t("eventos.filters.nearMe")}
               </button>
               <button
                 onClick={() => setMoreFilters((o) => !o)}
                 className="flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all"
                 style={moreFilters || activeAuds.size > 0 || showFavs ? { background: "var(--ag-brand-bg)", color: "var(--ag-brand)", border: "1px solid var(--ag-brand-border)" } : { background: "var(--home-card-bg)", color: "var(--home-text-muted)" }}
               >
-                <SlidersHorizontal size={13} /> Más filtros
+                <SlidersHorizontal size={13} /> {t("eventos.filters.more")}
                 <ChevronDown size={12} className={`transition-transform ${moreFilters ? "rotate-180" : ""}`} />
               </button>
             </div>
             <div className="flex shrink-0 rounded-full p-0.5" style={{ background: "var(--home-card-bg)" }}>
               {([
-                { id: "lista", icon: LayoutGrid, label: "Lista" },
-                { id: "calendario", icon: CalendarIcon, label: "Calendario" },
+                { id: "lista", icon: LayoutGrid, label: t("eventos.view.lista") },
+                { id: "calendario", icon: CalendarIcon, label: t("eventos.view.calendario") },
               ] as const).map((v) => (
                 <button
                   key={v.id}
@@ -736,18 +756,18 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
               <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
                 <div className="mt-3 space-y-3 border-t pt-3" style={{ borderColor: "var(--home-divider)" }}>
                   <div>
-                    <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide" style={{ color: "var(--home-text-soft)" }}>Cuándo</p>
+                    <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide" style={{ color: "var(--home-text-soft)" }}>{t("eventos.filters.whenLabel")}</p>
                     <div className="flex flex-wrap gap-2">
                       {DATE_FILTERS.map((f) => (
                         <button key={f.id} onClick={() => setDateFilter(f.id)} className="rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors"
                           style={dateFilter === f.id ? { background: "var(--ag-brand)", color: "#fff" } : { background: "var(--home-card-bg)", color: "var(--home-text-muted)" }}>
-                          {f.label}
+                          {t(f.labelKey)}
                         </button>
                       ))}
                     </div>
                   </div>
                   <div>
-                    <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide" style={{ color: "var(--home-text-soft)" }}>Categoría</p>
+                    <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide" style={{ color: "var(--home-text-soft)" }}>{t("eventos.filters.categoryLabel")}</p>
                     <div className="flex flex-wrap gap-2">
                       {(Object.keys(CATEGORIES) as Category[]).map((c) => {
                         const Cat = CATEGORIES[c];
@@ -755,25 +775,25 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
                         return (
                           <button key={c} onClick={() => toggleCat(c)} className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all"
                             style={on ? { background: "var(--ag-brand-bg)", color: "var(--ag-brand)", border: "1px solid var(--ag-brand-border)" } : { background: "transparent", color: "var(--home-text-muted)", border: "1px solid var(--home-card-border)" }}>
-                            <Cat.icon size={13} /> {Cat.label}
+                            <Cat.icon size={13} /> {t(Cat.labelKey)}
                           </button>
                         );
                       })}
                       <button onClick={() => setShowFavs((f) => !f)} className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all"
                         style={showFavs ? { background: "var(--ag-danger-bg)", color: "var(--ag-danger)", border: "1px solid var(--ag-danger-border)" } : { background: "transparent", color: "var(--home-text-muted)", border: "1px solid var(--home-card-border)" }}>
-                        <Heart size={13} fill={showFavs ? "currentColor" : "none"} /> Guardados {favs.size > 0 && `(${favs.size})`}
+                        <Heart size={13} fill={showFavs ? "currentColor" : "none"} /> {t("eventos.filters.saved")} {favs.size > 0 && `(${favs.size})`}
                       </button>
                     </div>
                   </div>
                   <div>
-                    <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide" style={{ color: "var(--home-text-soft)" }}>Para quién es</p>
+                    <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide" style={{ color: "var(--home-text-soft)" }}>{t("eventos.filters.audienceLabel")}</p>
                     <div className="flex flex-wrap gap-2">
                       {AUDIENCES.map((a) => {
                         const on = activeAuds.has(a.id);
                         return (
                           <button key={a.id} onClick={() => toggleAud(a.id)} className="rounded-full px-3 py-1.5 text-xs font-medium transition-all"
                             style={on ? { background: "var(--ag-brand-bg)", color: "var(--ag-brand)", border: "1px solid var(--ag-brand-border)" } : { background: "transparent", color: "var(--home-text-muted)", border: "1px solid var(--home-card-border)" }}>
-                            {a.label}
+                            {t(a.labelKey)}
                           </button>
                         );
                       })}
@@ -794,7 +814,7 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
                 className="overflow-hidden"
               >
                 <div className="mt-2.5 flex flex-wrap items-center gap-2 text-xs" style={{ color: "var(--home-text-muted)" }}>
-                  <span>Desde</span>
+                  <span>{t("eventos.range.from")}</span>
                   <input
                     type="date"
                     value={range.from}
@@ -802,7 +822,7 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
                     className="rounded-lg px-2 py-1.5"
                     style={{ background: "var(--home-bg-soft)", border: "1px solid var(--home-card-border)", color: "var(--home-text)" }}
                   />
-                  <span>hasta</span>
+                  <span>{t("eventos.range.to")}</span>
                   <input
                     type="date"
                     value={range.to}
@@ -821,13 +841,13 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
       {/* ── CONTENIDO ───────────────────────────────────────────── */}
       <section className="mx-auto max-w-6xl px-4 py-6">
         <p className="mb-4 text-sm" style={{ color: "var(--home-text-soft)" }}>
-          {filtered.length} {filtered.length === 1 ? "evento" : "eventos"} en {placeLabel}
+          {filtered.length} {filtered.length === 1 ? t("eventos.count.one") : t("eventos.count.many")} {t("eventos.count.in")} {placeLabel}
           {usingMock && (
             <span
               className="ml-2 rounded-full px-2 py-0.5 text-[11px]"
               style={{ background: "var(--ag-warning-bg)", color: "var(--ag-warning)" }}
             >
-              ejemplos de muestra
+              {t("eventos.count.mockBadge")}
             </span>
           )}
         </p>
@@ -855,11 +875,9 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
           style={{ background: "var(--home-feature-bg)", border: "1px solid var(--home-feature-border)" }}
         >
           <div>
-            <h3 className="text-base font-semibold">{user ? "¿Tienes un nuevo evento?" : "¿Organizas eventos?"}</h3>
+            <h3 className="text-base font-semibold">{user ? t("eventos.band.titleHas") : t("eventos.band.titleOrg")}</h3>
             <p className="mt-1 text-sm" style={{ color: "var(--home-text-muted)" }}>
-              {user
-                ? "Publícalo en la agenda y crea su flyer en minutos con tu cuenta."
-                : "Publica tu evento en la agenda y crea su flyer en minutos. Gratis para empezar."}
+              {user ? t("eventos.band.descHas") : t("eventos.band.descOrg")}
             </p>
           </div>
           <button
@@ -867,7 +885,7 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
             className="inline-flex shrink-0 items-center gap-1.5 rounded-xl px-5 py-2.5 text-sm font-semibold text-white"
             style={{ background: "var(--ag-brand)" }}
           >
-            <Sparkles size={15} /> {user ? "Publicar evento" : "Sube tu evento gratis"}
+            <Sparkles size={15} /> {user ? t("eventos.band.ctaHas") : t("eventos.band.ctaOrg")}
           </button>
         </div>
       </section>
@@ -887,8 +905,8 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
       {showAuth && (
         <AuthModal
           onClose={() => setShowAuth(false)}
-          title="Publica tu evento"
-          subtitle="Crea tu cuenta de organizador. Es gratis para empezar."
+          title={t("eventos.auth.title")}
+          subtitle={t("eventos.auth.subtitle")}
           nextUrl="/organizador"
           onAuthSuccess={() => router.push("/organizador")}
         />
@@ -903,7 +921,7 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
             onFav={() => toggleFav(selected.id)}
             onShare={() =>
               shareContent(
-                { title: selected.title, text: `${selected.title} · ${fmtLong(selected.date)} en ${selected.venue}`, url: eventUrl(selected.id) },
+                { title: selected.title, text: `${selected.title} · ${fmtLong(selected.date, locale)} en ${selected.venue}`, url: eventUrl(selected.id) },
                 () => setCopied(true)
               )
             }
@@ -926,6 +944,7 @@ function CityAutocomplete({
   cities: { id: string; label: string; available: boolean }[];
   onPick: (id: string) => void;
 }) {
+  const { t } = useLocale();
   const [q, setQ] = useState("");
   const norm = (s: string) => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
   const matches = cities.filter((c) => c.id !== "todas" && c.available && norm(c.label).includes(norm(q.trim()))).slice(0, 6);
@@ -934,7 +953,7 @@ function CityAutocomplete({
       <input
         value={q}
         onChange={(e) => setQ(e.target.value)}
-        placeholder="Escribe tu ciudad…"
+        placeholder={t("eventos.cityauto.placeholder")}
         autoFocus
         className="w-full rounded-xl px-3 py-2 text-sm outline-none"
         style={{ background: "var(--home-bg-soft)", border: "1px solid var(--home-card-border)", color: "var(--home-text)" }}
@@ -948,7 +967,7 @@ function CityAutocomplete({
               </button>
             ))
           ) : (
-            <p className="px-3 py-2 text-xs" style={{ color: "var(--home-text-soft)" }}>Aún no tenemos eventos ahí. Prueba Madrid, Barcelona, Valencia…</p>
+            <p className="px-3 py-2 text-xs" style={{ color: "var(--home-text-soft)" }}>{t("eventos.cityauto.empty")}</p>
           )}
         </div>
       )}
@@ -967,6 +986,7 @@ function PublishOptionsModal({
   onClose: () => void;
   onWeb: () => void;
 }) {
+  const { t } = useLocale();
   const telegramUrl = TELEGRAM_BOT ? `https://t.me/${TELEGRAM_BOT}` : "";
   return (
     <motion.div
@@ -988,13 +1008,13 @@ function PublishOptionsModal({
         <div className="flex items-start justify-between p-5 pb-2">
           <div>
             <h3 className="text-lg font-bold" style={{ color: "var(--home-text)" }}>
-              {user ? "Publica tu evento" : "Sube tu evento gratis"}
+              {user ? t("eventos.publish.titleHas") : t("eventos.publish.titleOrg")}
             </h3>
             <p className="mt-0.5 text-sm" style={{ color: "var(--home-text-soft)" }}>
-              Elige la vía más rápida para ti. Mandas el flyer y nosotros leemos fecha, lugar y precio.
+              {t("eventos.publish.subtitle")}
             </p>
           </div>
-          <button onClick={onClose} aria-label="Cerrar" className="rounded-full p-1.5" style={{ color: "var(--home-text-soft)" }}>
+          <button onClick={onClose} aria-label={t("eventos.publish.close")} className="rounded-full p-1.5" style={{ color: "var(--home-text-soft)" }}>
             <X size={18} />
           </button>
         </div>
@@ -1011,11 +1031,11 @@ function PublishOptionsModal({
             </span>
             <span className="min-w-0 flex-1">
               <span className="flex items-center gap-2 font-semibold" style={{ color: "var(--home-text)" }}>
-                Aquí mismo (asistente)
-                <span className="rounded-full px-1.5 py-0.5 text-[10px] font-bold text-white" style={{ background: "var(--ag-brand)" }}>RÁPIDO</span>
+                {t("eventos.publish.web.title")}
+                <span className="rounded-full px-1.5 py-0.5 text-[10px] font-bold text-white" style={{ background: "var(--ag-brand)" }}>{t("eventos.publish.web.fast")}</span>
               </span>
               <span className="block text-xs" style={{ color: "var(--home-text-soft)" }}>
-                Sube el flyer y se rellena solo. {user ? "Vas directo a tu panel." : "Creas tu cuenta gratis en segundos."}
+                {user ? t("eventos.publish.web.descHas") : t("eventos.publish.web.descOrg")}
               </span>
             </span>
             <ChevronRight size={18} style={{ color: "var(--home-text-soft)" }} />
@@ -1036,24 +1056,24 @@ function PublishOptionsModal({
               </span>
               <span className="min-w-0 flex-1">
                 <span className="flex items-center gap-2 font-semibold" style={{ color: "var(--home-text)" }}>
-                  Por Telegram
-                  <span className="rounded-full px-1.5 py-0.5 text-[10px] font-bold" style={{ background: "var(--home-bg-soft)", color: "var(--home-text-soft)" }}>SIN CUENTA</span>
+                  {t("eventos.publish.telegram.title")}
+                  <span className="rounded-full px-1.5 py-0.5 text-[10px] font-bold" style={{ background: "var(--home-bg-soft)", color: "var(--home-text-soft)" }}>{t("eventos.publish.telegram.noAccount")}</span>
                 </span>
                 <span className="block text-xs" style={{ color: "var(--home-text-soft)" }}>
-                  Mándale el flyer al bot y se publica solo. Tus eventos te esperan si luego abres cuenta.
+                  {t("eventos.publish.telegram.desc")}
                 </span>
               </span>
               <ExternalLink size={16} style={{ color: "var(--home-text-soft)" }} />
             </a>
           ) : (
-            <SoonRow icon={<Send size={18} />} color="#229ED9" title="Por Telegram" desc="Activando el bot — disponible muy pronto." />
+            <SoonRow icon={<Send size={18} />} color="#229ED9" title={t("eventos.publish.telegram.title")} desc={t("eventos.publish.telegram.soonDesc")} />
           )}
 
           {/* 3) WhatsApp — próximamente */}
-          <SoonRow icon={<MessageCircle size={18} />} color="#25D366" title="Por WhatsApp" desc="Próximamente: el mismo bot, en tu WhatsApp." />
+          <SoonRow icon={<MessageCircle size={18} />} color="#25D366" title={t("eventos.publish.whatsapp.title")} desc={t("eventos.publish.whatsapp.desc")} />
 
           {/* 4) Voz / audio — próximamente */}
-          <SoonRow icon={<Mic size={18} />} color="#7E2BFF" title="Por voz" desc="Próximamente: cuéntale tu evento con un audio." />
+          <SoonRow icon={<Mic size={18} />} color="#7E2BFF" title={t("eventos.publish.voice.title")} desc={t("eventos.publish.voice.desc")} />
         </div>
       </motion.div>
     </motion.div>
@@ -1061,6 +1081,7 @@ function PublishOptionsModal({
 }
 
 function SoonRow({ icon, color, title, desc }: { icon: ReactNode; color: string; title: string; desc: string }) {
+  const { t } = useLocale();
   return (
     <div className="flex w-full items-center gap-3 rounded-2xl p-3.5 text-left opacity-55" style={{ background: "var(--home-card-bg)", border: "1px solid var(--home-card-border)" }}>
       <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white" style={{ background: color }}>
@@ -1069,7 +1090,7 @@ function SoonRow({ icon, color, title, desc }: { icon: ReactNode; color: string;
       <span className="min-w-0 flex-1">
         <span className="flex items-center gap-2 font-semibold" style={{ color: "var(--home-text)" }}>
           {title}
-          <span className="rounded-full px-1.5 py-0.5 text-[10px] font-bold" style={{ background: "var(--home-bg-soft)", color: "var(--home-text-soft)" }}>PRONTO</span>
+          <span className="rounded-full px-1.5 py-0.5 text-[10px] font-bold" style={{ background: "var(--home-bg-soft)", color: "var(--home-text-soft)" }}>{t("eventos.publish.soonBadge")}</span>
         </span>
         <span className="block text-xs" style={{ color: "var(--home-text-soft)" }}>{desc}</span>
       </span>
@@ -1162,6 +1183,7 @@ function ListView({
   onBuy: (id: string) => void;
   onSeeDay: (date: string) => void;
 }) {
+  const { t, locale } = useLocale();
   return (
     <div className="space-y-8">
       {grouped.map(([date, items]) => (
@@ -1169,12 +1191,12 @@ function ListView({
           <div className="mb-3 flex items-center justify-between">
             <h3 className="flex items-center gap-2 text-sm font-semibold capitalize">
               <CalendarIcon size={15} style={{ color: "var(--ag-brand)" }} />
-              {date === TODAY ? "Hoy · " : ""}
-              {fmtLong(date)}
+              {date === TODAY ? t("eventos.list.today") : ""}
+              {fmtLong(date, locale)}
             </h3>
             {items.length > 3 && (
               <button onClick={() => onSeeDay(date)} className="flex items-center gap-0.5 text-xs font-medium" style={{ color: "var(--ag-brand)" }}>
-                Ver todos <ChevronRight size={13} />
+                {t("eventos.list.seeAll")} <ChevronRight size={13} />
               </button>
             )}
           </div>
@@ -1202,6 +1224,7 @@ function EventCard({
   onClick: () => void;
   onBuy: () => void;
 }) {
+  const { t } = useLocale();
   const Cat = CATEGORIES[event.category];
   const canBuy = (event.hasSale ?? !!event.url) && !!event.url;
   return (
@@ -1214,16 +1237,16 @@ function EventCard({
       <button onClick={onClick} className="relative block h-44 w-full" style={{ background: event.image }} aria-label={event.title}>
         {event.cancelled && <CancelledSeal />}
         <span className="absolute left-3 top-3 flex items-center gap-1 rounded-full bg-black/40 px-2.5 py-1 text-[11px] font-medium text-white backdrop-blur">
-          <Cat.icon size={11} /> {Cat.label}
+          <Cat.icon size={11} /> {t(Cat.labelKey)}
         </span>
         <span className="absolute bottom-3 right-3 rounded-full bg-white/90 px-2 py-1 text-[11px] font-semibold text-gray-900">
-          {event.price == null ? "Consultar" : event.price === 0 ? "Gratis" : `${event.priceInfo ? "desde " : ""}${event.price} €`}
+          {event.price == null ? t("eventos.card.consult") : event.price === 0 ? t("eventos.card.free") : `${event.priceInfo ? t("eventos.card.priceFrom") : ""}${event.price} €`}
         </span>
       </button>
       {/* Guardar (no dispara el click de la card) */}
       <button
         onClick={onFav}
-        aria-label={isFav ? "Quitar de guardados" : "Guardar evento"}
+        aria-label={isFav ? t("eventos.card.removeFav") : t("eventos.card.addFav")}
         className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur transition-transform hover:scale-110"
       >
         <Heart size={16} fill={isFav ? "#f87171" : "none"} stroke={isFav ? "#f87171" : "currentColor"} />
@@ -1241,7 +1264,7 @@ function EventCard({
         <div className="mt-3">
           {event.cancelled ? (
             <div className="rounded-xl py-2.5 text-center text-sm font-semibold" style={{ background: "var(--ag-danger-bg)", color: "var(--ag-danger)" }}>
-              Cancelado
+              {t("eventos.card.cancelled")}
             </div>
           ) : canBuy ? (
             <a
@@ -1252,7 +1275,7 @@ function EventCard({
               className="flex items-center justify-center gap-1.5 rounded-xl py-2.5 text-sm font-semibold text-white"
               style={{ background: "var(--ag-brand)" }}
             >
-              <Ticket size={15} /> Entradas
+              <Ticket size={15} /> {t("eventos.card.tickets")}
             </a>
           ) : (
             <button
@@ -1260,7 +1283,7 @@ function EventCard({
               className="flex w-full items-center justify-center gap-1 rounded-xl py-2.5 text-sm font-semibold"
               style={{ border: "1px solid var(--ag-brand-border)", color: "var(--ag-brand)" }}
             >
-              Ver evento <ChevronRight size={15} />
+              {t("eventos.card.seeEvent")} <ChevronRight size={15} />
             </button>
           )}
         </div>
@@ -1282,6 +1305,7 @@ function CalendarView({
   onMonth: (m: number) => void;
   onSelect: (e: EventItem) => void;
 }) {
+  const { t, locale } = useLocale();
   const year = 2026;
   const firstDay = (new Date(year, month, 1).getDay() + 6) % 7; // 0 = lunes
   const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -1307,14 +1331,14 @@ function CalendarView({
         <button onClick={() => onMonth(Math.max(0, month - 1))} disabled={month <= 0} className="rounded-lg p-2 hover:bg-ag-card disabled:opacity-30">
           <ChevronLeft size={18} />
         </button>
-        <h3 className="text-base font-semibold capitalize">{MONTHS[month]} {year}</h3>
+        <h3 className="text-base font-semibold capitalize">{monthYear(month, year, locale)}</h3>
         <button onClick={() => onMonth(Math.min(11, month + 1))} disabled={month >= 11} className="rounded-lg p-2 hover:bg-ag-card disabled:opacity-30">
           <ChevronRight size={18} />
         </button>
       </div>
 
       <div className="mb-2 grid grid-cols-7 gap-1 text-center text-[11px] font-medium" style={{ color: "var(--home-text-soft)" }}>
-        {WEEKDAYS.map((d) => <div key={d}>{d}</div>)}
+        {weekdayInitials(locale).map((d, i) => <div key={i}>{d}</div>)}
       </div>
 
       <div className="grid grid-cols-7 gap-1">
@@ -1345,7 +1369,7 @@ function CalendarView({
                   </button>
                 ))}
                 {dayEvents.length > 2 && (
-                  <span className="block px-1 text-[10px]" style={{ color: "var(--home-text-soft)" }}>+{dayEvents.length - 2} más</span>
+                  <span className="block px-1 text-[10px]" style={{ color: "var(--home-text-soft)" }}>{t("eventos.cal.more").replace("{n}", String(dayEvents.length - 2))}</span>
                 )}
               </div>
             </div>
@@ -1375,6 +1399,7 @@ function EventModal({
   onBuy: () => void;
   onClose: () => void;
 }) {
+  const { t, locale } = useLocale();
   const Cat = CATEGORIES[event.category];
   const [showFlyer, setShowFlyer] = useState(false);
   return (
@@ -1403,21 +1428,21 @@ function EventModal({
             <X size={16} />
           </button>
           <span className="absolute bottom-3 left-3 flex items-center gap-1.5 rounded-full bg-black/30 px-2.5 py-1 text-xs font-medium text-white backdrop-blur">
-            <Cat.icon size={13} /> {Cat.label}
+            <Cat.icon size={13} /> {t(Cat.labelKey)}
           </span>
           {event.flyerUrl && (
             <span className="absolute bottom-3 right-3 flex items-center gap-1 rounded-full bg-black/40 px-2.5 py-1 text-xs font-medium text-white backdrop-blur">
-              <Maximize2 size={12} /> Ver flyer
+              <Maximize2 size={12} /> {t("eventos.modal.seeFlyer")}
             </span>
           )}
         </div>
         <div className="p-5">
           <h3 className="text-xl font-bold">{event.title}</h3>
           <div className="mt-3 space-y-2 text-sm" style={{ color: "var(--home-text-muted)" }}>
-            <p className="flex items-center gap-2"><CalendarIcon size={15} style={{ color: "var(--ag-brand)" }} /> <span className="capitalize">{fmtLong(event.date)}</span></p>
-            <p className="flex items-center gap-2"><Clock size={15} style={{ color: "var(--ag-brand)" }} /> {event.time} h</p>
+            <p className="flex items-center gap-2"><CalendarIcon size={15} style={{ color: "var(--ag-brand)" }} /> <span className="capitalize">{fmtLong(event.date, locale)}</span></p>
+            <p className="flex items-center gap-2"><Clock size={15} style={{ color: "var(--ag-brand)" }} /> {event.time} {t("eventos.modal.timeSuffix")}</p>
             <p className="flex items-center gap-2"><MapPin size={15} style={{ color: "var(--ag-brand)" }} /> {event.venue}{event.neighborhood ? ` · ${event.neighborhood}` : ""}</p>
-            <p className="flex items-center gap-2"><Ticket size={15} style={{ color: "var(--ag-brand)" }} /> {event.priceInfo ? event.priceInfo : event.price == null ? "Precio por confirmar" : event.price === 0 ? "Entrada gratuita" : `${event.price} €`}</p>
+            <p className="flex items-center gap-2"><Ticket size={15} style={{ color: "var(--ag-brand)" }} /> {event.priceInfo ? event.priceInfo : event.price == null ? t("eventos.modal.priceTbc") : event.price === 0 ? t("eventos.modal.priceFree") : `${event.price} €`}</p>
           </div>
 
           {/* Acciones secundarias: guardar + compartir */}
@@ -1427,14 +1452,14 @@ function EventModal({
               className="flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2.5 text-sm font-medium"
               style={isFav ? { background: "var(--ag-danger-bg)", color: "var(--ag-danger)" } : { background: "var(--home-card-bg)", color: "var(--home-text)" }}
             >
-              <Heart size={15} fill={isFav ? "currentColor" : "none"} /> {isFav ? "Guardado" : "Guardar"}
+              <Heart size={15} fill={isFav ? "currentColor" : "none"} /> {isFav ? t("eventos.modal.saved") : t("eventos.modal.save")}
             </button>
             <button
               onClick={onShare}
               className="flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2.5 text-sm font-medium"
               style={{ background: "var(--home-card-bg)", color: "var(--home-text)" }}
             >
-              <Share2 size={15} /> {copied ? "¡Copiado!" : "Compartir"}
+              <Share2 size={15} /> {copied ? t("eventos.modal.copied") : t("eventos.modal.share")}
             </button>
           </div>
 
@@ -1449,15 +1474,15 @@ function EventModal({
               className="mt-2 flex items-center justify-center gap-1.5 rounded-xl py-3 text-sm font-semibold text-white"
               style={{ background: "var(--ag-brand)" }}
             >
-              Comprar entradas online <ExternalLink size={15} />
+              {t("eventos.modal.buyOnline")} <ExternalLink size={15} />
             </a>
           ) : event.price === 0 ? (
             <div className="mt-2 rounded-xl py-3 text-center text-sm font-medium" style={{ background: "var(--ag-success-bg)", color: "var(--ag-success)" }}>
-              Entrada libre — no necesitas reservar
+              {t("eventos.modal.freeEntry")}
             </div>
           ) : (
             <div className="mt-2 rounded-xl py-3 text-center text-sm font-medium" style={{ background: "var(--ag-info-bg)", color: "var(--ag-info)" }}>
-              {event.price == null ? "Consulta el precio con el organizador" : "Entradas en taquilla"}
+              {event.price == null ? t("eventos.modal.consultOrganizer") : t("eventos.modal.boxOffice")}
             </div>
           )}
         </div>
@@ -1476,6 +1501,7 @@ function EventModal({
 // ─── Visor de flyer a pantalla completa ──────────────────────────────────────
 
 function FlyerLightbox({ url, alt, onClose }: { url: string; alt: string; onClose: () => void }) {
+  const { t } = useLocale();
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -1487,7 +1513,7 @@ function FlyerLightbox({ url, alt, onClose }: { url: string; alt: string; onClos
       <button
         onClick={(e) => { e.stopPropagation(); onClose(); }}
         className="absolute right-4 top-4 rounded-full bg-white/15 p-2 text-white backdrop-blur"
-        aria-label="Cerrar"
+        aria-label={t("eventos.lightbox.close")}
       >
         <X size={20} />
       </button>
@@ -1506,13 +1532,14 @@ function FlyerLightbox({ url, alt, onClose }: { url: string; alt: string; onClos
 // ─── Sello CANCELADO ────────────────────────────────────────────────────────
 
 function CancelledSeal({ big }: { big?: boolean }) {
+  const { t } = useLocale();
   return (
     <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center" style={{ background: "rgba(0,0,0,0.45)" }}>
       <span
         className={`-rotate-12 rounded-md border-2 font-extrabold uppercase tracking-widest ${big ? "px-5 py-2 text-2xl" : "px-3 py-1 text-sm"}`}
         style={{ color: "#fff", borderColor: "#fff", background: "rgba(220,38,38,0.85)" }}
       >
-        Cancelado
+        {t("eventos.seal.cancelled")}
       </span>
     </div>
   );
@@ -1521,15 +1548,16 @@ function CancelledSeal({ big }: { big?: boolean }) {
 // ─── Estado vacío ─────────────────────────────────────────────────────────
 
 function EmptyState({ onReset }: { onReset: () => void }) {
+  const { t } = useLocale();
   return (
     <div className="flex flex-col items-center justify-center rounded-2xl py-16 text-center" style={{ background: "var(--home-bg-soft)", border: "1px dashed var(--home-card-border)" }}>
       <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-full" style={{ background: "var(--ag-brand-bg)" }}>
         <Search size={24} style={{ color: "var(--ag-brand)" }} />
       </div>
-      <h3 className="text-lg font-semibold">No hay eventos con esos filtros</h3>
-      <p className="mt-1 max-w-xs text-sm" style={{ color: "var(--home-text-muted)" }}>Prueba a cambiar la ciudad, las fechas o quita algún filtro.</p>
+      <h3 className="text-lg font-semibold">{t("eventos.empty.title")}</h3>
+      <p className="mt-1 max-w-xs text-sm" style={{ color: "var(--home-text-muted)" }}>{t("eventos.empty.body")}</p>
       <button onClick={onReset} className="mt-4 rounded-xl px-4 py-2 text-sm font-semibold text-white" style={{ background: "var(--ag-brand)" }}>
-        Limpiar filtros
+        {t("eventos.empty.reset")}
       </button>
     </div>
   );
