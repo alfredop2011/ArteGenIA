@@ -112,6 +112,14 @@ const CITIES_BY_COUNTRY: Record<string, { id: string; label: string; available: 
   ],
 };
 
+// Nombres "bonitos" para las ciudades con tildes; el resto se title-casan.
+const CITY_LABELS: Record<string, string> = {
+  madrid: "Madrid", barcelona: "Barcelona", valencia: "Valencia", sevilla: "Sevilla",
+  malaga: "Málaga", bilbao: "Bilbao", zaragoza: "Zaragoza", granada: "Granada",
+};
+const titleCaseCity = (s: string) => s.split(" ").map((w) => (w ? w[0].toUpperCase() + w.slice(1) : w)).join(" ");
+const cityLabelFor = (id: string) => CITY_LABELS[id] ?? titleCaseCity(id);
+
 // Coordenadas para "Cerca de mí" (detección por GPS → ciudad más cercana).
 const CITY_COORDS: Record<string, { country: string; lat: number; lng: number }> = {
   madrid: { country: "es", lat: 40.4168, lng: -3.7038 },
@@ -354,7 +362,19 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
   // El label "Todas las ciudades" es chrome de UI (se traduce); los nombres de
   // ciudades son nombres propios y se dejan tal cual.
   const cityLabelOf = (c: { id: string; label: string }) => (c.id === "todas" ? t("eventos.city.todas") : c.label);
-  const cities = CITIES_BY_COUNTRY[country] ?? [{ id: "todas", label: "Todas las ciudades", available: true }];
+  // Lista de ciudades DINÁMICA: sale de los eventos reales del país (con su
+  // número), así nunca ofrecemos ciudades vacías ni escondemos ciudades que sí
+  // tienen eventos (antes era una lista fija de 8 y se quedaban fuera, p.ej.
+  // Lloret de Mar). "Todas" siempre primera.
+  const cities = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const e of events) if (e.country === country) counts.set(e.city, (counts.get(e.city) ?? 0) + 1);
+    const list = [...counts.entries()]
+      .map(([id, count]) => ({ id, label: cityLabelFor(id), available: true, count }))
+      .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
+    const total = list.reduce((s, c) => s + c.count, 0);
+    return [{ id: "todas", label: "Todas las ciudades", available: true, count: total }, ...list];
+  }, [events, country]);
   const cityLabel = cityLabelOf(cities.find((c) => c.id === city) ?? { id: "todas", label: "" });
   // placeLabel = etiqueta "estable" para contador/compartir (país si es "todas").
   const placeLabel = city === "todas" ? countryLabel : cityLabel;
@@ -534,13 +554,19 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
       </div>
 
       {/* ── HERO ─────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden">
+      {/* sin overflow-hidden: recortaba el menú de los desplegables país/ciudad. */}
+      <section className="relative">
         <div
           className="absolute inset-0 -z-10 opacity-60"
           style={{ background: "radial-gradient(60% 80% at 50% 0%, var(--ag-brand-bg), transparent 70%)" }}
         />
         <div className="mx-auto max-w-6xl px-4 pt-5 pb-4 sm:pt-10 sm:pb-8">
-          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="text-left sm:text-center">
+          {/* initial=false: render directo a su estado final. Antes usaba una
+              animación de entrada (opacity 0→1) que en SSR/hidratación se podía
+              quedar atascada en opacity:0 y dejaba el hero (título, país/ciudad,
+              buscador) INVISIBLE. El contenido crítico nunca debe depender de
+              que una animación termine. */}
+          <motion.div initial={false} animate={{ opacity: 1, y: 0 }} className="text-left sm:text-center">
             <span
               className="mb-3 hidden items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium sm:inline-flex"
               style={{ background: "var(--ag-brand-bg)", color: "var(--ag-brand)", border: "1px solid var(--ag-brand-border)" }}
@@ -571,12 +597,15 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
             </p>
           </motion.div>
 
-          {/* País + ciudad + buscador */}
+          {/* País + ciudad + buscador — initial=false para que SIEMPRE se vean
+              (mismo motivo que arriba: la animación de entrada podía dejarlos
+              invisibles). */}
           <motion.div
-            initial={{ opacity: 0, y: 16 }}
+            initial={false}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.05 }}
-            className="mx-auto mt-4 flex max-w-3xl flex-col gap-2 sm:mt-7 sm:flex-row"
+            /* z-30 + relative: el menú de país/ciudad debe quedar POR ENCIMA de
+               la barra de filtros sticky (z-10), si no se abría detrás. */
+            className="relative z-30 mx-auto mt-4 flex max-w-3xl flex-col gap-2 sm:mt-7 sm:flex-row"
           >
             {/* País + ciudad: solo escritorio (en móvil basta el buscador + ◎) */}
             <div className="hidden gap-2 sm:flex">
@@ -615,13 +644,11 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
                 <DropdownItem
                   key={c.id}
                   active={c.id === city}
-                  disabled={!c.available}
                   onClick={() => {
-                    if (!c.available) return;
                     setCity(c.id);
                     setCityOpen(false);
                   }}
-                  right={!c.available ? t("eventos.country.soon") : undefined}
+                  right={String(c.count)}
                 >
                   {cityLabelOf(c)}
                 </DropdownItem>
@@ -1124,19 +1151,17 @@ function Dropdown({
         <span className="flex items-center gap-2 truncate">{icon}<span className="truncate">{label}</span></span>
         <ChevronDown size={15} className={`shrink-0 transition-transform ${open ? "rotate-180" : ""}`} style={{ color: "var(--home-text-soft)" }} />
       </button>
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ opacity: 0, y: -6 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -6 }}
-            className="absolute z-20 mt-2 w-full min-w-[200px] overflow-hidden rounded-xl shadow-lg"
-            style={{ background: "var(--home-bg-soft)", border: "1px solid var(--home-card-border)" }}
-          >
-            {children}
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* div plano (sin animación de opacidad): una animación de entrada de
+          framer se quedaba atascada a media opacidad y el menú salía
+          semitransparente. El menú crítico debe verse al 100% siempre. */}
+      {open && (
+        <div
+          className="absolute z-40 mt-2 max-h-72 w-full min-w-[220px] overflow-y-auto rounded-xl shadow-lg"
+          style={{ background: "var(--home-bg-soft)", border: "1px solid var(--home-card-border)" }}
+        >
+          {children}
+        </div>
+      )}
     </div>
   );
 }
