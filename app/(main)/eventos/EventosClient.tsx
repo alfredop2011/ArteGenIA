@@ -1390,6 +1390,21 @@ function CalendarView({
         </button>
       </div>
 
+      {/* Leyenda de colores por categoría (arriba, como referencia rápida) */}
+      {legendCats.length > 0 && (
+        <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1.5">
+          {legendCats.map((c) => {
+            const Cat = CATEGORIES[c];
+            return (
+              <span key={c} className="flex items-center gap-1.5 text-[11px]" style={{ color: "var(--home-text-muted)" }}>
+                <span className="h-2.5 w-2.5 rounded-full" style={{ background: Cat.grad }} />
+                {t(Cat.labelKey)}
+              </span>
+            );
+          })}
+        </div>
+      )}
+
       <div className="mb-2 grid grid-cols-7 gap-1 text-center text-[11px] font-medium" style={{ color: "var(--home-text-soft)" }}>
         {weekdayInitials(locale).map((d, i) => <div key={i}>{d}</div>)}
       </div>
@@ -1408,17 +1423,30 @@ function CalendarView({
                 border: isToday ? "1.5px solid var(--ag-brand)" : "1px solid transparent",
               }}
             >
-              <span className="text-[11px] font-semibold" style={{ color: isToday ? "var(--ag-brand)" : "var(--home-text-muted)" }}>{day}</span>
+              <div className="flex items-center justify-between">
+                {/* Hoy: número en círculo relleno (énfasis). Resto: número normal. */}
+                {isToday ? (
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-bold text-white" style={{ background: "var(--ag-brand)" }}>{day}</span>
+                ) : (
+                  <span className="text-[11px] font-semibold" style={{ color: "var(--home-text-muted)" }}>{day}</span>
+                )}
+                {/* Insignia con el nº de eventos del día */}
+                {dayEvents.length > 0 && (
+                  <span className="flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[9px] font-bold" style={{ background: "var(--ag-brand-bg)", color: "var(--ag-brand)" }}>
+                    {dayEvents.length}
+                  </span>
+                )}
+              </div>
               <div className="mt-1 space-y-1">
                 {dayEvents.slice(0, 2).map((e) => (
                   <button
                     key={e.id}
                     onClick={() => onSelect(e)}
-                    className="block w-full truncate rounded px-1 py-0.5 text-left text-[10px] font-medium text-white"
+                    className="flex w-full items-center gap-1 truncate rounded px-1 py-0.5 text-left text-[10px] font-medium text-white"
                     style={{ background: CATEGORIES[e.category].grad }}
                     title={e.title}
                   >
-                    {e.time} {e.title}
+                    <span className="truncate">{e.time} {e.title}</span>
                   </button>
                 ))}
                 {dayEvents.length > 2 && (
@@ -1430,23 +1458,6 @@ function CalendarView({
         })}
       </div>
 
-      {/* Leyenda de colores por categoría (solo las presentes en el mes) */}
-      {legendCats.length > 0 && (
-        <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 border-t pt-3" style={{ borderColor: "var(--home-divider)" }}>
-          <span className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: "var(--home-text-soft)" }}>
-            {t("eventos.cal.legend")}
-          </span>
-          {legendCats.map((c) => {
-            const Cat = CATEGORIES[c];
-            return (
-              <span key={c} className="flex items-center gap-1.5 text-xs" style={{ color: "var(--home-text-muted)" }}>
-                <span className="h-3 w-3 rounded-full" style={{ background: Cat.grad }} />
-                <Cat.icon size={12} /> {t(Cat.labelKey)}
-              </span>
-            );
-          })}
-        </div>
-      )}
     </div>
   );
 }
