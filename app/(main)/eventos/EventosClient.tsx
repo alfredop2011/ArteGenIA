@@ -913,28 +913,9 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
             destacados. Solo en vista Lista y sin filtros/búsqueda activos, como
             cabecera de descubrimiento (no se duplica al filtrar). */}
         {view === "lista" && !query && dateFilter === "todos" && filtered.length > 2 && (
-          <div className="mb-7">
-            <div className="mb-5 grid grid-cols-3 gap-3">
-              {[
-                { n: filtered.filter((e) => e.date <= addDays(TODAY, 6)).length, label: t("eventos.stats.week"), icon: CalendarIcon },
-                { n: filtered.filter((e) => e.price === 0).length, label: t("eventos.stats.free"), icon: Ticket },
-                { n: filtered.reduce((s, e) => s + (e.rsvpCount ?? 0), 0), label: t("eventos.stats.attending"), icon: Users },
-              ].map((s, i) => (
-                <div key={i} className="flex flex-col items-center gap-1 rounded-2xl p-4 text-center" style={{ background: "var(--home-bg-soft)", border: "1px solid var(--home-card-border)" }}>
-                  <s.icon size={18} style={{ color: "var(--ag-brand)" }} />
-                  <span className="text-2xl font-bold leading-none">{s.n}</span>
-                  <span className="text-[11px]" style={{ color: "var(--home-text-soft)" }}>{s.label}</span>
-                </div>
-              ))}
-            </div>
-            <h3 className="mb-3 text-base font-bold">{t("eventos.featured.title")}</h3>
-            <div className="-mx-4 flex gap-4 overflow-x-auto px-4 pb-2" style={{ scrollbarWidth: "none" }}>
-              {filtered.slice(0, 8).map((e) => (
-                <div key={e.id} className="w-[280px] shrink-0">
-                  <EventCard event={e} isFav={favs.has(e.id)} onFav={() => toggleFav(e.id)} onClick={() => setSelected(e)} onBuy={() => trackClick(e.id)} />
-                </div>
-              ))}
-            </div>
+          <div className="mb-7 space-y-5">
+            <StatsStrip events={filtered} />
+            <DestacadosRail events={filtered} favs={favs} onFav={toggleFav} onSelect={setSelected} onBuy={trackClick} />
           </div>
         )}
 
@@ -950,13 +931,19 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
             onSeeDay={(d) => { setRange({ from: d, to: d }); setDateFilter("rango"); }}
           />
         ) : (
-          // Vista calendario estilo mockup: "Popular hoy" + calendario al lado.
-          <div className="grid gap-4 lg:grid-cols-2">
-            {(() => {
-              const popular = filtered.find((e) => e.date === TODAY) ?? filtered[0];
-              return popular ? <FeaturedCard event={popular} onClick={() => setSelected(popular)} onBuy={() => trackClick(popular.id)} /> : null;
-            })()}
-            <CalendarView events={filtered} month={calMonth} onMonth={setCalMonth} onSelect={setSelected} />
+          // Vista calendario estilo mockup: "Popular hoy" (slider) + calendario
+          // al lado, y debajo stats + "Próximos destacados".
+          <div className="space-y-6">
+            <div className="grid items-start gap-4 lg:grid-cols-2">
+              {(() => {
+                const today = filtered.filter((e) => e.date === TODAY);
+                const populars = (today.length ? today : filtered).slice(0, 5);
+                return populars.length ? <PopularSlider events={populars} onSelect={setSelected} onBuy={trackClick} /> : <div />;
+              })()}
+              <CalendarView events={filtered} month={calMonth} onMonth={setCalMonth} onSelect={setSelected} />
+            </div>
+            <StatsStrip events={filtered} />
+            <DestacadosRail events={filtered} favs={favs} onFav={toggleFav} onSelect={setSelected} onBuy={trackClick} />
           </div>
         )}
       </section>
@@ -1642,6 +1629,78 @@ function EventModal({
         )}
       </AnimatePresence>
     </motion.div>
+  );
+}
+
+// ─── Slider "Popular hoy" (varios destacados que pasan solos) ────────────────
+
+function PopularSlider({ events, onSelect, onBuy }: { events: EventItem[]; onSelect: (e: EventItem) => void; onBuy: (id: string) => void }) {
+  const [i, setI] = useState(0);
+  const n = events.length;
+  useEffect(() => {
+    if (n <= 1) return;
+    const id = setInterval(() => setI((x) => (x + 1) % n), 5000); // pasa solo cada 5s
+    return () => clearInterval(id);
+  }, [n]);
+  if (n === 0) return null;
+  const idx = i % n;
+  const e = events[idx];
+  return (
+    <div>
+      <FeaturedCard event={e} onClick={() => onSelect(e)} onBuy={() => onBuy(e.id)} />
+      {n > 1 && (
+        <div className="mt-3 flex items-center justify-center gap-1.5">
+          {events.map((_, k) => (
+            <button
+              key={k}
+              onClick={() => setI(k)}
+              aria-label={`Destacado ${k + 1}`}
+              className="h-1.5 rounded-full transition-all"
+              style={{ width: k === idx ? 18 : 6, background: k === idx ? "var(--ag-brand)" : "var(--home-card-border)" }}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Tira de stats + carrusel "Próximos destacados" (reutilizables) ──────────
+
+function StatsStrip({ events }: { events: EventItem[] }) {
+  const { t } = useLocale();
+  const stats = [
+    { n: events.filter((e) => e.date <= addDays(TODAY, 6)).length, label: t("eventos.stats.week"), icon: CalendarIcon },
+    { n: events.filter((e) => e.price === 0).length, label: t("eventos.stats.free"), icon: Ticket },
+    { n: events.reduce((s, e) => s + (e.rsvpCount ?? 0), 0), label: t("eventos.stats.attending"), icon: Users },
+  ];
+  return (
+    <div className="grid grid-cols-3 gap-3">
+      {stats.map((s, i) => (
+        <div key={i} className="flex flex-col items-center gap-1 rounded-2xl p-4 text-center" style={{ background: "var(--home-bg-soft)", border: "1px solid var(--home-card-border)" }}>
+          <s.icon size={18} style={{ color: "var(--ag-brand)" }} />
+          <span className="text-2xl font-bold leading-none">{s.n}</span>
+          <span className="text-[11px]" style={{ color: "var(--home-text-soft)" }}>{s.label}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function DestacadosRail({ events, favs, onFav, onSelect, onBuy }: { events: EventItem[]; favs: Set<string>; onFav: (id: string) => void; onSelect: (e: EventItem) => void; onBuy: (id: string) => void }) {
+  const { t } = useLocale();
+  if (events.length === 0) return null;
+  return (
+    <div>
+      <h3 className="mb-3 text-base font-bold">{t("eventos.featured.title")}</h3>
+      <div className="-mx-4 flex gap-4 overflow-x-auto px-4 pb-2" style={{ scrollbarWidth: "none" }}>
+        {events.slice(0, 8).map((e) => (
+          <div key={e.id} className="w-[280px] shrink-0">
+            <EventCard event={e} isFav={favs.has(e.id)} onFav={() => onFav(e.id)} onClick={() => onSelect(e)} onBuy={() => onBuy(e.id)} />
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 
