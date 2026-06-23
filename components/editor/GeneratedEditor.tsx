@@ -2580,9 +2580,9 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
   // Logica pura de guardado en Supabase. NO checkea sesion (eso lo hace
   // el wrapper publico `handleSave` via requireAuth + useProjects ya valida
   // de nuevo en el server).
-  const doSave = useCallback(async () => {
+  const doSave = useCallback(async (): Promise<string | null> => {
     const canvas = fabricRef.current;
-    if (!canvas) return;
+    if (!canvas) return null;
     setSavingProject(true);
     setSaveState("saving");
     try {
@@ -2624,14 +2624,17 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
         }
         setSaveState("saved");
         toast.success("Diseño guardado");
+        return typeof result === "string" ? result : currentProjectId;
       } else {
         setSaveState("unsaved");
         toast.error("No se pudo guardar. ¿Has iniciado sesión?");
+        return null;
       }
     } catch (e) {
       console.error("Error guardando:", e);
       setSaveState("unsaved");
       toast.error("Error al guardar el diseño");
+      return null;
     } finally {
       setSavingProject(false);
     }
@@ -4313,18 +4316,31 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
                     vincular el invite al fabric_json). */}
                 <button
                   onClick={() => {
-                    if (!currentProjectId) {
-                      toast.error("Guarda el proyecto primero (botón Guardar arriba) para poder pedir esta foto a un colaborador.");
-                      return;
-                    }
                     const obj = fabricRef.current?.getActiveObject();
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     const customId = (obj as any)?.customId as string | undefined;
                     if (!customId) {
-                      toast.error("Esta capa no tiene identificador. Guarda el proyecto y vuelve a intentar.");
+                      toast.error("Esta capa no tiene identificador. Recarga e intenta de nuevo.");
                       return;
                     }
-                    setRequestPhotoLayerId(customId);
+                    // Si ya está guardado, abrir modal directo.
+                    if (currentProjectId) {
+                      setRequestPhotoLayerId(customId);
+                      return;
+                    }
+                    // Auto-guardar primero. Requiere sesión: si no hay,
+                    // requireAuth abre AuthModal y reintenta tras login.
+                    requireAuth(
+                      async () => {
+                        const id = await doSave();
+                        if (id) setRequestPhotoLayerId(customId);
+                        // Si doSave devolvió null, ya mostró toast de error.
+                      },
+                      {
+                        title: "Inicia sesión para pedir esta foto",
+                        subtitle: "Guardamos tu flyer y generamos un link único para tu colaborador (DJ, artista, marca).",
+                      },
+                    );
                   }}
                   title="Pedir la foto a un colaborador (DJ, artista, marca…)"
                   className="ag-fab-btn bg-emerald-600/20 text-emerald-200 hover:bg-emerald-600/30">

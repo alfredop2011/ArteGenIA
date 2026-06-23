@@ -1543,7 +1543,7 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
   }, [template, formatId, blocks, pushHistory, toast]);
 
   // Ref a doSave para usar desde callbacks declaradas ANTES de doSave
-  const doSaveRef = useRef<((silent?: boolean) => Promise<void>) | null>(null);
+  const doSaveRef = useRef<((silent?: boolean) => Promise<string | null>) | null>(null);
 
   // ─── Cambiar formato en vivo (Fase M.1) ────────────────────────────────
   // Si el proyecto esta guardado, lo guardamos primero (con cambios actuales)
@@ -1888,9 +1888,9 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
   // Serializa el canvas (incluyendo customId), genera thumbnail JPEG inline
   // y guarda o actualiza en Supabase. Si es nuevo, redirige URL a /editor/<uuid>
   // sin recargar (replaceState).
-  const doSave = useCallback(async (silent = false) => {
+  const doSave = useCallback(async (silent = false): Promise<string | null> => {
     const fc = fabricRef.current;
-    if (!fc || !loaded) return;
+    if (!fc || !loaded) return null;
     setSaveState("saving");
     try {
       // Multi-página: si hay más de 1 página o el proyecto ya está en
@@ -1933,14 +1933,17 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
         }
         setSaveState("saved");
         if (!silent) toast.success(t("mobileEditor.toast.savedOk"));
+        return typeof result === "string" ? result : currentProjectId;
       } else {
         setSaveState("unsaved");
         if (!silent) toast.error(t("mobileEditor.toast.savedFail"));
+        return null;
       }
     } catch (e) {
       console.error("save error", e);
       setSaveState("unsaved");
       if (!silent) toast.error(t("mobileEditor.toast.savedError"));
+      return null;
     }
   }, [loaded, currentProjectId, docTitle, templateId, template, formatId, canvasSize, saveProject, toast, t]);
 
@@ -2989,26 +2992,35 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
                 }}/>
                 {/* Z.17 — Borrador mágico/manual full-screen */}
                 <SubToolBtnIcon node={<Brush size={18} strokeWidth={2.2}/>} label="Refinar" active={false} onClick={() => { void openBrushEraser(); }}/>
-                {/* Solicitar foto al colaborador — visible siempre que la
-                    capa sea imagen real; el click pide guardar si aún no
-                    hay project_id (necesario para vincular el invite). */}
+                {/* Solicitar foto al colaborador — si el proyecto no
+                    está guardado, hacemos auto-save (con login si hace
+                    falta) y luego abrimos el modal. UX sin fricción. */}
                 <SubToolBtnIcon
                   node={<UserPlus size={18} strokeWidth={2.2}/>}
                   label="Solicitar"
                   active={false}
                   onClick={() => {
-                    if (!currentProjectId) {
-                      toast.error("Guarda el proyecto primero para pedir esta foto a un colaborador.");
-                      return;
-                    }
                     const img = getActiveImage();
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     const customId = (img as any)?.customId as string | undefined;
                     if (!customId) {
-                      toast.error("Esta capa no tiene identificador. Guarda el proyecto y vuelve a intentar.");
+                      toast.error("Esta capa no tiene identificador. Recarga e intenta de nuevo.");
                       return;
                     }
-                    setRequestPhotoLayerId(customId);
+                    if (currentProjectId) {
+                      setRequestPhotoLayerId(customId);
+                      return;
+                    }
+                    requireAuth(
+                      async () => {
+                        const id = await doSave(false);
+                        if (id) setRequestPhotoLayerId(customId);
+                      },
+                      {
+                        title: "Inicia sesión para pedir esta foto",
+                        subtitle: "Guardamos tu flyer y generamos un link único para tu colaborador.",
+                      },
+                    );
                   }}
                 />
                 {/* Espacio dummy intencional para mantener ritmo visual */}
