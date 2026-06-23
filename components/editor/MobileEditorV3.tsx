@@ -3026,7 +3026,7 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
                   node={<UserPlus size={18} strokeWidth={2.2}/>}
                   label="Solicitar"
                   active={false}
-                  onClick={() => {
+                  onClick={async () => {
                     const img = getActiveImage();
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     const customId = (img as any)?.customId as string | undefined;
@@ -3034,20 +3034,28 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
                       toast.error("Esta capa no tiene identificador. Recarga e intenta de nuevo.");
                       return;
                     }
-                    requireAuth(
-                      async () => {
-                        let id = currentProjectId;
-                        if (!id) {
-                          id = await doSave(false);
-                          if (!id) return;
-                        }
-                        setRequestPhotoLayerId(customId);
-                      },
-                      {
+                    // Verificación de sesión contra Supabase (no el state
+                    // local de useAuth, que durante hidratación puede ser
+                    // null y abrir AuthModal por error → OAuth Google saca
+                    // al user de la plantilla).
+                    const { data: { user: realUser } } = await supabase.auth.getUser();
+                    const proceed = async () => {
+                      let id = currentProjectId;
+                      if (!id) {
+                        id = await doSave(false);
+                        if (!id) return;
+                      }
+                      setRequestPhotoLayerId(customId);
+                    };
+                    if (realUser) {
+                      await proceed();
+                    } else {
+                      setAuthModalConfig({
                         title: "Inicia sesión para pedir esta foto",
                         subtitle: "Guardamos tu flyer y generamos un link único para tu colaborador.",
-                      },
-                    );
+                        onSuccess: () => { void proceed(); },
+                      });
+                    }
                   }}
                 />
                 {/* Espacio dummy intencional para mantener ritmo visual */}

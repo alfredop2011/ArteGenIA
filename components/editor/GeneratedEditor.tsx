@@ -4343,7 +4343,7 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
                     pidiendo guardar primero (necesitamos project_id para
                     vincular el invite al fabric_json). */}
                 <button
-                  onClick={() => {
+                  onClick={async () => {
                     const obj = fabricRef.current?.getActiveObject();
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     const customId = (obj as any)?.customId as string | undefined;
@@ -4351,27 +4351,29 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
                       toast.error("Esta capa no tiene identificador. Recarga e intenta de nuevo.");
                       return;
                     }
-                    // Solicitar foto SIEMPRE requiere sesión: el invite se
-                    // crea con owner_id y queda asociado a la cuenta del
-                    // usuario. Por eso envolvemos TODO en requireAuth,
-                    // incluso si ya hay currentProjectId (la cookie puede
-                    // haber expirado entre tabs).
-                    requireAuth(
-                      async () => {
-                        // Si no hay project guardado, lo guardamos primero
-                        // para tener un project_id que vincular al invite.
-                        let id = currentProjectId;
-                        if (!id) {
-                          id = await doSave();
-                          if (!id) return; // doSave ya mostró toast de error
-                        }
-                        setRequestPhotoLayerId(customId);
-                      },
-                      {
+                    // Verificamos sesión DIRECTAMENTE contra Supabase (no
+                    // contra el state local de useAuth, que puede estar
+                    // null durante hidratación inicial y disparar AuthModal
+                    // por error). Si hay sesión real, NO abrimos AuthModal:
+                    // eso evita perder la plantilla por la redirección OAuth.
+                    const { data: { user: realUser } } = await supabase.auth.getUser();
+                    const proceed = async () => {
+                      let id = currentProjectId;
+                      if (!id) {
+                        id = await doSave();
+                        if (!id) return;
+                      }
+                      setRequestPhotoLayerId(customId);
+                    };
+                    if (realUser) {
+                      await proceed();
+                    } else {
+                      setAuthModalConfig({
                         title: "Inicia sesión para pedir esta foto",
                         subtitle: "Guardamos tu flyer y generamos un link único para tu colaborador (DJ, artista, marca).",
-                      },
-                    );
+                        onSuccess: () => { void proceed(); },
+                      });
+                    }
                   }}
                   title="Pedir la foto a un colaborador (DJ, artista, marca…)"
                   className="ag-fab-btn bg-emerald-600/20 text-emerald-200 hover:bg-emerald-600/30">
