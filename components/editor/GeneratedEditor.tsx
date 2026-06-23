@@ -2588,7 +2588,7 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
     try {
       // Serializar el canvas a JSON. Incluimos customId para reidentificar capas al cargar.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const fabricJson = (canvas.toJSON as any)(["customId"]) as object;
+      const fabricJson = (canvas.toJSON as any)(["customId", "collaboratorReceivedAt", "collaboratorName"]) as object;
 
       // Generar thumbnail JPEG ~320px de ancho como data URL para guardar inline en BD
       // Cambiamos zoom temporal a tamaño real para que el export sea fiel
@@ -4265,6 +4265,34 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
 
             {isRealImage && (
               <>
+                {/* Badge "Foto recibida" — aparece SOLO si esta capa recibió
+                    foto via colaborador (lo marca patchProjectLayer en backend).
+                    Click → borra el flag y marca el proyecto como unsaved
+                    para que se persista en el próximo save. */}
+                {(() => {
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  const o = activeObj as any;
+                  if (!o?.collaboratorReceivedAt) return null;
+                  return (
+                    <button
+                      onClick={() => {
+                        delete o.collaboratorReceivedAt;
+                        delete o.collaboratorName;
+                        setSaveState("unsaved");
+                        updateFloatingToolbar();
+                        toast.success("Foto marcada como vista");
+                      }}
+                      title="Click para marcar como vista"
+                      className="ag-fab-btn bg-emerald-500/30 text-emerald-100 hover:bg-emerald-500/40 border border-emerald-400/40 animate-pulse"
+                    >
+                      <SparklesIcon className="w-4 h-4" strokeWidth={2.4} />
+                      <span className="font-bold">
+                        {o.collaboratorName ? `Recibida de ${o.collaboratorName}` : "Foto recibida"}
+                      </span>
+                    </button>
+                  );
+                })()}
+
                 {/* Reemplazar imagen — BOTON PROMINENTE (antes escondido en Edit) */}
                 <button
                   onClick={() => {

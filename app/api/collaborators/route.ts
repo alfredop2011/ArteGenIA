@@ -19,6 +19,7 @@ async function patchProjectLayer(
   projectId: string,
   targetLayerId: string,
   newUrl: string,
+  collaboratorName: string,
 ): Promise<boolean> {
   try {
     const { data: project, error } = await supabaseAdmin
@@ -32,9 +33,15 @@ async function patchProjectLayer(
     if (!Array.isArray(fj.objects)) return false;
 
     let touched = false;
+    const nowIso = new Date().toISOString();
     for (const obj of fj.objects) {
       if (obj.customId === targetLayerId && obj.type === "image") {
         obj.src = newUrl;
+        // Marcas para el badge "Recibida ✨" en el editor. El frontend
+        // las lee y, cuando el owner hace click en "Marcar como vista",
+        // las borra y persiste al siguiente save.
+        obj.collaboratorReceivedAt = nowIso;
+        obj.collaboratorName = collaboratorName;
         touched = true;
       }
     }
@@ -294,6 +301,7 @@ export async function POST(req: NextRequest) {
         invite.project_id,
         invite.target_layer_id,
         photoUrl,
+        artistName,
       );
 
       // Email al owner (best-effort, no rompe si falla)

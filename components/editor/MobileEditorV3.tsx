@@ -263,7 +263,7 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
     const fc = fabricRef.current;
     if (!fc) return;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const snap = (fc.toJSON as any)(["customId"]) as object;
+    const snap = (fc.toJSON as any)(["customId", "collaboratorReceivedAt", "collaboratorName"]) as object;
     const h = historyRef.current;
     // trunca futuro si estabamos en medio del stack
     h.stack = h.stack.slice(0, h.index + 1);
@@ -504,7 +504,7 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
       // Push estado inicial al history (index 0). Asi el primer cambio
       // permite undo de vuelta al inicio.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const snap = (fc.toJSON as any)(["customId"]) as object;
+      const snap = (fc.toJSON as any)(["customId", "collaboratorReceivedAt", "collaboratorName"]) as object;
       historyRef.current = { stack: [snap], index: 0 };
       recomputeCanUndoRedo();
     };
@@ -1900,7 +1900,7 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const fabricJson: object = pages.pageCount > 1
         ? (pages.serializeForSave(fc, canvasSize.w, canvasSize.h) as unknown as object)
-        : ((fc.toJSON as any)(["customId"]) as object);
+        : ((fc.toJSON as any)(["customId", "collaboratorReceivedAt", "collaboratorName"]) as object);
       // Thumbnail JPEG ~320px
       let thumbnailUrl: string | null = null;
       try {
@@ -2971,6 +2971,32 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
             )}
             {selectedType === "image" && (
               <>
+                {/* Badge "Foto recibida" — solo si la capa fue auto-rellenada
+                    por un colaborador via /api/collaborators. Click → quita
+                    el flag, marca como unsaved. */}
+                {(() => {
+                  const img = getActiveImage();
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  const o = img as any;
+                  if (!o?.collaboratorReceivedAt) return null;
+                  return (
+                    <button
+                      onClick={() => {
+                        delete o.collaboratorReceivedAt;
+                        delete o.collaboratorName;
+                        setSaveState("unsaved");
+                        toast.success("Foto marcada como vista");
+                      }}
+                      className="flex flex-col items-center justify-center min-w-[60px] px-2 py-1 rounded-lg bg-emerald-500/30 text-emerald-100 border border-emerald-400/40 animate-pulse"
+                    >
+                      <Sparkles size={16} strokeWidth={2.4} />
+                      <span className="text-[9px] font-bold mt-0.5 truncate max-w-[60px]">
+                        {o.collaboratorName ? o.collaboratorName.split(" ")[0] : "Recibida"}
+                      </span>
+                    </button>
+                  );
+                })()}
+
                 <SubToolBtnIcon node={<Replace size={18} strokeWidth={2.2}/>} label={t("mobileEditor.subtool.replace")} active={activeSubTool === "reemplazar"} onClick={() => setActiveSubTool(s => s === "reemplazar" ? null : "reemplazar")}/>
                 <SubToolBtnIcon node={<Crop size={18} strokeWidth={2.2}/>} label={t("mobileEditor.subtool.crop")} active={activeSubTool === "recortar"} onClick={() => setActiveSubTool(s => s === "recortar" ? null : "recortar")}/>
                 <SubToolBtnIcon node={<Sliders size={18} strokeWidth={2.2}/>} label={t("mobileEditor.subtool.filters")} active={activeSubTool === "filtros"} onClick={() => setActiveSubTool(s => s === "filtros" ? null : "filtros")}/>
