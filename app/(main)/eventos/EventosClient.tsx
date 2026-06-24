@@ -123,11 +123,14 @@ const CITY_LABELS: Record<string, string> = {
 const titleCaseCity = (s: string) => s.split(" ").map((w) => (w ? w[0].toUpperCase() + w.slice(1) : w)).join(" ");
 const cityLabelFor = (id: string) => CITY_LABELS[id] ?? titleCaseCity(id);
 
-// Foto de fondo del hero por ciudad (skyline nocturno). Vacío por ahora; para
-// activarla, sube la imagen a R2 (CORS ya configurado) y pon aquí su URL:
-//   madrid: `${process.env.NEXT_PUBLIC_R2_PUBLIC_URL}/hero/madrid.jpg`, …
+// Foto de fondo del hero por ciudad (skyline). La clave es el slug crudo de
+// `e.city` (minúsculas: "madrid", "barcelona"…). La imagen vive en R2 (CORS
+// ya configurado) bajo hero/<ciudad>.jpg. Para añadir otra ciudad: sube su
+// foto a R2 con `node` (ver carpeta hero/) y añade aquí su URL pública.
 // Si una ciudad no tiene foto, el hero usa solo el degradado oscuro + glows.
-const CITY_HERO: Record<string, string> = {};
+const CITY_HERO: Record<string, string> = {
+  madrid: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/hero/madrid.jpg",
+};
 
 // Coordenadas para "Cerca de mí" (detección por GPS → ciudad más cercana).
 const CITY_COORDS: Record<string, { country: string; lat: number; lng: number }> = {
@@ -593,7 +596,7 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
             <div
               className="absolute inset-y-0 right-0 w-full sm:w-3/5"
               style={{
-                backgroundImage: `linear-gradient(90deg,#0b0b13 0%,rgba(11,11,19,.65) 35%,rgba(11,11,19,.15) 100%), url('${cityHero}')`,
+                backgroundImage: `linear-gradient(90deg,#0b0b13 0%,rgba(11,11,19,.8) 28%,rgba(11,11,19,.5) 100%), url('${cityHero}')`,
                 backgroundSize: "cover",
                 backgroundPosition: "center",
                 maskImage: "linear-gradient(180deg,#000 0%,#000 60%,transparent 100%)",
@@ -621,7 +624,7 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
             <h1 className="mx-auto max-w-3xl text-2xl font-bold tracking-tight text-white sm:text-5xl">
               <span className="sm:hidden">{t("eventos.hero.titleMobile")}</span>
               <span className="hidden sm:inline">{t("eventos.hero.titleDesktop")}</span>
-              <span className="relative inline-flex items-baseline" style={{ background: "linear-gradient(90deg,#a855f7,#ec4899)", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent" }}>
+              <span className="relative inline-flex items-baseline" style={{ background: "linear-gradient(90deg,#a855f7,#ec4899)", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent", filter: "drop-shadow(0 1px 6px rgba(0,0,0,.55))" }}>
                 <AnimatePresence mode="wait">
                   <motion.span
                     key={heroWord}
