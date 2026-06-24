@@ -4962,20 +4962,22 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
             }).length;
             const offset = existingExtras * 40;
             try {
-              // PNG 240x240 transparente REAL (no 1x1 escalado x240, que
-              // causaba que la foto recibida se renderizara a tamaño
-              // absurdo). Con dimensions naturales 240x240 y scale 1,
-              // tanto el placeholder como la foto real ocupan ~240px en
-              // el canvas. El user puede ajustar después con el handle.
-              const transparentPng240 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPAAAADwCAQAAACFI7IzAAAAH0lEQVR42u3BMQEAAADCoPVPbQwfoAAAAAAAAAAAAOA1EFkAAR3Z6ScAAAAASUVORK5CYII=";
+              // PNG 1x1 transparente (canónico, 100% válido en cualquier
+              // navegador). Lo escalamos visualmente a 240x240 con
+              // scaleX/scaleY. Cuando llegue la foto real del colaborador,
+              // patchProjectLayer (backend) resetea scaleX/scaleY a 1
+              // y limpia backgroundColor/stroke — la foto se ve a tamaño
+              // natural sin overlay morado.
+              const transparentPng = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkAAIAAAoAAv/lxKUAAAAASUVORK5CYII=";
               const fabric = await import("fabric");
-              const img = await fabric.FabricImage.fromURL(transparentPng240);
+              const img = await fabric.FabricImage.fromURL(transparentPng);
               img.set({
                 left: 60 + offset,
                 top: 60 + offset,
                 originX: "left",
                 originY: "top",
-                // scaleX/scaleY = 1 (default). El PNG ya es 240x240.
+                scaleX: 240,
+                scaleY: 240,
                 // Fondo morado translúcido + borde dashed para que el
                 // user vea dónde está el slot antes de que llegue la foto.
                 stroke: "rgba(168,85,247,0.7)",
