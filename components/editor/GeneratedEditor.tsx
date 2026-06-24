@@ -39,6 +39,8 @@ import {
   Check,
   // Solicitar foto al colaborador (invite contextual desde toolbar)
   UserPlus,
+  // Wizard multi-invite "Solicitar todas las fotos"
+  Users,
   // Dropdown del avatar en el header del editor
   Settings, History, Crown, LogOut,
 } from "lucide-react";
@@ -57,6 +59,7 @@ import { type FormatId, getFormatByDimensions, FORMATS, PUBLIC_FORMATS } from "@
 import { applyTemplateLayers } from "@/lib/fabricApplyTemplateLayers";
 import { ArtistLibraryModal, type ArtistEntry } from "@/components/wizard/ArtistLibrary";
 import RequestPhotoModal from "@/components/editor/RequestPhotoModal";
+import MultiRequestPhotoModal, { type LayerInput as MultiLayerInput } from "@/components/editor/MultiRequestPhotoModal";
 import NotificationsBell from "@/components/notifications/NotificationsBell";
 import { isAdmin } from "@/lib/admin";
 // Side-effect import: extiende FabricObject.prototype.toObject para que
@@ -113,7 +116,7 @@ type ImageProps = {
 };
 
 type SaveState = "saved" | "saving" | "unsaved";
-type LeftTool = "design" | "elements" | "text" | "photos" | "background" | "layers" | "ai" | "brand" | "favorites" | "myAssets" | "request-photo";
+type LeftTool = "design" | "elements" | "text" | "photos" | "background" | "layers" | "ai" | "brand" | "favorites" | "myAssets" | "request-photo" | "request-photo-multi";
 
 // Z.8.1 — Asset de "Mis Recursos" cargado desde /api/assets para reusar
 // en el editor sin tener que subir el archivo otra vez.
@@ -400,6 +403,9 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
   // Modal "Solicitar foto al colaborador" — guarda el customId del layer
   // activo para que RequestPhotoModal genere un invite con contexto.
   const [requestPhotoLayerId, setRequestPhotoLayerId] = useState<string | null>(null);
+  // Wizard "Solicitar fotos a varios colaboradores". Cuando está set,
+  // contiene la lista de capas image detectadas + projectId.
+  const [multiRequestLayers, setMultiRequestLayers] = useState<MultiLayerInput[] | null>(null);
   // Dropdown del avatar en el header del editor — réplica del de AppShell
   // (Mis recursos, Historial, Mi cuenta, Cerrar sesión). Cerrado por defecto.
   const [editorUserMenuOpen, setEditorUserMenuOpen] = useState(false);
@@ -2708,6 +2714,58 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
     }
   }, [currentProjectId, doSave, toast]);
 
+  // ─── Solicitar fotos a VARIOS colaboradores (wizard multi-invite) ──────
+  // Detecta todas las capas image actuales del canvas y abre el modal con
+  // un invite por cada una. Mismo gate de auth + auto-save que el helper
+  // individual. Si no hay capas image, toast informativo.
+  const handleRequestPhotoMulti = useCallback(async () => {
+    const canvas = fabricRef.current;
+    if (!canvas) {
+      toast.error("Editor no listo, intenta de nuevo.");
+      return;
+    }
+    // Detectar capas image con customId. Solo seleccionables (evitamos
+    // backgrounds bloqueados que el user no quiere reemplazar).
+    const layerInputs: MultiLayerInput[] = [];
+    for (const obj of canvas.getObjects()) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const o = obj as any;
+      const t = o?.type;
+      const isImage = t === "image" || t === "Image";
+      const customId = o?.customId as string | undefined;
+      if (isImage && customId) {
+        layerInputs.push({
+          customId,
+          // sugerir rol legible a partir del id (ej. "dj-photo" → "Dj photo")
+          suggestedRole: customId.replace(/[-_]/g, " ").replace(/\b\w/g, c => c.toUpperCase()),
+        });
+      }
+    }
+    if (layerInputs.length === 0) {
+      toast.error("No hay capas de imagen para solicitar. Añade fotos al diseño primero.");
+      return;
+    }
+    // Verificar sesión real (mismo patrón que handleRequestPhoto individual)
+    const { data: { user: realUser } } = await supabase.auth.getUser();
+    const proceed = async () => {
+      let id = currentProjectId;
+      if (!id) {
+        id = await doSave();
+        if (!id) return;
+      }
+      setMultiRequestLayers(layerInputs);
+    };
+    if (realUser) {
+      await proceed();
+    } else {
+      setAuthModalConfig({
+        title: "Inicia sesión para pedir las fotos",
+        subtitle: "Guardamos tu flyer y generamos los links únicos para tus colaboradores.",
+        onSuccess: () => { void proceed(); },
+      });
+    }
+  }, [currentProjectId, doSave, toast]);
+
   // ─── ADMIN: SAVE DRAFT + PUBLISH ──────────────────────────────────────────
   // Serializa el canvas Fabric a una TemplateVariant compatible con applyTemplateLayers,
   // sube thumbnail a R2 y guarda en templates_draft.
@@ -2921,6 +2979,9 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
     // Acción rápida: pedir foto al colaborador. NO abre panel — ejecuta
     // directamente handleRequestPhoto (igual que "photos" abre modal).
     { id: "request-photo", label: "Solicitar", icon: <UserPlus className="w-5 h-5" strokeWidth={1.5} />, tooltip: "Enviar nueva solicitud de foto a un colaborador" },
+    // Wizard multi: detecta TODAS las capas image del flyer y genera N
+    // invites a la vez. Útil cuando hay varios DJs/bailarines/marcas.
+    { id: "request-photo-multi", label: "Solicitar todo", icon: <Users className="w-5 h-5" strokeWidth={1.5} />, tooltip: "Pedir fotos a varios colaboradores a la vez (1 por capa)" },
     { id: "brand",     label: t("editor.tool.brand"),      icon: <Tag className="w-5 h-5" strokeWidth={1.5} />, comingSoon: true, hidden: !FEATURES.brandKit },
     { id: "favorites", label: t("editor.tool.favorites"),  icon: <Heart className="w-5 h-5" strokeWidth={1.5} />, comingSoon: true, hidden: !FEATURES.favorites },
   ];
@@ -3380,6 +3441,7 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
                     if (tool.comingSoon) return;
                     if (tool.id === "photos") { setArtistsModalOpen(true); return; }
                     if (tool.id === "request-photo") { void handleRequestPhoto(); return; }
+                    if (tool.id === "request-photo-multi") { void handleRequestPhotoMulti(); return; }
                     setActiveTool(tool.id);
                     if (tool.id === "text") addText();
                   }}
@@ -4101,7 +4163,7 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
           }
           flex items-center gap-1.5 ${isMobile ? "justify-around" : ""}
         `}>
-          {TOOLS.filter(t => ["design","text","photos","layers","ai","background","request-photo"].includes(t.id)).map(tool => {
+          {TOOLS.filter(t => ["design","text","photos","layers","ai","background","request-photo","request-photo-multi"].includes(t.id)).map(tool => {
             const isActive = activeTool === tool.id;
             return (
               <button key={tool.id}
@@ -4109,6 +4171,7 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
                   if (tool.comingSoon) return;
                   if (tool.id === "photos") { setArtistsModalOpen(true); return; }
                   if (tool.id === "request-photo") { void handleRequestPhoto(); return; }
+                  if (tool.id === "request-photo-multi") { void handleRequestPhotoMulti(); return; }
                   if (tool.id === "layers" && isMobile) {
                     setMobilePanelOpen(mobilePanelOpen === "layers" ? null : "layers");
                     return;
@@ -4775,6 +4838,17 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
           targetLayerId={requestPhotoLayerId}
           projectName={adminTitle || null}
           onClose={() => setRequestPhotoLayerId(null)}
+        />
+      )}
+
+      {/* Wizard multi-invite: aparece tras click "Solicitar todo" del
+          sidebar/dock. Genera N invites de golpe (uno por capa image). */}
+      {multiRequestLayers && currentProjectId && (
+        <MultiRequestPhotoModal
+          projectId={currentProjectId}
+          projectName={adminTitle || null}
+          layers={multiRequestLayers}
+          onClose={() => setMultiRequestLayers(null)}
         />
       )}
 
