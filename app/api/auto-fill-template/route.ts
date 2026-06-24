@@ -64,16 +64,29 @@ REGLAS ESTRICTAS:
 - Si el texto del usuario tiene info que cabe en varias capas relacionadas (ej. programa con varios horarios), distribúyela mejor posible
 - NO cambies emojis ni símbolos decorativos que ya estaban (ej. "•", "·", "→")
 
+DETECCIÓN DE EXCESO (importante):
+- Si el texto del usuario contiene MÁS items repetitivos del mismo tipo
+  que slots disponibles en la plantilla (ej. 4 DJs pero solo 3 slots
+  dj-N, o 5 bailarines pero solo 3 slots), devuélvelos en un array
+  'extras' con los que NO cupieron en el mapping
+- Cada extra debe describir QUÉ es y por qué sobra
+- Si todo cabe perfectamente, devuelve "extras": []
+
 DEVUELVE SOLO JSON VÁLIDO con este shape exacto:
 {
   "mapping": {
     "customId-1": "nuevo texto",
     "customId-2": "nuevo texto",
     ...
-  }
+  },
+  "extras": [
+    { "label": "DJ NAYA", "context": "Afrobeat", "reason": "La plantilla solo tiene 3 slots de DJ" }
+  ]
 }
 
-No expliques nada, solo el JSON. Incluye TODAS las capas (las que no cambien, mismo texto que el actual).`;
+No expliques nada, solo el JSON. Incluye TODAS las capas en mapping
+(las que no cambien, mismo texto que el actual). extras es array vacío
+si no sobra nada.`;
 }
 
 export async function POST(req: NextRequest) {
@@ -153,6 +166,7 @@ export async function POST(req: NextRequest) {
 
     // ─── Llamada a Claude Sonnet 4.6 ────────────────────────────────────
     let mapping: Record<string, string> = {};
+    let extras: Array<{ label: string; context?: string; reason?: string }> = [];
     try {
         const res = await fetch("https://api.anthropic.com/v1/messages", {
             method: "POST",
@@ -179,7 +193,11 @@ export async function POST(req: NextRequest) {
         // Claude puede envolver el JSON en ``` o añadir prefijo — extraer
         const jsonMatch = raw.match(/\{[\s\S]*\}/);
         if (!jsonMatch) throw new Error("Claude no devolvió JSON válido");
-        const parsed = JSON.parse(jsonMatch[0]) as { mapping?: Record<string, string> };
+        const parsed = JSON.parse(jsonMatch[0]) as {
+            mapping?: Record<string, string>;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            extras?: Array<any>;
+        };
         if (!parsed.mapping || typeof parsed.mapping !== "object") {
             throw new Error("Claude no devolvió un mapping válido");
         }
@@ -190,6 +208,18 @@ export async function POST(req: NextRequest) {
             if (validIds.has(k) && typeof v === "string") {
                 mapping[k] = v;
             }
+        }
+        // Sanitizar extras: solo objetos con al menos label string.
+        // Anti-hallucination: max 10 extras (si Claude se pasa, cortamos).
+        if (Array.isArray(parsed.extras)) {
+            extras = parsed.extras
+                .filter(e => e && typeof e.label === "string" && e.label.length > 0)
+                .slice(0, 10)
+                .map(e => ({
+                    label: String(e.label).slice(0, 100),
+                    context: typeof e.context === "string" ? e.context.slice(0, 100) : undefined,
+                    reason: typeof e.reason === "string" ? e.reason.slice(0, 200) : undefined,
+                }));
         }
     } catch (e) {
         // Refund: la operación falló, devolver los créditos cobrados
@@ -226,6 +256,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
         mapping,
+        extras,
         used_credits: 2,
         layer_count: textLayers.length,
         matched_count: Object.keys(mapping).length,

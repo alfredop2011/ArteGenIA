@@ -15,7 +15,9 @@
  */
 
 import { useState } from "react";
-import { Loader2, Sparkles, X, ArrowRight, Check, AlertCircle } from "lucide-react";
+import { Loader2, Sparkles, X, ArrowRight, Check, AlertCircle, AlertTriangle } from "lucide-react";
+
+type ExtraItem = { label: string; context?: string; reason?: string };
 
 type Props = {
     projectId: string;
@@ -34,6 +36,7 @@ export default function AutoFillModal({ projectId, currentTexts, onClose, onAppl
     const [stage, setStage] = useState<Stage>("input");
     const [text, setText] = useState("");
     const [mapping, setMapping] = useState<Record<string, string>>({});
+    const [extras, setExtras] = useState<ExtraItem[]>([]);
     const [error, setError] = useState<string | null>(null);
 
     // Filtro: solo mostrar diffs reales (no incluir capas donde el texto
@@ -67,6 +70,7 @@ export default function AutoFillModal({ projectId, currentTexts, onClose, onAppl
                 throw new Error(data.error || "No se pudo procesar el texto");
             }
             setMapping(data.mapping as Record<string, string>);
+            setExtras(Array.isArray(data.extras) ? (data.extras as ExtraItem[]) : []);
             setStage("preview");
         } catch (e) {
             setError(e instanceof Error ? e.message : "Error desconocido");
@@ -168,6 +172,34 @@ export default function AutoFillModal({ projectId, currentTexts, onClose, onAppl
                                 <div className="px-3 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs mb-3">
                                     ✓ {realChanges.length} cambio{realChanges.length === 1 ? "" : "s"} detectado{realChanges.length === 1 ? "" : "s"}. Revisa antes de aplicar.
                                 </div>
+
+                                {/* Warning si Claude detectó más datos que slots */}
+                                {extras.length > 0 && (
+                                    <div className="px-3 py-2.5 rounded-lg mb-3"
+                                        style={{
+                                            background: "rgba(245,158,11,0.10)",
+                                            border: "1px solid rgba(245,158,11,0.40)",
+                                        }}
+                                    >
+                                        <p className="text-[12px] font-bold text-amber-300 flex items-center gap-1.5 mb-1.5">
+                                            <AlertTriangle size={13} />
+                                            Sobran {extras.length} elemento{extras.length === 1 ? "" : "s"} del texto
+                                        </p>
+                                        <ul className="text-[11px] text-amber-200/90 space-y-1 ml-5 list-disc">
+                                            {extras.map((e, i) => (
+                                                <li key={i}>
+                                                    <span className="font-bold">{e.label}</span>
+                                                    {e.context && <span className="text-amber-200/70"> · {e.context}</span>}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                        <p className="text-[10.5px] text-amber-200/70 mt-2 leading-relaxed">
+                                            La plantilla no tiene slots suficientes. Aplica los cambios que sí encajan,
+                                            y luego añade <b>slots extra al flyer</b> (botón &quot;Solicitar todo&quot; →
+                                            &quot;Añadir slot&quot;) o cambia a una plantilla con más capas.
+                                        </p>
+                                    </div>
+                                )}
                                 <div className="flex-1 overflow-y-auto space-y-2 -mx-1 px-1">
                                     {realChanges.map((c, idx) => (
                                         <div
