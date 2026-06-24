@@ -39,6 +39,8 @@ import {
   Check,
   // Solicitar foto al colaborador (invite contextual desde toolbar)
   UserPlus,
+  // Dropdown del avatar en el header del editor
+  Settings, History, Crown, LogOut,
 } from "lucide-react";
 import type { Canvas as FabricCanvas, FabricObject, IText } from "fabric";
 import {
@@ -55,6 +57,7 @@ import { type FormatId, getFormatByDimensions, FORMATS, PUBLIC_FORMATS } from "@
 import { applyTemplateLayers } from "@/lib/fabricApplyTemplateLayers";
 import { ArtistLibraryModal, type ArtistEntry } from "@/components/wizard/ArtistLibrary";
 import RequestPhotoModal from "@/components/editor/RequestPhotoModal";
+import { isAdmin } from "@/lib/admin";
 import { useProjects } from "@/hooks/useProjects";
 import { useUndoRedo } from "@/hooks/useUndoRedo";
 import { useTemplateDrafts } from "@/hooks/useTemplateDrafts";
@@ -391,6 +394,9 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
   // Modal "Solicitar foto al colaborador" — guarda el customId del layer
   // activo para que RequestPhotoModal genere un invite con contexto.
   const [requestPhotoLayerId, setRequestPhotoLayerId] = useState<string | null>(null);
+  // Dropdown del avatar en el header del editor — réplica del de AppShell
+  // (Mis recursos, Historial, Mi cuenta, Cerrar sesión). Cerrado por defecto.
+  const [editorUserMenuOpen, setEditorUserMenuOpen] = useState(false);
   // PostDownload modal — guarda dataURL para reuso en compartir/copiar
   const [postDownload, setPostDownload] = useState<{ dataUrl: string; format: "png" | "jpg" } | null>(null);
   /** P1.1 — Gate Pro para PDF/SVG. Mismo patrón que MobileEditorV3.
@@ -412,7 +418,7 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
   // ─── AUTH MODAL ──────────────────────────────────────────────────────────
   // Modal de login/registro que se abre cuando intentas descargar o guardar
   // sin sesion iniciada. Tras login exitoso, `onSuccess` reintenta la accion.
-  const { user: authUser, profile: authProfile } = useAuth();
+  const { user: authUser, profile: authProfile, signOut: authSignOut } = useAuth();
   const { t } = useLocale();
   const [authModalConfig, setAuthModalConfig] = useState<{ title: string; subtitle: string; onSuccess: () => void } | null>(null);
   /**
@@ -3227,8 +3233,73 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
           </button>
         )}
 
-        {/* User avatar - oculto en mobile */}
-        <div className="hidden sm:flex w-8 h-8 rounded-full bg-gradient-to-br from-zinc-700 to-zinc-900 border border-white/[0.07] items-center justify-center text-[11px] font-bold text-white/80 cursor-pointer hover:border-white/20 transition-all ml-1">AG</div>
+        {/* User avatar + dropdown — replica de AppShell para mantener consistencia.
+            Permite acceso rápido a Mis recursos, Mi cuenta, Historial, Admin y
+            Cerrar sesión sin tener que salir del editor. */}
+        {authUser && (
+          <div className="relative ml-1">
+            <button
+              onClick={() => setEditorUserMenuOpen(o => !o)}
+              className="hidden sm:flex w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 border border-white/[0.07] items-center justify-center text-[11px] font-bold text-white cursor-pointer hover:scale-110 transition-transform"
+              title={authProfile?.name ?? authUser.email ?? "Mi cuenta"}
+            >
+              {authProfile?.name
+                ? authProfile.name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase()
+                : authUser.email?.[0]?.toUpperCase() ?? "A"}
+            </button>
+
+            {editorUserMenuOpen && (
+              <>
+                {/* Backdrop invisible para cerrar al click fuera */}
+                <div className="fixed inset-0 z-40" onClick={() => setEditorUserMenuOpen(false)} />
+                <div className="absolute right-0 top-10 w-52 rounded-2xl border shadow-2xl overflow-hidden z-50"
+                     style={{ background: "var(--home-bg-soft, #16161f)", borderColor: "var(--home-card-border, rgba(255,255,255,0.08))" }}>
+                  <div className="px-4 py-3 border-b border-white/[0.06]">
+                    <p className="text-sm font-semibold truncate" style={{ color: "var(--home-text, #fff)" }}>
+                      {authProfile?.name ?? authUser.email}
+                    </p>
+                    <p className="text-xs truncate text-gray-500">{authUser.email}</p>
+                    <span className={`inline-flex items-center gap-1 mt-1 text-xs px-2 py-0.5 rounded-full font-medium ${
+                      authProfile?.plan === "enterprise"
+                        ? "bg-amber-500/15 text-amber-300"
+                        : authProfile?.plan === "pro"
+                        ? "bg-purple-500/15 text-purple-300"
+                        : "bg-white/[0.05] text-gray-400"
+                    }`}>
+                      {authProfile?.plan === "enterprise" ? (<><Crown size={11} strokeWidth={2.2}/> Enterprise</>)
+                       : authProfile?.plan === "pro" ? (<><Crown size={11} strokeWidth={2.2}/> Pro</>)
+                       : "Free"}
+                    </span>
+                  </div>
+                  <div className="p-2">
+                    <button onClick={() => { setEditorUserMenuOpen(false); router.push("/mis-recursos"); }}
+                      className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-gray-300 hover:bg-white/[0.05] hover:text-white transition-colors">
+                      <ImageIcon size={15} strokeWidth={1.8} /> Mis recursos
+                    </button>
+                    <button onClick={() => { setEditorUserMenuOpen(false); router.push("/history"); }}
+                      className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-gray-300 hover:bg-white/[0.05] hover:text-white transition-colors">
+                      <History size={15} strokeWidth={1.8} /> Historial
+                    </button>
+                    <button onClick={() => { setEditorUserMenuOpen(false); router.push("/cuenta"); }}
+                      className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-gray-300 hover:bg-white/[0.05] hover:text-white transition-colors">
+                      <Settings size={15} strokeWidth={1.8} /> Mi cuenta
+                    </button>
+                    {isAdmin(authUser.email) && (
+                      <button onClick={() => { setEditorUserMenuOpen(false); router.push("/admin/templates"); }}
+                        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-gray-300 hover:bg-white/[0.05] hover:text-white transition-colors">
+                        <Crown size={15} strokeWidth={1.8} /> Admin
+                      </button>
+                    )}
+                    <button onClick={() => { setEditorUserMenuOpen(false); void authSignOut(); }}
+                      className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-red-400 hover:bg-red-500/10 transition-colors">
+                      <LogOut size={15} strokeWidth={1.8} /> Cerrar sesión
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        )}
       </header>
 
       {/* ADMIN: Banner editando publicada */}
