@@ -17,7 +17,7 @@
  * se aplica una.
  */
 
-import { FabricObject } from "fabric";
+import { FabricObject, Rect, Circle, FabricImage, Textbox, Triangle, Line, Path, Group } from "fabric";
 
 // Lista única de propiedades custom que queremos que SIEMPRE viajen con cada
 // objeto Fabric al serializar. Añadir aquí cualquier prop nueva que asignemos
@@ -32,18 +32,30 @@ const CUSTOM_PROPS = [
 const FLAG = "__ag_customPropsPatched__";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const proto = FabricObject.prototype as any;
-
-if (!proto[FLAG]) {
-    const originalToObject = proto.toObject;
-    proto.toObject = function (propertiesToInclude: string[] = []) {
-        // Llamamos al original con nuestras props añadidas. Si el caller ya
-        // pasó algunas, las concatenamos sin duplicar (set semantics).
+function patch(klass: any) {
+    if (!klass?.prototype || klass.prototype[FLAG]) return;
+    const original = klass.prototype.toObject;
+    klass.prototype.toObject = function (propertiesToInclude: string[] = []) {
         const merged = Array.from(new Set([...propertiesToInclude, ...CUSTOM_PROPS]));
-        return originalToObject.call(this, merged);
+        return original.call(this, merged);
     };
-    proto[FLAG] = true;
+    klass.prototype[FLAG] = true;
 }
+
+// Parcheamos el prototype base + cada subclase concreta que usamos. En Fabric
+// v6 las subclasses sobrescriben toObject() para añadir sus propiedades
+// específicas (Image añade 'src', Textbox añade 'text', etc.) — y al hacerlo
+// NO heredan automáticamente nuestro override sobre FabricObject. Hay que
+// parchar cada una.
+patch(FabricObject);
+patch(Rect);
+patch(Circle);
+patch(Triangle);
+patch(Line);
+patch(Path);
+patch(Group);
+patch(FabricImage);
+patch(Textbox);
 
 // Re-export para uso explícito si hace falta documentar qué props se persisten.
 export const FABRIC_CUSTOM_PROPS = CUSTOM_PROPS;
