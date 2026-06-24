@@ -21,17 +21,19 @@ async function patchProjectLayer(
   newUrl: string,
   collaboratorName: string,
   photoSize: { width: number; height: number } | null,
+  collaboratorKind: "person" | "brand" | null,
 ): Promise<boolean> {
   try {
     const { data: project, error } = await supabaseAdmin
       .from("projects")
-      .select("id, fabric_json")
+      .select("id, fabric_json, width, height")
       .eq("id", projectId)
       .maybeSingle();
     if (error || !project?.fabric_json) {
       console.warn("[patchProjectLayer] project not found or no fabric_json", { projectId, error });
       return false;
     }
+    const canvasHeight = typeof project.height === "number" ? project.height : 1350;
 
     const fj = project.fabric_json as { objects?: Array<Record<string, unknown>> };
     if (!Array.isArray(fj.objects)) {
@@ -83,6 +85,7 @@ async function patchProjectLayer(
           // a 1x1 = invisible. Aplicamos object-fit cover sobre 240x240
           // visible target (igual que slots de plantilla, pero con
           // tamaño fijo en vez de leerlo del bbox original).
+          let placedHeight = 240;
           if (photoSize && photoSize.width > 0 && photoSize.height > 0) {
             const targetSize = Math.max(visibleWidth, visibleHeight, 240);
             obj.width = photoSize.width;
@@ -93,12 +96,30 @@ async function patchProjectLayer(
             );
             obj.scaleX = scaleCover;
             obj.scaleY = scaleCover;
+            placedHeight = photoSize.height * scaleCover;
           } else {
             // Sin photoSize (fallback): asumimos foto cuadrada 800x800
             // y reseteamos scale a algo razonable para que no quede 1x1.
             obj.scaleX = 0.3;
             obj.scaleY = 0.3;
+            placedHeight = 240;
           }
+
+          // Reposicionamiento automático según tipo de colaborador:
+          //   - Persona (artista) → ARRIBA del flyer (donde están las fotos
+          //     destacadas de DJs/bailarines).
+          //   - Marca/logo → ABAJO del flyer (típico para patrocinadores).
+          // Solo aplica a extra-slots (slots de plantilla mantienen su
+          // posición de diseño). Margen 60px desde el borde.
+          const margin = 60;
+          if (collaboratorKind === "brand") {
+            obj.top = Math.max(margin, canvasHeight - placedHeight - margin);
+          } else if (collaboratorKind === "person") {
+            obj.top = margin;
+          }
+          // Si kind es null (legacy/no detectable), respetar la posición
+          // actual del slot — el user lo movió a propósito o no nos lo
+          // dijeron.
         } else if (photoSize && photoSize.width > 0 && photoSize.height > 0 && visibleWidth > 0 && visibleHeight > 0) {
           // Slot de PLANTILLA: calcular scale para que la nueva foto
           // OCUPE EXACTAMENTE el mismo área visible que la foto vieja
@@ -405,6 +426,7 @@ export async function POST(req: NextRequest) {
         photoUrl,
         artistName,
         photoSize,
+        kind === "person" || kind === "brand" ? kind : null,
       );
 
       // Notificar al owner — email (siempre que pref esté activa) +
