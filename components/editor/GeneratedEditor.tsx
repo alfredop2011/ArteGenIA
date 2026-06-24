@@ -4962,17 +4962,28 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
             }).length;
             const offset = existingExtras * 40;
             try {
-              // Cargamos un placeholder neutro (cuadrado morado translúcido)
-              // como data-URL para no depender de assets externos.
-              const placeholderSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="240" height="240" viewBox="0 0 240 240"><rect width="240" height="240" fill="rgba(168,85,247,0.18)" stroke="rgba(168,85,247,0.6)" stroke-width="3" stroke-dasharray="8 4"/><g transform="translate(120 120)"><circle r="30" fill="rgba(168,85,247,0.35)"/><text y="6" text-anchor="middle" font-family="Arial" font-size="32" fill="white">+</text></g><text x="120" y="200" text-anchor="middle" font-family="Arial" font-size="14" fill="rgba(255,255,255,0.7)">Foto pendiente</text></svg>`;
-              const dataUrl = `data:image/svg+xml;utf8,${encodeURIComponent(placeholderSvg)}`;
+              // Placeholder = transparent 1x1 PNG. Si usamos SVG inline como
+              // data-URL, Fabric/loadFromJSON falla a renderizarlo (cuadrado
+              // negro). Un PNG transparente válido es el placeholder más
+              // confiable hasta que el colaborador suba la foto real.
+              const transparentPng = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkAAIAAAoAAv/lxKUAAAAASUVORK5CYII=";
               const fabric = await import("fabric");
-              const img = await fabric.FabricImage.fromURL(dataUrl);
+              const img = await fabric.FabricImage.fromURL(transparentPng);
+              // Lo escalamos al tamaño deseado (240x240) y le damos un fondo
+              // visible para que el user vea dónde está el slot antes de la foto.
               img.set({
                 left: 60 + offset,
                 top: 60 + offset,
                 originX: "left",
                 originY: "top",
+                scaleX: 240,
+                scaleY: 240,
+                // Fondo morado translúcido + borde dashed visible
+                stroke: "rgba(168,85,247,0.7)",
+                strokeWidth: 3,
+                strokeDashArray: [8, 4],
+                backgroundColor: "rgba(168,85,247,0.18)",
+                crossOrigin: "anonymous",
               });
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               (img as any).customId = newCustomId;
