@@ -624,7 +624,12 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
             <h1 className="mx-auto max-w-3xl text-2xl font-bold tracking-tight text-white sm:text-5xl">
               <span className="sm:hidden">{t("eventos.hero.titleMobile")}</span>
               <span className="hidden sm:inline">{t("eventos.hero.titleDesktop")}</span>
-              <span className="relative inline-flex items-baseline" style={{ background: "linear-gradient(90deg,#a855f7,#ec4899)", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent", filter: "drop-shadow(0 1px 6px rgba(0,0,0,.55))" }}>
+              {/* El degradado + background-clip:text + drop-shadow van en el
+                  PROPIO span animado (no en un padre): framer-motion promueve el
+                  motion.span a su propia capa de composición y el clip:text del
+                  padre NO pinta sobre el texto del hijo → la palabra salía
+                  invisible en Chrome. Aplicándolo aquí se ve siempre. */}
+              <span className="relative inline-flex items-baseline">
                 <AnimatePresence mode="wait">
                   <motion.span
                     key={heroWord}
@@ -633,6 +638,7 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
                     exit={{ opacity: 0, y: -10 }}
                     transition={{ duration: 0.35, ease: "easeOut" }}
                     className="inline-block"
+                    style={{ background: "linear-gradient(90deg,#a855f7,#ec4899)", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent", filter: "drop-shadow(0 1px 6px rgba(0,0,0,.55))" }}
                   >
                     {heroWord}
                   </motion.span>
