@@ -4962,15 +4962,15 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
             }).length;
             const offset = existingExtras * 40;
             try {
-              // Placeholder = transparent 1x1 PNG. Si usamos SVG inline como
-              // data-URL, Fabric/loadFromJSON falla a renderizarlo (cuadrado
-              // negro). Un PNG transparente válido es el placeholder más
-              // confiable hasta que el colaborador suba la foto real.
+              // PNG 1x1 transparente (canónico, 100% válido en cualquier
+              // navegador). Lo escalamos visualmente a 240x240 con
+              // scaleX/scaleY. Cuando llegue la foto real del colaborador,
+              // patchProjectLayer (backend) resetea scaleX/scaleY a 1
+              // y limpia backgroundColor/stroke — la foto se ve a tamaño
+              // natural sin overlay morado.
               const transparentPng = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkAAIAAAoAAv/lxKUAAAAASUVORK5CYII=";
               const fabric = await import("fabric");
               const img = await fabric.FabricImage.fromURL(transparentPng);
-              // Lo escalamos al tamaño deseado (240x240) y le damos un fondo
-              // visible para que el user vea dónde está el slot antes de la foto.
               img.set({
                 left: 60 + offset,
                 top: 60 + offset,
@@ -4978,7 +4978,8 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
                 originY: "top",
                 scaleX: 240,
                 scaleY: 240,
-                // Fondo morado translúcido + borde dashed visible
+                // Fondo morado translúcido + borde dashed para que el
+                // user vea dónde está el slot antes de que llegue la foto.
                 stroke: "rgba(168,85,247,0.7)",
                 strokeWidth: 3,
                 strokeDashArray: [8, 4],
