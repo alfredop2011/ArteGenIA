@@ -58,6 +58,11 @@ import { applyTemplateLayers } from "@/lib/fabricApplyTemplateLayers";
 import { ArtistLibraryModal, type ArtistEntry } from "@/components/wizard/ArtistLibrary";
 import RequestPhotoModal from "@/components/editor/RequestPhotoModal";
 import { isAdmin } from "@/lib/admin";
+// Side-effect import: extiende FabricObject.prototype.toObject para que
+// customId y otras props custom SIEMPRE se serialicen al guardar. Sin esto,
+// el fabric_json en BD pierde los customId y patchProjectLayer no puede
+// matchear el layer al recibir foto del colaborador.
+import "@/lib/fabricCustomProps";
 import { useProjects } from "@/hooks/useProjects";
 import { useUndoRedo } from "@/hooks/useUndoRedo";
 import { useTemplateDrafts } from "@/hooks/useTemplateDrafts";
