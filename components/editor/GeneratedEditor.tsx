@@ -60,6 +60,7 @@ import { applyTemplateLayers } from "@/lib/fabricApplyTemplateLayers";
 import { ArtistLibraryModal, type ArtistEntry } from "@/components/wizard/ArtistLibrary";
 import RequestPhotoModal from "@/components/editor/RequestPhotoModal";
 import MultiRequestPhotoModal, { type LayerInput as MultiLayerInput } from "@/components/editor/MultiRequestPhotoModal";
+import AutoFillModal from "@/components/editor/AutoFillModal";
 import NotificationsBell from "@/components/notifications/NotificationsBell";
 import { isAdmin } from "@/lib/admin";
 // Side-effect import: extiende FabricObject.prototype.toObject para que
@@ -116,7 +117,7 @@ type ImageProps = {
 };
 
 type SaveState = "saved" | "saving" | "unsaved";
-type LeftTool = "design" | "elements" | "text" | "photos" | "background" | "layers" | "ai" | "brand" | "favorites" | "myAssets" | "request-photo" | "request-photo-multi";
+type LeftTool = "design" | "elements" | "text" | "photos" | "background" | "layers" | "ai" | "brand" | "favorites" | "myAssets" | "request-photo" | "request-photo-multi" | "auto-fill";
 
 // Z.8.1 — Asset de "Mis Recursos" cargado desde /api/assets para reusar
 // en el editor sin tener que subir el archivo otra vez.
@@ -406,6 +407,9 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
   // Wizard "Solicitar fotos a varios colaboradores". Cuando está set,
   // contiene la lista de capas image detectadas + projectId.
   const [multiRequestLayers, setMultiRequestLayers] = useState<MultiLayerInput[] | null>(null);
+  // Auto-fill IA: snapshot de textos actuales para pasar al modal (preview
+  // antes/después). Cuando null, modal cerrado.
+  const [autoFillTexts, setAutoFillTexts] = useState<Array<{ customId: string; text: string }> | null>(null);
   // Dropdown del avatar en el header del editor — réplica del de AppShell
   // (Mis recursos, Historial, Mi cuenta, Cerrar sesión). Cerrado por defecto.
   const [editorUserMenuOpen, setEditorUserMenuOpen] = useState(false);
@@ -2766,6 +2770,54 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
     }
   }, [currentProjectId, doSave, toast]);
 
+  // ─── Rellenar plantilla con IA (Claude Sonnet 4.6) ─────────────────────
+  // Snapshot de capas de texto actual + auto-save si hace falta + abrir modal.
+  // El modal hace el POST a /api/auto-fill-template y devuelve un mapping
+  // { customId: nuevo_texto } que aplicamos vía onApply.
+  const handleAutoFill = useCallback(async () => {
+    const canvas = fabricRef.current;
+    if (!canvas) {
+      toast.error("Editor no listo, intenta de nuevo.");
+      return;
+    }
+    // Snapshot de textos actuales (Textbox + i-text) con customId
+    const snapshot: Array<{ customId: string; text: string }> = [];
+    for (const obj of canvas.getObjects()) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const o = obj as any;
+      const t = o?.type as string | undefined;
+      const isText = t === "textbox" || t === "Textbox" || t === "i-text" || t === "IText";
+      const customId = o?.customId as string | undefined;
+      const text = o?.text as string | undefined;
+      if (isText && customId && typeof text === "string" && text.length > 0) {
+        snapshot.push({ customId, text });
+      }
+    }
+    if (snapshot.length === 0) {
+      toast.error("El flyer no tiene capas de texto editables.");
+      return;
+    }
+    // Auth real + auto-save
+    const { data: { user: realUser } } = await supabase.auth.getUser();
+    const proceed = async () => {
+      let id = currentProjectId;
+      if (!id) {
+        id = await doSave();
+        if (!id) return;
+      }
+      setAutoFillTexts(snapshot);
+    };
+    if (realUser) {
+      await proceed();
+    } else {
+      setAuthModalConfig({
+        title: "Inicia sesión para rellenar con IA",
+        subtitle: "Guardamos tu flyer y mapeamos tu texto a las capas con Claude (2 créditos).",
+        onSuccess: () => { void proceed(); },
+      });
+    }
+  }, [currentProjectId, doSave, toast]);
+
   // ─── ADMIN: SAVE DRAFT + PUBLISH ──────────────────────────────────────────
   // Serializa el canvas Fabric a una TemplateVariant compatible con applyTemplateLayers,
   // sube thumbnail a R2 y guarda en templates_draft.
@@ -2982,6 +3034,9 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
     // Wizard multi: detecta TODAS las capas image del flyer y genera N
     // invites a la vez. Útil cuando hay varios DJs/bailarines/marcas.
     { id: "request-photo-multi", label: "Solicitar todo", icon: <Users className="w-5 h-5" strokeWidth={1.5} />, tooltip: "Pedir fotos a varios colaboradores a la vez (1 por capa)" },
+    // Auto-fill IA: pega texto libre (ChatGPT, email, nota) y la IA mapea
+    // los datos a las capas de texto de la plantilla.
+    { id: "auto-fill", label: "Rellenar IA", icon: <Wand2 className="w-5 h-5" strokeWidth={1.5} />, tooltip: "Pega info y la IA rellena los textos automáticamente (2 créditos)" },
     { id: "brand",     label: t("editor.tool.brand"),      icon: <Tag className="w-5 h-5" strokeWidth={1.5} />, comingSoon: true, hidden: !FEATURES.brandKit },
     { id: "favorites", label: t("editor.tool.favorites"),  icon: <Heart className="w-5 h-5" strokeWidth={1.5} />, comingSoon: true, hidden: !FEATURES.favorites },
   ];
@@ -3446,6 +3501,7 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
                     if (tool.id === "photos") { setArtistsModalOpen(true); return; }
                     if (tool.id === "request-photo") { void handleRequestPhoto(); return; }
                     if (tool.id === "request-photo-multi") { void handleRequestPhotoMulti(); return; }
+                    if (tool.id === "auto-fill") { void handleAutoFill(); return; }
                     setActiveTool(tool.id);
                     if (tool.id === "text") addText();
                   }}
@@ -4167,7 +4223,7 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
           }
           flex items-center gap-1.5 ${isMobile ? "justify-around" : ""}
         `}>
-          {TOOLS.filter(t => ["design","text","photos","layers","ai","background","request-photo","request-photo-multi"].includes(t.id)).map(tool => {
+          {TOOLS.filter(t => ["design","text","photos","layers","ai","background","request-photo","request-photo-multi","auto-fill"].includes(t.id)).map(tool => {
             const isActive = activeTool === tool.id;
             return (
               <button key={tool.id}
@@ -4176,6 +4232,7 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
                   if (tool.id === "photos") { setArtistsModalOpen(true); return; }
                   if (tool.id === "request-photo") { void handleRequestPhoto(); return; }
                   if (tool.id === "request-photo-multi") { void handleRequestPhotoMulti(); return; }
+                  if (tool.id === "auto-fill") { void handleAutoFill(); return; }
                   if (tool.id === "layers" && isMobile) {
                     setMobilePanelOpen(mobilePanelOpen === "layers" ? null : "layers");
                     return;
@@ -4842,6 +4899,42 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
           targetLayerId={requestPhotoLayerId}
           projectName={adminTitle || null}
           onClose={() => setRequestPhotoLayerId(null)}
+        />
+      )}
+
+      {/* Modal "Rellenar con IA": pega texto libre y la IA mapea cada
+          dato a su capa de texto. Tras aplicar, los layers cambian
+          .text pero mantienen estilo (color, fuente, tamaño, posición). */}
+      {autoFillTexts && currentProjectId && (
+        <AutoFillModal
+          projectId={currentProjectId}
+          currentTexts={autoFillTexts}
+          onClose={() => setAutoFillTexts(null)}
+          onApply={(mapping) => {
+            const canvas = fabricRef.current;
+            if (!canvas) return;
+            let applied = 0;
+            for (const obj of canvas.getObjects()) {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const o = obj as any;
+              const cid = o?.customId as string | undefined;
+              if (!cid || !(cid in mapping)) continue;
+              const newText = mapping[cid];
+              const t = o?.type as string;
+              const isText = t === "textbox" || t === "Textbox" || t === "i-text" || t === "IText";
+              if (!isText) continue;
+              if (typeof o.text === "string" && o.text === newText) continue;
+              // Aplicar texto sin tocar el resto del estilo
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              (o as any).set("text", newText);
+              applied++;
+            }
+            if (applied > 0) {
+              canvas.renderAll();
+              setSaveState("unsaved");
+              toast.success(`${applied} texto${applied === 1 ? "" : "s"} actualizados`);
+            }
+          }}
         />
       )}
 
