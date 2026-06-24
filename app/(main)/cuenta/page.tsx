@@ -19,9 +19,10 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Loader2, Save, User as UserIcon, Phone, Mail, Bell, MessageCircle, Lock } from "lucide-react";
+import { Loader2, Save, User as UserIcon, Mail, Bell, MessageCircle, Lock } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/lib/toast";
+import PhoneVerification from "@/components/account/PhoneVerification";
 
 type NotificationPrefs = {
   email: { foto_recibida: boolean; creditos_bajos: boolean; novedades: boolean };
@@ -45,9 +46,10 @@ export default function CuentaPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  // Form state — espejo editable del account state
+  // Form state — espejo editable del account state.
+  // El teléfono ya NO va aquí: lo gestiona PhoneVerification, que guarda
+  // directamente en profiles vía /api/account/phone/verify-otp tras OTP.
   const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
   const [prefs, setPrefs] = useState<NotificationPrefs>({
     email: { foto_recibida: true, creditos_bajos: true, novedades: false },
     whatsapp: { foto_recibida: false, creditos_bajos: false },
@@ -63,7 +65,6 @@ export default function CuentaPage() {
         const data = (await res.json()) as Account;
         setAccount(data);
         setName(data.name ?? "");
-        setPhone(data.phone ?? "");
         setPrefs(data.notification_prefs);
       } catch (e) {
         toast.error(e instanceof Error ? e.message : "Error desconocido");
@@ -81,22 +82,16 @@ export default function CuentaPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: name.trim(),
-          phone: phone.trim() || null,
           notification_prefs: prefs,
         }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "No se pudo guardar");
       toast.success("Cambios guardados");
-      // Refrescar el account local para reflejar phone_verified_at = null
-      // si el teléfono cambió
       if (account) {
-        const phoneChanged = phone.trim() !== (account.phone ?? "");
         setAccount({
           ...account,
           name: name.trim(),
-          phone: phone.trim() || null,
-          phone_verified_at: phoneChanged ? null : account.phone_verified_at,
           notification_prefs: prefs,
         });
       }
@@ -178,26 +173,19 @@ export default function CuentaPage() {
           <p className="text-[10px] text-gray-500 mt-1">El email se gestiona desde tu proveedor de login.</p>
         </label>
 
-        <label className="block">
-          <span className="text-xs text-gray-400 mb-1.5 block flex items-center gap-1.5">
-            <Phone size={12} /> Teléfono <span className="text-gray-600 font-normal">(opcional, para WhatsApp)</span>
-          </span>
-          <input
-            type="tel"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            placeholder="+34 611 11 11 11"
-            className="w-full px-3 py-2.5 rounded-xl text-sm bg-white/5 border border-white/10 text-white focus:border-purple-500/50 focus:outline-none"
-          />
-          {phone && !account?.phone_verified_at && (
-            <p className="text-[10px] text-amber-400 mt-1">
-              ⚠️ Sin verificar. Cuando habilitemos WhatsApp te enviaremos un código de un solo uso para verificarlo.
-            </p>
-          )}
-          {account?.phone_verified_at && phone === account?.phone && (
-            <p className="text-[10px] text-emerald-400 mt-1">✓ Verificado</p>
-          )}
-        </label>
+        <PhoneVerification
+          initialPhone={account?.phone ?? null}
+          initialVerifiedAt={account?.phone_verified_at ?? null}
+          onVerified={(verifiedPhone) => {
+            if (account) {
+              setAccount({
+                ...account,
+                phone: verifiedPhone,
+                phone_verified_at: new Date().toISOString(),
+              });
+            }
+          }}
+        />
       </section>
 
       {/* ── Bloque 2: Notificaciones por email ─────────────────────────── */}
@@ -232,26 +220,23 @@ export default function CuentaPage() {
         <h2 className="text-sm font-black uppercase tracking-widest text-emerald-300 mb-1 flex items-center gap-2">
           <MessageCircle size={14} /> Por WhatsApp
         </h2>
-        <p className="text-xs text-gray-500 mb-2">Avisos a tu número de teléfono.</p>
-        <div className="mb-4 px-3 py-2 rounded-lg text-[11px]" style={{ background: "rgba(245,158,11,0.10)", border: "1px solid rgba(245,158,11,0.25)", color: "#fbbf24" }}>
-          Próximamente. Estamos integrando WhatsApp Business. Configura tus preferencias ahora y se activarán automáticamente al lanzar.
-        </div>
+        <p className="text-xs text-gray-500 mb-4">Avisos al WhatsApp verificado. Más rápidos que el email.</p>
 
         <NotifToggle
           label="Foto recibida de un colaborador"
           desc="Notificación inmediata al subir la foto. Más rápido que el email."
           checked={prefs.whatsapp.foto_recibida}
           onChange={(v) => setPrefs({ ...prefs, whatsapp: { ...prefs.whatsapp, foto_recibida: v } })}
-          disabled={!phone}
-          disabledReason="Necesitas configurar un teléfono arriba para activar WhatsApp"
+          disabled={!account?.phone_verified_at}
+          disabledReason="Verifica tu teléfono arriba para activar WhatsApp"
         />
         <NotifToggle
           label="Créditos bajos"
           desc="Aviso inmediato cuando estés a punto de quedarte sin créditos."
           checked={prefs.whatsapp.creditos_bajos}
           onChange={(v) => setPrefs({ ...prefs, whatsapp: { ...prefs.whatsapp, creditos_bajos: v } })}
-          disabled={!phone}
-          disabledReason="Necesitas configurar un teléfono arriba para activar WhatsApp"
+          disabled={!account?.phone_verified_at}
+          disabledReason="Verifica tu teléfono arriba para activar WhatsApp"
         />
       </section>
 

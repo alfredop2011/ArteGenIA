@@ -43,20 +43,10 @@ type UpdateBody = {
 };
 
 /**
- * Valida un teléfono E.164 muy laxamente: '+' opcional, 7-15 dígitos.
- * El estándar real es complejo pero rechazar lo obvio basta para
- * evitar guardar basura ('asdf', '12', etc.). La verificación real
- * se hace cuando enviamos el SMS/WhatsApp.
- */
-function isValidPhone(phone: string): boolean {
-  const cleaned = phone.replace(/[\s\-()]/g, "");
-  return /^\+?[0-9]{7,15}$/.test(cleaned);
-}
-
-/**
  * PUT /api/account
- * Actualiza campos editables del profile: name, phone, notification_prefs.
- * Email NO es editable aquí (requeriría flow de re-verificación).
+ * Actualiza campos editables del profile: name, notification_prefs.
+ * El teléfono se gestiona aparte vía /api/account/phone/{send,verify}-otp
+ * para forzar OTP. Email no es editable (cambiarlo requeriría re-verificar).
  *
  * Si el teléfono cambia, phone_verified_at se reinicia a NULL (el nuevo
  * número debe verificarse antes de poder recibir WhatsApp).
@@ -83,26 +73,15 @@ export async function PUT(req: NextRequest) {
     update.name = trimmed;
   }
 
-  if (body.phone !== undefined) {
-    if (body.phone === null || body.phone === "") {
-      // Permitir borrar el teléfono
-      update.phone = null;
-      update.phone_verified_at = null;
-    } else if (typeof body.phone === "string") {
-      if (!isValidPhone(body.phone)) {
-        return NextResponse.json({ error: "Formato de teléfono no válido (ej. +34611111111)" }, { status: 400 });
-      }
-      // Si el teléfono cambia, invalidamos la verificación previa
-      const { data: prev } = await supabaseAdmin
-        .from("profiles")
-        .select("phone")
-        .eq("id", user.id)
-        .maybeSingle();
-      update.phone = body.phone.trim();
-      if (prev?.phone !== body.phone.trim()) {
-        update.phone_verified_at = null;
-      }
-    }
+  // El teléfono ya NO se acepta por este endpoint. Se gestiona vía
+  // /api/account/phone/send-otp + verify-otp para que cada número quede
+  // verificado por OTP antes de quedar guardado. Si el cliente lo manda,
+  // lo ignoramos (backward compat — no rompemos PUTs antiguos).
+  if (body.phone === null) {
+    // Borrar teléfono SÍ está permitido sin OTP — el user puede revocar
+    // su consentimiento de WhatsApp cuando quiera.
+    update.phone = null;
+    update.phone_verified_at = null;
   }
 
   if (body.notification_prefs && typeof body.notification_prefs === "object") {

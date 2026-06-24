@@ -4,6 +4,7 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { uploadToR2, deleteFromR2 } from "@/lib/r2";
 import { sendCollaboratorPhotoReceivedEmail } from "@/lib/email";
+import { sendCollaboratorPhotoReceivedWhatsapp } from "@/lib/whatsapp";
 
 /**
  * Auto-actualiza el fabric_json de un project reemplazando el `src` del
@@ -466,13 +467,26 @@ export async function POST(req: NextRequest) {
           );
         }
 
-        // WhatsApp: stub hasta que integremos provider (Twilio/Cloud API).
-        // Por ahora solo logueamos para que quede traza de que la pref
-        // está activa y sabemos a quién deberíamos haber notificado.
+        // WhatsApp: Meta Cloud API. Solo si:
+        //   - El user activó la pref
+        //   - Tiene teléfono guardado y verificado por OTP
+        //   - Las env vars de Meta están configuradas en Vercel (si no,
+        //     el helper hace no-op silencioso con warning)
         if (wantsWhatsapp && ownerProfile?.phone && ownerProfile?.phone_verified_at) {
-          console.log("[collaborators POST] would send WhatsApp to", ownerProfile.phone, "for project", invite.project_id);
-          // TODO(whatsapp): cuando esté el provider, llamar:
-          //   await sendCollaboratorPhotoReceivedWhatsapp(phone, name, artist, title, projectId)
+          const statusLine = projectPatched
+            ? `Ya está colocada en su slot del flyer.`
+            : `Súbela manualmente al flyer cuando la revises.`;
+          const waResult = await sendCollaboratorPhotoReceivedWhatsapp(
+            ownerProfile.phone,
+            ownerProfile.name ?? "",
+            artistName,
+            realTitle ?? "tu flyer",
+            statusLine,
+            invite.project_id,
+          );
+          if (!waResult.sent && waResult.reason !== "config_missing") {
+            console.error("[collaborators POST] WhatsApp send failed", waResult);
+          }
         }
 
         // Notificación in-app (campana) — SIEMPRE se crea, independiente
