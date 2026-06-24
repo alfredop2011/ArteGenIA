@@ -1848,12 +1848,27 @@ function StatsModal({ events, place, onClose }: { events: EventItem[]; place: st
 
 function DestacadosRail({ events, onSelect }: { events: EventItem[]; onSelect: (e: EventItem) => void }) {
   const { t, locale } = useLocale();
+  // Ref al contenedor scrollable para mover el carrusel con las flechas ‹ ›
+  // (en escritorio con ratón el scroll horizontal no es intuitivo; en móvil
+  // se sigue pudiendo deslizar con el dedo).
+  const railRef = useRef<HTMLDivElement>(null);
+  // Avance/retroceso del carrusel. Asignamos scrollLeft DIRECTAMENTE (funciona
+  // en todos los navegadores, también Safari) en vez de scrollBy({behavior:
+  // "smooth"}) — ese método no es fiable en Safari y el scroll se quedaba a 0,
+  // por lo que las flechas parecían muertas. La animación suave la da la
+  // propiedad CSS scroll-behavior:smooth del propio contenedor.
+  const scrollByDir = (dir: number) => {
+    const el = railRef.current;
+    if (!el) return;
+    el.scrollLeft += dir * Math.min(el.clientWidth * 0.8, 540);
+  };
   if (events.length === 0) return null;
   return (
     <div>
       <h3 className="mb-2.5 text-sm font-bold">{t("eventos.featured.title")}</h3>
       {/* Tarjetas MINI horizontales (miniatura + título + fecha): ocupan poco. */}
-      <div className="-mx-4 flex gap-2.5 overflow-x-auto px-4 pb-1" style={{ scrollbarWidth: "none" }}>
+      <div className="relative">
+        <div ref={railRef} className="-mx-4 flex gap-2.5 overflow-x-auto px-4 pb-1" style={{ scrollbarWidth: "none" }}>
         {events.slice(0, 10).map((e) => {
           const Cat = CATEGORIES[e.category];
           return (
@@ -1875,6 +1890,26 @@ function DestacadosRail({ events, onSelect }: { events: EventItem[]; onSelect: (
             </button>
           );
         })}
+        </div>
+        {/* Flechas de navegación (solo escritorio). Movemos el scroll suave. */}
+        <button
+          type="button"
+          aria-label="Anterior"
+          onClick={() => scrollByDir(-1)}
+          className="absolute left-1 top-1/2 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full shadow-md transition hover:scale-105 sm:flex"
+          style={{ background: "var(--home-bg)", border: "1px solid var(--home-card-border)", color: "var(--home-text)" }}
+        >
+          <ChevronLeft size={18} />
+        </button>
+        <button
+          type="button"
+          aria-label="Siguiente"
+          onClick={() => scrollByDir(1)}
+          className="absolute right-1 top-1/2 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full shadow-md transition hover:scale-105 sm:flex"
+          style={{ background: "var(--home-bg)", border: "1px solid var(--home-card-border)", color: "var(--home-text)" }}
+        >
+          <ChevronRight size={18} />
+        </button>
       </div>
     </div>
   );
