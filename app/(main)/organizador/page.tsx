@@ -122,16 +122,24 @@ export default function OrganizadorPage() {
   const admin = isAdmin(user?.email);
 
   const load = useCallback(async () => {
-    if (!user) return;
+    if (!user) { setLoading(false); return; }
     setLoading(true);
-    // Admin ve TODOS los eventos (incluidos los del bot sin dueño) para poder
-    // gestionarlos; el resto solo los suyos.
-    let q = supabase.from("events").select("*").order("event_date", { ascending: true });
-    if (!isAdmin(user.email)) q = q.eq("organizer_id", user.id);
-    const { data, error } = await q;
-    if (error) setError(error.message);
-    else setEvents((data as EventRow[]) ?? []);
-    setLoading(false);
+    setError(null);
+    // try/finally: si la query LANZA (red/RLS) el spinner NO debe quedarse
+    // colgado para siempre — siempre resolvemos `loading`.
+    try {
+      // Admin ve TODOS los eventos (incluidos los del bot sin dueño) para poder
+      // gestionarlos; el resto solo los suyos.
+      let q = supabase.from("events").select("*").order("event_date", { ascending: true });
+      if (!isAdmin(user.email)) q = q.eq("organizer_id", user.id);
+      const { data, error } = await q;
+      if (error) setError(error.message);
+      else setEvents((data as EventRow[]) ?? []);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "No se pudieron cargar los eventos.");
+    } finally {
+      setLoading(false);
+    }
   }, [user]);
 
   useEffect(() => {
