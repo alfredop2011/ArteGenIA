@@ -372,6 +372,28 @@ export async function POST(req: NextRequest) {
           // TODO(whatsapp): cuando esté el provider, llamar:
           //   await sendCollaboratorPhotoReceivedWhatsapp(phone, name, artist, title, projectId)
         }
+
+        // Notificación in-app (campana) — SIEMPRE se crea, independiente
+        // de prefs email/whatsapp. La campana es el canal "siempre on"
+        // que el user ve al volver a la app sin haber leído notificaciones
+        // externas. Si el user quiere apagarla en el futuro, añadimos pref
+        // notification_prefs.inapp.foto_recibida.
+        const { error: notifErr } = await supabaseAdmin
+          .from("notifications")
+          .insert({
+            user_id: invite.owner_id,
+            type: "collaborator_photo_received",
+            payload: {
+              collaborator_name: artistName,
+              project_id: invite.project_id,
+              project_title: realTitle,
+              auto_applied: projectPatched,
+              photo_url: photoUrl,
+            },
+          });
+        if (notifErr) {
+          console.warn("[collaborators POST] notification insert failed:", notifErr);
+        }
       } catch (mailErr) {
         console.warn("[collaborators POST] notification owner failed:", mailErr);
       }

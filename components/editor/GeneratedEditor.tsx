@@ -57,6 +57,7 @@ import { type FormatId, getFormatByDimensions, FORMATS, PUBLIC_FORMATS } from "@
 import { applyTemplateLayers } from "@/lib/fabricApplyTemplateLayers";
 import { ArtistLibraryModal, type ArtistEntry } from "@/components/wizard/ArtistLibrary";
 import RequestPhotoModal from "@/components/editor/RequestPhotoModal";
+import NotificationsBell from "@/components/notifications/NotificationsBell";
 import { isAdmin } from "@/lib/admin";
 // Side-effect import: extiende FabricObject.prototype.toObject para que
 // customId y otras props custom SIEMPRE se serialicen al guardar. Sin esto,
@@ -3237,6 +3238,11 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
             {adminPublishing ? <Loader2 className="w-3.5 h-3.5 animate-spin"/> : <><Send className="w-3.5 h-3.5" strokeWidth={2.5}/><span className="hidden sm:inline">{isEditingPublished ? "Publicar cambios" : "Publicar"}</span></>}
           </button>
         )}
+
+        {/* Campana de notificaciones — visible solo si hay sesión. Misma UI
+            que en AppShell, polling cada 60s para ver fotos nuevas de
+            colaboradores aunque el user esté en el editor. */}
+        {authUser && <NotificationsBell />}
 
         {/* User avatar + dropdown — replica de AppShell para mantener consistencia.
             Permite acceso rápido a Mis recursos, Mi cuenta, Historial, Admin y
