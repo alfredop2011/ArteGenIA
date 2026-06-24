@@ -4962,23 +4962,22 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
             }).length;
             const offset = existingExtras * 40;
             try {
-              // Placeholder = transparent 1x1 PNG. Si usamos SVG inline como
-              // data-URL, Fabric/loadFromJSON falla a renderizarlo (cuadrado
-              // negro). Un PNG transparente válido es el placeholder más
-              // confiable hasta que el colaborador suba la foto real.
-              const transparentPng = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkAAIAAAoAAv/lxKUAAAAASUVORK5CYII=";
+              // PNG 240x240 transparente REAL (no 1x1 escalado x240, que
+              // causaba que la foto recibida se renderizara a tamaño
+              // absurdo). Con dimensions naturales 240x240 y scale 1,
+              // tanto el placeholder como la foto real ocupan ~240px en
+              // el canvas. El user puede ajustar después con el handle.
+              const transparentPng240 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPAAAADwCAQAAACFI7IzAAAAH0lEQVR42u3BMQEAAADCoPVPbQwfoAAAAAAAAAAAAOA1EFkAAR3Z6ScAAAAASUVORK5CYII=";
               const fabric = await import("fabric");
-              const img = await fabric.FabricImage.fromURL(transparentPng);
-              // Lo escalamos al tamaño deseado (240x240) y le damos un fondo
-              // visible para que el user vea dónde está el slot antes de la foto.
+              const img = await fabric.FabricImage.fromURL(transparentPng240);
               img.set({
                 left: 60 + offset,
                 top: 60 + offset,
                 originX: "left",
                 originY: "top",
-                scaleX: 240,
-                scaleY: 240,
-                // Fondo morado translúcido + borde dashed visible
+                // scaleX/scaleY = 1 (default). El PNG ya es 240x240.
+                // Fondo morado translúcido + borde dashed para que el
+                // user vea dónde está el slot antes de que llegue la foto.
                 stroke: "rgba(168,85,247,0.7)",
                 strokeWidth: 3,
                 strokeDashArray: [8, 4],

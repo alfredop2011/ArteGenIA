@@ -35,7 +35,10 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ error: "Proyecto no encontrado" }, { status: 404 });
     }
 
-    // Traer invites con datos del colaborador asociado (LEFT JOIN via FK)
+    // Traer invites con datos del colaborador asociado (LEFT JOIN via FK).
+    // Hint EXPLÍCITO de FK porque collaborator_invites tiene 2 FK a
+    // collaborators (collaborator_id + updates_collaborator_id) y sin
+    // hint PostgREST devuelve PGRST201 (ambiguous relationship).
     const { data: invites, error } = await supabaseAdmin
         .from("collaborator_invites")
         .select(`
@@ -45,7 +48,7 @@ export async function GET(req: NextRequest) {
             used_at,
             collaborator_id,
             created_at,
-            collaborator:collaborators (
+            collaborator:collaborators!collaborator_id (
                 artist_name,
                 kind
             )
