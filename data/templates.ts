@@ -4900,4 +4900,208 @@ export const templates: Template[] = [
         ],
     },
 
+// ─────────────────────────────────────────────────────────────────────
+// 59 — DJ Lineup 4 (grid 2x2, festival medio-formato)
+//      Para eventos con 4 DJs. Más espacio por slot que en festivales grandes.
+// ─────────────────────────────────────────────────────────────────────
+    {
+        id: 59,
+        title: "DJ Lineup 4",
+        category: "Festival",
+        image: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dj/Dj-2.png",
+        premium: false,
+        audience: ["productoras"],
+        internalTags: ["complete"],
+        variants: [
+            { format: "portrait", width: 1080, height: 1350, layers: [
+                { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1350, fill: "#0b0b18", selectable: false },
+                { id: "glow-tl", type: "shape", shape: "circle", x: 100, y: 100, width: 600, height: 600, radius: 300, fill: "#a855f7", opacity: 0.28, originX: "center", originY: "center", selectable: false },
+                { id: "glow-br", type: "shape", shape: "circle", x: 980, y: 1250, width: 600, height: 600, radius: 300, fill: "#ec4899", opacity: 0.28, originX: "center", originY: "center", selectable: false },
+                // Header
+                { id: "kicker", type: "text", text: "F O U R   D J   N I G H T", x: 540, y: 60, width: 1080, fontSize: 16, fontFamily: "Montserrat, sans-serif", color: "#facc15", fontWeight: "700", textAlign: "center", originX: "center", originY: "top", charSpacing: 700 },
+                { id: "title-1", type: "text", text: "BASS", x: 540, y: 105, width: 1080, fontSize: 130, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", fontWeight: "900", textAlign: "center", originX: "center", originY: "top", charSpacing: 40 },
+                { id: "title-2", type: "text", text: "REVOLUTION", x: 540, y: 235, width: 1080, fontSize: 60, fontFamily: "Anton, Impact, sans-serif", color: "#a855f7", fontWeight: "900", textAlign: "center", originX: "center", originY: "top", charSpacing: 200 },
+                // GRID 2x2 — Slots de 460x270, gap 20
+                // DJ 1 (top-left) — rojo
+                { id: "slot-1-bg", type: "shape", shape: "rect", x: 60, y: 330, width: 470, height: 280, fill: "#1a1a28", radius: 16, selectable: false },
+                { id: "dj-1-img", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dj/Dj-1.png", x: 295, y: 340, scaleX: 0.42, scaleY: 0.42, originX: "center", originY: "top", shadow: { color: "rgba(239,68,68,0.6)", blur: 30, offsetX: 0, offsetY: 0 } },
+                { id: "dj-1-bar", type: "shape", shape: "rect", x: 60, y: 560, width: 470, height: 6, fill: "#ef4444", selectable: false },
+                { id: "dj-1-name", type: "text", text: "DJ NOVA", x: 60, y: 575, width: 470, fontSize: 28, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", fontWeight: "900", textAlign: "center", originX: "left", originY: "top", charSpacing: 150 },
+                { id: "dj-1-genre", type: "text", text: "TECHNO", x: 60, y: 605, width: 470, fontSize: 13, fontFamily: "Montserrat, sans-serif", color: "#ef4444", fontWeight: "700", textAlign: "center", originX: "left", originY: "top", charSpacing: 400 },
+                // DJ 2 (top-right) — cyan
+                { id: "slot-2-bg", type: "shape", shape: "rect", x: 550, y: 330, width: 470, height: 280, fill: "#1a1a28", radius: 16, selectable: false },
+                { id: "dj-2-img", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dj/Dj-2.png", x: 785, y: 340, scaleX: 0.42, scaleY: 0.42, originX: "center", originY: "top", shadow: { color: "rgba(6,182,212,0.6)", blur: 30, offsetX: 0, offsetY: 0 } },
+                { id: "dj-2-bar", type: "shape", shape: "rect", x: 550, y: 560, width: 470, height: 6, fill: "#06b6d4", selectable: false },
+                { id: "dj-2-name", type: "text", text: "DJ AXIS", x: 550, y: 575, width: 470, fontSize: 28, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", fontWeight: "900", textAlign: "center", originX: "left", originY: "top", charSpacing: 150 },
+                { id: "dj-2-genre", type: "text", text: "HOUSE", x: 550, y: 605, width: 470, fontSize: 13, fontFamily: "Montserrat, sans-serif", color: "#06b6d4", fontWeight: "700", textAlign: "center", originX: "left", originY: "top", charSpacing: 400 },
+                // DJ 3 (bottom-left) — amarillo
+                { id: "slot-3-bg", type: "shape", shape: "rect", x: 60, y: 630, width: 470, height: 280, fill: "#1a1a28", radius: 16, selectable: false },
+                { id: "dj-3-img", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dj/Dj-3.png", x: 295, y: 640, scaleX: 0.42, scaleY: 0.42, originX: "center", originY: "top", shadow: { color: "rgba(250,204,21,0.6)", blur: 30, offsetX: 0, offsetY: 0 } },
+                { id: "dj-3-bar", type: "shape", shape: "rect", x: 60, y: 860, width: 470, height: 6, fill: "#facc15", selectable: false },
+                { id: "dj-3-name", type: "text", text: "DJ KAI", x: 60, y: 875, width: 470, fontSize: 28, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", fontWeight: "900", textAlign: "center", originX: "left", originY: "top", charSpacing: 150 },
+                { id: "dj-3-genre", type: "text", text: "REGGAETON", x: 60, y: 905, width: 470, fontSize: 13, fontFamily: "Montserrat, sans-serif", color: "#facc15", fontWeight: "700", textAlign: "center", originX: "left", originY: "top", charSpacing: 400 },
+                // DJ 4 (bottom-right) — rosa
+                { id: "slot-4-bg", type: "shape", shape: "rect", x: 550, y: 630, width: 470, height: 280, fill: "#1a1a28", radius: 16, selectable: false },
+                { id: "dj-4-img", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dj/Dj-1.png", x: 785, y: 640, scaleX: 0.42, scaleY: 0.42, originX: "center", originY: "top", shadow: { color: "rgba(236,72,153,0.6)", blur: 30, offsetX: 0, offsetY: 0 } },
+                { id: "dj-4-bar", type: "shape", shape: "rect", x: 550, y: 860, width: 470, height: 6, fill: "#ec4899", selectable: false },
+                { id: "dj-4-name", type: "text", text: "DJ LUNA", x: 550, y: 875, width: 470, fontSize: 28, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", fontWeight: "900", textAlign: "center", originX: "left", originY: "top", charSpacing: 150 },
+                { id: "dj-4-genre", type: "text", text: "AFRO HOUSE", x: 550, y: 905, width: 470, fontSize: 13, fontFamily: "Montserrat, sans-serif", color: "#ec4899", fontWeight: "700", textAlign: "center", originX: "left", originY: "top", charSpacing: 400 },
+                // Footer info band
+                { id: "info-band", type: "shape", shape: "rect", x: 0, y: 950, width: 1080, height: 400, fill: "#1a0a1f", selectable: false },
+                { id: "info-accent", type: "shape", shape: "rect", x: 0, y: 950, width: 1080, height: 4, fill: "#facc15", selectable: false },
+                { id: "date-day", type: "text", text: "VIE 12  ·  SÁB 13", x: 540, y: 985, width: 1080, fontSize: 60, fontFamily: "Anton, Impact, sans-serif", color: "#facc15", fontWeight: "900", textAlign: "center", originX: "center", originY: "top", charSpacing: 200 },
+                { id: "date-month", type: "text", text: "SEPTIEMBRE  ·  2026", x: 540, y: 1060, width: 1080, fontSize: 22, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", fontWeight: "900", textAlign: "center", originX: "center", originY: "top", charSpacing: 600 },
+                { id: "time", type: "text", text: "23:00 — 07:00 H", x: 540, y: 1125, width: 1080, fontSize: 28, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.85)", fontWeight: "700", textAlign: "center", originX: "center", originY: "top", charSpacing: 250 },
+                { id: "venue", type: "text", text: "MIRADOR  ·  MADRID", x: 540, y: 1180, width: 1080, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "#ffffff", fontWeight: "600", textAlign: "center", originX: "center", originY: "top", charSpacing: 400 },
+                { id: "price-bg", type: "shape", shape: "rect", x: 240, y: 1240, width: 600, height: 60, fill: "#facc15", radius: 30, selectable: false },
+                { id: "price", type: "text", text: "ABONO 2 DÍAS  ·  45€", x: 540, y: 1255, width: 600, fontSize: 22, fontFamily: "Anton, Impact, sans-serif", color: "#1a0a1f", fontWeight: "900", textAlign: "center", originX: "center", originY: "top", charSpacing: 200 },
+            ] },
+        ],
+    },
+
+// ─────────────────────────────────────────────────────────────────────
+// 60 — DJ Lineup 6 (grid 3x2, festival mediano)
+//      Para eventos con 6 DJs. 3 columnas x 2 filas.
+// ─────────────────────────────────────────────────────────────────────
+    {
+        id: 60,
+        title: "DJ Lineup 6",
+        category: "Festival",
+        image: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dj/Dj-3.png",
+        premium: false,
+        audience: ["productoras"],
+        internalTags: ["complete"],
+        variants: [
+            { format: "portrait", width: 1080, height: 1350, layers: [
+                { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1350, fill: "#0a0a14", selectable: false },
+                { id: "glow-1", type: "shape", shape: "circle", x: 540, y: 600, width: 800, height: 800, radius: 400, fill: "#7c3aed", opacity: 0.22, originX: "center", originY: "center", selectable: false },
+                // Header
+                { id: "kicker", type: "text", text: "S I X   D J   F E S T I V A L", x: 540, y: 55, width: 1080, fontSize: 15, fontFamily: "Montserrat, sans-serif", color: "#06b6d4", fontWeight: "700", textAlign: "center", originX: "center", originY: "top", charSpacing: 600 },
+                { id: "title-1", type: "text", text: "NEON", x: 540, y: 95, width: 1080, fontSize: 120, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", fontWeight: "900", textAlign: "center", originX: "center", originY: "top", charSpacing: 40 },
+                { id: "title-2", type: "text", text: "WAVE", x: 540, y: 215, width: 1080, fontSize: 80, fontFamily: "Anton, Impact, sans-serif", color: "#06b6d4", fontWeight: "900", textAlign: "center", originX: "center", originY: "top", charSpacing: 200 },
+                // GRID 3x2 — slots de 310x270, gap 15
+                // FILA 1
+                { id: "slot-1-bg", type: "shape", shape: "rect", x: 60, y: 330, width: 310, height: 270, fill: "#1a1a28", radius: 12, selectable: false },
+                { id: "dj-1-img", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dj/Dj-1.png", x: 215, y: 340, scaleX: 0.32, scaleY: 0.32, originX: "center", originY: "top", shadow: { color: "rgba(239,68,68,0.55)", blur: 25, offsetX: 0, offsetY: 0 } },
+                { id: "dj-1-bar", type: "shape", shape: "rect", x: 60, y: 555, width: 310, height: 5, fill: "#ef4444", selectable: false },
+                { id: "dj-1-name", type: "text", text: "DJ NOVA", x: 60, y: 568, width: 310, fontSize: 22, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", fontWeight: "900", textAlign: "center", originX: "left", originY: "top", charSpacing: 120 },
+                { id: "dj-1-genre", type: "text", text: "TECHNO", x: 60, y: 593, width: 310, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "#ef4444", fontWeight: "700", textAlign: "center", originX: "left", originY: "top", charSpacing: 350 },
+                { id: "slot-2-bg", type: "shape", shape: "rect", x: 385, y: 330, width: 310, height: 270, fill: "#1a1a28", radius: 12, selectable: false },
+                { id: "dj-2-img", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dj/Dj-2.png", x: 540, y: 340, scaleX: 0.32, scaleY: 0.32, originX: "center", originY: "top", shadow: { color: "rgba(6,182,212,0.55)", blur: 25, offsetX: 0, offsetY: 0 } },
+                { id: "dj-2-bar", type: "shape", shape: "rect", x: 385, y: 555, width: 310, height: 5, fill: "#06b6d4", selectable: false },
+                { id: "dj-2-name", type: "text", text: "DJ AXIS", x: 385, y: 568, width: 310, fontSize: 22, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", fontWeight: "900", textAlign: "center", originX: "left", originY: "top", charSpacing: 120 },
+                { id: "dj-2-genre", type: "text", text: "HOUSE", x: 385, y: 593, width: 310, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "#06b6d4", fontWeight: "700", textAlign: "center", originX: "left", originY: "top", charSpacing: 350 },
+                { id: "slot-3-bg", type: "shape", shape: "rect", x: 710, y: 330, width: 310, height: 270, fill: "#1a1a28", radius: 12, selectable: false },
+                { id: "dj-3-img", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dj/Dj-3.png", x: 865, y: 340, scaleX: 0.32, scaleY: 0.32, originX: "center", originY: "top", shadow: { color: "rgba(250,204,21,0.55)", blur: 25, offsetX: 0, offsetY: 0 } },
+                { id: "dj-3-bar", type: "shape", shape: "rect", x: 710, y: 555, width: 310, height: 5, fill: "#facc15", selectable: false },
+                { id: "dj-3-name", type: "text", text: "DJ KAI", x: 710, y: 568, width: 310, fontSize: 22, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", fontWeight: "900", textAlign: "center", originX: "left", originY: "top", charSpacing: 120 },
+                { id: "dj-3-genre", type: "text", text: "REGGAETON", x: 710, y: 593, width: 310, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "#facc15", fontWeight: "700", textAlign: "center", originX: "left", originY: "top", charSpacing: 350 },
+                // FILA 2
+                { id: "slot-4-bg", type: "shape", shape: "rect", x: 60, y: 615, width: 310, height: 270, fill: "#1a1a28", radius: 12, selectable: false },
+                { id: "dj-4-img", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dj/Dj-1.png", x: 215, y: 625, scaleX: 0.32, scaleY: 0.32, originX: "center", originY: "top", shadow: { color: "rgba(236,72,153,0.55)", blur: 25, offsetX: 0, offsetY: 0 } },
+                { id: "dj-4-bar", type: "shape", shape: "rect", x: 60, y: 840, width: 310, height: 5, fill: "#ec4899", selectable: false },
+                { id: "dj-4-name", type: "text", text: "DJ LUNA", x: 60, y: 853, width: 310, fontSize: 22, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", fontWeight: "900", textAlign: "center", originX: "left", originY: "top", charSpacing: 120 },
+                { id: "dj-4-genre", type: "text", text: "AFRO HOUSE", x: 60, y: 878, width: 310, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "#ec4899", fontWeight: "700", textAlign: "center", originX: "left", originY: "top", charSpacing: 350 },
+                { id: "slot-5-bg", type: "shape", shape: "rect", x: 385, y: 615, width: 310, height: 270, fill: "#1a1a28", radius: 12, selectable: false },
+                { id: "dj-5-img", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dj/Dj-2.png", x: 540, y: 625, scaleX: 0.32, scaleY: 0.32, originX: "center", originY: "top", shadow: { color: "rgba(168,85,247,0.55)", blur: 25, offsetX: 0, offsetY: 0 } },
+                { id: "dj-5-bar", type: "shape", shape: "rect", x: 385, y: 840, width: 310, height: 5, fill: "#a855f7", selectable: false },
+                { id: "dj-5-name", type: "text", text: "DJ ZARA", x: 385, y: 853, width: 310, fontSize: 22, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", fontWeight: "900", textAlign: "center", originX: "left", originY: "top", charSpacing: 120 },
+                { id: "dj-5-genre", type: "text", text: "TRANCE", x: 385, y: 878, width: 310, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "#a855f7", fontWeight: "700", textAlign: "center", originX: "left", originY: "top", charSpacing: 350 },
+                { id: "slot-6-bg", type: "shape", shape: "rect", x: 710, y: 615, width: 310, height: 270, fill: "#1a1a28", radius: 12, selectable: false },
+                { id: "dj-6-img", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dj/Dj-3.png", x: 865, y: 625, scaleX: 0.32, scaleY: 0.32, originX: "center", originY: "top", shadow: { color: "rgba(34,197,94,0.55)", blur: 25, offsetX: 0, offsetY: 0 } },
+                { id: "dj-6-bar", type: "shape", shape: "rect", x: 710, y: 840, width: 310, height: 5, fill: "#22c55e", selectable: false },
+                { id: "dj-6-name", type: "text", text: "DJ ROKA", x: 710, y: 853, width: 310, fontSize: 22, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", fontWeight: "900", textAlign: "center", originX: "left", originY: "top", charSpacing: 120 },
+                { id: "dj-6-genre", type: "text", text: "DRUM & BASS", x: 710, y: 878, width: 310, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "#22c55e", fontWeight: "700", textAlign: "center", originX: "left", originY: "top", charSpacing: 350 },
+                // Footer
+                { id: "info-band", type: "shape", shape: "rect", x: 0, y: 920, width: 1080, height: 430, fill: "#0f0f1a", selectable: false },
+                { id: "info-accent", type: "shape", shape: "rect", x: 0, y: 920, width: 1080, height: 4, fill: "#06b6d4", selectable: false },
+                { id: "date-day", type: "text", text: "VIE 09  ·  SÁB 10", x: 540, y: 955, width: 1080, fontSize: 55, fontFamily: "Anton, Impact, sans-serif", color: "#06b6d4", fontWeight: "900", textAlign: "center", originX: "center", originY: "top", charSpacing: 200 },
+                { id: "date-month", type: "text", text: "OCTUBRE  ·  2026", x: 540, y: 1025, width: 1080, fontSize: 22, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", fontWeight: "900", textAlign: "center", originX: "center", originY: "top", charSpacing: 600 },
+                { id: "time", type: "text", text: "22:00 — 07:00 H", x: 540, y: 1085, width: 1080, fontSize: 26, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.85)", fontWeight: "700", textAlign: "center", originX: "center", originY: "top", charSpacing: 250 },
+                { id: "venue", type: "text", text: "CLUB ORBIT  ·  MADRID", x: 540, y: 1140, width: 1080, fontSize: 19, fontFamily: "Montserrat, sans-serif", color: "#ffffff", fontWeight: "600", textAlign: "center", originX: "center", originY: "top", charSpacing: 400 },
+                { id: "price-bg", type: "shape", shape: "rect", x: 240, y: 1195, width: 600, height: 60, fill: "#06b6d4", radius: 30, selectable: false },
+                { id: "price", type: "text", text: "ABONO 2 DÍAS  ·  55€", x: 540, y: 1210, width: 600, fontSize: 22, fontFamily: "Anton, Impact, sans-serif", color: "#0a0a14", fontWeight: "900", textAlign: "center", originX: "center", originY: "top", charSpacing: 200 },
+                { id: "tickets", type: "text", text: "ENTRADAS · ENTRADIUM.COM", x: 540, y: 1290, width: 1080, fontSize: 13, fontFamily: "Montserrat, sans-serif", color: "rgba(6,182,212,0.85)", fontWeight: "700", textAlign: "center", originX: "center", originY: "top", charSpacing: 500 },
+            ] },
+        ],
+    },
+
+// ─────────────────────────────────────────────────────────────────────
+// 61 — DJ Lineup 8 (grid 4x2, festival grande)
+//      Para eventos con 8 DJs. 4 columnas x 2 filas, slots compactos.
+// ─────────────────────────────────────────────────────────────────────
+    {
+        id: 61,
+        title: "DJ Lineup 8",
+        category: "Festival",
+        image: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dj/Dj-1.png",
+        premium: false,
+        audience: ["productoras"],
+        internalTags: ["complete"],
+        variants: [
+            { format: "portrait", width: 1080, height: 1350, layers: [
+                { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1350, fill: "#08080f", selectable: false },
+                { id: "glow-tl", type: "shape", shape: "circle", x: 150, y: 200, width: 500, height: 500, radius: 250, fill: "#ef4444", opacity: 0.20, originX: "center", originY: "center", selectable: false },
+                { id: "glow-tr", type: "shape", shape: "circle", x: 930, y: 200, width: 500, height: 500, radius: 250, fill: "#06b6d4", opacity: 0.20, originX: "center", originY: "center", selectable: false },
+                // Header — compacto para dar espacio a 8 slots
+                { id: "kicker", type: "text", text: "M E G A   F E S T   ·   8   D J S", x: 540, y: 50, width: 1080, fontSize: 14, fontFamily: "Montserrat, sans-serif", color: "#facc15", fontWeight: "700", textAlign: "center", originX: "center", originY: "top", charSpacing: 500 },
+                { id: "title-1", type: "text", text: "ULTRA", x: 540, y: 85, width: 1080, fontSize: 100, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", fontWeight: "900", textAlign: "center", originX: "center", originY: "top", charSpacing: 40 },
+                { id: "title-2", type: "text", text: "FEST", x: 540, y: 185, width: 1080, fontSize: 60, fontFamily: "Anton, Impact, sans-serif", color: "#facc15", fontWeight: "900", textAlign: "center", originX: "center", originY: "top", charSpacing: 200 },
+                // GRID 4x2 — slots de 230x265, gap 16
+                // FILA 1
+                { id: "slot-1-bg", type: "shape", shape: "rect", x: 60, y: 275, width: 230, height: 270, fill: "#15151f", radius: 10, selectable: false },
+                { id: "dj-1-img", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dj/Dj-1.png", x: 175, y: 285, scaleX: 0.24, scaleY: 0.24, originX: "center", originY: "top", shadow: { color: "rgba(239,68,68,0.5)", blur: 20, offsetX: 0, offsetY: 0 } },
+                { id: "dj-1-bar", type: "shape", shape: "rect", x: 60, y: 500, width: 230, height: 4, fill: "#ef4444", selectable: false },
+                { id: "dj-1-name", type: "text", text: "DJ NOVA", x: 60, y: 510, width: 230, fontSize: 17, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", fontWeight: "900", textAlign: "center", originX: "left", originY: "top", charSpacing: 90 },
+                { id: "dj-1-genre", type: "text", text: "TECHNO", x: 60, y: 530, width: 230, fontSize: 10, fontFamily: "Montserrat, sans-serif", color: "#ef4444", fontWeight: "700", textAlign: "center", originX: "left", originY: "top", charSpacing: 300 },
+                { id: "slot-2-bg", type: "shape", shape: "rect", x: 305, y: 275, width: 230, height: 270, fill: "#15151f", radius: 10, selectable: false },
+                { id: "dj-2-img", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dj/Dj-2.png", x: 420, y: 285, scaleX: 0.24, scaleY: 0.24, originX: "center", originY: "top", shadow: { color: "rgba(6,182,212,0.5)", blur: 20, offsetX: 0, offsetY: 0 } },
+                { id: "dj-2-bar", type: "shape", shape: "rect", x: 305, y: 500, width: 230, height: 4, fill: "#06b6d4", selectable: false },
+                { id: "dj-2-name", type: "text", text: "DJ AXIS", x: 305, y: 510, width: 230, fontSize: 17, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", fontWeight: "900", textAlign: "center", originX: "left", originY: "top", charSpacing: 90 },
+                { id: "dj-2-genre", type: "text", text: "HOUSE", x: 305, y: 530, width: 230, fontSize: 10, fontFamily: "Montserrat, sans-serif", color: "#06b6d4", fontWeight: "700", textAlign: "center", originX: "left", originY: "top", charSpacing: 300 },
+                { id: "slot-3-bg", type: "shape", shape: "rect", x: 550, y: 275, width: 230, height: 270, fill: "#15151f", radius: 10, selectable: false },
+                { id: "dj-3-img", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dj/Dj-3.png", x: 665, y: 285, scaleX: 0.24, scaleY: 0.24, originX: "center", originY: "top", shadow: { color: "rgba(250,204,21,0.5)", blur: 20, offsetX: 0, offsetY: 0 } },
+                { id: "dj-3-bar", type: "shape", shape: "rect", x: 550, y: 500, width: 230, height: 4, fill: "#facc15", selectable: false },
+                { id: "dj-3-name", type: "text", text: "DJ KAI", x: 550, y: 510, width: 230, fontSize: 17, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", fontWeight: "900", textAlign: "center", originX: "left", originY: "top", charSpacing: 90 },
+                { id: "dj-3-genre", type: "text", text: "REGGAETON", x: 550, y: 530, width: 230, fontSize: 10, fontFamily: "Montserrat, sans-serif", color: "#facc15", fontWeight: "700", textAlign: "center", originX: "left", originY: "top", charSpacing: 300 },
+                { id: "slot-4-bg", type: "shape", shape: "rect", x: 795, y: 275, width: 230, height: 270, fill: "#15151f", radius: 10, selectable: false },
+                { id: "dj-4-img", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dj/Dj-1.png", x: 910, y: 285, scaleX: 0.24, scaleY: 0.24, originX: "center", originY: "top", shadow: { color: "rgba(236,72,153,0.5)", blur: 20, offsetX: 0, offsetY: 0 } },
+                { id: "dj-4-bar", type: "shape", shape: "rect", x: 795, y: 500, width: 230, height: 4, fill: "#ec4899", selectable: false },
+                { id: "dj-4-name", type: "text", text: "DJ LUNA", x: 795, y: 510, width: 230, fontSize: 17, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", fontWeight: "900", textAlign: "center", originX: "left", originY: "top", charSpacing: 90 },
+                { id: "dj-4-genre", type: "text", text: "AFRO HOUSE", x: 795, y: 530, width: 230, fontSize: 10, fontFamily: "Montserrat, sans-serif", color: "#ec4899", fontWeight: "700", textAlign: "center", originX: "left", originY: "top", charSpacing: 300 },
+                // FILA 2
+                { id: "slot-5-bg", type: "shape", shape: "rect", x: 60, y: 560, width: 230, height: 270, fill: "#15151f", radius: 10, selectable: false },
+                { id: "dj-5-img", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dj/Dj-2.png", x: 175, y: 570, scaleX: 0.24, scaleY: 0.24, originX: "center", originY: "top", shadow: { color: "rgba(168,85,247,0.5)", blur: 20, offsetX: 0, offsetY: 0 } },
+                { id: "dj-5-bar", type: "shape", shape: "rect", x: 60, y: 785, width: 230, height: 4, fill: "#a855f7", selectable: false },
+                { id: "dj-5-name", type: "text", text: "DJ ZARA", x: 60, y: 795, width: 230, fontSize: 17, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", fontWeight: "900", textAlign: "center", originX: "left", originY: "top", charSpacing: 90 },
+                { id: "dj-5-genre", type: "text", text: "TRANCE", x: 60, y: 815, width: 230, fontSize: 10, fontFamily: "Montserrat, sans-serif", color: "#a855f7", fontWeight: "700", textAlign: "center", originX: "left", originY: "top", charSpacing: 300 },
+                { id: "slot-6-bg", type: "shape", shape: "rect", x: 305, y: 560, width: 230, height: 270, fill: "#15151f", radius: 10, selectable: false },
+                { id: "dj-6-img", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dj/Dj-3.png", x: 420, y: 570, scaleX: 0.24, scaleY: 0.24, originX: "center", originY: "top", shadow: { color: "rgba(34,197,94,0.5)", blur: 20, offsetX: 0, offsetY: 0 } },
+                { id: "dj-6-bar", type: "shape", shape: "rect", x: 305, y: 785, width: 230, height: 4, fill: "#22c55e", selectable: false },
+                { id: "dj-6-name", type: "text", text: "DJ ROKA", x: 305, y: 795, width: 230, fontSize: 17, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", fontWeight: "900", textAlign: "center", originX: "left", originY: "top", charSpacing: 90 },
+                { id: "dj-6-genre", type: "text", text: "DRUM & BASS", x: 305, y: 815, width: 230, fontSize: 10, fontFamily: "Montserrat, sans-serif", color: "#22c55e", fontWeight: "700", textAlign: "center", originX: "left", originY: "top", charSpacing: 300 },
+                { id: "slot-7-bg", type: "shape", shape: "rect", x: 550, y: 560, width: 230, height: 270, fill: "#15151f", radius: 10, selectable: false },
+                { id: "dj-7-img", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dj/Dj-1.png", x: 665, y: 570, scaleX: 0.24, scaleY: 0.24, originX: "center", originY: "top", shadow: { color: "rgba(251,146,60,0.5)", blur: 20, offsetX: 0, offsetY: 0 } },
+                { id: "dj-7-bar", type: "shape", shape: "rect", x: 550, y: 785, width: 230, height: 4, fill: "#fb923c", selectable: false },
+                { id: "dj-7-name", type: "text", text: "DJ BLAZE", x: 550, y: 795, width: 230, fontSize: 17, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", fontWeight: "900", textAlign: "center", originX: "left", originY: "top", charSpacing: 90 },
+                { id: "dj-7-genre", type: "text", text: "URBAN LATIN", x: 550, y: 815, width: 230, fontSize: 10, fontFamily: "Montserrat, sans-serif", color: "#fb923c", fontWeight: "700", textAlign: "center", originX: "left", originY: "top", charSpacing: 300 },
+                { id: "slot-8-bg", type: "shape", shape: "rect", x: 795, y: 560, width: 230, height: 270, fill: "#15151f", radius: 10, selectable: false },
+                { id: "dj-8-img", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dj/Dj-2.png", x: 910, y: 570, scaleX: 0.24, scaleY: 0.24, originX: "center", originY: "top", shadow: { color: "rgba(56,189,248,0.5)", blur: 20, offsetX: 0, offsetY: 0 } },
+                { id: "dj-8-bar", type: "shape", shape: "rect", x: 795, y: 785, width: 230, height: 4, fill: "#38bdf8", selectable: false },
+                { id: "dj-8-name", type: "text", text: "DJ KIRA", x: 795, y: 795, width: 230, fontSize: 17, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", fontWeight: "900", textAlign: "center", originX: "left", originY: "top", charSpacing: 90 },
+                { id: "dj-8-genre", type: "text", text: "ELECTRO POP", x: 795, y: 815, width: 230, fontSize: 10, fontFamily: "Montserrat, sans-serif", color: "#38bdf8", fontWeight: "700", textAlign: "center", originX: "left", originY: "top", charSpacing: 300 },
+                // Footer compacto
+                { id: "info-band", type: "shape", shape: "rect", x: 0, y: 860, width: 1080, height: 490, fill: "#1a0a1f", selectable: false },
+                { id: "info-accent", type: "shape", shape: "rect", x: 0, y: 860, width: 1080, height: 4, fill: "#facc15", selectable: false },
+                { id: "date-day", type: "text", text: "JUE 17  ·  VIE 18  ·  SÁB 19", x: 540, y: 895, width: 1080, fontSize: 45, fontFamily: "Anton, Impact, sans-serif", color: "#facc15", fontWeight: "900", textAlign: "center", originX: "center", originY: "top", charSpacing: 150 },
+                { id: "date-month", type: "text", text: "JULIO  ·  2026", x: 540, y: 960, width: 1080, fontSize: 22, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", fontWeight: "900", textAlign: "center", originX: "center", originY: "top", charSpacing: 600 },
+                { id: "time", type: "text", text: "22:00 — 08:00 H  ·  3 ESCENARIOS", x: 540, y: 1020, width: 1080, fontSize: 22, fontFamily: "Montserrat, sans-serif", color: "rgba(255,255,255,0.85)", fontWeight: "700", textAlign: "center", originX: "center", originY: "top", charSpacing: 250 },
+                { id: "venue", type: "text", text: "RECINTO FERIAL  ·  VALENCIA", x: 540, y: 1080, width: 1080, fontSize: 20, fontFamily: "Montserrat, sans-serif", color: "#ffffff", fontWeight: "600", textAlign: "center", originX: "center", originY: "top", charSpacing: 350 },
+                { id: "price-bg", type: "shape", shape: "rect", x: 200, y: 1140, width: 680, height: 60, fill: "#facc15", radius: 30, selectable: false },
+                { id: "price", type: "text", text: "ABONO 3 DÍAS  ·  85€", x: 540, y: 1155, width: 680, fontSize: 22, fontFamily: "Anton, Impact, sans-serif", color: "#1a0a1f", fontWeight: "900", textAlign: "center", originX: "center", originY: "top", charSpacing: 200 },
+                { id: "tickets", type: "text", text: "ULTRAFEST.ES  ·  ABONOS LIMITADOS", x: 540, y: 1240, width: 1080, fontSize: 14, fontFamily: "Montserrat, sans-serif", color: "rgba(250,204,21,0.85)", fontWeight: "700", textAlign: "center", originX: "center", originY: "top", charSpacing: 400 },
+            ] },
+        ],
+    },
+
 ];
