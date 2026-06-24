@@ -128,9 +128,27 @@ const cityLabelFor = (id: string) => CITY_LABELS[id] ?? titleCaseCity(id);
 // ya configurado) bajo hero/<ciudad>.jpg. Para añadir otra ciudad: sube su
 // foto a R2 con `node` (ver carpeta hero/) y añade aquí su URL pública.
 // Si una ciudad no tiene foto, el hero usa solo el degradado oscuro + glows.
+const R2_HERO = "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/hero";
 const CITY_HERO: Record<string, string> = {
-  madrid: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/hero/madrid.jpg",
+  madrid: `${R2_HERO}/madrid.jpg`,
+  barcelona: `${R2_HERO}/barcelona.jpg`,
+  valencia: `${R2_HERO}/valencia.jpg`,
+  malaga: `${R2_HERO}/malaga.jpg`,
+  sevilla: `${R2_HERO}/sevilla.jpg`,
+  granada: `${R2_HERO}/granada.jpg`,
+  zaragoza: `${R2_HERO}/zaragoza.jpg`,
+  bilbao: `${R2_HERO}/bilbao.jpg`,
+  pamplona: `${R2_HERO}/pamplona.jpg`,
+  "lloret de mar": `${R2_HERO}/lloret-de-mar.jpg`,
 };
+// Montaje para "Todas las ciudades": tiras verticales de varias ciudades
+// icónicas (la palabra del título va rotando entre ellas).
+const HERO_MONTAGE: string[] = [
+  `${R2_HERO}/madrid.jpg`,
+  `${R2_HERO}/barcelona.jpg`,
+  `${R2_HERO}/sevilla.jpg`,
+  `${R2_HERO}/granada.jpg`,
+];
 
 // Coordenadas para "Cerca de mí" (detección por GPS → ciudad más cercana).
 const CITY_COORDS: Record<string, { country: string; lat: number; lng: number }> = {
@@ -405,6 +423,9 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
   const rotCities = ROTATING_CITIES[country] ?? [countryLabel];
   const heroWord = city === "todas" ? rotCities[rotIdx % rotCities.length] ?? countryLabel : cityLabel;
   const cityHero = CITY_HERO[city] || "";
+  // Imágenes de fondo del hero: una si hay ciudad concreta con foto; el
+  // montaje de varias si estamos en "Todas las ciudades".
+  const heroImages = city === "todas" ? HERO_MONTAGE : cityHero ? [cityHero] : [];
 
   // Favoritos: cargar / persistir en localStorage.
   useEffect(() => {
@@ -591,18 +612,30 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
         <div className="absolute inset-0 -z-10 overflow-hidden">
           {/* base oscura */}
           <div className="absolute inset-0" style={{ background: "linear-gradient(180deg,#0b0b13 0%,#120a1f 55%,#0b0b13 100%)" }} />
-          {/* foto de la ciudad (si existe), desvanecida arriba-derecha */}
-          {cityHero && (
+          {/* Foto(s) de la ciudad, desvanecidas arriba-derecha. Una sola si
+              hay ciudad concreta; un montaje de tiras verticales si es "Todas".
+              El degradado oscuro va en una capa ENCIMA (no en el backgroundImage)
+              para que el montaje de varias imágenes comparta la misma máscara. */}
+          {heroImages.length > 0 && (
             <div
               className="absolute inset-y-0 right-0 w-full sm:w-3/5"
               style={{
-                backgroundImage: `linear-gradient(90deg,#0b0b13 0%,rgba(11,11,19,.8) 28%,rgba(11,11,19,.5) 100%), url('${cityHero}')`,
-                backgroundSize: "cover",
-                backgroundPosition: "center",
                 maskImage: "linear-gradient(180deg,#000 0%,#000 60%,transparent 100%)",
                 WebkitMaskImage: "linear-gradient(180deg,#000 0%,#000 60%,transparent 100%)",
               }}
-            />
+            >
+              <div className="absolute inset-0 flex">
+                {heroImages.map((src, i) => (
+                  <div
+                    key={src + i}
+                    className="flex-1"
+                    style={{ backgroundImage: `url('${src}')`, backgroundSize: "cover", backgroundPosition: "center" }}
+                  />
+                ))}
+              </div>
+              {/* máscara oscura para legibilidad del título */}
+              <div className="absolute inset-0" style={{ background: "linear-gradient(90deg,#0b0b13 0%,rgba(11,11,19,.8) 28%,rgba(11,11,19,.5) 100%)" }} />
+            </div>
           )}
           {/* glows neón */}
           <div className="absolute -left-24 top-0 h-72 w-72 rounded-full opacity-40 blur-3xl" style={{ background: "radial-gradient(circle,#7E2BFF,transparent 70%)" }} />
