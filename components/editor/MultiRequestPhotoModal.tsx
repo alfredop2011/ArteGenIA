@@ -21,7 +21,7 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
-import { Loader2, Copy, Check, MessageCircle, X, Sparkles } from "lucide-react";
+import { Loader2, Copy, Check, MessageCircle, X, Sparkles, Plus, Image as ImageIcon, FolderOpen } from "lucide-react";
 
 export type LayerInput = {
     customId: string;
@@ -38,14 +38,29 @@ type Invite = {
     reused: boolean;
 };
 
+/** Invite "suelto" sin capa (foto va a Mis Recursos > Colaboradores). */
+type GalleryInvite = {
+    token: string;
+    expiresAt: string;
+    /** Rol/etiqueta opcional para personalizar mensaje WhatsApp */
+    role: string;
+};
+
 type Props = {
     projectId: string;
     projectName?: string | null;
     layers: LayerInput[];
     onClose: () => void;
+    /**
+     * Callback opcional para que el editor añada un nuevo placeholder image
+     * al canvas. Devuelve el customId asignado a la nueva capa. El wizard
+     * lo añade a la lista y genera invite para él.
+     * Si no se proporciona, el botón "Añadir slot vacío" no aparece.
+     */
+    onAddEmptySlot?: () => Promise<string | null>;
 };
 
-export default function MultiRequestPhotoModal({ projectId, projectName, layers, onClose }: Props) {
+export default function MultiRequestPhotoModal({ projectId, projectName, layers, onClose, onAddEmptySlot }: Props) {
     // Roles editables por el user. Indexado por customId. Empieza con el
     // suggestedRole de cada capa.
     const [roles, setRoles] = useState<Record<string, string>>(() => {
@@ -59,6 +74,12 @@ export default function MultiRequestPhotoModal({ projectId, projectName, layers,
     const [error, setError] = useState<string | null>(null);
     // Tracking de qué links se copiaron recientemente (feedback visual breve)
     const [copiedToken, setCopiedToken] = useState<string | null>(null);
+    // Invites a galería (sin slot): foto llega a Mis Recursos > Colaboradores.
+    // El user los gestiona manualmente — útil cuando hay más artistas que
+    // capas en el flyer.
+    const [galleryInvites, setGalleryInvites] = useState<GalleryInvite[]>([]);
+    const [addingGallery, setAddingGallery] = useState(false);
+    const [addingSlot, setAddingSlot] = useState(false);
 
     const generate = async () => {
         if (layers.length === 0) {
@@ -120,6 +141,69 @@ export default function MultiRequestPhotoModal({ projectId, projectName, layers,
         const roleLabel = role.trim() ? ` (${role.trim()})` : "";
         const msg = encodeURIComponent(
             `¡Hola${roleLabel}! Necesito tu foto para el diseño ${flyerLabel}. Súbela aquí (se coloca sola en su sitio): ${url}`,
+        );
+        return `https://wa.me/?text=${msg}`;
+    };
+
+    /** Añade UN invite a galería (sin slot). La foto llegará a
+     *  Mis Recursos > Colaboradores y el user la arrastra al flyer cuando
+     *  quiera. POST al endpoint clásico (sin body = sin context). */
+    const addGalleryInvite = async () => {
+        setAddingGallery(true);
+        setError(null);
+        try {
+            const res = await fetch("/api/collaborator-invites", { method: "POST" });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || "No se pudo generar el link");
+            setGalleryInvites(prev => [
+                ...prev,
+                { token: data.token, expiresAt: data.expiresAt, role: "" },
+            ]);
+        } catch (e) {
+            setError(e instanceof Error ? e.message : "Error desconocido");
+        } finally {
+            setAddingGallery(false);
+        }
+    };
+
+    /** Pide al editor que añada un placeholder image vacío al canvas.
+     *  Si el callback devuelve customId, regeneramos los invites incluyendo
+     *  la nueva capa. */
+    const addEmptySlot = async () => {
+        if (!onAddEmptySlot) return;
+        setAddingSlot(true);
+        setError(null);
+        try {
+            const newCustomId = await onAddEmptySlot();
+            if (!newCustomId) throw new Error("No se pudo añadir el slot");
+            // Generar invite para la nueva capa. La regeneración bulk reutiliza
+            // los existentes (skip_existing_pending) y solo crea el nuevo.
+            const updatedLayerIds = [...layers.map(l => l.customId), newCustomId];
+            const res = await fetch("/api/collaborator-invites/bulk", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    project_id: projectId,
+                    layer_ids: updatedLayerIds,
+                }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || "No se pudo generar el invite");
+            setInvites(data.invites as Invite[]);
+            setRoles(prev => ({ ...prev, [newCustomId]: "Slot extra" }));
+        } catch (e) {
+            setError(e instanceof Error ? e.message : "Error desconocido");
+        } finally {
+            setAddingSlot(false);
+        }
+    };
+
+    const galleryWhatsappLink = (token: string, role: string) => {
+        const url = linkFor(token);
+        const flyerLabel = projectName ? `del flyer "${projectName}"` : "del flyer";
+        const roleLabel = role.trim() ? ` (${role.trim()})` : "";
+        const msg = encodeURIComponent(
+            `¡Hola${roleLabel}! Súbeme tu foto para mi galería ${flyerLabel}: ${url}`,
         );
         return `https://wa.me/?text=${msg}`;
     };
@@ -250,9 +334,110 @@ export default function MultiRequestPhotoModal({ projectId, projectName, layers,
                             );
                         })}
 
+                        {/* ── Sección galería: invites SIN slot ─────────────── */}
+                        {galleryInvites.length > 0 && (
+                            <>
+                                <div className="pt-3 pb-1 px-1">
+                                    <p className="text-[11px] font-bold uppercase tracking-wider text-gray-500 flex items-center gap-1.5">
+                                        <FolderOpen size={12} /> Personas extra (van a Colaboradores)
+                                    </p>
+                                </div>
+                                {galleryInvites.map((g, idx) => (
+                                    <div
+                                        key={g.token}
+                                        className="rounded-xl p-3 flex gap-3 items-start"
+                                        style={{
+                                            background: "rgba(255,255,255,0.02)",
+                                            border: "1px dashed rgba(255,255,255,0.10)",
+                                        }}
+                                    >
+                                        <div className="shrink-0 w-14 h-14 rounded-lg bg-white/[0.04] border border-dashed border-white/10 flex items-center justify-center">
+                                            <FolderOpen size={16} className="text-gray-500" />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <input
+                                                type="text"
+                                                value={g.role}
+                                                onChange={(e) =>
+                                                    setGalleryInvites(prev => prev.map((it, i) => i === idx ? { ...it, role: e.target.value } : it))
+                                                }
+                                                placeholder={`Persona ${idx + 1} (ej. Bailarín extra, fotógrafo...)`}
+                                                maxLength={60}
+                                                className="w-full px-2 py-1.5 rounded-md text-xs bg-white/[0.04] border border-white/[0.06] text-white placeholder:text-gray-600 focus:border-purple-500/40 focus:outline-none"
+                                            />
+                                            <p className="text-[10px] text-gray-500 mt-1 truncate font-mono">
+                                                {linkFor(g.token)} <span className="text-gray-600">· se guarda en Colaboradores</span>
+                                            </p>
+                                        </div>
+                                        <div className="shrink-0 flex flex-col gap-1.5">
+                                            <button
+                                                onClick={() => void copy(g.token)}
+                                                className="flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-md text-[11px] font-bold transition-all text-white"
+                                                style={{
+                                                    background: "rgba(255,255,255,0.06)",
+                                                    border: "1px solid rgba(255,255,255,0.10)",
+                                                }}
+                                            >
+                                                {copiedToken === g.token ? (
+                                                    <><Check size={11} className="text-emerald-400" /> Copiado</>
+                                                ) : (
+                                                    <><Copy size={11} /> Copiar</>
+                                                )}
+                                            </button>
+                                            <a
+                                                href={galleryWhatsappLink(g.token, g.role)}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-md text-[11px] font-bold text-white transition-all hover:scale-[1.02]"
+                                                style={{ background: "#25D366" }}
+                                            >
+                                                <MessageCircle size={11} /> WhatsApp
+                                            </a>
+                                        </div>
+                                    </div>
+                                ))}
+                            </>
+                        )}
+
+                        {/* ── Botones para añadir más personas ──────────────── */}
+                        <div className="pt-3 flex flex-wrap gap-2">
+                            <button
+                                onClick={() => void addGalleryInvite()}
+                                disabled={addingGallery}
+                                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-white transition-all disabled:opacity-50"
+                                style={{
+                                    background: "rgba(168,85,247,0.15)",
+                                    border: "1px solid rgba(168,85,247,0.40)",
+                                }}
+                                title="Genera un link extra cuya foto va a Mis Recursos > Colaboradores (no al flyer directamente)"
+                            >
+                                {addingGallery ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />}
+                                Añadir persona a galería
+                            </button>
+                            {onAddEmptySlot && (
+                                <button
+                                    onClick={() => void addEmptySlot()}
+                                    disabled={addingSlot}
+                                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-white transition-all disabled:opacity-50"
+                                    style={{
+                                        background: "rgba(236,72,153,0.12)",
+                                        border: "1px solid rgba(236,72,153,0.40)",
+                                    }}
+                                    title="Añade un nuevo placeholder de foto al flyer y genera su link. Tendrás que reposicionarlo después."
+                                >
+                                    {addingSlot ? <Loader2 size={12} className="animate-spin" /> : <ImageIcon size={12} />}
+                                    Añadir slot al flyer
+                                </button>
+                            )}
+                        </div>
+
                         <p className="text-[10px] text-gray-500 pt-2 leading-relaxed">
                             Cuando un colaborador suba su foto, se colocará automáticamente en su capa y recibirás email + notificación.
                             Los links caducan en 7 días. Si vuelves a este wizard, los links pendientes se reutilizan (no se generan duplicados).
+                            <br />
+                            <span className="text-gray-600">
+                                ¿Más personas que capas? Usa <b>Añadir persona a galería</b> — la foto llegará a tu sección de Colaboradores para que la metas tú al flyer cuando quieras.
+                            </span>
                         </p>
                     </div>
                 )}

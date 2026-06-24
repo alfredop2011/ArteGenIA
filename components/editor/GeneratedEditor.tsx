@@ -4842,13 +4842,63 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
       )}
 
       {/* Wizard multi-invite: aparece tras click "Solicitar todo" del
-          sidebar/dock. Genera N invites de golpe (uno por capa image). */}
+          sidebar/dock. Genera N invites de golpe (uno por capa image).
+          onAddEmptySlot añade un placeholder vacío al canvas para que el
+          user pueda pedir MÁS fotos de las que ya hay en el flyer. */}
       {multiRequestLayers && currentProjectId && (
         <MultiRequestPhotoModal
           projectId={currentProjectId}
           projectName={adminTitle || null}
           layers={multiRequestLayers}
           onClose={() => setMultiRequestLayers(null)}
+          onAddEmptySlot={async () => {
+            const canvas = fabricRef.current;
+            if (!canvas) return null;
+            // CustomId único basado en timestamp para no colisionar.
+            const newCustomId = `extra-slot-${Date.now()}`;
+            // Placeholder 1:1 de 240px en una posición libre (esquina sup-izq +
+            // offset por número de slots ya añadidos). El user lo recolocará.
+            const existingExtras = canvas.getObjects().filter(o => {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const cid = (o as any).customId as string | undefined;
+              return cid?.startsWith("extra-slot-");
+            }).length;
+            const offset = existingExtras * 40;
+            try {
+              // Cargamos un placeholder neutro (cuadrado morado translúcido)
+              // como data-URL para no depender de assets externos.
+              const placeholderSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="240" height="240" viewBox="0 0 240 240"><rect width="240" height="240" fill="rgba(168,85,247,0.18)" stroke="rgba(168,85,247,0.6)" stroke-width="3" stroke-dasharray="8 4"/><g transform="translate(120 120)"><circle r="30" fill="rgba(168,85,247,0.35)"/><text y="6" text-anchor="middle" font-family="Arial" font-size="32" fill="white">+</text></g><text x="120" y="200" text-anchor="middle" font-family="Arial" font-size="14" fill="rgba(255,255,255,0.7)">Foto pendiente</text></svg>`;
+              const dataUrl = `data:image/svg+xml;utf8,${encodeURIComponent(placeholderSvg)}`;
+              const fabric = await import("fabric");
+              const img = await fabric.FabricImage.fromURL(dataUrl);
+              img.set({
+                left: 60 + offset,
+                top: 60 + offset,
+                originX: "left",
+                originY: "top",
+              });
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              (img as any).customId = newCustomId;
+              canvas.add(img);
+              canvas.setActiveObject(img);
+              canvas.renderAll();
+              setSaveState("unsaved");
+              // Actualizamos la lista de layers del modal para que el nuevo
+              // slot aparezca como una entrada más.
+              setMultiRequestLayers(prev => prev ? [...prev, {
+                customId: newCustomId,
+                suggestedRole: "Slot extra",
+              }] : null);
+              // Auto-guardamos en background para que el invite del nuevo
+              // slot persista la capa en BD (sin esto, el patchProjectLayer
+              // del colaborador no encontraría customId al subir foto).
+              void doSave();
+              return newCustomId;
+            } catch (e) {
+              console.error("[onAddEmptySlot]", e);
+              return null;
+            }
+          }}
         />
       )}
 
