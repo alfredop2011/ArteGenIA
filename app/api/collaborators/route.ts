@@ -61,6 +61,23 @@ async function patchProjectLayer(
         // desde R2 sin CORS issues. Sin esto, loadFromJSON puede mostrar
         // cuadrado negro porque la imagen falla a cargar/taintear el canvas.
         obj.crossOrigin = "anonymous";
+        // Si el layer es un 'extra-slot-{timestamp}' (placeholder añadido
+        // desde el wizard 'Añadir slot al flyer'), limpiamos los visuales
+        // del placeholder (backgroundColor morado + stroke dashed) y
+        // resetamos el scale. Sin esto, la foto real queda escalada x240
+        // y con el cuadrado morado encima.
+        const isExtraSlot = typeof obj.customId === "string" && obj.customId.startsWith("extra-slot-");
+        if (isExtraSlot) {
+          obj.backgroundColor = "";
+          obj.stroke = "";
+          obj.strokeWidth = 0;
+          obj.strokeDashArray = null;
+          obj.scaleX = 1;
+          obj.scaleY = 1;
+          // No tocamos width/height: Fabric los recalcula al recibir el
+          // nuevo src basándose en las dimensions naturales de la foto.
+          // El user ajustará tamaño si hace falta.
+        }
         // Marcas para el badge "Recibida ✨" en el editor. El frontend
         // las lee y, cuando el owner hace click en "Marcar como vista",
         // las borra y persiste al siguiente save.
