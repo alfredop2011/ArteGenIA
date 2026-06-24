@@ -3324,47 +3324,51 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
               <>
                 {/* Backdrop invisible para cerrar al click fuera */}
                 <div className="fixed inset-0 z-40" onClick={() => setEditorUserMenuOpen(false)} />
-                <div className="absolute right-0 top-10 w-52 rounded-2xl border shadow-2xl overflow-hidden z-50"
-                     style={{ background: "var(--home-bg-soft, #16161f)", borderColor: "var(--home-card-border, rgba(255,255,255,0.08))" }}>
-                  <div className="px-4 py-3 border-b border-white/[0.06]">
-                    <p className="text-sm font-semibold truncate" style={{ color: "var(--home-text, #fff)" }}>
+                {/* Dropdown con colores SÓLIDOS (no vars CSS) — el editor tiene
+                    tema oscuro fijo y las vars del shell normal no aplican,
+                    por eso el texto se veía atenuado. */}
+                <div className="absolute right-0 top-10 w-56 rounded-2xl shadow-2xl overflow-hidden z-50"
+                     style={{ background: "#1a1a24", border: "1px solid rgba(255,255,255,0.12)" }}>
+                  <div className="px-4 py-3 border-b border-white/10">
+                    <p className="text-sm font-bold truncate text-white">
                       {authProfile?.name ?? authUser.email}
                     </p>
-                    <p className="text-xs truncate text-gray-500">{authUser.email}</p>
-                    <span className={`inline-flex items-center gap-1 mt-1 text-xs px-2 py-0.5 rounded-full font-medium ${
+                    <p className="text-xs truncate text-gray-400 mt-0.5">{authUser.email}</p>
+                    <span className={`inline-flex items-center gap-1 mt-1.5 text-[11px] px-2 py-0.5 rounded-full font-bold ${
                       authProfile?.plan === "enterprise"
-                        ? "bg-amber-500/15 text-amber-300"
+                        ? "bg-amber-500/20 text-amber-300"
                         : authProfile?.plan === "pro"
-                        ? "bg-purple-500/15 text-purple-300"
-                        : "bg-white/[0.05] text-gray-400"
+                        ? "bg-purple-500/20 text-purple-300"
+                        : "bg-white/10 text-gray-300"
                     }`}>
                       {authProfile?.plan === "enterprise" ? (<><Crown size={11} strokeWidth={2.2}/> Enterprise</>)
                        : authProfile?.plan === "pro" ? (<><Crown size={11} strokeWidth={2.2}/> Pro</>)
                        : "Free"}
                     </span>
                   </div>
-                  <div className="p-2">
+                  <div className="p-1.5">
                     <button onClick={() => { setEditorUserMenuOpen(false); router.push("/mis-recursos"); }}
-                      className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-gray-300 hover:bg-white/[0.05] hover:text-white transition-colors">
-                      <ImageIcon size={15} strokeWidth={1.8} /> Mis recursos
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-white hover:bg-white/10 transition-colors">
+                      <ImageIcon size={16} strokeWidth={1.8} className="text-gray-400" /> Mis recursos
                     </button>
                     <button onClick={() => { setEditorUserMenuOpen(false); router.push("/history"); }}
-                      className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-gray-300 hover:bg-white/[0.05] hover:text-white transition-colors">
-                      <History size={15} strokeWidth={1.8} /> Historial
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-white hover:bg-white/10 transition-colors">
+                      <History size={16} strokeWidth={1.8} className="text-gray-400" /> Historial
                     </button>
                     <button onClick={() => { setEditorUserMenuOpen(false); router.push("/cuenta"); }}
-                      className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-gray-300 hover:bg-white/[0.05] hover:text-white transition-colors">
-                      <Settings size={15} strokeWidth={1.8} /> Mi cuenta
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-white hover:bg-white/10 transition-colors">
+                      <Settings size={16} strokeWidth={1.8} className="text-gray-400" /> Mi cuenta
                     </button>
                     {isAdmin(authUser.email) && (
                       <button onClick={() => { setEditorUserMenuOpen(false); router.push("/admin/templates"); }}
-                        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-gray-300 hover:bg-white/[0.05] hover:text-white transition-colors">
-                        <Crown size={15} strokeWidth={1.8} /> Admin
+                        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-white hover:bg-white/10 transition-colors">
+                        <Crown size={16} strokeWidth={1.8} className="text-gray-400" /> Admin
                       </button>
                     )}
+                    <div className="my-1 h-px bg-white/10" />
                     <button onClick={() => { setEditorUserMenuOpen(false); void authSignOut(); }}
-                      className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-red-400 hover:bg-red-500/10 transition-colors">
-                      <LogOut size={15} strokeWidth={1.8} /> Cerrar sesión
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-bold text-red-400 hover:bg-red-500/15 hover:text-red-300 transition-colors">
+                      <LogOut size={16} strokeWidth={1.8} /> Cerrar sesión
                     </button>
                   </div>
                 </div>
