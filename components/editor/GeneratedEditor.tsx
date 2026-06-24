@@ -4983,6 +4983,12 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
                 stroke: "rgba(168,85,247,0.7)",
                 strokeWidth: 3,
                 strokeDashArray: [8, 4],
+                // CRÍTICO: sin strokeUniform, Fabric multiplica strokeWidth
+                // por scale (3*240 = 720px) y el placeholder se renderiza
+                // como un cuadrado morado GIGANTE que tapa el flyer entero
+                // en las miniaturas. strokeUniform mantiene el stroke a 3px
+                // visuales independiente del scale.
+                strokeUniform: true,
                 backgroundColor: "rgba(168,85,247,0.18)",
                 crossOrigin: "anonymous",
               });
