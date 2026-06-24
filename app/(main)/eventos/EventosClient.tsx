@@ -694,8 +694,10 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
                la barra de filtros sticky (z-10), si no se abría detrás. */
             className="relative z-30 mx-auto mt-4 flex max-w-3xl flex-col gap-2 sm:mt-7 sm:flex-row"
           >
-            {/* País + ciudad: solo escritorio (en móvil basta el buscador + ◎) */}
-            <div className="hidden gap-2 sm:flex">
+            {/* País + ciudad: también en MÓVIL (apilados, ancho completo). Antes
+                eran solo escritorio, pero en móvil el usuario necesita elegir
+                ciudad de una LISTA tappable, no escribir en el buscador. */}
+            <div className="flex flex-col gap-2 sm:flex-row">
             {/* País */}
             <Dropdown
               open={countryOpen}
