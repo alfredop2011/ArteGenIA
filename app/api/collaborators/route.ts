@@ -20,6 +20,7 @@ async function patchProjectLayer(
   targetLayerId: string,
   newUrl: string,
   collaboratorName: string,
+  photoSize: { width: number; height: number } | null,
 ): Promise<boolean> {
   try {
     const { data: project, error } = await supabaseAdmin
@@ -56,31 +57,51 @@ async function patchProjectLayer(
       const hasSrc = "src" in obj;
       const looksLikeImage = obj.type === "image" || obj.type === "Image" || hasSrc;
       if (customIdMatch && looksLikeImage) {
+        // Calcular tamaño VISIBLE del slot ANTES de cambiar el src.
+        // Esto es lo que ocupaba la foto vieja en el canvas, y es lo
+        // que queremos que ocupe la nueva (preserva el layout).
+        const oldWidth = typeof obj.width === "number" ? obj.width : 0;
+        const oldHeight = typeof obj.height === "number" ? obj.height : 0;
+        const oldScaleX = typeof obj.scaleX === "number" ? obj.scaleX : 1;
+        const oldScaleY = typeof obj.scaleY === "number" ? obj.scaleY : 1;
+        const visibleWidth = oldWidth * oldScaleX;
+        const visibleHeight = oldHeight * oldScaleY;
+
         obj.src = srcWithBuster;
-        // CRÍTICO: forzar crossOrigin para que Fabric pueda cargar la imagen
-        // desde R2 sin CORS issues. Sin esto, loadFromJSON puede mostrar
-        // cuadrado negro porque la imagen falla a cargar/taintear el canvas.
         obj.crossOrigin = "anonymous";
-        // Si el layer es un 'extra-slot-{timestamp}' (placeholder añadido
-        // desde el wizard 'Añadir slot al flyer'), limpiamos los visuales
-        // del placeholder (backgroundColor morado + stroke dashed) y
-        // resetamos el scale. Sin esto, la foto real queda escalada x240
-        // y con el cuadrado morado encima.
+
         const isExtraSlot = typeof obj.customId === "string" && obj.customId.startsWith("extra-slot-");
         if (isExtraSlot) {
+          // Extra-slot: limpiar visuales del placeholder morado + reset scale.
+          // La nueva foto se mostrará a tamaño natural en la posición del slot.
           obj.backgroundColor = "";
           obj.stroke = "";
           obj.strokeWidth = 0;
           obj.strokeDashArray = null;
           obj.scaleX = 1;
           obj.scaleY = 1;
-          // No tocamos width/height: Fabric los recalcula al recibir el
-          // nuevo src basándose en las dimensions naturales de la foto.
-          // El user ajustará tamaño si hace falta.
+        } else if (photoSize && photoSize.width > 0 && photoSize.height > 0 && visibleWidth > 0 && visibleHeight > 0) {
+          // Slot de PLANTILLA: calcular scale para que la nueva foto
+          // OCUPE EXACTAMENTE el mismo área visible que la foto vieja
+          // (object-fit: cover). Esto evita el bug de fotos cortadas
+          // cuando la nueva imagen tiene aspect ratio distinto a la
+          // de la plantilla (ej. logo horizontal en slot retrato).
+          //
+          // 1. Las dimensions del objeto pasan a ser las naturales de
+          //    la nueva foto (Fabric las usa al renderizar).
+          // 2. Calculamos scale como MAX(visibleW/photoW, visibleH/photoH)
+          //    = cover (la foto cubre todo el bbox, sobra recortado).
+          // 3. NO tocamos left/top (la foto queda en la misma posición).
+          obj.width = photoSize.width;
+          obj.height = photoSize.height;
+          const scaleCover = Math.max(
+            visibleWidth / photoSize.width,
+            visibleHeight / photoSize.height,
+          );
+          obj.scaleX = scaleCover;
+          obj.scaleY = scaleCover;
         }
-        // Marcas para el badge "Recibida ✨" en el editor. El frontend
-        // las lee y, cuando el owner hace click en "Marcar como vista",
-        // las borra y persiste al siguiente save.
+
         obj.collaboratorReceivedAt = nowIso;
         obj.collaboratorName = collaboratorName;
         touched = true;
@@ -235,6 +256,20 @@ export async function POST(req: NextRequest) {
     const key = `${prefix}/${invite.owner_id}/${token}-${safeName}.${outExt}`;
     const { url: photoUrl } = await uploadToR2(outBytes, key, outMime);
 
+    // Leer dimensions reales de la foto procesada. Necesarias para que
+    // patchProjectLayer calcule el scale correcto al meterla en el slot
+    // del flyer (sin esto, la foto se ve cortada si el aspect ratio no
+    // coincide con el slot original de la plantilla).
+    let photoSize: { width: number; height: number } | null = null;
+    try {
+      const photoMeta = await sharp(outBytes).metadata();
+      if (typeof photoMeta.width === "number" && typeof photoMeta.height === "number") {
+        photoSize = { width: photoMeta.width, height: photoMeta.height };
+      }
+    } catch (sizeErr) {
+      console.warn("[collaborators POST] could not read photo size:", sizeErr);
+    }
+
     /** Limpia el archivo R2 que acabamos de subir si el INSERT/UPDATE
      *  falla más abajo. Sin esto el archivo queda huérfano (el cron de
      *  cleanup lo pesca eventualmente, pero mejor evitar la acumulación).
@@ -350,6 +385,7 @@ export async function POST(req: NextRequest) {
         invite.target_layer_id,
         photoUrl,
         artistName,
+        photoSize,
       );
 
       // Notificar al owner — email (siempre que pref esté activa) +
