@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { UploadCloud, Loader2, CheckCircle2, ExternalLink, Copy, Sparkles, CalendarPlus, Plus, MapPin, Check } from "lucide-react";
+import { UploadCloud, Loader2, CheckCircle2, ExternalLink, Copy, Sparkles, CalendarPlus, Plus, MapPin, Check, X } from "lucide-react";
 
 /**
  * /subir — Página PÚBLICA (sin cuenta) para subir un evento a la agenda.
@@ -33,8 +33,7 @@ type Form = {
   venue: string;
   neighborhood: string; // dirección / zona / barrio
   category: string;
-  price: string; // "" = consultar, "0" = gratis
-  price_info: string;
+  tiers: { amount: string; includes: string }[]; // tarifas: importe + qué incluye
   ticket_url: string;
   description: string;
   submitter_name: string;
@@ -43,7 +42,7 @@ type Form = {
 
 const EMPTY: Form = {
   title: "", event_date: "", event_time: "20:00", city: "madrid", venue: "", neighborhood: "", category: "social",
-  price: "", price_info: "", ticket_url: "", description: "", submitter_name: "", submitter_email: "",
+  tiers: [{ amount: "", includes: "" }], ticket_url: "", description: "", submitter_name: "", submitter_email: "",
 };
 
 export default function SubirEventoPage() {
@@ -65,6 +64,11 @@ export default function SubirEventoPage() {
 
   const set = (patch: Partial<Form>) => setForm((f) => ({ ...f, ...patch }));
   const qs = k ? `?k=${encodeURIComponent(k)}` : "";
+  // Tarifas (precios múltiples).
+  const setTier = (i: number, patch: Partial<{ amount: string; includes: string }>) =>
+    setForm((f) => ({ ...f, tiers: f.tiers.map((t, j) => (j === i ? { ...t, ...patch } : t)) }));
+  const addTier = () => setForm((f) => ({ ...f, tiers: [...f.tiers, { amount: "", includes: "" }] }));
+  const removeTier = (i: number) => setForm((f) => ({ ...f, tiers: f.tiers.length > 1 ? f.tiers.filter((_, j) => j !== i) : f.tiers }));
 
   async function onFile(file: File) {
     setError("");
@@ -89,8 +93,9 @@ export default function SubirEventoPage() {
           venue: d.venue || "",
           neighborhood: d.neighborhood || "",
           category: CATS.some((c) => c.id === d.category) ? d.category : "social",
-          price: d.price == null ? "" : String(d.price),
-          price_info: d.price_info || "",
+          tiers: d.price == null && !d.price_info
+            ? [{ amount: "", includes: "" }]
+            : [{ amount: d.price == null ? "" : String(d.price), includes: d.price_info || "" }],
           ticket_url: d.ticket_url || "",
           description: d.description || "",
         });
@@ -107,11 +112,18 @@ export default function SubirEventoPage() {
     if (!form.title.trim()) return setError("Pon el nombre del evento.");
     if (!/^\d{4}-\d{2}-\d{2}$/.test(form.event_date)) return setError("Pon la fecha del evento.");
     setSubmitting(true);
+    // Tarifas → price (la más barata; "" = consultar) + price_info (el detalle).
+    const valid = form.tiers.map((t) => ({ a: t.amount.trim(), inc: t.includes.trim() })).filter((t) => t.a !== "");
+    const nums = valid.map((t) => Number(t.a)).filter((n) => Number.isFinite(n));
+    const price = nums.length ? String(Math.min(...nums)) : "";
+    const price_info = valid.length > 1 || (valid[0] && valid[0].inc)
+      ? valid.map((t) => `${t.a}€${t.inc ? ` ${t.inc}` : ""}`).join(" · ")
+      : "";
     try {
       const res = await fetch(`/api/eventos/public-submit${qs}`, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ ...form, image_url: image?.url, image_key: image?.key }),
+        body: JSON.stringify({ ...form, price, price_info, image_url: image?.url, image_key: image?.key }),
       });
       const json = await res.json();
       if (!res.ok) {
@@ -214,10 +226,25 @@ export default function SubirEventoPage() {
           <VenueAutocomplete value={form.venue} venues={venues} onChange={(v) => set({ venue: v })} />
         </Field>
         <Field label="Dirección / zona" hint="opcional"><input className={inp} value={form.neighborhood} onChange={(e) => set({ neighborhood: e.target.value })} placeholder="Calle, barrio o metro" /></Field>
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Precio (€)" hint="vacío = consultar · 0 = gratis"><input type="number" min={0} className={inp} value={form.price} onChange={(e) => set({ price: e.target.value })} placeholder="Consultar" /></Field>
-          <Field label="Link de entradas"><input className={inp} value={form.ticket_url} onChange={(e) => set({ ticket_url: e.target.value })} placeholder="https://…" /></Field>
-        </div>
+        <Field label="Precios / tarifas" hint="vacío = consultar · 0 = gratis · añade las que haya">
+          <div className="space-y-2">
+            {form.tiers.map((t, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <div className="relative w-24 shrink-0">
+                  <input type="number" min={0} value={t.amount} onChange={(e) => setTier(i, { amount: e.target.value })} placeholder="€" className="w-full rounded-xl px-3 py-2 text-sm outline-none" style={{ background: "var(--home-bg-soft)", border: "1px solid var(--home-card-border)", color: "var(--home-text)" }} />
+                </div>
+                <input value={t.includes} onChange={(e) => setTier(i, { includes: e.target.value })} placeholder="qué incluye (ej. 1 copa · taller + social)" className="flex-1 rounded-xl px-3 py-2 text-sm outline-none" style={{ background: "var(--home-bg-soft)", border: "1px solid var(--home-card-border)", color: "var(--home-text)" }} />
+                {form.tiers.length > 1 && (
+                  <button type="button" onClick={() => removeTier(i)} aria-label="Quitar tarifa" className="shrink-0 rounded-lg p-1.5" style={{ color: "var(--home-text-soft)" }}><X size={16} /></button>
+                )}
+              </div>
+            ))}
+            <button type="button" onClick={addTier} className="flex items-center gap-1.5 text-sm font-medium" style={{ color: "var(--ag-brand)" }}>
+              <Plus size={15} /> Añadir tarifa
+            </button>
+          </div>
+        </Field>
+        <Field label="Link de entradas"><input className={inp} value={form.ticket_url} onChange={(e) => set({ ticket_url: e.target.value })} placeholder="https://…" /></Field>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Tu nombre"><input className={inp} value={form.submitter_name} onChange={(e) => set({ submitter_name: e.target.value })} placeholder="Quién lo organiza" /></Field>
           <Field label="Tu email" hint="opcional, para avisarte"><input type="email" className={inp} value={form.submitter_email} onChange={(e) => set({ submitter_email: e.target.value })} placeholder="tu@email.com" /></Field>
