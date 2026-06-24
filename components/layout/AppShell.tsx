@@ -111,7 +111,16 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         <ToastProvider>
         <div className="min-h-screen flex flex-col"
              style={{ background: "var(--home-bg)", color: "var(--home-text)" }}>
-            {showAuth && <AuthModal onClose={() => setShowAuth(false)} />}
+            {showAuth && (
+                <AuthModal
+                    onClose={() => setShowAuth(false)}
+                    // Pasamos la URL actual como nextUrl para que tras OAuth
+                    // (Google) el callback nos devuelva a la misma página en
+                    // vez de a "/". Sin esto, login desde /pricing redirige
+                    // a home y el user pierde el contexto de su compra.
+                    nextUrl={typeof window !== "undefined" ? pathname + (window.location.search || "") : pathname}
+                />
+            )}
 
             {/* Modal onboarding: pregunta tipo de organizador la primera vez */}
             {showOrganizerModal && (
