@@ -17,10 +17,13 @@ export async function GET() {
       .in("status", ["published", "cancelled"])
       .not("venue", "is", null)
       .limit(2000);
+    // Excluye valores que son DIRECCIONES (no nombres de sala): "C/ …",
+    // "Calle …", "Av. …", o que empiezan por número. Así la lista solo trae salas.
+    const looksLikeAddress = (v: string) => /^(c\/|c\.|calle |avenida |av\.|av |paseo |plaza |pza|polígono |pol\.|\d)/i.test(v);
     const set = new Set<string>();
     for (const r of data ?? []) {
       const v = (r.venue as string)?.trim();
-      if (v && v.length > 1 && v.toLowerCase() !== "por confirmar") set.add(v);
+      if (v && v.length > 1 && v.toLowerCase() !== "por confirmar" && !looksLikeAddress(v)) set.add(v);
     }
     const venues = [...set].sort((a, b) => a.localeCompare(b, "es"));
     return NextResponse.json({ venues });

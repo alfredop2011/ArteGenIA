@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { UploadCloud, Loader2, CheckCircle2, ExternalLink, Copy, Sparkles, CalendarPlus } from "lucide-react";
+import { UploadCloud, Loader2, CheckCircle2, ExternalLink, Copy, Sparkles, CalendarPlus, Plus, MapPin, Check } from "lucide-react";
 
 /**
  * /subir — Página PÚBLICA (sin cuenta) para subir un evento a la agenda.
@@ -210,9 +210,8 @@ export default function SubirEventoPage() {
           <Field label="Tipo"><select className={inp} value={form.category} onChange={(e) => set({ category: e.target.value })}>{CATS.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}</select></Field>
           <Field label="Ciudad"><select className={inp} value={form.city} onChange={(e) => set({ city: e.target.value })}>{CITIES.map((c) => <option key={c} value={c}>{c[0].toUpperCase() + c.slice(1)}</option>)}</select></Field>
         </div>
-        <Field label="Sala / lugar" hint="elige una guardada o escribe una nueva">
-          <input className={inp} value={form.venue} onChange={(e) => set({ venue: e.target.value })} placeholder="Ej. Orishas Dance, Sala Pirandello…" list="salas-guardadas" autoComplete="off" />
-          <datalist id="salas-guardadas">{venues.map((v) => <option key={v} value={v} />)}</datalist>
+        <Field label="Sala / lugar" hint="elige una guardada o añade la tuya">
+          <VenueAutocomplete value={form.venue} venues={venues} onChange={(v) => set({ venue: v })} />
         </Field>
         <Field label="Dirección / zona" hint="opcional"><input className={inp} value={form.neighborhood} onChange={(e) => set({ neighborhood: e.target.value })} placeholder="Calle, barrio o metro" /></Field>
         <div className="grid grid-cols-2 gap-3">
@@ -239,6 +238,54 @@ export default function SubirEventoPage() {
 }
 
 const inp = "w-full rounded-xl px-3 py-2 text-sm outline-none bg-[var(--home-bg-soft)] border border-[var(--home-card-border)] text-[var(--home-text)]";
+
+// Combobox de salas: escribes y filtra las guardadas; si no está, "Añadir «X»".
+function VenueAutocomplete({ value, venues, onChange }: { value: string; venues: string[]; onChange: (v: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const norm = (s: string) => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+  const q = value.trim();
+  const matches = venues.filter((v) => norm(v).includes(norm(q))).slice(0, 8);
+  const exact = venues.some((v) => norm(v) === norm(q));
+  useEffect(() => {
+    const h = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
+    document.addEventListener("mousedown", h);
+    return () => document.removeEventListener("mousedown", h);
+  }, []);
+  const showAdd = q.length > 1 && !exact;
+  return (
+    <div ref={ref} className="relative">
+      <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2"><MapPin size={15} style={{ color: "var(--home-text-soft)" }} /></span>
+      <input
+        value={value}
+        onChange={(e) => { onChange(e.target.value); setOpen(true); }}
+        onFocus={() => setOpen(true)}
+        placeholder="Ej. Sala Pirandello"
+        autoComplete="off"
+        className="w-full rounded-xl py-2 pl-9 pr-3 text-sm outline-none"
+        style={{ background: "var(--home-bg-soft)", border: "1px solid var(--home-card-border)", color: "var(--home-text)" }}
+      />
+      {open && (matches.length > 0 || showAdd) && (
+        <div className="absolute z-20 mt-1 max-h-60 w-full overflow-y-auto rounded-xl shadow-lg" style={{ background: "var(--home-bg-soft)", border: "1px solid var(--home-card-border)" }}>
+          {matches.map((v) => (
+            <button key={v} type="button" onClick={() => { onChange(v); setOpen(false); }}
+              className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm hover:bg-ag-card" style={{ color: "var(--home-text)" }}>
+              <span className="truncate">{v}</span>
+              {norm(v) === norm(q) && <Check size={15} style={{ color: "var(--ag-brand)" }} />}
+            </button>
+          ))}
+          {showAdd && (
+            <button type="button" onClick={() => setOpen(false)}
+              className="flex w-full items-center gap-2 border-t px-3 py-2 text-left text-sm font-medium hover:bg-ag-card"
+              style={{ color: "var(--ag-brand)", borderColor: "var(--home-divider)" }}>
+              <Plus size={15} /> Añadir «{q}»
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function Field({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
   return (
