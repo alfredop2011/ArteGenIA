@@ -72,14 +72,33 @@ async function patchProjectLayer(
 
         const isExtraSlot = typeof obj.customId === "string" && obj.customId.startsWith("extra-slot-");
         if (isExtraSlot) {
-          // Extra-slot: limpiar visuales del placeholder morado + reset scale.
-          // La nueva foto se mostrará a tamaño natural en la posición del slot.
+          // Extra-slot: limpiar visuales del placeholder morado.
           obj.backgroundColor = "";
           obj.stroke = "";
           obj.strokeWidth = 0;
           obj.strokeDashArray = null;
-          obj.scaleX = 1;
-          obj.scaleY = 1;
+          // El placeholder era PNG 1x1 con scaleX=scaleY=240 → ocupaba
+          // 240x240 visualmente. Si solo reseteamos scale a 1 sin tocar
+          // width/height (que eran 1px), la foto recibida se renderiza
+          // a 1x1 = invisible. Aplicamos object-fit cover sobre 240x240
+          // visible target (igual que slots de plantilla, pero con
+          // tamaño fijo en vez de leerlo del bbox original).
+          if (photoSize && photoSize.width > 0 && photoSize.height > 0) {
+            const targetSize = Math.max(visibleWidth, visibleHeight, 240);
+            obj.width = photoSize.width;
+            obj.height = photoSize.height;
+            const scaleCover = Math.max(
+              targetSize / photoSize.width,
+              targetSize / photoSize.height,
+            );
+            obj.scaleX = scaleCover;
+            obj.scaleY = scaleCover;
+          } else {
+            // Sin photoSize (fallback): asumimos foto cuadrada 800x800
+            // y reseteamos scale a algo razonable para que no quede 1x1.
+            obj.scaleX = 0.3;
+            obj.scaleY = 0.3;
+          }
         } else if (photoSize && photoSize.width > 0 && photoSize.height > 0 && visibleWidth > 0 && visibleHeight > 0) {
           // Slot de PLANTILLA: calcular scale para que la nueva foto
           // OCUPE EXACTAMENTE el mismo área visible que la foto vieja
