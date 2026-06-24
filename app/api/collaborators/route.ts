@@ -27,15 +27,31 @@ async function patchProjectLayer(
       .select("id, fabric_json")
       .eq("id", projectId)
       .maybeSingle();
-    if (error || !project?.fabric_json) return false;
+    if (error || !project?.fabric_json) {
+      console.warn("[patchProjectLayer] project not found or no fabric_json", { projectId, error });
+      return false;
+    }
 
     const fj = project.fabric_json as { objects?: Array<Record<string, unknown>> };
-    if (!Array.isArray(fj.objects)) return false;
+    if (!Array.isArray(fj.objects)) {
+      console.warn("[patchProjectLayer] fabric_json has no objects array", { projectId });
+      return false;
+    }
 
     let touched = false;
     const nowIso = new Date().toISOString();
+    // Recopilamos customIds disponibles para debug si no encontramos match
+    const availableIds: string[] = [];
     for (const obj of fj.objects) {
-      if (obj.customId === targetLayerId && obj.type === "image") {
+      if (obj.customId) availableIds.push(`${obj.customId}(${obj.type})`);
+      // Match RELAJADO: customId coincide Y es image. Antes filtraba ESTRICTO
+      // por type === "image"; ahora también aceptamos cualquier tipo si el
+      // customId coincide y el objeto tiene `src` (cubre FabricImage que en
+      // serialización a veces aparece como type "Image" con I mayúscula).
+      const customIdMatch = obj.customId === targetLayerId;
+      const hasSrc = "src" in obj;
+      const looksLikeImage = obj.type === "image" || obj.type === "Image" || hasSrc;
+      if (customIdMatch && looksLikeImage) {
         obj.src = newUrl;
         // Marcas para el badge "Recibida ✨" en el editor. El frontend
         // las lee y, cuando el owner hace click en "Marcar como vista",
@@ -45,7 +61,14 @@ async function patchProjectLayer(
         touched = true;
       }
     }
-    if (!touched) return false;
+    if (!touched) {
+      console.warn("[patchProjectLayer] no layer matched", {
+        projectId,
+        targetLayerId,
+        availableIds,
+      });
+      return false;
+    }
 
     const { error: updErr } = await supabaseAdmin
       .from("projects")
