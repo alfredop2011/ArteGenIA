@@ -65,12 +65,19 @@ export async function POST(req: NextRequest) {
     // pendiente (no usado, no expirado), reutilizamos ese token en vez de
     // crear uno nuevo. Esto permite al user volver al wizard sin generar
     // links extra que confundirían a los colaboradores.
+    //
+    // ADEMÁS: si una capa ya tiene invite USADO (foto recibida), tampoco
+    // creamos uno nuevo — esa capa ya está completada y volver a pedirla
+    // sería confuso. La devolvemos en la respuesta con `completed: true`
+    // para que el modal la muestre como "Recibida".
     const skipExisting = body.skip_existing_pending !== false;
 
     const nowIso = new Date().toISOString();
-    let existing: Array<{ token: string; target_layer_id: string; expires_at: string }> = [];
+    let pending: Array<{ token: string; target_layer_id: string; expires_at: string }> = [];
+    let completed: Array<{ token: string; target_layer_id: string; expires_at: string }> = [];
     if (skipExisting) {
-        const { data: existingInvites } = await supabaseAdmin
+        // Pendientes: no usados, no expirados
+        const { data: pendingInvites } = await supabaseAdmin
             .from("collaborator_invites")
             .select("token, target_layer_id, expires_at")
             .eq("owner_id", user.id)
@@ -78,11 +85,24 @@ export async function POST(req: NextRequest) {
             .in("target_layer_id", uniqueLayerIds)
             .is("used_at", null)
             .gt("expires_at", nowIso);
-        existing = (existingInvites ?? []) as typeof existing;
+        pending = (pendingInvites ?? []) as typeof pending;
+
+        // Completados: ya usados (foto recibida)
+        const { data: completedInvites } = await supabaseAdmin
+            .from("collaborator_invites")
+            .select("token, target_layer_id, expires_at")
+            .eq("owner_id", user.id)
+            .eq("project_id", body.project_id)
+            .in("target_layer_id", uniqueLayerIds)
+            .not("used_at", "is", null);
+        completed = (completedInvites ?? []) as typeof completed;
     }
 
-    const existingByLayer = new Map(existing.map(e => [e.target_layer_id, e]));
-    const layersToCreate = uniqueLayerIds.filter(id => !existingByLayer.has(id));
+    const existingLayerIds = new Set([
+        ...pending.map(p => p.target_layer_id),
+        ...completed.map(c => c.target_layer_id),
+    ]);
+    const layersToCreate = uniqueLayerIds.filter(id => !existingLayerIds.has(id));
 
     // Crear los nuevos invites en una sola query batch
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
@@ -107,12 +127,31 @@ export async function POST(req: NextRequest) {
         newInvites.push(...((inserted ?? []) as typeof newInvites));
     }
 
-    // Devolvemos TODOS los invites para los layer_ids pedidos (existentes
-    // reutilizados + nuevos creados). Cliente no necesita saber cuáles son
-    // viejos vs nuevos — los renderiza igual.
+    // Devolvemos TODOS los invites: completados (con flag para que el
+    // modal los muestre como 'Recibida' sin re-pedir) + pendientes
+    // reutilizados + nuevos creados.
     const allInvites = [
-        ...existing.map(e => ({ token: e.token, target_layer_id: e.target_layer_id, expiresAt: e.expires_at, reused: true })),
-        ...newInvites.map(n => ({ token: n.token, target_layer_id: n.target_layer_id, expiresAt: n.expires_at, reused: false })),
+        ...completed.map(c => ({
+            token: c.token,
+            target_layer_id: c.target_layer_id,
+            expiresAt: c.expires_at,
+            reused: true,
+            completed: true,
+        })),
+        ...pending.map(p => ({
+            token: p.token,
+            target_layer_id: p.target_layer_id,
+            expiresAt: p.expires_at,
+            reused: true,
+            completed: false,
+        })),
+        ...newInvites.map(n => ({
+            token: n.token,
+            target_layer_id: n.target_layer_id,
+            expiresAt: n.expires_at,
+            reused: false,
+            completed: false,
+        })),
     ];
 
     return NextResponse.json({ invites: allInvites });

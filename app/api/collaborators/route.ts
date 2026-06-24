@@ -40,6 +40,10 @@ async function patchProjectLayer(
 
     let touched = false;
     const nowIso = new Date().toISOString();
+    // Cache buster para que el navegador NO use una imagen cacheada del src
+    // antiguo (caso raro: si el customId estaba en una URL R2 reutilizada).
+    const cacheBuster = `?v=${Date.now()}`;
+    const srcWithBuster = newUrl + cacheBuster;
     // Recopilamos customIds disponibles para debug si no encontramos match
     const availableIds: string[] = [];
     for (const obj of fj.objects) {
@@ -52,7 +56,11 @@ async function patchProjectLayer(
       const hasSrc = "src" in obj;
       const looksLikeImage = obj.type === "image" || obj.type === "Image" || hasSrc;
       if (customIdMatch && looksLikeImage) {
-        obj.src = newUrl;
+        obj.src = srcWithBuster;
+        // CRÍTICO: forzar crossOrigin para que Fabric pueda cargar la imagen
+        // desde R2 sin CORS issues. Sin esto, loadFromJSON puede mostrar
+        // cuadrado negro porque la imagen falla a cargar/taintear el canvas.
+        obj.crossOrigin = "anonymous";
         // Marcas para el badge "Recibida ✨" en el editor. El frontend
         // las lee y, cuando el owner hace click en "Marcar como vista",
         // las borra y persiste al siguiente save.
