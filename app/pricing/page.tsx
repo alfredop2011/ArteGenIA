@@ -6,6 +6,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/lib/toast";
 import AuthModal from "@/components/auth/AuthModal";
+import { supabase } from "@/lib/supabase";
 
 /**
  * /pricing — 3 planes (Free, Pro, Enterprise) estilo shadcn limpio.
@@ -173,8 +174,14 @@ function PricingContent() {
   };
 
   const startCheckout = async (plan: "pro" | "enterprise" = "pro") => {
-    if (!user) {
-      // Guest user: abrir AuthModal aquí mismo. Tras el login disparamos
+    // Verificamos sesión DIRECTAMENTE contra Supabase (no contra el state
+    // local de useAuth, que puede ser null durante hidratación inicial y
+    // disparar AuthModal innecesariamente). Si la cookie de Supabase es
+    // válida, vamos a checkout sin pasar por AuthModal — esto evita el
+    // bug de "vuelvo a /pricing y me vuelve a pedir login".
+    const { data: { user: realUser } } = await supabase.auth.getUser();
+    if (!realUser) {
+      // Guest real: abrir AuthModal aquí. Tras el login disparamos
       // checkout sin perder qué plan querían comprar.
       setPendingPlan(plan);
       setShowAuth(true);
