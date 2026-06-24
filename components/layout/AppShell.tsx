@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import { Bell, Crown, Image as ImageIcon, History, LogOut, Plus, LayoutGrid, FolderOpen, Menu, Users, CreditCard, Wand2, Settings } from "lucide-react";
+import NotificationsBell from "@/components/notifications/NotificationsBell";
 import { CreditsBadge } from "@/components/credits/CreditsBadge";
 import { useAuth } from "@/hooks/useAuth";
 import AuthModal from "@/components/auth/AuthModal";
@@ -230,9 +231,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                                 <CreditsBadge plan={profile?.plan} />
 
                                 {/* Notificaciones - SOLO desktop */}
-                                <button aria-label={t("nav.notifications")} className="hidden sm:flex w-8 h-8 rounded-full border border-ag items-center justify-center text-ag-muted hover:text-ag-primary transition-colors">
-                                    <Bell size={15} strokeWidth={1.8} />
-                                </button>
+                                <NotificationsBell />
 
                                 {/* Avatar + menu */}
                                 <div className="relative">

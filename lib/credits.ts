@@ -41,6 +41,10 @@ export const CREDIT_COST = {
   quitar_objeto: 2,
   mejorar_resolucion: 2,
   variaciones_ia: 6,          // 4 variantes Flux
+  // Auto-rellenar plantilla desde texto del usuario (Claude Sonnet 4.6).
+  // Coste real $0.015-0.03 según texto. 2 créditos = $0.025 → margen ~25%
+  // si entrada es típica (300-500 palabras).
+  rellenar_plantilla: 2,
   // Descargas (Fase Z.1 — política "todas las descargas consumen")
   download_png: 1,
   download_jpg: 1,

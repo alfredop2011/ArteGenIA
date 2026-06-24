@@ -70,6 +70,10 @@ import { CREDIT_COST, type CreditModule } from "@/lib/credits";
 import BrushEraserModal from "@/components/editor/BrushEraserModal";
 import { Save, FolderOpen, Share2, Link2, Mail, MessageCircle, Send, Plus, Layers, Lock, Unlock, Eye, EyeOff, Circle as CircleIcon, Square as SquareIcon, Triangle, Heart, Star, AlignHorizontalJustifyCenter, Clipboard, ClipboardPaste, UserPlus } from "lucide-react";
 import RequestPhotoModal from "@/components/editor/RequestPhotoModal";
+// Side-effect: customId/collaboratorReceivedAt/collaboratorName se serializan
+// en TODO toObject(). Sin esto el fabric_json en BD pierde customId y el
+// auto-patch de Solicitar Foto falla.
+import "@/lib/fabricCustomProps";
 
 type Props = {
   templateId?: number;

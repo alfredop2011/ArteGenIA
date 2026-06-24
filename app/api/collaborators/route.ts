@@ -27,16 +27,40 @@ async function patchProjectLayer(
       .select("id, fabric_json")
       .eq("id", projectId)
       .maybeSingle();
-    if (error || !project?.fabric_json) return false;
+    if (error || !project?.fabric_json) {
+      console.warn("[patchProjectLayer] project not found or no fabric_json", { projectId, error });
+      return false;
+    }
 
     const fj = project.fabric_json as { objects?: Array<Record<string, unknown>> };
-    if (!Array.isArray(fj.objects)) return false;
+    if (!Array.isArray(fj.objects)) {
+      console.warn("[patchProjectLayer] fabric_json has no objects array", { projectId });
+      return false;
+    }
 
     let touched = false;
     const nowIso = new Date().toISOString();
+    // Cache buster para que el navegador NO use una imagen cacheada del src
+    // antiguo (caso raro: si el customId estaba en una URL R2 reutilizada).
+    const cacheBuster = `?v=${Date.now()}`;
+    const srcWithBuster = newUrl + cacheBuster;
+    // Recopilamos customIds disponibles para debug si no encontramos match
+    const availableIds: string[] = [];
     for (const obj of fj.objects) {
-      if (obj.customId === targetLayerId && obj.type === "image") {
-        obj.src = newUrl;
+      if (obj.customId) availableIds.push(`${obj.customId}(${obj.type})`);
+      // Match RELAJADO: customId coincide Y es image. Antes filtraba ESTRICTO
+      // por type === "image"; ahora también aceptamos cualquier tipo si el
+      // customId coincide y el objeto tiene `src` (cubre FabricImage que en
+      // serialización a veces aparece como type "Image" con I mayúscula).
+      const customIdMatch = obj.customId === targetLayerId;
+      const hasSrc = "src" in obj;
+      const looksLikeImage = obj.type === "image" || obj.type === "Image" || hasSrc;
+      if (customIdMatch && looksLikeImage) {
+        obj.src = srcWithBuster;
+        // CRÍTICO: forzar crossOrigin para que Fabric pueda cargar la imagen
+        // desde R2 sin CORS issues. Sin esto, loadFromJSON puede mostrar
+        // cuadrado negro porque la imagen falla a cargar/taintear el canvas.
+        obj.crossOrigin = "anonymous";
         // Marcas para el badge "Recibida ✨" en el editor. El frontend
         // las lee y, cuando el owner hace click en "Marcar como vista",
         // las borra y persiste al siguiente save.
@@ -45,7 +69,14 @@ async function patchProjectLayer(
         touched = true;
       }
     }
-    if (!touched) return false;
+    if (!touched) {
+      console.warn("[patchProjectLayer] no layer matched", {
+        projectId,
+        targetLayerId,
+        availableIds,
+      });
+      return false;
+    }
 
     const { error: updErr } = await supabaseAdmin
       .from("projects")
@@ -348,6 +379,28 @@ export async function POST(req: NextRequest) {
           console.log("[collaborators POST] would send WhatsApp to", ownerProfile.phone, "for project", invite.project_id);
           // TODO(whatsapp): cuando esté el provider, llamar:
           //   await sendCollaboratorPhotoReceivedWhatsapp(phone, name, artist, title, projectId)
+        }
+
+        // Notificación in-app (campana) — SIEMPRE se crea, independiente
+        // de prefs email/whatsapp. La campana es el canal "siempre on"
+        // que el user ve al volver a la app sin haber leído notificaciones
+        // externas. Si el user quiere apagarla en el futuro, añadimos pref
+        // notification_prefs.inapp.foto_recibida.
+        const { error: notifErr } = await supabaseAdmin
+          .from("notifications")
+          .insert({
+            user_id: invite.owner_id,
+            type: "collaborator_photo_received",
+            payload: {
+              collaborator_name: artistName,
+              project_id: invite.project_id,
+              project_title: realTitle,
+              auto_applied: projectPatched,
+              photo_url: photoUrl,
+            },
+          });
+        if (notifErr) {
+          console.warn("[collaborators POST] notification insert failed:", notifErr);
         }
       } catch (mailErr) {
         console.warn("[collaborators POST] notification owner failed:", mailErr);

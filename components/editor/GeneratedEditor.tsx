@@ -39,6 +39,10 @@ import {
   Check,
   // Solicitar foto al colaborador (invite contextual desde toolbar)
   UserPlus,
+  // Wizard multi-invite "Solicitar todas las fotos"
+  Users,
+  // Dropdown del avatar en el header del editor
+  Settings, History, Crown, LogOut,
 } from "lucide-react";
 import type { Canvas as FabricCanvas, FabricObject, IText } from "fabric";
 import {
@@ -55,6 +59,15 @@ import { type FormatId, getFormatByDimensions, FORMATS, PUBLIC_FORMATS } from "@
 import { applyTemplateLayers } from "@/lib/fabricApplyTemplateLayers";
 import { ArtistLibraryModal, type ArtistEntry } from "@/components/wizard/ArtistLibrary";
 import RequestPhotoModal from "@/components/editor/RequestPhotoModal";
+import MultiRequestPhotoModal, { type LayerInput as MultiLayerInput } from "@/components/editor/MultiRequestPhotoModal";
+import AutoFillModal from "@/components/editor/AutoFillModal";
+import NotificationsBell from "@/components/notifications/NotificationsBell";
+import { isAdmin } from "@/lib/admin";
+// Side-effect import: extiende FabricObject.prototype.toObject para que
+// customId y otras props custom SIEMPRE se serialicen al guardar. Sin esto,
+// el fabric_json en BD pierde los customId y patchProjectLayer no puede
+// matchear el layer al recibir foto del colaborador.
+import "@/lib/fabricCustomProps";
 import { useProjects } from "@/hooks/useProjects";
 import { useUndoRedo } from "@/hooks/useUndoRedo";
 import { useTemplateDrafts } from "@/hooks/useTemplateDrafts";
@@ -104,7 +117,7 @@ type ImageProps = {
 };
 
 type SaveState = "saved" | "saving" | "unsaved";
-type LeftTool = "design" | "elements" | "text" | "photos" | "background" | "layers" | "ai" | "brand" | "favorites" | "myAssets" | "request-photo";
+type LeftTool = "design" | "elements" | "text" | "photos" | "background" | "layers" | "ai" | "brand" | "favorites" | "myAssets" | "request-photo" | "request-photo-multi" | "auto-fill";
 
 // Z.8.1 — Asset de "Mis Recursos" cargado desde /api/assets para reusar
 // en el editor sin tener que subir el archivo otra vez.
@@ -391,6 +404,15 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
   // Modal "Solicitar foto al colaborador" — guarda el customId del layer
   // activo para que RequestPhotoModal genere un invite con contexto.
   const [requestPhotoLayerId, setRequestPhotoLayerId] = useState<string | null>(null);
+  // Wizard "Solicitar fotos a varios colaboradores". Cuando está set,
+  // contiene la lista de capas image detectadas + projectId.
+  const [multiRequestLayers, setMultiRequestLayers] = useState<MultiLayerInput[] | null>(null);
+  // Auto-fill IA: snapshot de textos actuales para pasar al modal (preview
+  // antes/después). Cuando null, modal cerrado.
+  const [autoFillTexts, setAutoFillTexts] = useState<Array<{ customId: string; text: string }> | null>(null);
+  // Dropdown del avatar en el header del editor — réplica del de AppShell
+  // (Mis recursos, Historial, Mi cuenta, Cerrar sesión). Cerrado por defecto.
+  const [editorUserMenuOpen, setEditorUserMenuOpen] = useState(false);
   // PostDownload modal — guarda dataURL para reuso en compartir/copiar
   const [postDownload, setPostDownload] = useState<{ dataUrl: string; format: "png" | "jpg" } | null>(null);
   /** P1.1 — Gate Pro para PDF/SVG. Mismo patrón que MobileEditorV3.
@@ -412,7 +434,7 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
   // ─── AUTH MODAL ──────────────────────────────────────────────────────────
   // Modal de login/registro que se abre cuando intentas descargar o guardar
   // sin sesion iniciada. Tras login exitoso, `onSuccess` reintenta la accion.
-  const { user: authUser, profile: authProfile } = useAuth();
+  const { user: authUser, profile: authProfile, signOut: authSignOut } = useAuth();
   const { t } = useLocale();
   const [authModalConfig, setAuthModalConfig] = useState<{ title: string; subtitle: string; onSuccess: () => void } | null>(null);
   /**
@@ -2696,6 +2718,106 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
     }
   }, [currentProjectId, doSave, toast]);
 
+  // ─── Solicitar fotos a VARIOS colaboradores (wizard multi-invite) ──────
+  // Detecta todas las capas image actuales del canvas y abre el modal con
+  // un invite por cada una. Mismo gate de auth + auto-save que el helper
+  // individual. Si no hay capas image, toast informativo.
+  const handleRequestPhotoMulti = useCallback(async () => {
+    const canvas = fabricRef.current;
+    if (!canvas) {
+      toast.error("Editor no listo, intenta de nuevo.");
+      return;
+    }
+    // Detectar capas image con customId. Solo seleccionables (evitamos
+    // backgrounds bloqueados que el user no quiere reemplazar).
+    const layerInputs: MultiLayerInput[] = [];
+    for (const obj of canvas.getObjects()) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const o = obj as any;
+      const t = o?.type;
+      const isImage = t === "image" || t === "Image";
+      const customId = o?.customId as string | undefined;
+      if (isImage && customId) {
+        layerInputs.push({
+          customId,
+          // sugerir rol legible a partir del id (ej. "dj-photo" → "Dj photo")
+          suggestedRole: customId.replace(/[-_]/g, " ").replace(/\b\w/g, c => c.toUpperCase()),
+        });
+      }
+    }
+    if (layerInputs.length === 0) {
+      toast.error("No hay capas de imagen para solicitar. Añade fotos al diseño primero.");
+      return;
+    }
+    // Verificar sesión real (mismo patrón que handleRequestPhoto individual)
+    const { data: { user: realUser } } = await supabase.auth.getUser();
+    const proceed = async () => {
+      let id = currentProjectId;
+      if (!id) {
+        id = await doSave();
+        if (!id) return;
+      }
+      setMultiRequestLayers(layerInputs);
+    };
+    if (realUser) {
+      await proceed();
+    } else {
+      setAuthModalConfig({
+        title: "Inicia sesión para pedir las fotos",
+        subtitle: "Guardamos tu flyer y generamos los links únicos para tus colaboradores.",
+        onSuccess: () => { void proceed(); },
+      });
+    }
+  }, [currentProjectId, doSave, toast]);
+
+  // ─── Rellenar plantilla con IA (Claude Sonnet 4.6) ─────────────────────
+  // Snapshot de capas de texto actual + auto-save si hace falta + abrir modal.
+  // El modal hace el POST a /api/auto-fill-template y devuelve un mapping
+  // { customId: nuevo_texto } que aplicamos vía onApply.
+  const handleAutoFill = useCallback(async () => {
+    const canvas = fabricRef.current;
+    if (!canvas) {
+      toast.error("Editor no listo, intenta de nuevo.");
+      return;
+    }
+    // Snapshot de textos actuales (Textbox + i-text) con customId
+    const snapshot: Array<{ customId: string; text: string }> = [];
+    for (const obj of canvas.getObjects()) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const o = obj as any;
+      const t = o?.type as string | undefined;
+      const isText = t === "textbox" || t === "Textbox" || t === "i-text" || t === "IText";
+      const customId = o?.customId as string | undefined;
+      const text = o?.text as string | undefined;
+      if (isText && customId && typeof text === "string" && text.length > 0) {
+        snapshot.push({ customId, text });
+      }
+    }
+    if (snapshot.length === 0) {
+      toast.error("El flyer no tiene capas de texto editables.");
+      return;
+    }
+    // Auth real + auto-save
+    const { data: { user: realUser } } = await supabase.auth.getUser();
+    const proceed = async () => {
+      let id = currentProjectId;
+      if (!id) {
+        id = await doSave();
+        if (!id) return;
+      }
+      setAutoFillTexts(snapshot);
+    };
+    if (realUser) {
+      await proceed();
+    } else {
+      setAuthModalConfig({
+        title: "Inicia sesión para rellenar con IA",
+        subtitle: "Guardamos tu flyer y mapeamos tu texto a las capas con Claude (2 créditos).",
+        onSuccess: () => { void proceed(); },
+      });
+    }
+  }, [currentProjectId, doSave, toast]);
+
   // ─── ADMIN: SAVE DRAFT + PUBLISH ──────────────────────────────────────────
   // Serializa el canvas Fabric a una TemplateVariant compatible con applyTemplateLayers,
   // sube thumbnail a R2 y guarda en templates_draft.
@@ -2909,6 +3031,12 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
     // Acción rápida: pedir foto al colaborador. NO abre panel — ejecuta
     // directamente handleRequestPhoto (igual que "photos" abre modal).
     { id: "request-photo", label: "Solicitar", icon: <UserPlus className="w-5 h-5" strokeWidth={1.5} />, tooltip: "Enviar nueva solicitud de foto a un colaborador" },
+    // Wizard multi: detecta TODAS las capas image del flyer y genera N
+    // invites a la vez. Útil cuando hay varios DJs/bailarines/marcas.
+    { id: "request-photo-multi", label: "Solicitar todo", icon: <Users className="w-5 h-5" strokeWidth={1.5} />, tooltip: "Pedir fotos a varios colaboradores a la vez (1 por capa)" },
+    // Auto-fill IA: pega texto libre (ChatGPT, email, nota) y la IA mapea
+    // los datos a las capas de texto de la plantilla.
+    { id: "auto-fill", label: "Rellenar IA", icon: <Wand2 className="w-5 h-5" strokeWidth={1.5} />, tooltip: "Pega info y la IA rellena los textos automáticamente (2 créditos)" },
     { id: "brand",     label: t("editor.tool.brand"),      icon: <Tag className="w-5 h-5" strokeWidth={1.5} />, comingSoon: true, hidden: !FEATURES.brandKit },
     { id: "favorites", label: t("editor.tool.favorites"),  icon: <Heart className="w-5 h-5" strokeWidth={1.5} />, comingSoon: true, hidden: !FEATURES.favorites },
   ];
@@ -3227,8 +3355,82 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
           </button>
         )}
 
-        {/* User avatar - oculto en mobile */}
-        <div className="hidden sm:flex w-8 h-8 rounded-full bg-gradient-to-br from-zinc-700 to-zinc-900 border border-white/[0.07] items-center justify-center text-[11px] font-bold text-white/80 cursor-pointer hover:border-white/20 transition-all ml-1">AG</div>
+        {/* Campana de notificaciones — visible solo si hay sesión. Misma UI
+            que en AppShell, polling cada 60s para ver fotos nuevas de
+            colaboradores aunque el user esté en el editor. */}
+        {authUser && <NotificationsBell />}
+
+        {/* User avatar + dropdown — replica de AppShell para mantener consistencia.
+            Permite acceso rápido a Mis recursos, Mi cuenta, Historial, Admin y
+            Cerrar sesión sin tener que salir del editor. */}
+        {authUser && (
+          <div className="relative ml-1">
+            <button
+              onClick={() => setEditorUserMenuOpen(o => !o)}
+              className="hidden sm:flex w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 border border-white/[0.07] items-center justify-center text-[11px] font-bold text-white cursor-pointer hover:scale-110 transition-transform"
+              title={authProfile?.name ?? authUser.email ?? "Mi cuenta"}
+            >
+              {authProfile?.name
+                ? authProfile.name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase()
+                : authUser.email?.[0]?.toUpperCase() ?? "A"}
+            </button>
+
+            {editorUserMenuOpen && (
+              <>
+                {/* Backdrop invisible para cerrar al click fuera */}
+                <div className="fixed inset-0 z-40" onClick={() => setEditorUserMenuOpen(false)} />
+                {/* Dropdown con colores SÓLIDOS (no vars CSS) — el editor tiene
+                    tema oscuro fijo y las vars del shell normal no aplican,
+                    por eso el texto se veía atenuado. */}
+                <div className="absolute right-0 top-10 w-56 rounded-2xl shadow-2xl overflow-hidden z-50"
+                     style={{ background: "#1a1a24", border: "1px solid rgba(255,255,255,0.12)" }}>
+                  <div className="px-4 py-3 border-b border-white/10">
+                    <p className="text-sm font-bold truncate text-white">
+                      {authProfile?.name ?? authUser.email}
+                    </p>
+                    <p className="text-xs truncate text-gray-400 mt-0.5">{authUser.email}</p>
+                    <span className={`inline-flex items-center gap-1 mt-1.5 text-[11px] px-2 py-0.5 rounded-full font-bold ${
+                      authProfile?.plan === "enterprise"
+                        ? "bg-amber-500/20 text-amber-300"
+                        : authProfile?.plan === "pro"
+                        ? "bg-purple-500/20 text-purple-300"
+                        : "bg-white/10 text-gray-300"
+                    }`}>
+                      {authProfile?.plan === "enterprise" ? (<><Crown size={11} strokeWidth={2.2}/> Enterprise</>)
+                       : authProfile?.plan === "pro" ? (<><Crown size={11} strokeWidth={2.2}/> Pro</>)
+                       : "Free"}
+                    </span>
+                  </div>
+                  <div className="p-1.5">
+                    <button onClick={() => { setEditorUserMenuOpen(false); router.push("/mis-recursos"); }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-white hover:bg-white/10 transition-colors">
+                      <ImageIcon size={16} strokeWidth={1.8} className="text-gray-400" /> Mis recursos
+                    </button>
+                    <button onClick={() => { setEditorUserMenuOpen(false); router.push("/history"); }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-white hover:bg-white/10 transition-colors">
+                      <History size={16} strokeWidth={1.8} className="text-gray-400" /> Historial
+                    </button>
+                    <button onClick={() => { setEditorUserMenuOpen(false); router.push("/cuenta"); }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-white hover:bg-white/10 transition-colors">
+                      <Settings size={16} strokeWidth={1.8} className="text-gray-400" /> Mi cuenta
+                    </button>
+                    {isAdmin(authUser.email) && (
+                      <button onClick={() => { setEditorUserMenuOpen(false); router.push("/admin/templates"); }}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-white hover:bg-white/10 transition-colors">
+                        <Crown size={16} strokeWidth={1.8} className="text-gray-400" /> Admin
+                      </button>
+                    )}
+                    <div className="my-1 h-px bg-white/10" />
+                    <button onClick={() => { setEditorUserMenuOpen(false); void authSignOut(); }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-bold text-red-400 hover:bg-red-500/15 hover:text-red-300 transition-colors">
+                      <LogOut size={16} strokeWidth={1.8} /> Cerrar sesión
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        )}
       </header>
 
       {/* ADMIN: Banner editando publicada */}
@@ -3298,6 +3500,8 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
                     if (tool.comingSoon) return;
                     if (tool.id === "photos") { setArtistsModalOpen(true); return; }
                     if (tool.id === "request-photo") { void handleRequestPhoto(); return; }
+                    if (tool.id === "request-photo-multi") { void handleRequestPhotoMulti(); return; }
+                    if (tool.id === "auto-fill") { void handleAutoFill(); return; }
                     setActiveTool(tool.id);
                     if (tool.id === "text") addText();
                   }}
@@ -4019,7 +4223,7 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
           }
           flex items-center gap-1.5 ${isMobile ? "justify-around" : ""}
         `}>
-          {TOOLS.filter(t => ["design","text","photos","layers","ai","background","request-photo"].includes(t.id)).map(tool => {
+          {TOOLS.filter(t => ["design","text","photos","layers","ai","background","request-photo","request-photo-multi","auto-fill"].includes(t.id)).map(tool => {
             const isActive = activeTool === tool.id;
             return (
               <button key={tool.id}
@@ -4027,6 +4231,8 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
                   if (tool.comingSoon) return;
                   if (tool.id === "photos") { setArtistsModalOpen(true); return; }
                   if (tool.id === "request-photo") { void handleRequestPhoto(); return; }
+                  if (tool.id === "request-photo-multi") { void handleRequestPhotoMulti(); return; }
+                  if (tool.id === "auto-fill") { void handleAutoFill(); return; }
                   if (tool.id === "layers" && isMobile) {
                     setMobilePanelOpen(mobilePanelOpen === "layers" ? null : "layers");
                     return;
@@ -4693,6 +4899,114 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
           targetLayerId={requestPhotoLayerId}
           projectName={adminTitle || null}
           onClose={() => setRequestPhotoLayerId(null)}
+        />
+      )}
+
+      {/* Modal "Rellenar con IA": pega texto libre y la IA mapea cada
+          dato a su capa de texto. Tras aplicar, los layers cambian
+          .text pero mantienen estilo (color, fuente, tamaño, posición). */}
+      {autoFillTexts && currentProjectId && (
+        <AutoFillModal
+          projectId={currentProjectId}
+          currentTexts={autoFillTexts}
+          onClose={() => setAutoFillTexts(null)}
+          onApply={(mapping) => {
+            const canvas = fabricRef.current;
+            if (!canvas) return;
+            let applied = 0;
+            for (const obj of canvas.getObjects()) {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const o = obj as any;
+              const cid = o?.customId as string | undefined;
+              if (!cid || !(cid in mapping)) continue;
+              const newText = mapping[cid];
+              const t = o?.type as string;
+              const isText = t === "textbox" || t === "Textbox" || t === "i-text" || t === "IText";
+              if (!isText) continue;
+              if (typeof o.text === "string" && o.text === newText) continue;
+              // Aplicar texto sin tocar el resto del estilo
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              (o as any).set("text", newText);
+              applied++;
+            }
+            if (applied > 0) {
+              canvas.renderAll();
+              setSaveState("unsaved");
+              toast.success(`${applied} texto${applied === 1 ? "" : "s"} actualizados`);
+            }
+          }}
+        />
+      )}
+
+      {/* Wizard multi-invite: aparece tras click "Solicitar todo" del
+          sidebar/dock. Genera N invites de golpe (uno por capa image).
+          onAddEmptySlot añade un placeholder vacío al canvas para que el
+          user pueda pedir MÁS fotos de las que ya hay en el flyer. */}
+      {multiRequestLayers && currentProjectId && (
+        <MultiRequestPhotoModal
+          projectId={currentProjectId}
+          projectName={adminTitle || null}
+          layers={multiRequestLayers}
+          onClose={() => setMultiRequestLayers(null)}
+          onAddEmptySlot={async () => {
+            const canvas = fabricRef.current;
+            if (!canvas) return null;
+            // CustomId único basado en timestamp para no colisionar.
+            const newCustomId = `extra-slot-${Date.now()}`;
+            // Placeholder 1:1 de 240px en una posición libre (esquina sup-izq +
+            // offset por número de slots ya añadidos). El user lo recolocará.
+            const existingExtras = canvas.getObjects().filter(o => {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const cid = (o as any).customId as string | undefined;
+              return cid?.startsWith("extra-slot-");
+            }).length;
+            const offset = existingExtras * 40;
+            try {
+              // Placeholder = transparent 1x1 PNG. Si usamos SVG inline como
+              // data-URL, Fabric/loadFromJSON falla a renderizarlo (cuadrado
+              // negro). Un PNG transparente válido es el placeholder más
+              // confiable hasta que el colaborador suba la foto real.
+              const transparentPng = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkAAIAAAoAAv/lxKUAAAAASUVORK5CYII=";
+              const fabric = await import("fabric");
+              const img = await fabric.FabricImage.fromURL(transparentPng);
+              // Lo escalamos al tamaño deseado (240x240) y le damos un fondo
+              // visible para que el user vea dónde está el slot antes de la foto.
+              img.set({
+                left: 60 + offset,
+                top: 60 + offset,
+                originX: "left",
+                originY: "top",
+                scaleX: 240,
+                scaleY: 240,
+                // Fondo morado translúcido + borde dashed visible
+                stroke: "rgba(168,85,247,0.7)",
+                strokeWidth: 3,
+                strokeDashArray: [8, 4],
+                backgroundColor: "rgba(168,85,247,0.18)",
+                crossOrigin: "anonymous",
+              });
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              (img as any).customId = newCustomId;
+              canvas.add(img);
+              canvas.setActiveObject(img);
+              canvas.renderAll();
+              setSaveState("unsaved");
+              // Actualizamos la lista de layers del modal para que el nuevo
+              // slot aparezca como una entrada más.
+              setMultiRequestLayers(prev => prev ? [...prev, {
+                customId: newCustomId,
+                suggestedRole: "Slot extra",
+              }] : null);
+              // Auto-guardamos en background para que el invite del nuevo
+              // slot persista la capa en BD (sin esto, el patchProjectLayer
+              // del colaborador no encontraría customId al subir foto).
+              void doSave();
+              return newCustomId;
+            } catch (e) {
+              console.error("[onAddEmptySlot]", e);
+              return null;
+            }
+          }}
         />
       )}
 
