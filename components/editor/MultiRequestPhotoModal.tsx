@@ -21,7 +21,7 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
-import { Loader2, Copy, Check, MessageCircle, X, Sparkles, Plus, Image as ImageIcon, FolderOpen } from "lucide-react";
+import { Loader2, Copy, Check, MessageCircle, X, Sparkles, Plus, Image as ImageIcon, FolderOpen, CheckCircle2, Clock } from "lucide-react";
 
 export type LayerInput = {
     customId: string;
@@ -80,6 +80,10 @@ export default function MultiRequestPhotoModal({ projectId, projectName, layers,
     const [galleryInvites, setGalleryInvites] = useState<GalleryInvite[]>([]);
     const [addingGallery, setAddingGallery] = useState(false);
     const [addingSlot, setAddingSlot] = useState(false);
+    // Status por token: si fue usado y por quién (artist_name). Se hidrata
+    // al abrir el modal y se refresca cada 30s para que el usuario vea
+    // llegar las fotos en directo sin tener que cerrar/reabrir.
+    const [statusByToken, setStatusByToken] = useState<Record<string, { usedAt: string | null; collaboratorName: string | null }>>({});
 
     const generate = async () => {
         if (layers.length === 0) {
@@ -115,6 +119,49 @@ export default function MultiRequestPhotoModal({ projectId, projectName, layers,
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
+
+    // Hidratar status de invites (usado/pendiente + nombre del colaborador).
+    // Refresh cada 30s mientras el modal está abierto, para que el user vea
+    // llegar las fotos en directo sin reabrir.
+    useEffect(() => {
+        let active = true;
+        const fetchStatus = async () => {
+            try {
+                const res = await fetch(`/api/collaborator-invites/by-project?project_id=${projectId}`);
+                if (!res.ok || !active) return;
+                const data = await res.json() as {
+                    invites: Array<{
+                        token: string;
+                        used_at: string | null;
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        collaborator: any;
+                    }>;
+                };
+                const map: Record<string, { usedAt: string | null; collaboratorName: string | null }> = {};
+                for (const inv of data.invites) {
+                    map[inv.token] = {
+                        usedAt: inv.used_at,
+                        collaboratorName: (inv.collaborator?.artist_name as string | undefined) ?? null,
+                    };
+                }
+                if (active) setStatusByToken(map);
+            } catch { /* silent */ }
+        };
+        void fetchStatus();
+        const interval = setInterval(() => { void fetchStatus(); }, 30_000);
+        return () => { active = false; clearInterval(interval); };
+    }, [projectId]);
+
+    // Métricas de progreso para el header (X de N completadas + %)
+    const progress = useMemo(() => {
+        const total = (invites?.length ?? 0);
+        if (total === 0) return { total: 0, done: 0, pct: 0 };
+        let done = 0;
+        for (const inv of invites ?? []) {
+            if (statusByToken[inv.token]?.usedAt) done++;
+        }
+        return { total, done, pct: Math.round((done / total) * 100) };
+    }, [invites, statusByToken]);
 
     const inviteByLayer = useMemo(() => {
         const map = new Map<string, Invite>();
@@ -238,6 +285,44 @@ export default function MultiRequestPhotoModal({ projectId, projectName, layers,
                     <p className="text-xs text-gray-400 leading-relaxed">
                         {layers.length} capa{layers.length === 1 ? "" : "s"} de imagen detectadas en este flyer. Cada link va a su capa específica — comparte cada uno con la persona correcta.
                     </p>
+
+                    {/* Barra de progreso — muestra cuántas fotos han llegado.
+                        Auto-refresca cada 30s. */}
+                    {progress.total > 0 && (
+                        <div className="mt-3">
+                            <div className="flex items-center justify-between mb-1.5">
+                                <span className="text-[11px] font-bold text-white">
+                                    {progress.done} de {progress.total} completadas
+                                </span>
+                                <span className="text-[11px] font-bold" style={{
+                                    color: progress.pct === 100 ? "#34d399" : "#c084fc",
+                                }}>
+                                    {progress.pct}%
+                                </span>
+                            </div>
+                            <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.06)" }}>
+                                <div
+                                    className="h-full rounded-full transition-all duration-500"
+                                    style={{
+                                        width: `${progress.pct}%`,
+                                        background: progress.pct === 100
+                                            ? "linear-gradient(90deg, #34d399, #10b981)"
+                                            : "linear-gradient(90deg, #a855f7, #ec4899)",
+                                    }}
+                                />
+                            </div>
+                            {progress.done < progress.total && (
+                                <p className="text-[10px] text-gray-500 mt-1.5">
+                                    Faltan {progress.total - progress.done}. Te avisamos por email + campana cuando llegue cada una.
+                                </p>
+                            )}
+                            {progress.pct === 100 && (
+                                <p className="text-[10px] text-emerald-400 mt-1.5 font-bold">
+                                    ¡Completado! Todas las fotos recibidas.
+                                </p>
+                            )}
+                        </div>
+                    )}
                 </div>
 
                 {error && (
@@ -264,13 +349,15 @@ export default function MultiRequestPhotoModal({ projectId, projectName, layers,
                         {layers.map((layer) => {
                             const inv = inviteByLayer.get(layer.customId);
                             const role = roles[layer.customId] ?? "";
+                            const status = inv ? statusByToken[inv.token] : undefined;
+                            const isDone = !!status?.usedAt;
                             return (
                                 <div
                                     key={layer.customId}
-                                    className="rounded-xl p-3 flex gap-3 items-start"
+                                    className="rounded-xl p-3 flex gap-3 items-start transition-colors"
                                     style={{
-                                        background: "rgba(255,255,255,0.04)",
-                                        border: "1px solid rgba(255,255,255,0.08)",
+                                        background: isDone ? "rgba(16,185,129,0.06)" : "rgba(255,255,255,0.04)",
+                                        border: isDone ? "1px solid rgba(16,185,129,0.30)" : "1px solid rgba(255,255,255,0.08)",
                                     }}
                                 >
                                     {/* Thumbnail si está disponible, si no un placeholder */}
@@ -278,6 +365,8 @@ export default function MultiRequestPhotoModal({ projectId, projectName, layers,
                                         {layer.thumbnail ? (
                                             // eslint-disable-next-line @next/next/no-img-element
                                             <img src={layer.thumbnail} alt="" className="w-full h-full object-cover" />
+                                        ) : isDone ? (
+                                            <CheckCircle2 size={20} className="text-emerald-400" />
                                         ) : (
                                             <Sparkles size={16} className="text-purple-400/60" />
                                         )}
@@ -290,17 +379,32 @@ export default function MultiRequestPhotoModal({ projectId, projectName, layers,
                                             onChange={(e) => setRoles(prev => ({ ...prev, [layer.customId]: e.target.value }))}
                                             placeholder={layer.suggestedRole || "Nombre o rol (ej. Bailarín 1, DJ Axis)"}
                                             maxLength={60}
-                                            className="w-full px-2 py-1.5 rounded-md text-xs bg-white/[0.04] border border-white/[0.06] text-white placeholder:text-gray-600 focus:border-purple-500/40 focus:outline-none"
+                                            disabled={isDone}
+                                            className="w-full px-2 py-1.5 rounded-md text-xs bg-white/[0.04] border border-white/[0.06] text-white placeholder:text-gray-600 focus:border-purple-500/40 focus:outline-none disabled:opacity-60 disabled:cursor-not-allowed"
                                         />
+                                        {/* Status badge: pendiente vs recibida */}
                                         {inv && (
-                                            <p className="text-[10px] text-gray-500 mt-1 truncate font-mono">
-                                                {linkFor(inv.token)}
-                                                {inv.reused && <span className="ml-2 text-emerald-400">· reutilizado</span>}
-                                            </p>
+                                            isDone ? (
+                                                <p className="text-[11px] mt-1.5 flex items-center gap-1.5 font-bold text-emerald-400">
+                                                    <CheckCircle2 size={11} />
+                                                    Recibida{status?.collaboratorName ? ` de ${status.collaboratorName}` : ""}
+                                                </p>
+                                            ) : (
+                                                <>
+                                                    <p className="text-[11px] mt-1.5 flex items-center gap-1.5 text-amber-400">
+                                                        <Clock size={11} />
+                                                        Pendiente
+                                                    </p>
+                                                    <p className="text-[10px] text-gray-500 mt-0.5 truncate font-mono">
+                                                        {linkFor(inv.token)}
+                                                        {inv.reused && <span className="ml-2 text-emerald-400">· reutilizado</span>}
+                                                    </p>
+                                                </>
+                                            )
                                         )}
                                     </div>
 
-                                    {inv && (
+                                    {inv && !isDone && (
                                         <div className="shrink-0 flex flex-col gap-1.5">
                                             <button
                                                 onClick={() => void copy(inv.token)}
