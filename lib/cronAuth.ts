@@ -10,6 +10,11 @@ import { timingSafeEqual } from "node:crypto";
  * La comparación es timing-safe para no filtrar el secret por canal lateral.
  */
 export function isAuthorizedCron(req: Request): boolean {
+  // En el proyecto "agenda" (peligroficial.com) NO corren los crons: comparte
+  // el mismo repo y la MISMA BD que artegenia, así que los crons (imports,
+  // emails, digest) deben ejecutarse SOLO en artegenia para no duplicarlos.
+  if (process.env.NEXT_PUBLIC_APP_MODE === "agenda") return false;
+
   const secret = process.env.CRON_SECRET;
   if (!secret) return false; // sin secret configurado → denegar (fail-closed)
 
