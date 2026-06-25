@@ -1042,6 +1042,60 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
         )}
       </section>
 
+      {/* ── BANNER: vende el generador de flyers (ArteGenIA) ─────────
+          Embudo: la agenda (gratis) atrae al medio; aquí convertimos al
+          organizador hacia la herramienta de flyers. CTA → artegenia.com
+          (funciona igual desde peligroficial.com, es enlace absoluto). */}
+      <section className="mx-auto mt-8 max-w-6xl px-4">
+        <div
+          className="overflow-hidden rounded-3xl"
+          style={{ background: "linear-gradient(120deg,#1a0b2e 0%,#2b0f3f 45%,#3a0d2a 100%)", border: "1px solid var(--home-card-border)" }}
+        >
+          <div className="flex flex-col items-center gap-7 p-7 sm:flex-row sm:p-9">
+            {/* Texto + CTA */}
+            <div className="min-w-0 flex-1 text-center sm:text-left">
+              <span className="mb-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wide" style={{ background: "rgba(255,255,255,.1)", color: "#f0c0ff" }}>
+                <Sparkles size={12} /> Para organizadores
+              </span>
+              <h3 className="text-xl font-extrabold leading-tight text-white sm:text-[26px]">
+                ¿Organizas eventos? Crea tu flyer profesional en 2 minutos
+              </h3>
+              <p className="mx-auto mt-2 max-w-md text-sm sm:mx-0" style={{ color: "rgba(255,255,255,.72)" }}>
+                Sin diseñador ni Photoshop. Plantillas, IA y tus fotos — flyers como los de esta agenda, listos para redes en minutos.
+              </p>
+              <a
+                href="https://artegenia.com/templates"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-5 inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-bold text-white shadow-lg transition hover:scale-[1.03]"
+                style={{ background: "var(--ag-brand)" }}
+              >
+                Crea tu flyer gratis <ChevronRight size={16} />
+              </a>
+            </div>
+            {/* Ejemplos: 3 flyers reales en abanico */}
+            <div className="flex shrink-0 items-center justify-center gap-0 pr-2">
+              {[
+                { src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/flyers/eventos/1781793119485-exxu4b52.jpg", r: "-9deg", z: 1 },
+                { src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/flyers/eventos/1782314912937-culccqjh.jpg", r: "0deg", z: 3 },
+                { src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/flyers/eventos/1781803375023-2f89q50d.jpg", r: "9deg", z: 1 },
+              ].map((f, i) => (
+                <div
+                  key={i}
+                  className="h-36 w-[100px] shrink-0 rounded-xl bg-cover bg-center shadow-2xl sm:h-44 sm:w-[124px]"
+                  style={{
+                    backgroundImage: `url('${f.src}')`,
+                    transform: `rotate(${f.r}) translateX(${i === 0 ? "12px" : i === 2 ? "-12px" : "0"})`,
+                    zIndex: f.z,
+                    border: "2px solid rgba(255,255,255,.15)",
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ── BANDA ORGANIZADORES (secundaria, al pie) ─────────────── */}
       <section className="mx-auto mt-6 max-w-6xl px-4 pb-12">
         <div
