@@ -641,7 +641,7 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
           <div className="absolute -left-24 top-0 h-72 w-72 rounded-full opacity-40 blur-3xl" style={{ background: "radial-gradient(circle,#7E2BFF,transparent 70%)" }} />
           <div className="absolute right-0 top-10 h-72 w-72 rounded-full opacity-30 blur-3xl" style={{ background: "radial-gradient(circle,#FF1EA8,transparent 70%)" }} />
         </div>
-        <div className="mx-auto max-w-6xl px-4 pt-5 pb-4 sm:pt-10 sm:pb-8">
+        <div className="mx-auto max-w-7xl px-4 pt-4 pb-3 sm:pt-6 sm:pb-5">
           {/* initial=false: render directo a su estado final. Antes usaba una
               animación de entrada (opacity 0→1) que en SSR/hidratación se podía
               quedar atascada en opacity:0 y dejaba el hero (título, país/ciudad,
@@ -654,7 +654,7 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
             >
               <Sparkles size={13} /> {t("eventos.hero.badge")}
             </span>
-            <h1 className="mx-auto max-w-3xl text-2xl font-bold tracking-tight text-white sm:text-5xl">
+            <h1 className="mx-auto max-w-3xl text-2xl font-bold tracking-tight text-white sm:text-4xl">
               <span className="sm:hidden">{t("eventos.hero.titleMobile")}</span>
               <span className="hidden sm:inline">{t("eventos.hero.titleDesktop")}</span>
               {/* El degradado + background-clip:text + drop-shadow van en el
@@ -956,7 +956,7 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
       </div>
 
       {/* ── CONTENIDO ───────────────────────────────────────────── */}
-      <section className="mx-auto max-w-6xl px-4 py-6">
+      <section className="mx-auto max-w-7xl px-4 py-6">
         <div className="mb-4 flex items-center justify-between gap-3">
           <p className="text-sm" style={{ color: "var(--home-text-soft)" }}>
             {filtered.length} {filtered.length === 1 ? t("eventos.count.one") : t("eventos.count.many")} {t("eventos.count.in")} {placeLabel}
@@ -990,35 +990,95 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
         {filtered.length === 0 ? (
           <EmptyState onReset={resetFilters} />
         ) : view === "lista" ? (
-          <>
-            <ListView
-              grouped={grouped}
-              favs={favs}
-              onFav={toggleFav}
-              onSelect={setSelected}
-              onBuy={trackClick}
-              onSeeDay={(d) => { setRange({ from: d, to: d }); setDateFilter("rango"); }}
-            />
-            {totalPages > 1 && (
-              <div className="mt-6 flex items-center justify-center gap-3">
-                <button
-                  onClick={() => { setPage(Math.max(1, curPage - 1)); window.scrollTo({ top: 0, behavior: "smooth" }); }}
-                  disabled={curPage <= 1}
-                  className="flex h-9 w-9 items-center justify-center rounded-full disabled:opacity-30"
-                  style={{ background: "var(--home-card-bg)", color: "var(--ag-brand)" }}
-                  aria-label="Anterior"
-                ><ChevronLeft size={18} /></button>
-                <span className="text-sm font-medium" style={{ color: "var(--home-text-muted)" }}>{curPage} / {totalPages}</span>
-                <button
-                  onClick={() => { setPage(Math.min(totalPages, curPage + 1)); window.scrollTo({ top: 0, behavior: "smooth" }); }}
-                  disabled={curPage >= totalPages}
-                  className="flex h-9 w-9 items-center justify-center rounded-full disabled:opacity-30"
-                  style={{ background: "var(--home-card-bg)", color: "var(--ag-brand)" }}
-                  aria-label="Siguiente"
-                ><ChevronRight size={18} /></button>
-              </div>
-            )}
-          </>
+          // Escritorio: 2 columnas (listado 1fr + sidebar sticky ~360px).
+          // Móvil: una sola columna (el sidebar se oculta).
+          <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_clamp(320px,26vw,372px)] lg:items-start lg:gap-6">
+            <div className="min-w-0">
+              <ListView
+                grouped={grouped}
+                favs={favs}
+                onFav={toggleFav}
+                onSelect={setSelected}
+                onBuy={trackClick}
+                onSeeDay={(d) => { setRange({ from: d, to: d }); setDateFilter("rango"); }}
+              />
+              {totalPages > 1 && (
+                <div className="mt-6 flex items-center justify-center gap-3">
+                  <button
+                    onClick={() => { setPage(Math.max(1, curPage - 1)); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                    disabled={curPage <= 1}
+                    className="flex h-9 w-9 items-center justify-center rounded-full disabled:opacity-30"
+                    style={{ background: "var(--home-card-bg)", color: "var(--ag-brand)" }}
+                    aria-label="Anterior"
+                  ><ChevronLeft size={18} /></button>
+                  <span className="text-sm font-medium" style={{ color: "var(--home-text-muted)" }}>{curPage} / {totalPages}</span>
+                  <button
+                    onClick={() => { setPage(Math.min(totalPages, curPage + 1)); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                    disabled={curPage >= totalPages}
+                    className="flex h-9 w-9 items-center justify-center rounded-full disabled:opacity-30"
+                    style={{ background: "var(--home-card-bg)", color: "var(--ag-brand)" }}
+                    aria-label="Siguiente"
+                  ><ChevronRight size={18} /></button>
+                </div>
+              )}
+            </div>
+
+            {/* Sidebar SOLO escritorio: Hoy + calendario + categorías (sticky). */}
+            <aside className="hidden self-start lg:sticky lg:top-4 lg:block lg:space-y-4">
+              {(() => {
+                const hoy = filtered.filter((e) => e.date === TODAY).slice(0, 4);
+                if (!hoy.length) return null;
+                return (
+                  <div className="rounded-2xl p-4" style={{ background: "var(--home-bg-soft)", border: "1px solid var(--home-card-border)" }}>
+                    <h3 className="mb-2.5 flex items-center gap-2 text-sm font-bold">
+                      <span className="h-2 w-2 rounded-full" style={{ background: "var(--ag-danger, #ef4444)" }} /> {t("eventos.list.today")}
+                    </h3>
+                    <div className="space-y-1">
+                      {hoy.map((e) => {
+                        const Cat = CATEGORIES[e.category];
+                        return (
+                          <button key={e.id} onClick={() => setSelected(e)} className="flex w-full items-center gap-2.5 rounded-lg p-1.5 text-left transition-colors hover:bg-ag-card">
+                            <span className="relative h-9 w-9 shrink-0 overflow-hidden rounded-md" style={{ background: e.image, backgroundSize: "cover", backgroundPosition: "center" }}>
+                              {!e.flyerUrl && <span className="absolute inset-0 flex items-center justify-center text-white"><Cat.icon size={14} /></span>}
+                            </span>
+                            <span className="min-w-0 flex-1">
+                              <span className="block truncate text-xs font-semibold" style={{ color: "var(--home-text)" }}>{e.title}</span>
+                              <span className="block truncate text-[11px]" style={{ color: "var(--home-text-soft)" }}>{e.time} · {e.venue}</span>
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })()}
+
+              <CalendarView events={filtered} month={calMonth} onMonth={setCalMonth} onSelect={setSelected} />
+
+              {(() => {
+                const counts: Partial<Record<Category, number>> = {};
+                for (const e of filtered) counts[e.category] = (counts[e.category] ?? 0) + 1;
+                const rows = (Object.keys(CATEGORIES) as Category[]).filter((c) => counts[c]);
+                if (!rows.length) return null;
+                return (
+                  <div className="rounded-2xl p-4" style={{ background: "var(--home-bg-soft)", border: "1px solid var(--home-card-border)" }}>
+                    <h3 className="mb-2.5 text-sm font-bold">Por categoría</h3>
+                    <div className="space-y-2">
+                      {rows.map((c) => {
+                        const Cat = CATEGORIES[c];
+                        return (
+                          <div key={c} className="flex items-center justify-between text-xs" style={{ color: "var(--home-text-muted)" }}>
+                            <span className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full" style={{ background: Cat.grad }} /> {t(Cat.labelKey)}</span>
+                            <span className="font-semibold" style={{ color: "var(--home-text)" }}>{counts[c]}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })()}
+            </aside>
+          </div>
         ) : (
           // Vista calendario: SOLO si hay eventos HOY mostramos el carrusel 3D
           // (destacado izq + calendario der, lado a lado en escritorio). Si HOY
