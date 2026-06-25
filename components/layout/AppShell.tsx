@@ -19,6 +19,13 @@ import WelcomeChecklist from "@/components/onboarding/WelcomeChecklist";
 import { ToastProvider } from "@/lib/toast";
 import { hasFirstVictory, onFirstVictory } from "@/lib/firstVictory";
 
+// "Modo agenda" (peligrooficial.com): NEXT_PUBLIC_APP_MODE=agenda hace que
+// TODA la app se comporte como la agenda cultural — home = agenda, sin el
+// menú de flyers, y "Crea Flyer" enlaza a artegenia.com. Es una constante de
+// build (la env se hornea), así vale igual en server y cliente.
+const AGENDA_ONLY = process.env.NEXT_PUBLIC_APP_MODE === "agenda";
+const FLYER_APP_URL = "https://artegenia.com/templates";
+
 export default function AppShell({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const { user, profile, loading, signOut } = useAuth();
@@ -51,7 +58,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     // el menú de flyers (Crear, Quitar fondo, Plantillas…) y la bottom nav
     // móvil para que se sienta como una agenda, no como la app de flyers.
     // La cabecera mantiene logo + idioma + tema + login (cuenta = organizador).
-    const isAgendaRoute = pathname.startsWith("/eventos") || pathname.startsWith("/organizador") || pathname.startsWith("/subir");
+    const isAgendaRoute = AGENDA_ONLY || pathname.startsWith("/eventos") || pathname.startsWith("/organizador") || pathname.startsWith("/subir");
 
     // Lee localStorage al montar + escucha el evento custom para
     // re-renderizar cuando el user completa su primera descarga.
@@ -165,9 +172,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                         acceso de organizador ("Sube tu evento"). */}
                     {isAgendaRoute ? (
                         <nav className="hidden md:flex items-center gap-1">
-                            <Link href="/eventos"
+                            <Link href={AGENDA_ONLY ? "/" : "/eventos"}
                                 className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                                    pathname.startsWith("/eventos")
+                                    (AGENDA_ONLY ? pathname === "/" : pathname.startsWith("/eventos"))
                                         ? "text-ag-active border-b-2 border-ag-active rounded-none"
                                         : "text-ag-muted hover:text-ag-primary"
                                 }`}>
@@ -181,14 +188,23 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                                 }`}>
                                 Sube tu evento
                             </Link>
-                            <Link href="/templates"
-                                className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                                    pathname.startsWith("/templates")
-                                        ? "text-ag-active border-b-2 border-ag-active rounded-none"
-                                        : "text-ag-muted hover:text-ag-primary"
-                                }`}>
-                                Crea Flyer
-                            </Link>
+                            {/* En modo agenda, "Crea Flyer" sale a artegenia.com
+                                (la app de flyers vive en otro dominio). */}
+                            {AGENDA_ONLY ? (
+                                <a href={FLYER_APP_URL} target="_blank" rel="noopener noreferrer"
+                                    className="px-4 py-1.5 rounded-lg text-sm font-medium transition-all text-ag-muted hover:text-ag-primary">
+                                    Crea Flyer ↗
+                                </a>
+                            ) : (
+                                <Link href="/templates"
+                                    className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                                        pathname.startsWith("/templates")
+                                            ? "text-ag-active border-b-2 border-ag-active rounded-none"
+                                            : "text-ag-muted hover:text-ag-primary"
+                                    }`}>
+                                    Crea Flyer
+                                </Link>
+                            )}
                         </nav>
                     ) : (
                         <nav className="hidden md:flex items-center gap-1">
