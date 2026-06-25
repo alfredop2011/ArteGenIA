@@ -7,7 +7,8 @@ import type { NextRequest } from "next/server";
 // Next 16: convención "proxy" (sustituye al antiguo "middleware").
 function isAgendaHost(req: NextRequest): boolean {
   const host = (req.headers.get("host") || req.nextUrl.hostname || "").toLowerCase();
-  if (host.includes("peligrooficial")) return true;
+  // Cubre cualquier variante del dominio (peligroficial / peligrooficial / www).
+  if (host.includes("peligro")) return true;
   if (process.env.NEXT_PUBLIC_APP_MODE === "agenda") return true;
   if (process.env.APP_MODE === "agenda") return true;
   return false;
