@@ -102,16 +102,24 @@ export async function PATCH(
   }
 
   // Normaliza handles redes (sin @, sin URL, solo chars válidos).
-  // Mismo helper que /api/collaborators POST — duplicado a propósito para
-  // no acoplar este endpoint al otro.
-  const cleanHandle = (raw: unknown): string | null => {
-    if (typeof raw !== "string") return null;
+  // Devuelve { value, error } para que el caller pueda devolver 400
+  // específico en vez de descartar silenciosamente (bug reportado:
+  // user puso 'Yo' como prueba, quedó NULL sin aviso).
+  const normalizeHandle = (raw: unknown): { value: string | null; error?: string } => {
+    if (raw === null || raw === undefined) return { value: null };
+    if (typeof raw !== "string") return { value: null };
     const trimmed = raw.trim();
-    if (!trimmed) return null;
+    if (!trimmed) return { value: null }; // vacío = borrar canal, OK
     const fromUrl = trimmed.match(/(?:t\.me|telegram\.me|instagram\.com)\/([^/?#]+)/i);
     const candidate = fromUrl ? fromUrl[1] : trimmed.replace(/^@+/, "");
     const safe = candidate.replace(/[^a-zA-Z0-9_.]/g, "").slice(0, 32);
-    return safe.length >= 3 ? safe : null;
+    if (safe.length === 0) {
+      return { value: null, error: "usa solo letras, números, _ y ." };
+    }
+    if (safe.length < 3) {
+      return { value: null, error: `"${safe}" es muy corto — mínimo 3 caracteres` };
+    }
+    return { value: safe };
   };
 
   // Whitelist de campos editables por tipo.
@@ -136,7 +144,15 @@ export async function PATCH(
     if (!allowed[key]) continue;
     // Handles necesitan normalización; phone aceptamos trim simple
     if (key === "telegram_handle" || key === "instagram_handle") {
-      updates[key] = cleanHandle(body[key]);
+      const r = normalizeHandle(body[key]);
+      if (r.error) {
+        const channel = key === "telegram_handle" ? "Telegram" : "Instagram";
+        return NextResponse.json(
+          { error: `${channel}: ${r.error}` },
+          { status: 400 },
+        );
+      }
+      updates[key] = r.value;
     } else {
       updates[key] = body[key];
     }

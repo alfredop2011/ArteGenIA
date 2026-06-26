@@ -135,8 +135,24 @@ export default function PublishModal({
         setEditError(null);
     }, []);
 
+    // Validación frontend de un handle: vacío OK, < 3 chars válidos ERROR.
+    // Evita round-trip al server por algo que podemos detectar local.
+    const validateHandleClient = (raw: string): string | null => {
+        const trimmed = raw.trim();
+        if (!trimmed) return null; // vacío = borrar canal, OK
+        const cleaned = trimmed.replace(/^@+/, "").replace(/[^a-zA-Z0-9_.]/g, "");
+        if (cleaned.length === 0) return "Inválido — solo letras, números, _ y .";
+        if (cleaned.length < 3) return `"${cleaned}" es muy corto (mínimo 3 caracteres)`;
+        return null;
+    };
+
     const saveEditCollab = useCallback(async () => {
         if (!editingCollab || !projectId) return;
+        // Validación frontend ANTES de mandar — feedback inmediato.
+        const tgErr = validateHandleClient(editTelegram);
+        if (tgErr) { setEditError(`Telegram: ${tgErr}`); return; }
+        const igErr = validateHandleClient(editInstagram);
+        if (igErr) { setEditError(`Instagram: ${igErr}`); return; }
         setEditSaving(true);
         setEditError(null);
         try {
