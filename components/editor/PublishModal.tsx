@@ -136,7 +136,7 @@ export default function PublishModal({
     }, []);
 
     const saveEditCollab = useCallback(async () => {
-        if (!editingCollab) return;
+        if (!editingCollab || !projectId) return;
         setEditSaving(true);
         setEditError(null);
         try {
@@ -150,27 +150,39 @@ export default function PublishModal({
                 }),
             });
             const data = await res.json();
-            if (!res.ok) throw new Error(data.error ?? "No se pudo guardar");
-            // Actualizamos la lista local con lo que enviamos. El backend
-            // normaliza los handles (quita '@', extrae URL) — para mostrar
-            // exactamente lo que quedó guardado, re-fetch tras esto.
-            setCollaborators(prev => prev.map(c =>
-                c.id === editingCollab.id
-                    ? {
-                        ...c,
-                        phone: editPhone.trim() || null,
-                        telegram_handle: editTelegram.trim().replace(/^@+/, "") || null,
-                        instagram_handle: editInstagram.trim().replace(/^@+/, "") || null,
+            if (!res.ok) {
+                // Mostrar mensaje específico para columnas faltantes (migración
+                // SQL no aplicada en Supabase). Es el bug más común tras
+                // añadir telegram_handle/instagram_handle.
+                const raw = String(data.error ?? "");
+                if (raw.includes("column") && raw.includes("does not exist")) {
+                    throw new Error(
+                        "La base de datos no tiene las columnas de Telegram/Instagram. " +
+                        "Aplica la migración 2026_06_26_collaborator_social_handles.sql en Supabase.",
+                    );
+                }
+                throw new Error(raw || `HTTP ${res.status}`);
+            }
+            // Re-fetch la lista del servidor para mostrar EXACTAMENTE lo que
+            // quedó guardado (con normalización del backend aplicada). No
+            // confiamos en update local — si el backend cambió algo (clean
+            // handle), el state quedaría desincronizado.
+            try {
+                const refreshRes = await fetch(`/api/projects/${projectId}/collaborators`);
+                if (refreshRes.ok) {
+                    const refreshData = await refreshRes.json() as { collaborators?: Collaborator[] };
+                    if (Array.isArray(refreshData.collaborators)) {
+                        setCollaborators(refreshData.collaborators);
                     }
-                    : c,
-            ));
+                }
+            } catch { /* silent — fallback: dejar lista como estaba */ }
             closeEditCollab();
         } catch (e) {
             setEditError(e instanceof Error ? e.message : "Error desconocido");
         } finally {
             setEditSaving(false);
         }
-    }, [editingCollab, editPhone, editTelegram, editInstagram, closeEditCollab]);
+    }, [editingCollab, projectId, editPhone, editTelegram, editInstagram, closeEditCollab]);
 
     // Cargar colaboradores del proyecto en paralelo al upload del flyer.
     // Si no hay projectId (flyer no guardado), omitimos.
