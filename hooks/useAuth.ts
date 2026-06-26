@@ -58,7 +58,17 @@ export function useAuth() {
         supabase.auth.signInWithPassword({ email, password });
 
     const signUpWithEmail = (email: string, password: string, name: string) =>
-        supabase.auth.signUp({ email, password, options: { data: { full_name: name } } });
+        supabase.auth.signUp({
+            email,
+            password,
+            options: {
+                data: { full_name: name },
+                // El email de confirmación vuelve al DOMINIO ACTUAL (peligroficial
+                // o artegenia), no a la Site URL fija. Requiere que la URL esté en
+                // los Redirect URLs de Supabase.
+                emailRedirectTo: typeof window !== "undefined" ? `${window.location.origin}/auth/callback` : undefined,
+            },
+        });
 
     const signOut = () => supabase.auth.signOut();
 
