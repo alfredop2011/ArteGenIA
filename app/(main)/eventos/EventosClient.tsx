@@ -542,6 +542,20 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
     }).sort((a, b) => (a.date === b.date ? a.time.localeCompare(b.time) : a.date.localeCompare(b.date)));
   }, [events, query, dateFilter, range, activeCats, activeAuds, onlyFree, country, city, showFavs, favs, t]);
 
+  // Eventos para el date-strip (móvil): mismos filtros que `filtered` PERO sin
+  // el de fecha, para que los puntos de cada día no desaparezcan al elegir un día.
+  const stripEvents = useMemo(() => {
+    return events.filter((e) => {
+      if (e.country !== country) return false;
+      if (city !== "todas" && e.city !== city) return false;
+      if (showFavs && !favs.has(e.id)) return false;
+      if (activeCats.size > 0 && !activeCats.has(e.category)) return false;
+      if (activeAuds.size > 0 && !e.audience.some((a) => activeAuds.has(a))) return false;
+      if (onlyFree && e.price !== 0) return false;
+      return true;
+    });
+  }, [events, activeCats, activeAuds, onlyFree, country, city, showFavs, favs]);
+
   // Paginación de la vista Lista (la del calendario muestra el mes entero).
   const PER_PAGE = 24;
   const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
@@ -694,10 +708,10 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
                la barra de filtros sticky (z-10), si no se abría detrás. */
             className="relative z-30 mx-auto mt-4 flex max-w-3xl flex-col gap-2 sm:mt-7 sm:flex-row"
           >
-            {/* País + ciudad: también en MÓVIL (apilados, ancho completo). Antes
-                eran solo escritorio, pero en móvil el usuario necesita elegir
-                ciudad de una LISTA tappable, no escribir en el buscador. */}
-            <div className="flex flex-col gap-2 sm:flex-row">
+            {/* País + ciudad: en MÓVIL van en 2 columnas (ahorra altura); en
+                escritorio en fila. Antes eran solo escritorio, pero en móvil el
+                usuario necesita elegir ciudad de una LISTA tappable. */}
+            <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-row">
             {/* País */}
             <Dropdown
               open={countryOpen}
@@ -982,8 +996,25 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
             destacados. Solo en vista Lista y sin filtros/búsqueda activos, como
             cabecera de descubrimiento (no se duplica al filtrar). */}
         {view === "lista" && !query && dateFilter === "todos" && filtered.length > 2 && (
-          <div className="mb-7">
+          // En MÓVIL se oculta: empuja demasiado hacia abajo los eventos de hoy.
+          // En escritorio se mantiene (hay sitio de sobra).
+          <div className="mb-7 hidden lg:block">
             <DestacadosRail events={filtered} onSelect={setSelected} />
+          </div>
+        )}
+
+        {/* Date-strip SOLO móvil: ver/saltar a HOY y a cualquier día al instante. */}
+        {view === "lista" && (
+          <div className="mb-3 lg:hidden">
+            <DateStrip
+              events={stripEvents}
+              activeDay={dateFilter === "rango" && range.from === range.to ? range.from : null}
+              onPick={(iso) => {
+                if (iso) { setRange({ from: iso, to: iso }); setDateFilter("rango"); }
+                else { setDateFilter("todos"); }
+                setPage(1);
+              }}
+            />
           </div>
         )}
 
@@ -1454,6 +1485,60 @@ function DropdownItem({
       <span>{children}</span>
       {right && <span className="text-[10px]" style={{ color: "var(--home-text-soft)" }}>{right}</span>}
     </button>
+  );
+}
+
+// ─── Date-strip (móvil): tira horizontal de días con puntos por categoría ──
+// Permite saltar a "hoy" o a cualquier día rápido sin scroll. Tocar un día
+// activo lo deselecciona (vuelve a "todos").
+function DateStrip({
+  events,
+  activeDay,
+  onPick,
+}: {
+  events: EventItem[];
+  activeDay: string | null;
+  onPick: (iso: string | null) => void;
+}) {
+  const { locale } = useLocale();
+  const days = useMemo(() => Array.from({ length: 14 }, (_, i) => addDays(TODAY, i)), []);
+  const byDay = useMemo(() => {
+    const m = new Map<string, Category[]>();
+    for (const e of events) {
+      const arr = m.get(e.date) ?? [];
+      if (!arr.includes(e.category)) arr.push(e.category);
+      m.set(e.date, arr);
+    }
+    return m;
+  }, [events]);
+  const wd = new Intl.DateTimeFormat(tag(locale), { weekday: "narrow" });
+  return (
+    <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1" style={{ scrollbarWidth: "none" }}>
+      {days.map((iso) => {
+        const d = parse(iso);
+        const cats = (byDay.get(iso) ?? []).slice(0, 3);
+        const isActive = activeDay === iso;
+        const isToday = iso === TODAY;
+        return (
+          <button
+            key={iso}
+            onClick={() => onPick(isActive ? null : iso)}
+            className="flex w-[46px] shrink-0 flex-col items-center gap-0.5 rounded-xl py-2 transition-colors"
+            style={isActive
+              ? { background: "var(--ag-brand)", color: "#fff" }
+              : { background: "var(--home-bg-soft)", border: "1px solid var(--home-card-border)", color: "var(--home-text)" }}
+          >
+            <span className="text-[10px] font-semibold uppercase opacity-70">{wd.format(d)}</span>
+            <span className="text-base font-bold" style={isToday && !isActive ? { color: "var(--ag-brand)" } : undefined}>{d.getDate()}</span>
+            <span className="flex h-1.5 items-center gap-0.5">
+              {cats.length === 0
+                ? <span className="h-1 w-1 rounded-full opacity-0" />
+                : cats.map((c) => <span key={c} className="h-1 w-1 rounded-full" style={{ background: isActive ? "#fff" : CATEGORIES[c].grad }} />)}
+            </span>
+          </button>
+        );
+      })}
+    </div>
   );
 }
 
