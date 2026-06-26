@@ -27,8 +27,17 @@ import {
     Calendar, ExternalLink, AlertCircle,
 } from "lucide-react";
 
-// Si peligroficial.com cambia el path/params, cambiar aquí.
-const PELIGRO_OFICIAL_URL_BASE = "https://peligroficial.com/eventos/nuevo";
+// peligroficial.com es el mismo proyecto que ArteGenIA (multi-domain por
+// host — ver proxy.ts). La página de crear evento es /organizador.
+//
+// Actualmente NO acepta query params para pre-rellenar el form (solo lee
+// ?claim=<token>). Backlog: que /organizador lea ?title, ?image, ?date,
+// ?city y los pre-rellene en el form de creación. Cuando esté listo,
+// los params que mandamos abajo se aplicarán automáticamente.
+//
+// Mientras tanto, copiamos la URL del flyer al portapapeles al click para
+// que el organizador solo tenga que pegar.
+const PELIGRO_OFICIAL_URL_BASE = "https://peligroficial.com/organizador";
 
 type ExportFn = () => Promise<string | null>;
 
@@ -166,10 +175,35 @@ export default function PublishModal({
         }
     }, [publicUrl]);
 
-    const publishToPeligro = useCallback(() => {
+    const [peligroLoading, setPeligroLoading] = useState(false);
+    const [peligroCopied, setPeligroCopied] = useState(false);
+
+    const publishToPeligro = useCallback(async () => {
         if (!publicUrl) return;
-        // Construimos URL con query params. Si peligroficial.com no los lee,
-        // simplemente carga el form vacío — sin error.
+        setPeligroLoading(true);
+
+        // 1) Copiamos la URL del flyer al portapapeles. Mientras
+        //    /organizador no lea query params (backlog), el organizador
+        //    pega la URL en el campo "Imagen" del form manualmente.
+        try {
+            await navigator.clipboard.writeText(publicUrl);
+            setPeligroCopied(true);
+            setTimeout(() => setPeligroCopied(false), 4000);
+        } catch {
+            // Fallback execCommand (Safari iOS < 13.4)
+            const ta = document.createElement("textarea");
+            ta.value = publicUrl;
+            document.body.appendChild(ta);
+            ta.select();
+            try { document.execCommand("copy"); } catch { /* silent */ }
+            document.body.removeChild(ta);
+            setPeligroCopied(true);
+            setTimeout(() => setPeligroCopied(false), 4000);
+        }
+
+        // 2) Construimos URL con query params. Por ahora /organizador los
+        //    ignora pero los enviamos para que cuando se implementen, todo
+        //    funcione sin tocar ArteGenIA.
         const params = new URLSearchParams();
         params.set("title", flyerTitle);
         params.set("image", publicUrl);
@@ -181,6 +215,7 @@ export default function PublishModal({
 
         const url = `${PELIGRO_OFICIAL_URL_BASE}?${params.toString()}`;
         window.open(url, "_blank", "noopener,noreferrer");
+        setPeligroLoading(false);
     }, [publicUrl, flyerTitle, eventMetadata]);
 
     return (
@@ -331,19 +366,32 @@ export default function PublishModal({
                                     Calendario de eventos
                                 </div>
                                 <button
-                                    onClick={publishToPeligro}
-                                    className="w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl text-white font-bold text-sm active:scale-[0.98] transition shadow-lg shadow-purple-500/20"
+                                    onClick={() => void publishToPeligro()}
+                                    disabled={peligroLoading}
+                                    className="w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl text-white font-bold text-sm active:scale-[0.98] transition shadow-lg shadow-purple-500/20 disabled:opacity-70"
                                     style={{ background: "linear-gradient(135deg,#7c3aed,#db2777)" }}
                                 >
                                     <span className="flex items-center gap-2.5">
                                         <Calendar size={18} strokeWidth={2.2} />
                                         Publicar en Peligro Oficial
                                     </span>
-                                    <ExternalLink size={14} className="opacity-80" />
+                                    {peligroLoading
+                                        ? <Loader2 size={14} className="animate-spin opacity-80" />
+                                        : <ExternalLink size={14} className="opacity-80" />}
                                 </button>
-                                <p className="text-[10px] text-gray-500 leading-relaxed mt-2">
-                                    Abriremos peligroficial.com con tu flyer y datos del evento listos para revisar.
-                                </p>
+                                {peligroCopied ? (
+                                    <div className="mt-2 px-3 py-2 rounded-lg flex items-start gap-2 text-[11px] leading-snug"
+                                        style={{ background: "rgba(16,185,129,0.10)", border: "1px solid rgba(16,185,129,0.30)", color: "#a7f3d0" }}>
+                                        <Check size={12} className="mt-0.5 shrink-0 text-emerald-400" />
+                                        <span>
+                                            <strong>URL copiada al portapapeles.</strong> Pégala en el campo &quot;Imagen del flyer&quot; del formulario.
+                                        </span>
+                                    </div>
+                                ) : (
+                                    <p className="text-[10px] text-gray-500 leading-relaxed mt-2">
+                                        Te abriremos el panel de organizador. Copiaremos la URL del flyer al portapapeles para que solo la pegues.
+                                    </p>
+                                )}
                             </div>
 
                             <p className="text-[10px] text-gray-600 leading-snug text-center pt-2">
