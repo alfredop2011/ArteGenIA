@@ -341,6 +341,7 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
   const detectLocation = () => {
     if (typeof navigator === "undefined" || !navigator.geolocation) {
       setGeo({ status: "error", msg: t("eventos.geo.unsupported") });
+      setCityOpen(true); // sin ubicación → abre el selector de ciudad (no input aparte)
       return;
     }
     setGeo({ status: "locating" });
@@ -364,9 +365,10 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
           setGeo({ status: "done", msg: t("eventos.geo.showing").replace("{place}", best.label) });
         } else {
           setGeo({ status: "error", msg: t("eventos.geo.noneNearby") });
+          setCityOpen(true);
         }
       },
-      () => setGeo({ status: "error", msg: t("eventos.geo.failed") }),
+      () => { setGeo({ status: "error", msg: t("eventos.geo.failed") }); setCityOpen(true); },
       { timeout: 8000 }
     );
   };
@@ -786,20 +788,12 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
               </button>
             </div>
           </motion.div>
-          {geo.status === "error" ? (
-            <div className="mx-auto mt-2 max-w-sm text-center">
-              <p className="text-xs" style={{ color: "var(--ag-warning)" }}>{t("eventos.geo.errorPrompt").replace("{msg}", geo.msg ?? "")}</p>
-              <CityAutocomplete
-                cities={cities}
-                onPick={(id) => {
-                  const lbl = cities.find((c) => c.id === id)?.label ?? "";
-                  setCity(id);
-                  setGeo({ status: "done", msg: t("eventos.geo.showing").replace("{place}", lbl) });
-                }}
-              />
-            </div>
-          ) : geo.msg ? (
-            <p className="mx-auto mt-2 max-w-3xl text-center text-xs" style={{ color: "var(--home-text-soft)" }}>{geo.msg}</p>
+          {/* Mensaje de geolocalización (sin input aparte): si falla, abrimos el
+              selector de ciudad existente y solo mostramos un texto breve. */}
+          {geo.msg ? (
+            <p className="mx-auto mt-2 max-w-3xl text-center text-xs" style={{ color: geo.status === "error" ? "var(--ag-warning)" : "var(--home-text-soft)" }}>
+              {geo.msg}
+            </p>
           ) : null}
         </div>
       </section>
@@ -996,9 +990,7 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
             destacados. Solo en vista Lista y sin filtros/búsqueda activos, como
             cabecera de descubrimiento (no se duplica al filtrar). */}
         {view === "lista" && !query && dateFilter === "todos" && filtered.length > 2 && (
-          // En MÓVIL se oculta: empuja demasiado hacia abajo los eventos de hoy.
-          // En escritorio se mantiene (hay sitio de sobra).
-          <div className="mb-7 hidden lg:block">
+          <div className="mb-7">
             <DestacadosRail events={filtered} onSelect={setSelected} />
           </div>
         )}
