@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 
 /**
@@ -20,10 +21,16 @@ import { createSupabaseServerClient } from "@/lib/supabaseServer";
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
+  // `next` viene de la COOKIE pa_next (la pone signInWithGoogle), con fallback al
+  // query param por compatibilidad. Así el redirect_to es limpio y casa con la
+  // lista de Supabase del dominio actual.
+  const cookieStore = await cookies();
+  const rawNext = cookieStore.get("pa_next")?.value
+    ? decodeURIComponent(cookieStore.get("pa_next")!.value)
+    : (searchParams.get("next") ?? "/");
   // Open-redirect guard: solo permitimos rutas internas. Rechazamos URLs
   // absolutas (https://evil.com), protocol-relative (//evil.com),
   // userinfo (@evil.com) y dominios pegados (.evil.com) → todo a "/".
-  const rawNext = searchParams.get("next") ?? "/";
   const next =
     rawNext.startsWith("/") && !rawNext.startsWith("//") && !rawNext.startsWith("/\\")
       ? rawNext
@@ -70,6 +77,9 @@ export async function GET(request: Request) {
     console.warn("[auth callback] welcome email skip:", e);
   }
 
-  // Sesión creada y guardada en cookies. Redirigimos a la home.
-  return NextResponse.redirect(`${origin}${next}`);
+  // Sesión creada y guardada en cookies. Redirigimos a `next` y limpiamos la
+  // cookie pa_next.
+  const res = NextResponse.redirect(`${origin}${next}`);
+  res.cookies.delete("pa_next");
+  return res;
 }

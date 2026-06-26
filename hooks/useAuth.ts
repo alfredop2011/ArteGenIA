@@ -47,10 +47,16 @@ export function useAuth() {
      *    que ya lo respeta. Útil para devolver al usuario a la página que
      *    estaba (ej. /pricing?autostart=enterprise) en vez de a la home. */
     const signInWithGoogle = (nextUrl?: string) => {
-        const nextParam = nextUrl ? `?next=${encodeURIComponent(nextUrl)}` : "";
+        // El `next` va en COOKIE, no en el redirect_to: así la URL de redirección
+        // es LIMPIA (`/auth/callback`) y casa con la lista de Supabase del dominio
+        // actual sin depender de comodines con query string (que fallaba y caía a
+        // la Site URL = artegenia). El callback lee la cookie y la borra.
+        if (typeof document !== "undefined" && nextUrl) {
+            document.cookie = `pa_next=${encodeURIComponent(nextUrl)}; path=/; max-age=600; samesite=lax`;
+        }
         return supabase.auth.signInWithOAuth({
             provider: "google",
-            options: { redirectTo: `${window.location.origin}/auth/callback${nextParam}` },
+            options: { redirectTo: `${window.location.origin}/auth/callback` },
         });
     };
 
