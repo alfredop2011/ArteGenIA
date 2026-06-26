@@ -103,7 +103,13 @@ export default function PublishModal({
 }: Props) {
     const [stage, setStage] = useState<Stage>("loading");
     const [error, setError] = useState<string | null>(null);
+    // URL HTML con OG tags (/flyer/<id>) — se usa en Facebook (crawler
+    // necesita meta tags) y como link "canónico" copiable.
     const [publicUrl, setPublicUrl] = useState<string | null>(null);
+    // URL DIRECTA del JPG en R2 — se usa en WhatsApp/Telegram/colaboradores
+    // para que al hacer click el receptor vea la imagen full en el chat y
+    // pueda guardar/reenviar como foto en 1 tap.
+    const [imageUrl, setImageUrl] = useState<string | null>(null);
     const [previewDataUrl, setPreviewDataUrl] = useState<string | null>(null);
     const [copied, setCopied] = useState(false);
     const [igInstrOpen, setIgInstrOpen] = useState(false);
@@ -243,7 +249,12 @@ export default function PublishModal({
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ imageDataUrl: dataUrl, title: flyerTitle }),
                 });
-                const data = await res.json() as { publicUrl?: string; url?: string; error?: string };
+                const data = await res.json() as {
+                    publicUrl?: string;
+                    imageUrl?: string;
+                    url?: string;
+                    error?: string;
+                };
                 if (!res.ok) {
                     if (res.status === 401) {
                         onRequireAuth();
@@ -252,9 +263,16 @@ export default function PublishModal({
                     }
                     throw new Error(data.error ?? "No se pudo publicar el flyer");
                 }
-                const finalUrl = data.publicUrl || data.url;
-                if (!finalUrl) throw new Error("La URL pública no llegó");
-                setPublicUrl(finalUrl);
+                // imageUrl = JPG directa R2 (para WA/TG/colabs)
+                // publicUrl = landing HTML con OG (para Facebook)
+                // url = backward compat con endpoint antiguo (pre F5)
+                const finalImage = data.imageUrl || data.url;
+                const finalPublic = data.publicUrl || data.imageUrl || data.url;
+                if (!finalImage || !finalPublic) {
+                    throw new Error("La URL del flyer no llegó");
+                }
+                setImageUrl(finalImage);
+                setPublicUrl(finalPublic);
                 setStage("ready");
             } catch (e) {
                 console.error("[publish]", e);
@@ -269,34 +287,42 @@ export default function PublishModal({
     const credit = "Creado con ArteGenIA — artegenia.com";
 
     const shareTo = useCallback((target: "whatsapp" | "facebook" | "telegram") => {
-        if (!publicUrl) return;
+        if (!publicUrl || !imageUrl) return;
         const text = `${message}\n\n${credit}`;
         let href = "";
         switch (target) {
             case "whatsapp":
-                href = `https://wa.me/?text=${encodeURIComponent(`${text}\n${publicUrl}`)}`;
+                // URL directa al JPG — el receptor ve la imagen full en el
+                // chat y puede guardar/reenviar como foto en 1 tap.
+                href = `https://wa.me/?text=${encodeURIComponent(`${text}\n${imageUrl}`)}`;
                 break;
             case "facebook":
-                // Sharer ignora 'quote' desde 2018 — solo crawler-fetches OG del URL.
+                // Facebook necesita landing HTML con OG tags. Sharer
+                // ignora 'quote' desde 2018, solo crawler-fetches OG del URL.
                 href = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(publicUrl)}`;
                 break;
             case "telegram":
-                href = `https://t.me/share/url?url=${encodeURIComponent(publicUrl)}&text=${encodeURIComponent(text)}`;
+                // Telegram también renderiza imagen directa inline.
+                href = `https://t.me/share/url?url=${encodeURIComponent(imageUrl)}&text=${encodeURIComponent(text)}`;
                 break;
         }
         window.open(href, "_blank", "noopener,noreferrer");
-    }, [publicUrl, message, credit]);
+    }, [publicUrl, imageUrl, message, credit]);
 
     const copyLink = useCallback(async () => {
-        if (!publicUrl) return;
+        // Copiamos imageUrl (JPG directa R2) en lugar de publicUrl —
+        // si el user pega el link en WhatsApp/Telegram/etc, el receptor
+        // ve la imagen directamente sin tener que abrir una página web.
+        const linkToCopy = imageUrl ?? publicUrl;
+        if (!linkToCopy) return;
         try {
-            await navigator.clipboard.writeText(publicUrl);
+            await navigator.clipboard.writeText(linkToCopy);
             setCopied(true);
             setTimeout(() => setCopied(false), 2000);
         } catch {
             // Fallback execCommand (Safari iOS < 13.4)
             const ta = document.createElement("textarea");
-            ta.value = publicUrl;
+            ta.value = linkToCopy;
             document.body.appendChild(ta);
             ta.select();
             try { document.execCommand("copy"); } catch { /* silent */ }
@@ -304,49 +330,50 @@ export default function PublishModal({
             setCopied(true);
             setTimeout(() => setCopied(false), 2000);
         }
-    }, [publicUrl]);
+    }, [imageUrl, publicUrl]);
 
     const [peligroLoading, setPeligroLoading] = useState(false);
     const [peligroCopied, setPeligroCopied] = useState(false);
 
     // Mensaje preset para cada colaborador. Sale por wa.me/t.me/clipboard.
-    // Personalizado con el nombre del colab + título del evento + CTA etiquetar.
+    // Usa imageUrl (JPG directa R2) — al recibirlo el colab ve la imagen
+    // full en el chat y puede guardar/reenviar como foto directamente.
     const buildCollabMessage = useCallback((collabName: string): string => {
         const cleanName = collabName.split(/\s+/)[0] || collabName; // primer nombre
         return `Hola ${cleanName} 👋
 
 Ya está listo el flyer del evento: ${flyerTitle} 🎨
 
-${publicUrl ?? ""}
+${imageUrl ?? ""}
 
 ¿Lo compartes con tu audiencia? Cuando lo subas a tus historias o feed, etiquétanos 🙌  @artegenia`;
-    }, [flyerTitle, publicUrl]);
+    }, [flyerTitle, imageUrl]);
 
     /** Envía al colaborador por WhatsApp (deep link wa.me). Requiere phone. */
     const sendToCollabWhatsapp = useCallback((collab: Collaborator) => {
-        if (!collab.phone || !publicUrl) return;
+        if (!collab.phone || !imageUrl) return;
         // Normaliza phone: quita '+', espacios, guiones. wa.me espera solo dígitos.
         const cleanPhone = collab.phone.replace(/[^\d]/g, "");
         const text = buildCollabMessage(collab.artist_name);
         const url = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(text)}`;
         window.open(url, "_blank", "noopener,noreferrer");
-    }, [publicUrl, buildCollabMessage]);
+    }, [imageUrl, buildCollabMessage]);
 
     /** Envía al colaborador por Telegram. Telegram acepta deep link al chat
      *  con texto preset solo si el handle es accesible públicamente. */
     const sendToCollabTelegram = useCallback((collab: Collaborator) => {
-        if (!collab.telegram_handle || !publicUrl) return;
+        if (!collab.telegram_handle || !imageUrl) return;
         const text = buildCollabMessage(collab.artist_name);
         // tg://resolve?domain=X abre la app si está instalada; t.me/X fallback web
         const url = `https://t.me/${collab.telegram_handle}?text=${encodeURIComponent(text)}`;
         window.open(url, "_blank", "noopener,noreferrer");
-    }, [publicUrl, buildCollabMessage]);
+    }, [imageUrl, buildCollabMessage]);
 
     /** Instagram NO permite DM por URL desde web/móvil. Lo único realista:
      *  copiar el mensaje al portapapeles + abrir el perfil. El user manda
      *  DM manual desde la app de Instagram. */
     const sendToCollabInstagram = useCallback(async (collab: Collaborator) => {
-        if (!collab.instagram_handle || !publicUrl) return;
+        if (!collab.instagram_handle || !imageUrl) return;
         const text = buildCollabMessage(collab.artist_name);
         try {
             await navigator.clipboard.writeText(text);
@@ -355,18 +382,18 @@ ${publicUrl ?? ""}
         } catch { /* silent */ }
         // Abre el perfil. El user hace "Mensaje" desde IG y pega.
         window.open(`https://instagram.com/${collab.instagram_handle}`, "_blank", "noopener,noreferrer");
-    }, [publicUrl, buildCollabMessage]);
+    }, [imageUrl, buildCollabMessage]);
 
     /** Para colabs sin canal de contacto, copiar mensaje al portapapeles. */
     const copyCollabMessage = useCallback(async (collab: Collaborator) => {
-        if (!publicUrl) return;
+        if (!imageUrl) return;
         const text = buildCollabMessage(collab.artist_name);
         try {
             await navigator.clipboard.writeText(text);
             setCollabCopiedId(collab.id);
             setTimeout(() => setCollabCopiedId(null), 3000);
         } catch { /* silent */ }
-    }, [publicUrl, buildCollabMessage]);
+    }, [imageUrl, buildCollabMessage]);
 
     const publishToPeligro = useCallback(async () => {
         if (!publicUrl) return;
@@ -502,15 +529,16 @@ ${publicUrl ?? ""}
                                 </div>
                             )}
 
-                            {/* URL pública copiable */}
+                            {/* URL del JPG directo — al pegarlo en cualquier
+                                chat el receptor ve la imagen full inline */}
                             <button
                                 onClick={() => void copyLink()}
                                 className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] hover:bg-white/[0.07] transition group"
-                                title="Copiar enlace"
+                                title="Copiar enlace de la imagen"
                             >
                                 <Link2 size={14} className="text-purple-300 shrink-0" />
                                 <code className="text-[11px] text-gray-300 truncate flex-1 text-left font-mono">
-                                    {publicUrl}
+                                    {imageUrl ?? publicUrl}
                                 </code>
                                 <span className={`text-[10px] font-bold shrink-0 ${copied ? "text-emerald-400" : "text-gray-500 group-hover:text-purple-300"}`}>
                                     {copied ? "COPIADO ✓" : "COPIAR"}
