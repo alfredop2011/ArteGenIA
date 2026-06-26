@@ -801,32 +801,69 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
       {/* ── BARRA DE FILTROS (sticky) ───────────────────────────── */}
       <div className="sticky top-0 z-10 backdrop-blur" style={{ background: "var(--header-bg)", borderBottom: "1px solid var(--header-border)" }}>
         <div className="mx-auto max-w-7xl px-4 py-3">
-          <div className="flex items-center gap-2">
-            {/* Chips rápidos: UNA sola fila con scroll horizontal (no wrap) para
-                no comer alto en móvil; scrollbar oculta. El toggle queda fijo a
-                la derecha. En escritorio caben todos sin scroll. */}
-            <div className="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
-              {(["hoy", "finde"] as DateFilter[]).map((id) => {
-                const f = DATE_FILTERS.find((x) => x.id === id)!;
-                const on = dateFilter === id;
-                return (
+          <div className="space-y-2">
+            {/* FILA 1: tiempo / gratis / ubicación / más filtros + toggle de vista.
+                Scroll horizontal si no caben (móvil); scrollbar oculta. */}
+            <div className="flex items-center gap-2">
+              <div className="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
+                {(["hoy", "finde"] as DateFilter[]).map((id) => {
+                  const f = DATE_FILTERS.find((x) => x.id === id)!;
+                  const on = dateFilter === id;
+                  return (
+                    <button
+                      key={id}
+                      onClick={() => setDateFilter(on ? "todos" : id)}
+                      className="shrink-0 rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors"
+                      style={on ? { background: "var(--ag-brand)", color: "#fff" } : { background: "var(--home-card-bg)", color: "var(--home-text-muted)" }}
+                    >
+                      {t(f.labelKey)}
+                    </button>
+                  );
+                })}
+                <button
+                  onClick={() => setOnlyFree((v) => !v)}
+                  className="flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all"
+                  style={onlyFree ? { background: "var(--ag-success-bg)", color: "var(--ag-success)", border: "1px solid var(--ag-success-border)" } : { background: "var(--home-card-bg)", color: "var(--home-text-muted)" }}
+                >
+                  <Ticket size={13} /> {t("eventos.filters.free")}
+                </button>
+                <button
+                  onClick={detectLocation}
+                  className="flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all"
+                  style={{ background: "var(--home-card-bg)", color: "var(--ag-brand)" }}
+                >
+                  <Navigation size={13} /> {t("eventos.filters.nearMe")}
+                </button>
+                <button
+                  onClick={() => setMoreFilters((o) => !o)}
+                  className="flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all"
+                  style={moreFilters || activeAuds.size > 0 || showFavs ? { background: "var(--ag-brand-bg)", color: "var(--ag-brand)", border: "1px solid var(--ag-brand-border)" } : { background: "var(--home-card-bg)", color: "var(--home-text-muted)" }}
+                >
+                  <SlidersHorizontal size={13} /> {t("eventos.filters.more")}
+                  <ChevronDown size={12} className={`transition-transform ${moreFilters ? "rotate-180" : ""}`} />
+                </button>
+              </div>
+              <div className="flex shrink-0 rounded-full p-0.5" style={{ background: "var(--home-card-bg)" }}>
+                {([
+                  { id: "lista", icon: LayoutGrid, label: t("eventos.view.lista") },
+                  { id: "calendario", icon: CalendarIcon, label: t("eventos.view.calendario") },
+                ] as const).map((v) => (
                   <button
-                    key={id}
-                    onClick={() => setDateFilter(on ? "todos" : id)}
-                    className="shrink-0 rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors"
-                    style={on ? { background: "var(--ag-brand)", color: "#fff" } : { background: "var(--home-card-bg)", color: "var(--home-text-muted)" }}
+                    key={v.id}
+                    onClick={() => setView(v.id)}
+                    className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors"
+                    style={view === v.id ? { background: "var(--home-bg-soft)", color: "var(--ag-brand)" } : { color: "var(--home-text-soft)" }}
+                    aria-label={v.label}
                   >
-                    {t(f.labelKey)}
+                    <v.icon size={14} />
+                    <span className="hidden sm:inline">{v.label}</span>
                   </button>
-                );
-              })}
-              <button
-                onClick={() => setOnlyFree((v) => !v)}
-                className="flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all"
-                style={onlyFree ? { background: "var(--ag-success-bg)", color: "var(--ag-success)", border: "1px solid var(--ag-success-border)" } : { background: "var(--home-card-bg)", color: "var(--home-text-muted)" }}
-              >
-                <Ticket size={13} /> {t("eventos.filters.free")}
-              </button>
+                ))}
+              </div>
+            </div>
+
+            {/* FILA 2: categorías en su propia línea (todas visibles). */}
+            <div className="flex items-center gap-2 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
               {(["conciertos", "social", "clases", "teatro"] as Category[]).map((c) => {
                 const Cat = CATEGORIES[c];
                 const on = activeCats.has(c);
@@ -841,38 +878,6 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
                   </button>
                 );
               })}
-              <button
-                onClick={detectLocation}
-                className="flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all"
-                style={{ background: "var(--home-card-bg)", color: "var(--ag-brand)" }}
-              >
-                <Navigation size={13} /> {t("eventos.filters.nearMe")}
-              </button>
-              <button
-                onClick={() => setMoreFilters((o) => !o)}
-                className="flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all"
-                style={moreFilters || activeAuds.size > 0 || showFavs ? { background: "var(--ag-brand-bg)", color: "var(--ag-brand)", border: "1px solid var(--ag-brand-border)" } : { background: "var(--home-card-bg)", color: "var(--home-text-muted)" }}
-              >
-                <SlidersHorizontal size={13} /> {t("eventos.filters.more")}
-                <ChevronDown size={12} className={`transition-transform ${moreFilters ? "rotate-180" : ""}`} />
-              </button>
-            </div>
-            <div className="flex shrink-0 rounded-full p-0.5" style={{ background: "var(--home-card-bg)" }}>
-              {([
-                { id: "lista", icon: LayoutGrid, label: t("eventos.view.lista") },
-                { id: "calendario", icon: CalendarIcon, label: t("eventos.view.calendario") },
-              ] as const).map((v) => (
-                <button
-                  key={v.id}
-                  onClick={() => setView(v.id)}
-                  className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors"
-                  style={view === v.id ? { background: "var(--home-bg-soft)", color: "var(--ag-brand)" } : { color: "var(--home-text-soft)" }}
-                  aria-label={v.label}
-                >
-                  <v.icon size={14} />
-                  <span className="hidden sm:inline">{v.label}</span>
-                </button>
-              ))}
             </div>
           </div>
 
