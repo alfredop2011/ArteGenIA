@@ -17,6 +17,7 @@ import OrganizerTypeModal from "@/components/onboarding/OrganizerTypeModal";
 import FeedbackWidget from "@/components/feedback/FeedbackWidget";
 import WelcomeChecklist from "@/components/onboarding/WelcomeChecklist";
 import { ToastProvider } from "@/lib/toast";
+import { goToFlyerApp } from "@/lib/flyerHandoff";
 import { hasFirstVictory, onFirstVictory } from "@/lib/firstVictory";
 
 // "Modo agenda" (peligrooficial.com): NEXT_PUBLIC_APP_MODE=agenda hace que
@@ -207,7 +208,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                             {/* En modo agenda, "Crea Flyer" sale a artegenia.com
                                 (la app de flyers vive en otro dominio). */}
                             {AGENDA_ONLY ? (
-                                <a href={FLYER_APP_URL} target="_blank" rel="noopener noreferrer"
+                                <a href={FLYER_APP_URL} onClick={goToFlyerApp("/templates")} rel="noopener noreferrer"
                                     className="px-4 py-1.5 rounded-lg text-sm font-medium transition-all text-ag-muted hover:text-ag-primary">
                                     Crea Flyer ↗
                                 </a>

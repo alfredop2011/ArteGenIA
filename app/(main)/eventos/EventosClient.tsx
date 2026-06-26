@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useLocale } from "@/hooks/useLocale";
 import type { TranslationKey } from "@/lib/translations";
 import { supabase } from "@/lib/supabase";
+import { goToFlyerApp } from "@/lib/flyerHandoff";
 import AuthModal from "@/components/auth/AuthModal";
 import { type Category, type Audience, type EventItem, CATEGORY_GRAD } from "./eventData";
 import {
@@ -1147,7 +1148,7 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
               </p>
               <a
                 href="https://artegenia.com/templates"
-                target="_blank"
+                onClick={goToFlyerApp("/templates")}
                 rel="noopener noreferrer"
                 className="mt-5 inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-bold text-white shadow-lg transition hover:scale-[1.03]"
                 style={{ background: "var(--ag-brand)" }}
