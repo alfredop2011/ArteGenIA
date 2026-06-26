@@ -827,7 +827,7 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
               >
                 <Ticket size={13} /> {t("eventos.filters.free")}
               </button>
-              {(["conciertos", "teatro", "social"] as Category[]).map((c) => {
+              {(["conciertos", "social", "clases", "teatro"] as Category[]).map((c) => {
                 const Cat = CATEGORIES[c];
                 const on = activeCats.has(c);
                 return (
