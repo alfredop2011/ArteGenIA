@@ -101,10 +101,30 @@ export async function PATCH(
     return NextResponse.json({ error: "No encontrado" }, { status: 404 });
   }
 
-  // Whitelist de campos editables por tipo
+  // Normaliza handles redes (sin @, sin URL, solo chars válidos).
+  // Mismo helper que /api/collaborators POST — duplicado a propósito para
+  // no acoplar este endpoint al otro.
+  const cleanHandle = (raw: unknown): string | null => {
+    if (typeof raw !== "string") return null;
+    const trimmed = raw.trim();
+    if (!trimmed) return null;
+    const fromUrl = trimmed.match(/(?:t\.me|telegram\.me|instagram\.com)\/([^/?#]+)/i);
+    const candidate = fromUrl ? fromUrl[1] : trimmed.replace(/^@+/, "");
+    const safe = candidate.replace(/[^a-zA-Z0-9_.]/g, "").slice(0, 32);
+    return safe.length >= 3 ? safe : null;
+  };
+
+  // Whitelist de campos editables por tipo.
+  // Para `person` permitimos también corregir datos de contacto: el
+  // organizador puede haber transcrito mal el teléfono que le pasaron en
+  // persona, o el colab cambió de @handle. NO compromete consentimiento
+  // RGPD (que se firmó al subir foto, no se borra), solo corrige typo.
   const allowed: Record<string, true> = {};
   if (existing.kind === "person") {
-    allowed.role = true;
+    allowed.role             = true;
+    allowed.phone            = true;
+    allowed.telegram_handle  = true;
+    allowed.instagram_handle = true;
   } else if (existing.kind === "brand") {
     allowed.artist_name = true;
     allowed.role        = true;
@@ -113,7 +133,13 @@ export async function PATCH(
 
   const updates: Record<string, unknown> = {};
   for (const key of Object.keys(body)) {
-    if (allowed[key]) updates[key] = body[key];
+    if (!allowed[key]) continue;
+    // Handles necesitan normalización; phone aceptamos trim simple
+    if (key === "telegram_handle" || key === "instagram_handle") {
+      updates[key] = cleanHandle(body[key]);
+    } else {
+      updates[key] = body[key];
+    }
   }
 
   if (Object.keys(updates).length === 0) {
@@ -123,8 +149,9 @@ export async function PATCH(
     );
   }
 
-  // Trim de strings
+  // Trim de strings (saltamos handles que ya están normalizados arriba)
   for (const k of Object.keys(updates)) {
+    if (k === "telegram_handle" || k === "instagram_handle") continue;
     if (typeof updates[k] === "string") {
       updates[k] = (updates[k] as string).trim() || null;
     }

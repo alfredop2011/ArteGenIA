@@ -24,7 +24,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import * as fabric from "fabric";
 import {
     Share2, X, MessageCircle, Send, Link2, Loader2, Check,
-    Calendar, ExternalLink, AlertCircle, Users, Clock,
+    Calendar, ExternalLink, AlertCircle, Users, Clock, Pencil,
 } from "lucide-react";
 
 // peligroficial.com es el mismo proyecto que ArteGenIA (multi-domain por
@@ -113,6 +113,64 @@ export default function PublishModal({
     const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
     const [collabsLoading, setCollabsLoading] = useState(false);
     const [collabCopiedId, setCollabCopiedId] = useState<string | null>(null);
+
+    // Edición inline de contactos del colaborador (corregir typos)
+    const [editingCollab, setEditingCollab] = useState<Collaborator | null>(null);
+    const [editPhone, setEditPhone] = useState("");
+    const [editTelegram, setEditTelegram] = useState("");
+    const [editInstagram, setEditInstagram] = useState("");
+    const [editSaving, setEditSaving] = useState(false);
+    const [editError, setEditError] = useState<string | null>(null);
+
+    const openEditCollab = useCallback((c: Collaborator) => {
+        setEditingCollab(c);
+        setEditPhone(c.phone ?? "");
+        setEditTelegram(c.telegram_handle ?? "");
+        setEditInstagram(c.instagram_handle ?? "");
+        setEditError(null);
+    }, []);
+
+    const closeEditCollab = useCallback(() => {
+        setEditingCollab(null);
+        setEditError(null);
+    }, []);
+
+    const saveEditCollab = useCallback(async () => {
+        if (!editingCollab) return;
+        setEditSaving(true);
+        setEditError(null);
+        try {
+            const res = await fetch(`/api/collaborators/${editingCollab.id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    phone: editPhone.trim() || null,
+                    telegram_handle: editTelegram.trim() || null,
+                    instagram_handle: editInstagram.trim() || null,
+                }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error ?? "No se pudo guardar");
+            // Actualizamos la lista local con lo que enviamos. El backend
+            // normaliza los handles (quita '@', extrae URL) — para mostrar
+            // exactamente lo que quedó guardado, re-fetch tras esto.
+            setCollaborators(prev => prev.map(c =>
+                c.id === editingCollab.id
+                    ? {
+                        ...c,
+                        phone: editPhone.trim() || null,
+                        telegram_handle: editTelegram.trim().replace(/^@+/, "") || null,
+                        instagram_handle: editInstagram.trim().replace(/^@+/, "") || null,
+                    }
+                    : c,
+            ));
+            closeEditCollab();
+        } catch (e) {
+            setEditError(e instanceof Error ? e.message : "Error desconocido");
+        } finally {
+            setEditSaving(false);
+        }
+    }, [editingCollab, editPhone, editTelegram, editInstagram, closeEditCollab]);
 
     // Cargar colaboradores del proyecto en paralelo al upload del flyer.
     // Si no hay projectId (flyer no guardado), omitimos.
@@ -610,6 +668,16 @@ ${publicUrl ?? ""}
                                                                         <Link2 size={12} strokeWidth={2.4} />
                                                                     </button>
                                                                 )}
+                                                                {/* Editar contactos (corregir typos) — solo para personas */}
+                                                                {c.kind === "person" && (
+                                                                    <button
+                                                                        onClick={() => openEditCollab(c)}
+                                                                        title="Editar teléfono / redes"
+                                                                        className="w-8 h-8 rounded-full bg-white/[0.04] hover:bg-white/[0.10] flex items-center justify-center text-gray-400 hover:text-white transition active:scale-95 ml-0.5"
+                                                                    >
+                                                                        <Pencil size={11} strokeWidth={2.4} />
+                                                                    </button>
+                                                                )}
                                                             </div>
 
                                                             {/* Toast inline cuando copiamos al portapapeles (IG / sin redes) */}
@@ -680,6 +748,114 @@ ${publicUrl ?? ""}
                         >
                             Cerrar
                         </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Mini-modal: editar datos de contacto de un colaborador.
+                El organizador puede corregir typos (teléfono mal escrito,
+                handle de IG con typo) sin tener que reinvitar al colab.
+                Solo afecta a personas (las marcas no tienen estos campos). */}
+            {editingCollab && (
+                <div
+                    className="fixed inset-0 z-[210] bg-black/80 backdrop-blur-md flex items-end sm:items-center justify-center"
+                    onClick={closeEditCollab}
+                >
+                    <div
+                        className="w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 flex flex-col gap-3 safe-area-bottom"
+                        style={{ background: "#1c1c2a", border: "1px solid rgba(255,255,255,0.10)" }}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="flex items-center justify-between">
+                            <h3 className="text-base font-black text-white flex items-center gap-2">
+                                <Pencil size={14} className="text-purple-300" />
+                                Editar contacto de {editingCollab.artist_name}
+                            </h3>
+                            <button
+                                onClick={closeEditCollab}
+                                className="w-8 h-8 rounded-full bg-white/[0.06] text-gray-300 hover:text-white flex items-center justify-center active:scale-95"
+                                aria-label="Cerrar"
+                            >
+                                <X size={14} strokeWidth={2.4} />
+                            </button>
+                        </div>
+
+                        <p className="text-[11px] text-gray-400 leading-relaxed">
+                            Corrige si te diste cuenta de un error o si {editingCollab.artist_name.split(/\s+/)[0]} te ha pasado nuevos datos.
+                            Tu cambio queda registrado.
+                        </p>
+
+                        <label className="block">
+                            <span className="text-[11px] font-semibold text-gray-300 mb-1.5 block flex items-center gap-1.5">
+                                <MessageCircle size={11} className="text-emerald-400" /> WhatsApp / Teléfono
+                            </span>
+                            <input
+                                type="tel"
+                                value={editPhone}
+                                onChange={(e) => setEditPhone(e.target.value)}
+                                placeholder="+34 666 12 34 56"
+                                className="w-full px-3 py-2.5 rounded-xl text-sm bg-black/30 border border-white/10 text-white placeholder:text-gray-600 focus:border-emerald-500/40 outline-none transition"
+                            />
+                        </label>
+
+                        <label className="block">
+                            <span className="text-[11px] font-semibold text-gray-300 mb-1.5 block flex items-center gap-1.5">
+                                <Send size={11} className="text-sky-400" /> Telegram
+                            </span>
+                            <div className="relative">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm pointer-events-none">@</span>
+                                <input
+                                    type="text"
+                                    value={editTelegram}
+                                    onChange={(e) => setEditTelegram(e.target.value)}
+                                    placeholder="tu_usuario"
+                                    className="w-full pl-7 pr-3 py-2.5 rounded-xl text-sm bg-black/30 border border-white/10 text-white placeholder:text-gray-600 focus:border-sky-500/40 outline-none transition"
+                                />
+                            </div>
+                        </label>
+
+                        <label className="block">
+                            <span className="text-[11px] font-semibold text-gray-300 mb-1.5 block flex items-center gap-1.5">
+                                <InstagramIcon /> Instagram
+                            </span>
+                            <div className="relative">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm pointer-events-none">@</span>
+                                <input
+                                    type="text"
+                                    value={editInstagram}
+                                    onChange={(e) => setEditInstagram(e.target.value)}
+                                    placeholder="tu_usuario"
+                                    className="w-full pl-7 pr-3 py-2.5 rounded-xl text-sm bg-black/30 border border-white/10 text-white placeholder:text-gray-600 focus:border-pink-500/40 outline-none transition"
+                                />
+                            </div>
+                        </label>
+
+                        {editError && (
+                            <div className="px-3 py-2 rounded-lg text-[11px] bg-red-500/10 border border-red-500/30 text-red-400">
+                                {editError}
+                            </div>
+                        )}
+
+                        <div className="flex items-center gap-2 mt-1">
+                            <button
+                                onClick={closeEditCollab}
+                                disabled={editSaving}
+                                className="flex-1 py-2.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.10] text-gray-300 text-sm font-semibold transition active:scale-95"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={() => void saveEditCollab()}
+                                disabled={editSaving}
+                                className="flex-1 py-2.5 rounded-xl text-white text-sm font-black flex items-center justify-center gap-2 active:scale-95 disabled:opacity-60 transition"
+                                style={{ background: "linear-gradient(135deg,#a855f7,#ec4899)" }}
+                            >
+                                {editSaving
+                                    ? <Loader2 size={14} className="animate-spin" />
+                                    : <Check size={14} />}
+                                Guardar
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
