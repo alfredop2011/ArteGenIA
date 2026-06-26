@@ -60,6 +60,20 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     // La cabecera mantiene logo + idioma + tema + login (cuenta = organizador).
     const isAgendaRoute = AGENDA_ONLY || pathname.startsWith("/eventos") || pathname.startsWith("/organizador") || pathname.startsWith("/subir");
 
+    // Home de la AGENDA (/eventos, o "/" en peligrooficial): la cabecera se hace
+    // TRANSPARENTE arriba del todo para que el skyline del hero se vea DETRÁS del
+    // menú; al hacer scroll vuelve sólida. El hero es siempre oscuro, así que
+    // arriba forzamos texto blanco en la cabecera.
+    const isAgendaHome = AGENDA_ONLY ? (pathname === "/" || pathname.startsWith("/eventos")) : pathname.startsWith("/eventos");
+    const [scrolled, setScrolled] = useState(false);
+    useEffect(() => {
+        const onScroll = () => setScrolled(window.scrollY > 40);
+        onScroll();
+        window.addEventListener("scroll", onScroll, { passive: true });
+        return () => window.removeEventListener("scroll", onScroll);
+    }, []);
+    const heroHeader = isAgendaHome && !scrolled;
+
     // Lee localStorage al montar + escucha el evento custom para
     // re-renderizar cuando el user completa su primera descarga.
     useEffect(() => {
@@ -148,9 +162,11 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             {!isTechnicalRoute && <WelcomeChecklist />}
 
             {/* Header */}
-            <header className="sticky top-0 z-50 backdrop-blur-md border-b"
-                    style={{ background: "var(--header-bg)", borderColor: "var(--header-border)" }}>
-                <div className="flex items-center justify-between px-4 sm:px-6 h-14">
+            <header className={`sticky top-0 z-50 transition-colors duration-300 ${heroHeader ? "" : "backdrop-blur-md border-b"}`}
+                    style={heroHeader
+                        ? { background: "transparent", borderColor: "transparent" }
+                        : { background: "var(--header-bg)", borderColor: "var(--header-border)" }}>
+                <div className={`flex items-center justify-between px-4 sm:px-6 h-14 ${heroHeader ? "[&_a]:!text-white [&_button]:!text-white" : ""}`}>
 
                     {/* Logo — isotipo real (PNG generado en public/brand/exports/) */}
                     <Link href="/" className="flex items-center gap-2 shrink-0">

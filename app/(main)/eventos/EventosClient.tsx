@@ -591,7 +591,7 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
           sección: así el menú de los desplegables país/ciudad no se recorta ni
           queda detrás de los chips. Las capas de fondo se recortan en su propio
           contenedor interno. */}
-      <section className="relative z-20">
+      <section className="relative z-20 -mt-14">
         <div className="absolute inset-0 -z-10 overflow-hidden">
           {/* base oscura */}
           <div className="absolute inset-0" style={{ background: "linear-gradient(180deg,#0b0b13 0%,#120a1f 55%,#0b0b13 100%)" }} />
@@ -624,7 +624,7 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
           <div className="absolute -left-24 top-0 h-72 w-72 rounded-full opacity-40 blur-3xl" style={{ background: "radial-gradient(circle,#7E2BFF,transparent 70%)" }} />
           <div className="absolute right-0 top-10 h-72 w-72 rounded-full opacity-30 blur-3xl" style={{ background: "radial-gradient(circle,#FF1EA8,transparent 70%)" }} />
         </div>
-        <div className="mx-auto max-w-7xl px-4 pt-4 pb-3 sm:pt-6 sm:pb-5">
+        <div className="mx-auto max-w-7xl px-4 pt-[72px] pb-3 sm:pt-[84px] sm:pb-5">
           {/* Acciones sobre el skyline (Compartir + Sube tu evento). Sin rótulo
               "Agenda": el skyline llega hasta arriba, detrás de estos botones. */}
           <div className="mb-3 flex items-center justify-end gap-2 sm:mb-4">
@@ -788,7 +788,7 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
       </section>
 
       {/* ── BARRA DE FILTROS (sticky) ───────────────────────────── */}
-      <div className="sticky top-0 z-10 backdrop-blur" style={{ background: "var(--header-bg)", borderBottom: "1px solid var(--header-border)" }}>
+      <div className="sticky top-14 z-10 backdrop-blur" style={{ background: "var(--header-bg)", borderBottom: "1px solid var(--header-border)" }}>
         <div className="mx-auto max-w-7xl px-4 py-3">
           <div className="space-y-2">
             {/* FILA 1: tiempo / gratis / ubicación / más filtros + toggle de vista.
