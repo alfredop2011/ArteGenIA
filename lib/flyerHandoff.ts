@@ -1,24 +1,24 @@
 import { supabase } from "@/lib/supabase";
 
 const ARTEGENIA = "https://artegenia.com";
+const PELIGRO = "https://peligroficial.com";
 
 /**
- * SSO seamless agenda (peligroficial.com) → app de flyers (artegenia.com).
+ * SSO seamless entre los dos dominios (artegenia ↔ peligroficial).
  *
- * Las cookies de sesión son por dominio: estar logueado en peligroficial NO
- * te loguea en artegenia (aunque sea la misma cuenta Supabase). Para que el
- * usuario llegue a artegenia YA logueado, pasamos la sesión por handoff:
+ * Las cookies de sesión son por dominio: estar logueado en uno NO te loguea en
+ * el otro (aunque sea la misma cuenta Supabase). Para llegar logueado al otro
+ * dominio, pasamos la sesión por handoff:
+ *   - `${target}/auth/handoff#at=<access>&rt=<refresh>&next=…`
+ *   - Los tokens van en el FRAGMENT (#): NO se envían al servidor, ni a logs,
+ *     ni al Referer. La página /auth/handoff hace setSession y limpia la URL.
  *
- *  - Construimos `artegenia.com/auth/handoff#at=<access>&rt=<refresh>&next=…`.
- *  - Los tokens van en el FRAGMENT (#), que NO se envía al servidor ni a logs
- *    ni al Referer. La página /auth/handoff hace setSession y limpia la URL.
- *
- * Si ya estamos en artegenia (misma sesión) → enlace interno normal.
- * Si no hay sesión → vamos a artegenia normal (allí harán login).
+ * Si ya estamos en el dominio destino → enlace interno. Sin sesión → enlace
+ * normal (allí harán login si hace falta).
  */
-export async function flyerAppHref(next = "/templates"): Promise<string> {
-  // En artegenia ya compartimos cookies → enlace interno directo.
-  if (typeof window !== "undefined" && window.location.hostname.includes("artegenia")) {
+async function crossHref(targetBase: string, hostKey: string, next: string): Promise<string> {
+  // En el propio dominio destino compartimos cookies → enlace interno directo.
+  if (typeof window !== "undefined" && window.location.hostname.includes(hostKey)) {
     return next;
   }
   try {
@@ -26,19 +26,34 @@ export async function flyerAppHref(next = "/templates"): Promise<string> {
     const s = data.session;
     if (s?.access_token && s?.refresh_token) {
       const frag = new URLSearchParams({ at: s.access_token, rt: s.refresh_token, next });
-      return `${ARTEGENIA}/auth/handoff#${frag.toString()}`;
+      return `${targetBase}/auth/handoff#${frag.toString()}`;
     }
   } catch {
     /* sin sesión o error → enlace normal */
   }
-  return `${ARTEGENIA}${next.startsWith("/") ? next : "/templates"}`;
+  return `${targetBase}${next.startsWith("/") ? next : "/"}`;
 }
 
-/** onClick listo para usar en los enlaces "Crea Flyer". Hace el handoff y navega. */
+/** URL a la app de flyers (artegenia) llevando la sesión si la hay. */
+export function flyerAppHref(next = "/templates") {
+  return crossHref(ARTEGENIA, "artegenia", next);
+}
+/** URL a la agenda (peligroficial) llevando la sesión si la hay. */
+export function agendaHref(next = "/") {
+  return crossHref(PELIGRO, "peligro", next);
+}
+
+/** onClick listo: navega a la app de flyers (mismo tab) con handoff. */
 export function goToFlyerApp(next = "/templates") {
   return async (e?: { preventDefault?: () => void }) => {
     e?.preventDefault?.();
-    const url = await flyerAppHref(next);
-    window.location.href = url;
+    window.location.href = await flyerAppHref(next);
+  };
+}
+/** onClick listo: navega a la agenda (peligroficial) con handoff. */
+export function goToAgenda(next = "/") {
+  return async (e?: { preventDefault?: () => void }) => {
+    e?.preventDefault?.();
+    window.location.href = await agendaHref(next);
   };
 }

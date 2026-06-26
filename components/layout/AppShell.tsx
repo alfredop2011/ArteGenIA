@@ -17,7 +17,7 @@ import OrganizerTypeModal from "@/components/onboarding/OrganizerTypeModal";
 import FeedbackWidget from "@/components/feedback/FeedbackWidget";
 import WelcomeChecklist from "@/components/onboarding/WelcomeChecklist";
 import { ToastProvider } from "@/lib/toast";
-import { goToFlyerApp } from "@/lib/flyerHandoff";
+import { goToFlyerApp, goToAgenda } from "@/lib/flyerHandoff";
 import { hasFirstVictory, onFirstVictory } from "@/lib/firstVictory";
 
 // "Modo agenda" (peligrooficial.com): NEXT_PUBLIC_APP_MODE=agenda hace que
@@ -228,13 +228,22 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                         <nav className="hidden md:flex items-center gap-1">
                             {navLinks.map((link) => {
                                 const isActive = pathname === link.href;
+                                const cls = `px-4 py-1.5 rounded-lg text-sm font-medium transition-all flex items-center gap-1.5 ${
+                                    isActive
+                                        ? "text-ag-active border-b-2 border-ag-active rounded-none"
+                                        : "text-ag-muted hover:text-ag-primary"
+                                }`;
+                                // "Agenda" lleva a peligroficial (la marca de la agenda),
+                                // con SSO seamless si hay sesión iniciada.
+                                if (link.href === "/eventos") {
+                                    return (
+                                        <a key={link.href} href="https://peligroficial.com/" onClick={goToAgenda("/")} rel="noopener noreferrer" className={cls}>
+                                            {link.label}
+                                        </a>
+                                    );
+                                }
                                 return (
-                                    <Link key={link.href} href={link.href}
-                                        className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all flex items-center gap-1.5 ${
-                                            isActive
-                                                ? "text-ag-active border-b-2 border-ag-active rounded-none"
-                                                : "text-ag-muted hover:text-ag-primary"
-                                        }`}>
+                                    <Link key={link.href} href={link.href} className={cls}>
                                         {link.label}
                                         {link.badge && (
                                             <span className="text-[9px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded-full bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/40 text-purple-300">
