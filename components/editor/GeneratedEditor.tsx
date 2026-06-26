@@ -4970,6 +4970,7 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
       {publishOpen && (
         <PublishModal
           flyerTitle={docTitle || template?.title || "Mi flyer"}
+          projectId={currentProjectId}
           exportPng={async () => {
             const canvas = fabricRef.current;
             return exportCanvasToPng(canvas);

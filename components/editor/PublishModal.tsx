@@ -24,7 +24,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import * as fabric from "fabric";
 import {
     Share2, X, MessageCircle, Send, Link2, Loader2, Check,
-    Calendar, ExternalLink, AlertCircle,
+    Calendar, ExternalLink, AlertCircle, Users, Clock,
 } from "lucide-react";
 
 // peligroficial.com es el mismo proyecto que ArteGenIA (multi-domain por
@@ -47,6 +47,11 @@ type Props = {
     exportPng: ExportFn;
     /** Título visible del flyer (para mostrar en preview y URL share). */
     flyerTitle: string;
+    /** ID del proyecto. Si está presente, cargamos los colaboradores
+     *  asociados al flyer (vía /api/projects/[id]/collaborators) para
+     *  mostrar la sección "Enviar a colaboradores". Si es null, omitimos
+     *  esa sección — útil para flyers no guardados aún. */
+    projectId?: string | null;
     /** Opcional — metadata del evento para pre-rellenar Peligro Oficial.
      *  Si el flyer no tiene fecha/ciudad detectada, se pasan vacíos y el
      *  user los rellena en peligroficial.com directamente. */
@@ -60,6 +65,18 @@ type Props = {
     onRequireAuth: () => void;
     /** Callback al cerrar el modal. */
     onClose: () => void;
+};
+
+type Collaborator = {
+    id: string;
+    artist_name: string;
+    kind: "person" | "brand";
+    photo_url: string | null;
+    phone: string | null;
+    telegram_handle: string | null;
+    instagram_handle: string | null;
+    uploaded: boolean;
+    layer_id: string;
 };
 
 type Stage = "loading" | "ready" | "error";
@@ -82,7 +99,7 @@ const FacebookIcon = () => (
 );
 
 export default function PublishModal({
-    exportPng, flyerTitle, eventMetadata, onRequireAuth, onClose,
+    exportPng, flyerTitle, projectId, eventMetadata, onRequireAuth, onClose,
 }: Props) {
     const [stage, setStage] = useState<Stage>("loading");
     const [error, setError] = useState<string | null>(null);
@@ -91,6 +108,34 @@ export default function PublishModal({
     const [copied, setCopied] = useState(false);
     const [igInstrOpen, setIgInstrOpen] = useState(false);
     const hasUploadedRef = useRef(false);
+
+    // Colaboradores del flyer (lazy load — solo si projectId presente).
+    const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
+    const [collabsLoading, setCollabsLoading] = useState(false);
+    const [collabCopiedId, setCollabCopiedId] = useState<string | null>(null);
+
+    // Cargar colaboradores del proyecto en paralelo al upload del flyer.
+    // Si no hay projectId (flyer no guardado), omitimos.
+    useEffect(() => {
+        if (!projectId) return;
+        let cancelled = false;
+        setCollabsLoading(true);
+        (async () => {
+            try {
+                const res = await fetch(`/api/projects/${projectId}/collaborators`);
+                if (!res.ok) return; // silent — la sección no aparecerá
+                const data = await res.json() as { collaborators?: Collaborator[] };
+                if (!cancelled && Array.isArray(data.collaborators)) {
+                    setCollaborators(data.collaborators);
+                }
+            } catch (e) {
+                console.warn("[publish] collaborators fetch failed", e);
+            } finally {
+                if (!cancelled) setCollabsLoading(false);
+            }
+        })();
+        return () => { cancelled = true; };
+    }, [projectId]);
 
     // Al montar: exportar PNG → subir a R2 → recibir publicUrl
     useEffect(() => {
@@ -177,6 +222,65 @@ export default function PublishModal({
 
     const [peligroLoading, setPeligroLoading] = useState(false);
     const [peligroCopied, setPeligroCopied] = useState(false);
+
+    // Mensaje preset para cada colaborador. Sale por wa.me/t.me/clipboard.
+    // Personalizado con el nombre del colab + título del evento + CTA etiquetar.
+    const buildCollabMessage = useCallback((collabName: string): string => {
+        const cleanName = collabName.split(/\s+/)[0] || collabName; // primer nombre
+        return `Hola ${cleanName} 👋
+
+Ya está listo el flyer del evento: ${flyerTitle} 🎨
+
+${publicUrl ?? ""}
+
+¿Lo compartes con tu audiencia? Cuando lo subas a tus historias o feed, etiquétanos 🙌  @artegenia`;
+    }, [flyerTitle, publicUrl]);
+
+    /** Envía al colaborador por WhatsApp (deep link wa.me). Requiere phone. */
+    const sendToCollabWhatsapp = useCallback((collab: Collaborator) => {
+        if (!collab.phone || !publicUrl) return;
+        // Normaliza phone: quita '+', espacios, guiones. wa.me espera solo dígitos.
+        const cleanPhone = collab.phone.replace(/[^\d]/g, "");
+        const text = buildCollabMessage(collab.artist_name);
+        const url = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(text)}`;
+        window.open(url, "_blank", "noopener,noreferrer");
+    }, [publicUrl, buildCollabMessage]);
+
+    /** Envía al colaborador por Telegram. Telegram acepta deep link al chat
+     *  con texto preset solo si el handle es accesible públicamente. */
+    const sendToCollabTelegram = useCallback((collab: Collaborator) => {
+        if (!collab.telegram_handle || !publicUrl) return;
+        const text = buildCollabMessage(collab.artist_name);
+        // tg://resolve?domain=X abre la app si está instalada; t.me/X fallback web
+        const url = `https://t.me/${collab.telegram_handle}?text=${encodeURIComponent(text)}`;
+        window.open(url, "_blank", "noopener,noreferrer");
+    }, [publicUrl, buildCollabMessage]);
+
+    /** Instagram NO permite DM por URL desde web/móvil. Lo único realista:
+     *  copiar el mensaje al portapapeles + abrir el perfil. El user manda
+     *  DM manual desde la app de Instagram. */
+    const sendToCollabInstagram = useCallback(async (collab: Collaborator) => {
+        if (!collab.instagram_handle || !publicUrl) return;
+        const text = buildCollabMessage(collab.artist_name);
+        try {
+            await navigator.clipboard.writeText(text);
+            setCollabCopiedId(collab.id);
+            setTimeout(() => setCollabCopiedId(null), 3000);
+        } catch { /* silent */ }
+        // Abre el perfil. El user hace "Mensaje" desde IG y pega.
+        window.open(`https://instagram.com/${collab.instagram_handle}`, "_blank", "noopener,noreferrer");
+    }, [publicUrl, buildCollabMessage]);
+
+    /** Para colabs sin canal de contacto, copiar mensaje al portapapeles. */
+    const copyCollabMessage = useCallback(async (collab: Collaborator) => {
+        if (!publicUrl) return;
+        const text = buildCollabMessage(collab.artist_name);
+        try {
+            await navigator.clipboard.writeText(text);
+            setCollabCopiedId(collab.id);
+            setTimeout(() => setCollabCopiedId(null), 3000);
+        } catch { /* silent */ }
+    }, [publicUrl, buildCollabMessage]);
 
     const publishToPeligro = useCallback(async () => {
         if (!publicUrl) return;
@@ -393,6 +497,139 @@ export default function PublishModal({
                                     </p>
                                 )}
                             </div>
+
+                            {/* Enviar a colaboradores del flyer (si hay) */}
+                            {(collabsLoading || collaborators.length > 0) && (
+                                <div className="pt-1">
+                                    <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2.5 flex items-center gap-1.5">
+                                        <Users size={11} />
+                                        Enviar a colaboradores del flyer
+                                    </div>
+                                    {collabsLoading ? (
+                                        <div className="flex items-center justify-center py-4">
+                                            <Loader2 size={18} className="text-purple-400 animate-spin" />
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <div className="space-y-2 max-h-[300px] overflow-y-auto -mr-1 pr-1">
+                                                {collaborators.map((c) => {
+                                                    const hasAny = !!(c.phone || c.telegram_handle || c.instagram_handle);
+                                                    const justCopied = collabCopiedId === c.id;
+                                                    return (
+                                                        <div
+                                                            key={c.id}
+                                                            className="flex items-center gap-3 p-2 rounded-xl"
+                                                            style={{
+                                                                background: "rgba(255,255,255,0.03)",
+                                                                border: "1px solid rgba(255,255,255,0.06)",
+                                                            }}
+                                                        >
+                                                            {/* Avatar */}
+                                                            <div className="relative shrink-0">
+                                                                {c.photo_url ? (
+                                                                    // eslint-disable-next-line @next/next/no-img-element
+                                                                    <img
+                                                                        src={c.photo_url}
+                                                                        alt={c.artist_name}
+                                                                        className="w-10 h-10 rounded-full object-cover border border-white/10"
+                                                                    />
+                                                                ) : (
+                                                                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white text-xs font-black">
+                                                                        {c.artist_name[0]?.toUpperCase() ?? "?"}
+                                                                    </div>
+                                                                )}
+                                                                {/* Badge status (esquina inferior derecha) */}
+                                                                <div
+                                                                    className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full flex items-center justify-center border-2"
+                                                                    style={{
+                                                                        background: c.uploaded ? "#10b981" : "#f59e0b",
+                                                                        borderColor: "#13131f",
+                                                                    }}
+                                                                    title={c.uploaded ? "Foto recibida" : "Pendiente de subir foto"}
+                                                                >
+                                                                    {c.uploaded
+                                                                        ? <Check size={9} strokeWidth={3} className="text-white" />
+                                                                        : <Clock size={9} strokeWidth={2.5} className="text-white" />}
+                                                                </div>
+                                                            </div>
+
+                                                            {/* Info */}
+                                                            <div className="flex-1 min-w-0">
+                                                                <div className="text-sm font-bold text-white truncate">
+                                                                    {c.artist_name}
+                                                                </div>
+                                                                {!hasAny ? (
+                                                                    <div className="text-[10px] text-gray-500 truncate">Sin redes guardadas</div>
+                                                                ) : (
+                                                                    <div className="text-[10px] text-gray-500 truncate">
+                                                                        {[
+                                                                            c.phone && "WhatsApp",
+                                                                            c.telegram_handle && "Telegram",
+                                                                            c.instagram_handle && "Instagram",
+                                                                        ].filter(Boolean).join(" · ")}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+
+                                                            {/* Botones por canal disponible */}
+                                                            <div className="flex items-center gap-1 shrink-0">
+                                                                {c.phone && (
+                                                                    <button
+                                                                        onClick={() => sendToCollabWhatsapp(c)}
+                                                                        title="Enviar por WhatsApp"
+                                                                        className="w-8 h-8 rounded-full bg-emerald-500 hover:bg-emerald-400 flex items-center justify-center text-white transition active:scale-95"
+                                                                    >
+                                                                        <MessageCircle size={14} strokeWidth={2.4} />
+                                                                    </button>
+                                                                )}
+                                                                {c.telegram_handle && (
+                                                                    <button
+                                                                        onClick={() => sendToCollabTelegram(c)}
+                                                                        title="Enviar por Telegram"
+                                                                        className="w-8 h-8 rounded-full bg-sky-500 hover:bg-sky-400 flex items-center justify-center text-white transition active:scale-95"
+                                                                    >
+                                                                        <Send size={13} strokeWidth={2.4} />
+                                                                    </button>
+                                                                )}
+                                                                {c.instagram_handle && (
+                                                                    <button
+                                                                        onClick={() => void sendToCollabInstagram(c)}
+                                                                        title="Abrir Instagram (mensaje copiado al portapapeles)"
+                                                                        className="w-8 h-8 rounded-full flex items-center justify-center text-white transition active:scale-95"
+                                                                        style={{ background: "linear-gradient(135deg,#f472b6,#fb923c)" }}
+                                                                    >
+                                                                        <InstagramIcon />
+                                                                    </button>
+                                                                )}
+                                                                {!hasAny && (
+                                                                    <button
+                                                                        onClick={() => void copyCollabMessage(c)}
+                                                                        title="Copiar mensaje (sin redes guardadas)"
+                                                                        className="w-8 h-8 rounded-full bg-white/[0.06] hover:bg-white/[0.10] flex items-center justify-center text-gray-300 transition active:scale-95"
+                                                                    >
+                                                                        <Link2 size={12} strokeWidth={2.4} />
+                                                                    </button>
+                                                                )}
+                                                            </div>
+
+                                                            {/* Toast inline cuando copiamos al portapapeles (IG / sin redes) */}
+                                                            {justCopied && (
+                                                                <div className="absolute -mt-12 ml-12 px-2 py-1 rounded-md text-[10px] font-bold text-white pointer-events-none"
+                                                                    style={{ background: "#10b981" }}>
+                                                                    Mensaje copiado ✓
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                            <p className="text-[10px] text-gray-500 leading-relaxed mt-2">
+                                                Cada botón abre tu WhatsApp/Telegram/Instagram con el mensaje preset y el link del flyer ya escrito. Pídeles que lo compartan y os etiqueten.
+                                            </p>
+                                        </>
+                                    )}
+                                </div>
+                            )}
 
                             <p className="text-[10px] text-gray-600 leading-snug text-center pt-2">
                                 Tu flyer se publica en una URL pública con preview optimizado para redes.

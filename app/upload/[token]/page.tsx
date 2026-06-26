@@ -23,6 +23,8 @@ export default function CollaboratorSignupPage({
   const [name, setName] = useState("");
   const [role, setRole] = useState("");
   const [phone, setPhone] = useState("");
+  const [telegram, setTelegram] = useState("");
+  const [instagram, setInstagram] = useState("");
   const [photo, setPhoto] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [consent, setConsent] = useState(false);
@@ -77,6 +79,7 @@ export default function CollaboratorSignupPage({
 
   const resetFormFields = () => {
     setName(""); setRole(""); setPhone("");
+    setTelegram(""); setInstagram("");
     setPhoto(null); setPhotoPreview(null);
     setConsent(false); setError(null);
   };
@@ -111,6 +114,11 @@ export default function CollaboratorSignupPage({
       if (kind === "person") {
         if (role.trim()) fd.append("role", role.trim());
         if (phone.trim()) fd.append("phone", phone.trim());
+        // Handles redes sociales — opcionales. El backend los normaliza
+        // (quita '@', limpia URLs pegadas). Si el user pega vacío, no se
+        // manda el campo y queda NULL en DB.
+        if (telegram.trim()) fd.append("telegram_handle", telegram.trim());
+        if (instagram.trim()) fd.append("instagram_handle", instagram.trim());
         fd.append("consent_accepted", "true");
         fd.append("consent_text", CONSENT_TEXT);
       }
@@ -359,6 +367,44 @@ export default function CollaboratorSignupPage({
                   className="w-full bg-white/[0.04] border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 outline-none focus:border-purple-500/40 transition-colors"
                 />
               </div>
+
+              {/* Handles redes sociales — ayudan al organizador a avisarte
+                  cuando publique el flyer para que lo compartas y os etiquetéis. */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-300 mb-2">
+                    Telegram <span className="text-gray-600 font-normal">(opcional)</span>
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm pointer-events-none">@</span>
+                    <input
+                      type="text"
+                      value={telegram}
+                      onChange={e => setTelegram(e.target.value)}
+                      placeholder="tu_usuario"
+                      className="w-full bg-white/[0.04] border border-white/10 rounded-xl pl-7 pr-4 py-3 text-sm text-white placeholder-gray-600 outline-none focus:border-sky-500/40 transition-colors"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-300 mb-2">
+                    Instagram <span className="text-gray-600 font-normal">(opcional)</span>
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm pointer-events-none">@</span>
+                    <input
+                      type="text"
+                      value={instagram}
+                      onChange={e => setInstagram(e.target.value)}
+                      placeholder="tu_usuario"
+                      className="w-full bg-white/[0.04] border border-white/10 rounded-xl pl-7 pr-4 py-3 text-sm text-white placeholder-gray-600 outline-none focus:border-pink-500/40 transition-colors"
+                    />
+                  </div>
+                </div>
+              </div>
+              <p className="text-[11px] text-gray-500 leading-relaxed -mt-2">
+                Rellena tus redes para que el organizador pueda avisarte cuando publique el flyer y os etiquetéis al compartir.
+              </p>
 
               <label className="flex gap-3 items-start cursor-pointer p-3 rounded-xl bg-white/[0.02] border border-white/[0.06] hover:border-purple-500/30 transition-colors">
                 <input
