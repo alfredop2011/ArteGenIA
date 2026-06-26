@@ -369,20 +369,41 @@ ${imageUrl ?? ""}
         window.open(url, "_blank", "noopener,noreferrer");
     }, [imageUrl, buildCollabMessage]);
 
-    /** Instagram NO permite DM por URL desde web/móvil. Lo único realista:
-     *  copiar el mensaje al portapapeles + abrir el perfil. El user manda
-     *  DM manual desde la app de Instagram. */
+    // Estado para el sub-modal de Instagram (necesario porque IG no permite
+    // pre-rellenar el chat por URL — hay que enseñar al user qué hacer).
+    const [igCollabModal, setIgCollabModal] = useState<Collaborator | null>(null);
+    const [igCollabCopied, setIgCollabCopied] = useState(false);
+
+    /** Instagram NO permite DM por URL desde web/móvil. Abrimos un sub-modal
+     *  con instrucciones claras: copiamos el mensaje, abrimos su perfil,
+     *  el user pega en el DM manualmente. */
     const sendToCollabInstagram = useCallback(async (collab: Collaborator) => {
         if (!collab.instagram_handle || !imageUrl) return;
         const text = buildCollabMessage(collab.artist_name);
+        // Copia inmediata al portapapeles para que el user solo tenga que
+        // pegar en el DM cuando llegue.
         try {
             await navigator.clipboard.writeText(text);
-            setCollabCopiedId(collab.id);
-            setTimeout(() => setCollabCopiedId(null), 3000);
-        } catch { /* silent */ }
-        // Abre el perfil. El user hace "Mensaje" desde IG y pega.
-        window.open(`https://instagram.com/${collab.instagram_handle}`, "_blank", "noopener,noreferrer");
+            setIgCollabCopied(true);
+        } catch {
+            setIgCollabCopied(false);
+        }
+        setIgCollabModal(collab);
     }, [imageUrl, buildCollabMessage]);
+
+    /** Tras leer las instrucciones del sub-modal, abre Instagram. */
+    const openInstagramForCollab = useCallback(() => {
+        if (!igCollabModal?.instagram_handle) return;
+        // Deep link a la app móvil si está instalada (iOS/Android lo soporta).
+        // Fallback a web si no.
+        const handle = igCollabModal.instagram_handle;
+        const webUrl = `https://instagram.com/${handle}`;
+        // Intentamos deep link primero, web como fallback en ~600ms.
+        window.location.href = `instagram://user?username=${handle}`;
+        setTimeout(() => window.open(webUrl, "_blank", "noopener,noreferrer"), 600);
+        setIgCollabModal(null);
+        setIgCollabCopied(false);
+    }, [igCollabModal]);
 
     /** Para colabs sin canal de contacto, copiar mensaje al portapapeles. */
     const copyCollabMessage = useCallback(async (collab: Collaborator) => {
@@ -803,6 +824,97 @@ ${imageUrl ?? ""}
                             className="py-2 rounded-xl bg-white/[0.06] text-gray-300 text-xs font-semibold"
                         >
                             Cerrar
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Sub-modal Instagram colaborador: instrucciones claras de
+                3 pasos porque IG no permite abrir el chat con texto preset.
+                Mostramos el mensaje copiado + botón para abrir su perfil. */}
+            {igCollabModal && (
+                <div
+                    className="fixed inset-0 z-[215] bg-black/80 backdrop-blur-md flex items-end sm:items-center justify-center"
+                    onClick={() => { setIgCollabModal(null); setIgCollabCopied(false); }}
+                >
+                    <div
+                        className="w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 flex flex-col gap-3 safe-area-bottom"
+                        style={{ background: "#1c1c2a", border: "1px solid rgba(255,255,255,0.10)" }}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="flex items-center justify-between">
+                            <h3 className="text-base font-black text-white flex items-center gap-2">
+                                <InstagramIcon />
+                                Enviar a @{igCollabModal.instagram_handle}
+                            </h3>
+                            <button
+                                onClick={() => { setIgCollabModal(null); setIgCollabCopied(false); }}
+                                className="w-8 h-8 rounded-full bg-white/[0.06] text-gray-300 hover:text-white flex items-center justify-center active:scale-95"
+                                aria-label="Cerrar"
+                            >
+                                <X size={14} strokeWidth={2.4} />
+                            </button>
+                        </div>
+
+                        <p className="text-xs text-gray-300 leading-relaxed">
+                            Instagram no permite abrir chats con mensajes pre-rellenados desde la web (limitación de la plataforma para evitar spam). Pero te dejamos todo listo:
+                        </p>
+
+                        {/* Status copia al portapapeles */}
+                        <div
+                            className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl"
+                            style={{
+                                background: igCollabCopied ? "rgba(16,185,129,0.10)" : "rgba(245,158,11,0.10)",
+                                border: `1px solid ${igCollabCopied ? "rgba(16,185,129,0.30)" : "rgba(245,158,11,0.30)"}`,
+                            }}
+                        >
+                            {igCollabCopied ? (
+                                <>
+                                    <Check size={14} className="text-emerald-400 shrink-0" strokeWidth={2.5} />
+                                    <span className="text-xs text-emerald-300 leading-snug">
+                                        <strong>Mensaje copiado al portapapeles.</strong> Solo tienes que pegarlo en el chat.
+                                    </span>
+                                </>
+                            ) : (
+                                <>
+                                    <AlertCircle size={14} className="text-amber-400 shrink-0" />
+                                    <span className="text-xs text-amber-300 leading-snug">
+                                        No pudimos copiar al portapapeles. Cópialo a mano del preview de abajo.
+                                    </span>
+                                </>
+                            )}
+                        </div>
+
+                        {/* Preview del mensaje (siempre visible para copia manual) */}
+                        <details className="rounded-xl bg-black/30 border border-white/[0.06]">
+                            <summary className="px-3 py-2 cursor-pointer text-[11px] font-semibold text-gray-400 hover:text-white">
+                                Ver el mensaje que se va a pegar
+                            </summary>
+                            <pre className="px-3 pb-3 text-[11px] text-gray-300 whitespace-pre-wrap font-sans leading-relaxed">
+{buildCollabMessage(igCollabModal.artist_name)}
+                            </pre>
+                        </details>
+
+                        {/* Pasos */}
+                        <ol className="text-xs text-gray-300 leading-relaxed space-y-1.5 pl-5 list-decimal">
+                            <li>Te abriremos el perfil de <strong>@{igCollabModal.instagram_handle}</strong></li>
+                            <li>Click en <strong>&quot;Mensaje&quot;</strong> dentro de su perfil</li>
+                            <li><strong>Pega</strong> el mensaje en el chat (Cmd+V / long press → Pegar)</li>
+                        </ol>
+
+                        <button
+                            onClick={openInstagramForCollab}
+                            className="mt-2 py-3 rounded-xl text-white font-bold text-sm active:scale-[0.98] flex items-center justify-center gap-2"
+                            style={{ background: "linear-gradient(135deg,#f472b6,#fb923c)" }}
+                        >
+                            <InstagramIcon />
+                            Abrir Instagram de @{igCollabModal.instagram_handle}
+                        </button>
+                        <button
+                            onClick={() => { setIgCollabModal(null); setIgCollabCopied(false); }}
+                            className="py-2 rounded-xl bg-white/[0.06] text-gray-300 text-xs font-semibold"
+                        >
+                            Cancelar
                         </button>
                     </div>
                 </div>
