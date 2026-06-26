@@ -96,7 +96,7 @@ export function CreditsBadge({ plan }: { plan?: string | null }) {
           onMouseLeave={() => setOpen(false)}
           className="absolute right-0 top-full mt-2 w-72 z-50 rounded-2xl shadow-2xl border p-4 animate-in fade-in zoom-in-95 duration-150"
           style={{
-            background: "var(--home-card-bg)",
+            background: "var(--home-bg-soft)",
             borderColor: "var(--home-card-border)",
             color: "var(--home-text)",
           }}
