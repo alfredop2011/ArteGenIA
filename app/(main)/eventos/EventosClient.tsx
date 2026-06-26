@@ -982,6 +982,27 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
           </button>
         </div>
 
+        {/* LEYENDA de colores por categoría — SIEMPRE visible (explica los puntos
+            del date-strip y del calendario). Antes solo estaba dentro del
+            calendario y se apretaba en el sidebar. */}
+        {(() => {
+          const present = (Object.keys(CATEGORIES) as Category[]).filter((c) => filtered.some((e) => e.category === c));
+          if (present.length === 0) return null;
+          return (
+            <div className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-1.5">
+              {present.map((c) => {
+                const Cat = CATEGORIES[c];
+                return (
+                  <span key={c} className="flex items-center gap-1.5 text-[11px]" style={{ color: "var(--home-text-muted)" }}>
+                    <span className="h-2.5 w-2.5 rounded-full" style={{ background: Cat.grad }} />
+                    {t(Cat.labelKey)}
+                  </span>
+                );
+              })}
+            </div>
+          );
+        })()}
+
         {/* Sección de DESCUBRIMIENTO (estilo mockup): stats + carrusel de
             destacados. Solo en vista Lista y sin filtros/búsqueda activos, como
             cabecera de descubrimiento (no se duplica al filtrar). */}
