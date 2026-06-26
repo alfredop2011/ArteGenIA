@@ -584,39 +584,6 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
 
   return (
     <div className="min-h-screen" style={{ background: "var(--home-bg)", color: "var(--home-text)" }}>
-      {/* ── BARRA SUPERIOR: marca pública + acciones secundarias ─────────── */}
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-4 pt-5">
-        <span className="flex items-center gap-2 text-sm font-bold">
-          <span className="flex h-7 w-7 items-center justify-center rounded-lg text-white" style={{ background: "var(--ag-brand)" }}>
-            <CalendarIcon size={16} />
-          </span>
-          {t("eventos.topbar.brand")}
-        </span>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={sharePage}
-            aria-label={t("eventos.topbar.shareAria")}
-            className="flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs font-medium sm:px-3"
-            style={{ background: "var(--home-card-bg)", color: "var(--home-text-muted)" }}
-          >
-            <Share2 size={14} />
-            <span className="hidden sm:inline">{copied ? t("eventos.topbar.shareCopied") : t("eventos.topbar.share")}</span>
-          </button>
-          {/* Organizadores: acción CLARA pero secundaria. Si ya hay sesión,
-              va directo al panel; si no, abre el login con retorno a /organizador.
-              En móvil acortamos el texto para que no se parta en dos líneas. */}
-          <button
-            onClick={() => setShowPublish(true)}
-            className="flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold"
-            style={{ border: "1px solid var(--ag-brand-border)", color: "var(--ag-brand)" }}
-          >
-            <Sparkles size={14} />
-            <span className="sm:hidden">{user ? t("eventos.topbar.publishShort") : t("eventos.topbar.uploadShort")}</span>
-            <span className="hidden sm:inline">{organizerLabel}</span>
-          </button>
-        </div>
-      </div>
-
       {/* ── HERO (oscuro, estilo "noche" premium) ────────────── */}
       {/* Fondo oscuro fijo (no depende del tema) + glows neón. Si la ciudad
           tiene foto (CITY_HERO), se pinta detrás con máscara oscura. */}
@@ -658,6 +625,28 @@ export default function EventosClient({ initialEvents }: { initialEvents: EventI
           <div className="absolute right-0 top-10 h-72 w-72 rounded-full opacity-30 blur-3xl" style={{ background: "radial-gradient(circle,#FF1EA8,transparent 70%)" }} />
         </div>
         <div className="mx-auto max-w-7xl px-4 pt-4 pb-3 sm:pt-6 sm:pb-5">
+          {/* Acciones sobre el skyline (Compartir + Sube tu evento). Sin rótulo
+              "Agenda": el skyline llega hasta arriba, detrás de estos botones. */}
+          <div className="mb-3 flex items-center justify-end gap-2 sm:mb-4">
+            <button
+              onClick={sharePage}
+              aria-label={t("eventos.topbar.shareAria")}
+              className="flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs font-medium text-white sm:px-3"
+              style={{ background: "rgba(255,255,255,.12)", border: "1px solid rgba(255,255,255,.18)", backdropFilter: "blur(8px)" }}
+            >
+              <Share2 size={14} />
+              <span className="hidden sm:inline">{copied ? t("eventos.topbar.shareCopied") : t("eventos.topbar.share")}</span>
+            </button>
+            <button
+              onClick={() => setShowPublish(true)}
+              className="flex items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-1.5 text-xs font-semibold text-white shadow-md"
+              style={{ background: "var(--ag-brand)" }}
+            >
+              <Sparkles size={14} />
+              <span className="sm:hidden">{user ? t("eventos.topbar.publishShort") : t("eventos.topbar.uploadShort")}</span>
+              <span className="hidden sm:inline">{organizerLabel}</span>
+            </button>
+          </div>
           {/* initial=false: render directo a su estado final. Antes usaba una
               animación de entrada (opacity 0→1) que en SSR/hidratación se podía
               quedar atascada en opacity:0 y dejaba el hero (título, país/ciudad,
