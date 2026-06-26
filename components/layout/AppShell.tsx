@@ -106,6 +106,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     // para liberar espacio en el nav. Los hrefs viejos siguen via redirect.
     const navLinks = [
         { href: "/create", label: t("nav.create") },
+        { href: "/eventos", label: "Agenda" },
         { href: "/quitar-fondo", label: "Quitar fondo" },
         { href: "/capas-magicas", label: "Capas Mágicas", badge: userIsAdmin ? undefined : "Próximamente" },
         { href: "/templates", label: t("nav.templates") },
