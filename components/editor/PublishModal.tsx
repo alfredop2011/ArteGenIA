@@ -286,9 +286,47 @@ export default function PublishModal({
     const message = `Mira el flyer que hice para "${flyerTitle}" con ArteGenIA 🎨`;
     const credit = "Creado con ArteGenIA — artegenia.com";
 
+    /** Construye la línea de menciones para una red específica usando los
+     *  handles guardados de cada colaborador. Si una red no tiene handles
+     *  (ej. Facebook no usa @, Instagram usa instagram_handle), devuelve
+     *  los nombres de los artistas en su lugar.
+     *
+     *  Ejemplo Instagram: "Con @djnayaoficial @djblaze @djkira"
+     *  Ejemplo Facebook:  "Con DJ Naya, DJ Blaze, DJ Kira"
+     *
+     *  Devuelve "" si no hay colaboradores con ese tipo de dato. */
+    const buildMentionsLine = useCallback((target: "instagram" | "telegram" | "names"): string => {
+        if (collaborators.length === 0) return "";
+        const parts: string[] = [];
+        for (const c of collaborators) {
+            if (target === "instagram" && c.instagram_handle) {
+                parts.push(`@${c.instagram_handle}`);
+            } else if (target === "telegram" && c.telegram_handle) {
+                parts.push(`@${c.telegram_handle}`);
+            } else if (target === "names") {
+                // Fallback: usar el nombre artístico (para WA, FB y como
+                // fallback cuando una red no tiene handles guardados)
+                parts.push(c.artist_name);
+            }
+        }
+        if (parts.length === 0) return "";
+        return `\n\nCon: ${parts.join(" ")}`;
+    }, [collaborators]);
+
     const shareTo = useCallback((target: "whatsapp" | "facebook" | "telegram") => {
         if (!publicUrl || !imageUrl) return;
-        const text = `${message}\n\n${credit}`;
+        // Cada red usa el handle apropiado para que las menciones se
+        // conviertan en links tappables que disparen notificación al colab:
+        //   - Telegram: @telegram_handle (sólo si está guardado)
+        //   - WhatsApp: nombres del artista (WA no enlaza @, mejor texto plano)
+        //   - Facebook: nombres del artista (FB usa names, no handles)
+        // Si no hay colaboradores con el dato adecuado, la línea sale vacía
+        // y el mensaje queda como antes (sin "Con: ..." al final).
+        let mentions = "";
+        if (target === "telegram") mentions = buildMentionsLine("telegram");
+        else mentions = buildMentionsLine("names");
+
+        const text = `${message}${mentions}\n\n${credit}`;
         let href = "";
         switch (target) {
             case "whatsapp":
@@ -303,11 +341,12 @@ export default function PublishModal({
                 break;
             case "telegram":
                 // Telegram también renderiza imagen directa inline.
+                // Aquí las @menciones SÍ se convierten en links tappables.
                 href = `https://t.me/share/url?url=${encodeURIComponent(imageUrl)}&text=${encodeURIComponent(text)}`;
                 break;
         }
         window.open(href, "_blank", "noopener,noreferrer");
-    }, [publicUrl, imageUrl, message, credit]);
+    }, [publicUrl, imageUrl, message, credit, buildMentionsLine]);
 
     const copyLink = useCallback(async () => {
         // Copiamos imageUrl (JPG directa R2) en lugar de publicUrl —
@@ -785,13 +824,18 @@ ${imageUrl ?? ""}
             </div>
 
             {/* Instrucciones Instagram (no tiene web share publico) */}
-            {igInstrOpen && (
+            {igInstrOpen && (() => {
+                // Construimos la caption con menciones de Instagram. Si no
+                // hay handles guardados, fallback a nombres.
+                const igMentions = buildMentionsLine("instagram") || buildMentionsLine("names");
+                const igCaption = `🎉 ${flyerTitle}${igMentions}\n\nCreado con ArteGenIA — artegenia.com\n.\n.\n#evento #flyer #ArteGenIA`;
+                return (
                 <div
                     className="fixed inset-0 z-[200] bg-black/80 backdrop-blur-md flex items-end sm:items-center justify-center"
                     onClick={() => setIgInstrOpen(false)}
                 >
                     <div
-                        className="w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 flex flex-col gap-3 safe-area-bottom"
+                        className="w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 flex flex-col gap-3 safe-area-bottom max-h-[90vh] overflow-y-auto"
                         style={{ background: "#1c1c2a", border: "1px solid rgba(255,255,255,0.10)" }}
                         onClick={(e) => e.stopPropagation()}
                     >
@@ -800,16 +844,44 @@ ${imageUrl ?? ""}
                             Compartir en Instagram
                         </h3>
                         <p className="text-xs text-gray-300 leading-relaxed">
-                            Instagram no permite compartir desde la web de forma automática. Descarga el flyer y súbelo desde la app:
+                            Instagram no permite compartir desde la web automáticamente. Te dejamos todo listo:
                         </p>
+
+                        {/* Caption pre-generada con menciones — copiable */}
+                        <div className="rounded-xl bg-black/30 border border-white/[0.06] overflow-hidden">
+                            <div className="px-3 py-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest border-b border-white/[0.06] flex items-center justify-between">
+                                <span>Caption sugerida</span>
+                                <button
+                                    onClick={async () => {
+                                        try { await navigator.clipboard.writeText(igCaption); }
+                                        catch {
+                                            const ta = document.createElement("textarea");
+                                            ta.value = igCaption;
+                                            document.body.appendChild(ta);
+                                            ta.select();
+                                            try { document.execCommand("copy"); } catch { /* silent */ }
+                                            document.body.removeChild(ta);
+                                        }
+                                    }}
+                                    className="px-2 py-1 rounded-md bg-purple-500/20 text-purple-200 font-semibold text-[10px] hover:bg-purple-500/30 transition active:scale-95"
+                                >
+                                    Copiar caption
+                                </button>
+                            </div>
+                            <pre className="px-3 py-2.5 text-[11px] text-gray-200 whitespace-pre-wrap font-sans leading-relaxed max-h-32 overflow-y-auto">{igCaption}</pre>
+                        </div>
+
                         <ol className="text-xs text-gray-300 leading-relaxed space-y-1.5 pl-5 list-decimal">
-                            <li>Descarga el flyer desde el botón <strong>Exportar</strong> arriba.</li>
-                            <li>Abre Instagram → toca <strong>+</strong> arriba.</li>
+                            <li>Descarga el flyer desde <strong>Exportar</strong> (arriba).</li>
+                            <li>Abre Instagram → toca <strong>+</strong>.</li>
                             <li>Elige <strong>Historia</strong> o <strong>Publicación</strong> y selecciona el flyer.</li>
+                            <li><strong>Pega la caption</strong> arriba (long press → Pegar).</li>
                         </ol>
+
                         <button
-                            onClick={() => {
-                                // Deep link a la app si está instalada
+                            onClick={async () => {
+                                // Copiar caption antes de abrir IG
+                                try { await navigator.clipboard.writeText(igCaption); } catch { /* silent */ }
                                 window.location.href = "instagram://camera";
                                 setTimeout(() => window.open("https://instagram.com", "_blank"), 800);
                             }}
@@ -817,7 +889,7 @@ ${imageUrl ?? ""}
                             style={{ background: "linear-gradient(135deg,#f472b6,#fb923c)" }}
                         >
                             <InstagramIcon />
-                            Abrir Instagram
+                            Copiar caption y abrir Instagram
                         </button>
                         <button
                             onClick={() => setIgInstrOpen(false)}
@@ -827,7 +899,8 @@ ${imageUrl ?? ""}
                         </button>
                     </div>
                 </div>
-            )}
+                );
+            })()}
 
             {/* Sub-modal Instagram colaborador: instrucciones claras de
                 3 pasos porque IG no permite abrir el chat con texto preset.
