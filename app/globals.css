@@ -192,29 +192,45 @@ body {
   }
 }
 
-/* Fix dropdown avatar AppShell — fuerza color de texto con !important.
-   En peligroficial.com (mismo repo, otro dominio via proxy.ts rewrite a
-   /eventos), los <Link> renderizan como <a> y el color azul-violáceo
-   default de browser ganaba en specificity contra style inline. Esta
-   regla garantiza legibilidad en cualquier dominio/contexto. */
+/* Fix dropdown avatar AppShell — fuerza color de texto con !important
+   y HARDCODED (no CSS vars). En Safari privada las medidas avanzadas
+   de tracking prevention pueden bloquear el cómputo de CSS vars; con
+   colores hexadecimales directos descartamos esa variable.
+
+   Modo light por defecto (la app es light-first). En theme-dark
+   overrideamos abajo. */
 .appshell-user-menu a,
 .appshell-user-menu a:link,
 .appshell-user-menu a:visited,
 .appshell-user-menu a:hover,
 .appshell-user-menu a:active {
-  color: var(--home-text-muted) !important;
+  color: #4b5563 !important;          /* gray-600 — gris oscuro legible */
   text-decoration: none !important;
 }
 .appshell-user-menu .signout-btn,
 .appshell-user-menu .signout-btn:hover {
-  color: #dc2626 !important;
+  color: #dc2626 !important;           /* red-600 */
 }
-.appshell-user-menu .username,
-.appshell-user-menu .username:link {
-  color: var(--home-text) !important;
+.appshell-user-menu .username {
+  color: #0e0e14 !important;           /* casi negro */
 }
 .appshell-user-menu .email-muted {
-  color: var(--home-text-soft) !important;
+  color: #6b7280 !important;           /* gray-500 */
+}
+
+/* Override para dark mode: colores claros sobre fondo oscuro */
+.theme-dark .appshell-user-menu a,
+.theme-dark .appshell-user-menu a:link,
+.theme-dark .appshell-user-menu a:visited,
+.theme-dark .appshell-user-menu a:hover,
+.theme-dark .appshell-user-menu a:active {
+  color: #d1d5db !important;           /* gray-300 */
+}
+.theme-dark .appshell-user-menu .username {
+  color: #ffffff !important;
+}
+.theme-dark .appshell-user-menu .email-muted {
+  color: #9ca3af !important;           /* gray-400 */
 }
 
 /* UX#12 — Focus visible global accesible (WCAG 2.4.7).
