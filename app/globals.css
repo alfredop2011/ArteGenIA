@@ -192,6 +192,31 @@ body {
   }
 }
 
+/* Fix dropdown avatar AppShell — fuerza color de texto con !important.
+   En peligroficial.com (mismo repo, otro dominio via proxy.ts rewrite a
+   /eventos), los <Link> renderizan como <a> y el color azul-violáceo
+   default de browser ganaba en specificity contra style inline. Esta
+   regla garantiza legibilidad en cualquier dominio/contexto. */
+.appshell-user-menu a,
+.appshell-user-menu a:link,
+.appshell-user-menu a:visited,
+.appshell-user-menu a:hover,
+.appshell-user-menu a:active {
+  color: var(--home-text-muted) !important;
+  text-decoration: none !important;
+}
+.appshell-user-menu .signout-btn,
+.appshell-user-menu .signout-btn:hover {
+  color: #dc2626 !important;
+}
+.appshell-user-menu .username,
+.appshell-user-menu .username:link {
+  color: var(--home-text) !important;
+}
+.appshell-user-menu .email-muted {
+  color: var(--home-text-soft) !important;
+}
+
 /* UX#12 — Focus visible global accesible (WCAG 2.4.7).
    Por defecto Next/Tailwind no muestra outline, así que los users que
    navegan por teclado pierden track de dónde están. Añadimos un outline

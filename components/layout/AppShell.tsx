@@ -285,21 +285,17 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                                     </button>
 
                                     {showUserMenu && (
-                                        <div className="absolute right-0 top-10 w-52 rounded-2xl border shadow-2xl overflow-hidden z-50"
+                                        <div className="appshell-user-menu absolute right-0 top-10 w-52 rounded-2xl border shadow-2xl overflow-hidden z-50"
                                              style={{
                                                background: "var(--home-bg-soft)",
                                                borderColor: "var(--home-card-border)",
-                                               // Force descendant color: garantiza que los <a> de Next
-                                               // (Links) no hereden el color azul de enlaces del browser.
-                                               // Antes, en peligroficial.com el dropdown se veía con
-                                               // textos azul-violáceo casi ilegibles sobre fondo claro.
                                                color: "var(--home-text)",
                                              }}>
                                             <div className="px-4 py-3" style={{ borderBottom: "1px solid var(--home-divider)" }}>
-                                                <p className="text-sm font-semibold truncate" style={{ color: "var(--home-text)" }}>
+                                                <p className="username text-sm font-semibold truncate" style={{ color: "var(--home-text)" }}>
                                                     {profile?.name ?? user.email}
                                                 </p>
-                                                <p className="text-xs truncate" style={{ color: "var(--home-text-soft)" }}>
+                                                <p className="email-muted text-xs truncate" style={{ color: "var(--home-text-soft)" }}>
                                                     {user.email}
                                                 </p>
                                                 {/* Badge del plan: distingue 3 estados (free / pro / enterprise).
@@ -357,7 +353,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                                                 <button
                                                     onClick={() => { signOut(); setShowUserMenu(false); }}
                                                     style={{ color: "#dc2626" }}
-                                                    className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm hover:bg-red-500/10 transition-colors">
+                                                    className="signout-btn w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm hover:bg-red-500/10 transition-colors">
                                                     <LogOut size={15} strokeWidth={1.8} />
                                                     {t("nav.signOut")}
                                                 </button>
