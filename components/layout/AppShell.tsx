@@ -326,26 +326,26 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                                             <div className="p-2">
                                                 <Link href="/mis-recursos" onClick={() => setShowUserMenu(false)}
                                                     style={{ color: "#4b5563" }}
-                                                    className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm hover:bg-ag-card transition-colors no-underline">
+                                                    className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm hover:bg-ag-card transition-colors no-underline !text-gray-600 hover:!text-gray-900">
                                                     <ImageIcon size={15} strokeWidth={1.8} />
                                                     Mis recursos
                                                 </Link>
                                                 <Link href="/history" onClick={() => setShowUserMenu(false)}
                                                     style={{ color: "#4b5563" }}
-                                                    className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm hover:bg-ag-card transition-colors no-underline">
+                                                    className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm hover:bg-ag-card transition-colors no-underline !text-gray-600 hover:!text-gray-900">
                                                     <History size={15} strokeWidth={1.8} />
                                                     {t("nav.history")}
                                                 </Link>
                                                 <Link href="/cuenta" onClick={() => setShowUserMenu(false)}
                                                     style={{ color: "#4b5563" }}
-                                                    className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm hover:bg-ag-card transition-colors no-underline">
+                                                    className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm hover:bg-ag-card transition-colors no-underline !text-gray-600 hover:!text-gray-900">
                                                     <Settings size={15} strokeWidth={1.8} />
                                                     Mi cuenta
                                                 </Link>
                                                 {isAdmin(user?.email) && (
                                                     <Link href="/admin/templates" onClick={() => setShowUserMenu(false)}
                                                         style={{ color: "#4b5563" }}
-                                                        className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm hover:bg-ag-card transition-colors no-underline">
+                                                        className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm hover:bg-ag-card transition-colors no-underline !text-gray-600 hover:!text-gray-900">
                                                         <Crown size={15} strokeWidth={1.8} />
                                                         {t("nav.admin")}
                                                     </Link>
