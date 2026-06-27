@@ -286,10 +286,22 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
                                     {showUserMenu && (
                                         <div className="absolute right-0 top-10 w-52 rounded-2xl border shadow-2xl overflow-hidden z-50"
-                                             style={{ background: "var(--home-bg-soft)", borderColor: "var(--home-card-border)" }}>
-                                            <div className="px-4 py-3 border-b border-ag">
-                                                <p className="text-ag-primary text-sm font-semibold truncate">{profile?.name ?? user.email}</p>
-                                                <p className="text-ag-soft text-xs truncate">{user.email}</p>
+                                             style={{
+                                               background: "var(--home-bg-soft)",
+                                               borderColor: "var(--home-card-border)",
+                                               // Force descendant color: garantiza que los <a> de Next
+                                               // (Links) no hereden el color azul de enlaces del browser.
+                                               // Antes, en peligroficial.com el dropdown se veía con
+                                               // textos azul-violáceo casi ilegibles sobre fondo claro.
+                                               color: "var(--home-text)",
+                                             }}>
+                                            <div className="px-4 py-3" style={{ borderBottom: "1px solid var(--home-divider)" }}>
+                                                <p className="text-sm font-semibold truncate" style={{ color: "var(--home-text)" }}>
+                                                    {profile?.name ?? user.email}
+                                                </p>
+                                                <p className="text-xs truncate" style={{ color: "var(--home-text-soft)" }}>
+                                                    {user.email}
+                                                </p>
                                                 {/* Badge del plan: distingue 3 estados (free / pro / enterprise).
                                                     Antes solo distinguía pro vs el resto → enterprise mostraba "Free". */}
                                                 <span className={`inline-flex items-center gap-1 mt-1 text-xs px-2 py-0.5 rounded-full font-medium ${
@@ -297,9 +309,11 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                                                         ? "bg-amber-500/15 text-amber-700"
                                                         : profile?.plan === "pro"
                                                             ? "bg-purple-500/15 text-purple-700"
-                                                            : "text-ag-muted"
+                                                            : ""
                                                 }`}
-                                                style={profile?.plan === "free" || !profile?.plan ? { background: "var(--home-card-bg)" } : undefined}>
+                                                style={profile?.plan === "free" || !profile?.plan
+                                                    ? { background: "var(--home-card-bg)", color: "var(--home-text-muted)" }
+                                                    : undefined}>
                                                     {profile?.plan === "enterprise" ? (
                                                         <>
                                                             <Crown size={11} strokeWidth={2.2} />
@@ -315,30 +329,35 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                                             </div>
                                             <div className="p-2">
                                                 <Link href="/mis-recursos" onClick={() => setShowUserMenu(false)}
-                                                    className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-ag-muted hover:bg-ag-card hover:text-ag-primary transition-colors">
+                                                    style={{ color: "var(--home-text-muted)" }}
+                                                    className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm hover:bg-ag-card transition-colors no-underline">
                                                     <ImageIcon size={15} strokeWidth={1.8} />
                                                     Mis recursos
                                                 </Link>
                                                 <Link href="/history" onClick={() => setShowUserMenu(false)}
-                                                    className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-ag-muted hover:bg-ag-card hover:text-ag-primary transition-colors">
+                                                    style={{ color: "var(--home-text-muted)" }}
+                                                    className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm hover:bg-ag-card transition-colors no-underline">
                                                     <History size={15} strokeWidth={1.8} />
                                                     {t("nav.history")}
                                                 </Link>
                                                 <Link href="/cuenta" onClick={() => setShowUserMenu(false)}
-                                                    className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-ag-muted hover:bg-ag-card hover:text-ag-primary transition-colors">
+                                                    style={{ color: "var(--home-text-muted)" }}
+                                                    className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm hover:bg-ag-card transition-colors no-underline">
                                                     <Settings size={15} strokeWidth={1.8} />
                                                     Mi cuenta
                                                 </Link>
                                                 {isAdmin(user?.email) && (
                                                     <Link href="/admin/templates" onClick={() => setShowUserMenu(false)}
-                                                        className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-ag-muted hover:bg-ag-card hover:text-ag-primary transition-colors">
+                                                        style={{ color: "var(--home-text-muted)" }}
+                                                        className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm hover:bg-ag-card transition-colors no-underline">
                                                         <Crown size={15} strokeWidth={1.8} />
                                                         {t("nav.admin")}
                                                     </Link>
                                                 )}
                                                 <button
                                                     onClick={() => { signOut(); setShowUserMenu(false); }}
-                                                    className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-red-600 hover:bg-red-500/10 transition-colors">
+                                                    style={{ color: "#dc2626" }}
+                                                    className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm hover:bg-red-500/10 transition-colors">
                                                     <LogOut size={15} strokeWidth={1.8} />
                                                     {t("nav.signOut")}
                                                 </button>
