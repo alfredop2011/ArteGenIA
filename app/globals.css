@@ -210,6 +210,17 @@ body {
 .appshell-user-menu ::selection {
   background: transparent;
 }
+/* Selectores DUPLICADOS (header .appshell-user-menu Y .appshell-user-menu .appshell-user-menu)
+   para ganar especificidad sobre Tailwind 4 '[&_a]:!text-white' del header
+   hero que SOBRESCRIBE con !important los descendientes <a>.
+
+   La regla del header tiene specificity (0,2,0). Con 'header X X X a' bajamos
+   a (0,3,2) que GANA. */
+header .appshell-user-menu a,
+header .appshell-user-menu a:link,
+header .appshell-user-menu a:visited,
+header .appshell-user-menu a:hover,
+header .appshell-user-menu a:active,
 .appshell-user-menu a,
 .appshell-user-menu a:link,
 .appshell-user-menu a:visited,
@@ -218,13 +229,17 @@ body {
   color: #4b5563 !important;          /* gray-600 — gris oscuro legible */
   text-decoration: none !important;
 }
+header .appshell-user-menu .signout-btn,
+header .appshell-user-menu .signout-btn:hover,
 .appshell-user-menu .signout-btn,
 .appshell-user-menu .signout-btn:hover {
   color: #dc2626 !important;           /* red-600 */
 }
+header .appshell-user-menu .username,
 .appshell-user-menu .username {
   color: #0e0e14 !important;           /* casi negro */
 }
+header .appshell-user-menu .email-muted,
 .appshell-user-menu .email-muted {
   color: #6b7280 !important;           /* gray-500 */
 }
