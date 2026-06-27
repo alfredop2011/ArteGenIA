@@ -192,6 +192,70 @@ body {
   }
 }
 
+/* Fix dropdown avatar AppShell — fuerza color de texto con !important
+   y HARDCODED (no CSS vars). En Safari privada las medidas avanzadas
+   de tracking prevention pueden bloquear el cómputo de CSS vars; con
+   colores hexadecimales directos descartamos esa variable.
+
+   Modo light por defecto (la app es light-first). En theme-dark
+   overrideamos abajo.
+
+   Además: deshabilitamos user-select dentro del menú para evitar
+   selecciones accidentales de texto (triple-click, Cmd+A) que cubren
+   los textos con el highlight azul de ::selection. */
+.appshell-user-menu {
+  user-select: none;
+  -webkit-user-select: none;
+}
+.appshell-user-menu ::selection {
+  background: transparent;
+}
+/* Selectores con html body + header + .appshell-user-menu — máxima
+   especificidad (0,1,4) que GANA sobre cualquier regla Tailwind incluso
+   las del hero header con [&_a]:!text-white (0,1,1). Reportado tras 6
+   commits intentando ganar con menos: el hero forzaba color: white a los
+   <a> descendientes y mis fixes anteriores empataban en specificity. */
+html body header .appshell-user-menu a,
+html body header .appshell-user-menu a:link,
+html body header .appshell-user-menu a:visited,
+html body header .appshell-user-menu a:hover,
+html body header .appshell-user-menu a:active,
+.appshell-user-menu a,
+.appshell-user-menu a:link,
+.appshell-user-menu a:visited,
+.appshell-user-menu a:hover,
+.appshell-user-menu a:active {
+  color: #4b5563 !important;          /* gray-600 — gris oscuro legible */
+  text-decoration: none !important;
+}
+html body header .appshell-user-menu .signout-btn,
+.appshell-user-menu .signout-btn {
+  color: #dc2626 !important;           /* red-600 */
+}
+html body header .appshell-user-menu .username,
+.appshell-user-menu .username {
+  color: #0e0e14 !important;           /* casi negro */
+}
+html body header .appshell-user-menu .email-muted,
+.appshell-user-menu .email-muted {
+  color: #6b7280 !important;           /* gray-500 */
+}
+
+/* Override para dark mode: colores claros sobre fondo oscuro */
+.theme-dark .appshell-user-menu a,
+.theme-dark .appshell-user-menu a:link,
+.theme-dark .appshell-user-menu a:visited,
+.theme-dark .appshell-user-menu a:hover,
+.theme-dark .appshell-user-menu a:active {
+  color: #d1d5db !important;           /* gray-300 */
+}
+.theme-dark .appshell-user-menu .username {
+  color: #ffffff !important;
+}
+.theme-dark .appshell-user-menu .email-muted {
+  color: #9ca3af !important;           /* gray-400 */
+}
+
 /* UX#12 — Focus visible global accesible (WCAG 2.4.7).
    Por defecto Next/Tailwind no muestra outline, así que los users que
    navegan por teclado pierden track de dónde están. Añadimos un outline

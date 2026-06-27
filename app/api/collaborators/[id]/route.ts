@@ -101,10 +101,38 @@ export async function PATCH(
     return NextResponse.json({ error: "No encontrado" }, { status: 404 });
   }
 
-  // Whitelist de campos editables por tipo
+  // Normaliza handles redes (sin @, sin URL, solo chars válidos).
+  // Devuelve { value, error } para que el caller pueda devolver 400
+  // específico en vez de descartar silenciosamente (bug reportado:
+  // user puso 'Yo' como prueba, quedó NULL sin aviso).
+  const normalizeHandle = (raw: unknown): { value: string | null; error?: string } => {
+    if (raw === null || raw === undefined) return { value: null };
+    if (typeof raw !== "string") return { value: null };
+    const trimmed = raw.trim();
+    if (!trimmed) return { value: null }; // vacío = borrar canal, OK
+    const fromUrl = trimmed.match(/(?:t\.me|telegram\.me|instagram\.com)\/([^/?#]+)/i);
+    const candidate = fromUrl ? fromUrl[1] : trimmed.replace(/^@+/, "");
+    const safe = candidate.replace(/[^a-zA-Z0-9_.]/g, "").slice(0, 32);
+    if (safe.length === 0) {
+      return { value: null, error: "usa solo letras, números, _ y ." };
+    }
+    if (safe.length < 3) {
+      return { value: null, error: `"${safe}" es muy corto — mínimo 3 caracteres` };
+    }
+    return { value: safe };
+  };
+
+  // Whitelist de campos editables por tipo.
+  // Para `person` permitimos también corregir datos de contacto: el
+  // organizador puede haber transcrito mal el teléfono que le pasaron en
+  // persona, o el colab cambió de @handle. NO compromete consentimiento
+  // RGPD (que se firmó al subir foto, no se borra), solo corrige typo.
   const allowed: Record<string, true> = {};
   if (existing.kind === "person") {
-    allowed.role = true;
+    allowed.role             = true;
+    allowed.phone            = true;
+    allowed.telegram_handle  = true;
+    allowed.instagram_handle = true;
   } else if (existing.kind === "brand") {
     allowed.artist_name = true;
     allowed.role        = true;
@@ -113,7 +141,21 @@ export async function PATCH(
 
   const updates: Record<string, unknown> = {};
   for (const key of Object.keys(body)) {
-    if (allowed[key]) updates[key] = body[key];
+    if (!allowed[key]) continue;
+    // Handles necesitan normalización; phone aceptamos trim simple
+    if (key === "telegram_handle" || key === "instagram_handle") {
+      const r = normalizeHandle(body[key]);
+      if (r.error) {
+        const channel = key === "telegram_handle" ? "Telegram" : "Instagram";
+        return NextResponse.json(
+          { error: `${channel}: ${r.error}` },
+          { status: 400 },
+        );
+      }
+      updates[key] = r.value;
+    } else {
+      updates[key] = body[key];
+    }
   }
 
   if (Object.keys(updates).length === 0) {
@@ -123,8 +165,9 @@ export async function PATCH(
     );
   }
 
-  // Trim de strings
+  // Trim de strings (saltamos handles que ya están normalizados arriba)
   for (const k of Object.keys(updates)) {
+    if (k === "telegram_handle" || k === "instagram_handle") continue;
     if (typeof updates[k] === "string") {
       updates[k] = (updates[k] as string).trim() || null;
     }

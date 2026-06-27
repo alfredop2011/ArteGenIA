@@ -61,6 +61,7 @@ import { ArtistLibraryModal, type ArtistEntry } from "@/components/wizard/Artist
 import RequestPhotoModal from "@/components/editor/RequestPhotoModal";
 import MultiRequestPhotoModal, { type LayerInput as MultiLayerInput } from "@/components/editor/MultiRequestPhotoModal";
 import AutoFillModal from "@/components/editor/AutoFillModal";
+import PublishModal, { exportCanvasToPng } from "@/components/editor/PublishModal";
 import NotificationsBell from "@/components/notifications/NotificationsBell";
 import { isAdmin } from "@/lib/admin";
 // Side-effect import: extiende FabricObject.prototype.toObject para que
@@ -454,6 +455,19 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
   const [currentProjectId, setCurrentProjectId] = useState<string | null>(projectId ?? null);
   const [savingProject, setSavingProject] = useState(false);
   const canvasWrapperRef = useRef<HTMLDivElement>(null);
+
+  // Modal "Publicar" — abre share a redes sociales + Peligro Oficial.
+  // El export del canvas se hace dentro del propio modal (exportCanvasToPng).
+  const [publishOpen, setPublishOpen] = useState(false);
+  const openPublishModal = useCallback(() => {
+    requireAuth(
+      () => setPublishOpen(true),
+      {
+        title: "Inicia sesión para publicar",
+        subtitle: "Subimos una copia de tu flyer para que tenga un link previsualizable. Necesitas tener sesión iniciada.",
+      },
+    );
+  }, [requireAuth]);
 
   const { saveProject } = useProjects();
   const { toast } = useToast();
@@ -3311,6 +3325,18 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
           </button>
         )}
 
+        {/* Publicar - compartir en redes + Peligro Oficial (NO admin) */}
+        {!isAdminMode && (
+          <button
+            onClick={openPublishModal}
+            title="Publicar en redes y calendario de eventos"
+            className="flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-semibold transition-all shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50"
+          >
+            <Share2 className="w-3.5 h-3.5" strokeWidth={2} />
+            <span className="hidden sm:inline">Publicar</span>
+          </button>
+        )}
+
         {/* Export normal - oculto en modo admin (porque tenemos Publicar) */}
         {!isAdminMode && (
         <div className="relative group">
@@ -4935,6 +4961,26 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
               toast.success(`${applied} texto${applied === 1 ? "" : "s"} actualizados`);
             }
           }}
+        />
+      )}
+
+      {/* Modal "Publicar": comparte el flyer en WhatsApp/Facebook/IG/Telegram
+          + Peligro Oficial. El modal exporta el canvas a PNG, lo sube a R2 y
+          obtiene una URL /flyer/<id> con OG tags para previews bonitas. */}
+      {publishOpen && (
+        <PublishModal
+          flyerTitle={docTitle || template?.title || "Mi flyer"}
+          projectId={currentProjectId}
+          exportPng={async () => {
+            const canvas = fabricRef.current;
+            return exportCanvasToPng(canvas);
+          }}
+          onRequireAuth={() => setAuthModalConfig({
+            title: "Inicia sesión para publicar",
+            subtitle: "Para subir tu flyer y generar el link compartible necesitas tener sesión iniciada.",
+            onSuccess: () => setPublishOpen(true),
+          })}
+          onClose={() => setPublishOpen(false)}
         />
       )}
 

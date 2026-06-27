@@ -201,6 +201,21 @@ export async function POST(req: NextRequest) {
     const artistName = (formData.get("artist_name") as string | null)?.trim();
     const role = (formData.get("role") as string | null)?.trim() || null;
     const phone = (formData.get("phone") as string | null)?.trim() || null;
+    // Handles redes sociales (opcionales). Normalizamos: quitamos '@' inicial,
+    // limpiamos URL completa si pegaron https://t.me/foo → foo, max 32 chars.
+    const cleanHandle = (raw: string | null): string | null => {
+      if (!raw) return null;
+      const trimmed = raw.trim();
+      if (!trimmed) return null;
+      // Si pegaron URL completa, extraer último segmento
+      const fromUrl = trimmed.match(/(?:t\.me|telegram\.me|instagram\.com)\/([^/?#]+)/i);
+      const candidate = fromUrl ? fromUrl[1] : trimmed.replace(/^@+/, "");
+      // Solo permitimos chars válidos en handles: letras, números, _ y .
+      const safe = candidate.replace(/[^a-zA-Z0-9_.]/g, "").slice(0, 32);
+      return safe.length >= 3 ? safe : null;
+    };
+    const telegramHandle = cleanHandle(formData.get("telegram_handle") as string | null);
+    const instagramHandle = cleanHandle(formData.get("instagram_handle") as string | null);
     const consentAccepted = formData.get("consent_accepted") === "true";
     const consentText = formData.get("consent_text") as string | null;
     const photo = formData.get("photo") as File | null;
@@ -334,6 +349,9 @@ export async function POST(req: NextRequest) {
       artist_name: artistName,
       role,
       phone: kind === "person" ? phone : null,
+      // Handles solo aplican a personas (las marcas usan su propio canal).
+      telegram_handle: kind === "person" ? telegramHandle : null,
+      instagram_handle: kind === "person" ? instagramHandle : null,
       photo_url: photoUrl,
       consent_text: kind === "person" ? consentText : null,
       consent_at: kind === "person" ? new Date().toISOString() : null,
@@ -537,7 +555,7 @@ export async function GET() {
 
   const { data, error } = await supabase
     .from("collaborators")
-    .select("id, kind, artist_name, role, phone, photo_url, created_at, updated_at")
+    .select("id, kind, artist_name, role, phone, telegram_handle, instagram_handle, photo_url, created_at, updated_at")
     .order("created_at", { ascending: false });
 
   if (error) {
