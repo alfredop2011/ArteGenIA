@@ -198,7 +198,18 @@ body {
    colores hexadecimales directos descartamos esa variable.
 
    Modo light por defecto (la app es light-first). En theme-dark
-   overrideamos abajo. */
+   overrideamos abajo.
+
+   Además: deshabilitamos user-select dentro del menú para evitar
+   selecciones accidentales de texto (triple-click, Cmd+A) que cubren
+   los textos con el highlight azul de ::selection. */
+.appshell-user-menu {
+  user-select: none;
+  -webkit-user-select: none;
+}
+.appshell-user-menu ::selection {
+  background: transparent;
+}
 .appshell-user-menu a,
 .appshell-user-menu a:link,
 .appshell-user-menu a:visited,
