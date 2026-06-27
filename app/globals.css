@@ -1,5 +1,12 @@
 @import "tailwindcss";
 
+/* Declarar layer 'overrides' DESPUÉS de los layers de Tailwind
+   (theme, base, components, utilities). Con !important, las reglas
+   en layers ganan sobre unlayered Y sobre layers anteriores. Esto
+   nos permite vencer a las clases Tailwind como '[&_a]:!text-white'
+   del header hero que estaban ganando contra nuestro CSS unlayered. */
+@layer theme, base, components, utilities, overrides;
+
 /* ─── THEME TOKENS ─────────────────────────────────────────────────────────
    Definimos dos temas como variables CSS. El hook useTheme alterna
    class="theme-light" / "theme-dark" en <html>. Si no hay class, default
@@ -210,35 +217,30 @@ body {
 .appshell-user-menu ::selection {
   background: transparent;
 }
-/* Selectores con html body + header + .appshell-user-menu — máxima
-   especificidad (0,1,4) que GANA sobre cualquier regla Tailwind incluso
-   las del hero header con [&_a]:!text-white (0,1,1). Reportado tras 6
-   commits intentando ganar con menos: el hero forzaba color: white a los
-   <a> descendientes y mis fixes anteriores empataban en specificity. */
-html body header .appshell-user-menu a,
-html body header .appshell-user-menu a:link,
-html body header .appshell-user-menu a:visited,
-html body header .appshell-user-menu a:hover,
-html body header .appshell-user-menu a:active,
-.appshell-user-menu a,
-.appshell-user-menu a:link,
-.appshell-user-menu a:visited,
-.appshell-user-menu a:hover,
-.appshell-user-menu a:active {
-  color: #4b5563 !important;          /* gray-600 — gris oscuro legible */
-  text-decoration: none !important;
-}
-html body header .appshell-user-menu .signout-btn,
-.appshell-user-menu .signout-btn {
-  color: #dc2626 !important;           /* red-600 */
-}
-html body header .appshell-user-menu .username,
-.appshell-user-menu .username {
-  color: #0e0e14 !important;           /* casi negro */
-}
-html body header .appshell-user-menu .email-muted,
-.appshell-user-menu .email-muted {
-  color: #6b7280 !important;           /* gray-500 */
+/* Reglas DENTRO de @layer overrides (declarado al inicio del archivo
+   después de los layers de Tailwind). Con !important, las reglas en
+   layers ganan sobre unlayered, y entre layers, el último declarado
+   gana. Esto vence a '[&_a]:!text-white' del hero header (que vive en
+   @layer utilities) que estaba pintando blanco a TODOS los <a>
+   descendientes del header, incluyendo el dropdown del avatar. */
+@layer overrides {
+  .appshell-user-menu a,
+  .appshell-user-menu a:link,
+  .appshell-user-menu a:visited,
+  .appshell-user-menu a:hover,
+  .appshell-user-menu a:active {
+    color: #4b5563 !important;          /* gray-600 — gris oscuro legible */
+    text-decoration: none !important;
+  }
+  .appshell-user-menu .signout-btn {
+    color: #dc2626 !important;           /* red-600 */
+  }
+  .appshell-user-menu .username {
+    color: #0e0e14 !important;           /* casi negro */
+  }
+  .appshell-user-menu .email-muted {
+    color: #6b7280 !important;           /* gray-500 */
+  }
 }
 
 /* Override para dark mode: colores claros sobre fondo oscuro */
