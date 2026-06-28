@@ -1,23 +1,27 @@
-import { createSupabaseServerClient } from "@/lib/supabaseServer";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import type { EventRow } from "@/lib/supabase";
 import { rowToEvent } from "./eventData";
 import EventosClient from "./EventosClient";
 
 /**
  * /eventos — Agenda pública. Server Component: carga los eventos publicados (y
- * cancelados, que se muestran con sello) en SSR y se los pasa al cliente. Así
- * los eventos reales aparecen en el HTML aunque el JS de cliente tarde o falle
- * en hidratar — la página de consulta nunca queda vacía ni depende del fetch
- * en el navegador. El filtrado/interacción los maneja EventosClient.
+ * cancelados, que se muestran con sello) y se los pasa al cliente. Así los
+ * eventos reales aparecen en el HTML aunque el JS de cliente tarde o falle en
+ * hidratar — la página nunca queda vacía. El filtrado/interacción → EventosClient.
+ *
+ * PERF — ISR en vez de force-dynamic: los eventos son PÚBLICOS e iguales para
+ * todos (los favoritos/sesión los maneja el cliente), así que cacheamos el HTML
+ * y revalidamos cada 60 s. Antes era `force-dynamic`: CADA visita lanzaba una
+ * query a Supabase y el SSR esperaba → cuando Supabase iba frío/lento la página
+ * se sentía lenta "a veces". Ahora casi todas las visitas se sirven de caché al
+ * instante. Usamos supabaseAdmin (sin cookies) porque la query es pública y así
+ * la página puede ser estática/ISR (con el cliente de cookies no se podría).
  */
-
-// Siempre dinámico: leemos cookies (sesión) y queremos datos frescos.
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
 export default async function EventosPage() {
   let initialEvents: ReturnType<typeof rowToEvent>[] = [];
   try {
-    const supabase = await createSupabaseServerClient();
     // Solo próximos (una agenda muestra lo que viene, no lo pasado).
     const todayIso = new Date().toISOString().slice(0, 10);
     // Perf: filtramos en la BD (no traer basura ni filas de más).
@@ -27,7 +31,7 @@ export default async function EventosPage() {
     //    filtro era en JS, así que Supabase devolvía filas que se descartaban.
     //  - limit defensivo: la agenda no necesita miles de filas y los crons
     //    importan ~200/día; sin tope la query crecería sin control.
-    const { data } = await supabase
+    const { data } = await supabaseAdmin
       .from("events")
       .select("*")
       .in("status", ["published", "cancelled"])

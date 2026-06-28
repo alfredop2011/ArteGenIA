@@ -1620,7 +1620,11 @@ function EventCard({
     <motion.div
       whileHover={{ y: -4 }}
       className="group relative flex flex-col overflow-hidden rounded-2xl"
-      style={{ background: "var(--home-bg-soft)", border: "1px solid var(--home-card-border)" }}
+      // Perf: content-visibility:auto deja que el navegador OMITA el render de
+      // las tarjetas fuera de pantalla (con 100+ eventos esto aligera mucho el
+      // render inicial y el scroll, sobre todo en móvil). contain-intrinsic-size
+      // reserva el alto aproximado para que el scroll no salte.
+      style={{ background: "var(--home-bg-soft)", border: "1px solid var(--home-card-border)", contentVisibility: "auto", containIntrinsicSize: "0 350px" }}
     >
       {/* Imagen */}
       <button onClick={onClick} className="relative block h-44 w-full" style={{ background: event.image }} aria-label={event.title}>
