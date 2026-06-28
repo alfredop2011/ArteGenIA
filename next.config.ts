@@ -107,6 +107,17 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // Perf — optimiza los imports de paquetes "barrel" pesados: solo entra en el
+  // bundle lo que de verdad se usa (no toda la librería). lucide-react ya lo
+  // optimiza Next por defecto; framer-motion NO, y se usa en muchas páginas.
+  experimental: {
+    optimizePackageImports: ["framer-motion", "lucide-react"],
+  },
+  // Perf — en producción quitamos console.* (excepto error/warn, útiles para
+  // monitorización). Menos ruido y algo menos de JS.
+  compiler: {
+    removeConsole: process.env.NODE_ENV === "production" ? { exclude: ["error", "warn"] } : false,
+  },
   // UX#1 — /planes es la versión MVP-waitlist legacy. /pricing es la real
   // con Stripe Checkout. Redirigimos 308 (permanente) para que cualquier
   // link viejo guardado o compartido no caiga en una página confusa con

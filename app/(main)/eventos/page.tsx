@@ -20,17 +20,22 @@ export default async function EventosPage() {
     const supabase = await createSupabaseServerClient();
     // Solo próximos (una agenda muestra lo que viene, no lo pasado).
     const todayIso = new Date().toISOString().slice(0, 10);
+    // Perf: filtramos en la BD (no traer basura ni filas de más).
+    //  - status published/cancelled, solo futuros
+    //  - ocultar AUTO-importados sin foto (Open Data Madrid → tarjetas vacías);
+    //    los curados (manual/web/bot/Ticketmaster) salen siempre. Antes este
+    //    filtro era en JS, así que Supabase devolvía filas que se descartaban.
+    //  - limit defensivo: la agenda no necesita miles de filas y los crons
+    //    importan ~200/día; sin tope la query crecería sin control.
     const { data } = await supabase
       .from("events")
       .select("*")
       .in("status", ["published", "cancelled"])
       .gte("event_date", todayIso)
-      .order("event_date", { ascending: true });
-    // Solo ocultamos los AUTO-importados sin foto (p.ej. Open Data Madrid, que
-    // dan tarjetas vacías). Los eventos curados (manual/web/bot/Ticketmaster) se
-    // muestran SIEMPRE, aunque aún no tengan cartel (placeholder por categoría).
-    const visible = ((data as EventRow[]) ?? []).filter((r) => r.image_url || r.source !== "auto");
-    const mapped = visible.map(rowToEvent);
+      .or("image_url.not.is.null,source.neq.auto")
+      .order("event_date", { ascending: true })
+      .limit(600);
+    const mapped = ((data as EventRow[]) ?? []).map(rowToEvent);
     // Dedup defensivo: colapsa duplicados (mismo título + fecha + ciudad + lugar).
     const seen = new Set<string>();
     initialEvents = mapped.filter((e) => {
