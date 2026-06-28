@@ -70,6 +70,7 @@ import { CREDIT_COST, type CreditModule } from "@/lib/credits";
 import BrushEraserModal from "@/components/editor/BrushEraserModal";
 import { Save, FolderOpen, Share2, Link2, Mail, MessageCircle, Send, Plus, Layers, Lock, Unlock, Eye, EyeOff, Circle as CircleIcon, Square as SquareIcon, Triangle, Heart, Star, AlignHorizontalJustifyCenter, Clipboard, ClipboardPaste, UserPlus } from "lucide-react";
 import RequestPhotoModal from "@/components/editor/RequestPhotoModal";
+import PublishModal, { exportCanvasToPng } from "@/components/editor/PublishModal";
 // Side-effect: customId/collaboratorReceivedAt/collaboratorName se serializan
 // en TODO toObject(). Sin esto el fabric_json en BD pierde customId y el
 // auto-patch de Solicitar Foto falla.
@@ -2074,6 +2075,22 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
     return () => window.clearTimeout(t);
   }, [authUser, loaded, currentProjectId, saveState, doSave]);
 
+  // ─── Modal "Publicar" — paridad mobile con desktop ─────────────────────
+  // Reutiliza el PublishModal de desktop (mismo componente). Abre share a
+  // WhatsApp/Telegram/IG/FB + sección colaboradores con botones por canal
+  // y publicación en Peligro Oficial. El export del canvas a PNG se hace
+  // dentro del modal (vía exportCanvasToPng helper).
+  const [publishOpen, setPublishOpen] = useState(false);
+  const openPublishModal = useCallback(() => {
+    requireAuth(
+      () => setPublishOpen(true),
+      {
+        title: "Inicia sesión para publicar",
+        subtitle: "Subimos una copia de tu flyer para que tenga un link previsualizable. Necesitas tener sesión iniciada.",
+      },
+    );
+  }, [requireAuth]);
+
   // ─── Compartir tras descargar (Fase H) ──────────────────────────────────
   // Tras descargar el flyer, abrimos un modal con opciones de compartir.
   // Subimos el PNG a R2 para tener URL publica que WhatsApp/Facebook/etc.
@@ -2688,6 +2705,17 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
           title={currentProjectId ? t("mobileEditor.header.save") : t("mobileEditor.header.saveNew")}
         >
           <Save size={16} strokeWidth={2.2}/>
+        </button>
+        {/* Botón Publicar — paridad mobile con desktop. Abre PublishModal
+            con sección colaboradores + share por canal + Peligro Oficial.
+            Icono Send sin texto para no abigarrar el header. */}
+        <button
+          aria-label="Publicar"
+          onClick={openPublishModal}
+          className="w-9 h-9 rounded-lg flex items-center justify-center text-gray-300 active:bg-white/10"
+          title="Publicar en redes y enviar a colaboradores"
+        >
+          <Send size={16} strokeWidth={2.2}/>
         </button>
         <button
           aria-label={t("mobileEditor.header.more")}
@@ -3668,6 +3696,25 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
           ensureSharedUrl={ensureSharedUrl}
           lastExportedDataUrl={lastExportedDataUrl}
           onClose={() => setShareOpen(false)}
+        />
+      )}
+
+      {/* Modal "Publicar" — paridad mobile con desktop. El componente es el
+          mismo PublishModal de desktop (mobile-responsive via Tailwind). */}
+      {publishOpen && (
+        <PublishModal
+          flyerTitle={docTitle || template?.title || "Mi flyer"}
+          projectId={currentProjectId}
+          exportPng={async () => {
+            const canvas = fabricRef.current;
+            return exportCanvasToPng(canvas);
+          }}
+          onRequireAuth={() => setAuthModalConfig({
+            title: "Inicia sesión para publicar",
+            subtitle: "Para subir tu flyer y generar el link compartible necesitas tener sesión iniciada.",
+            onSuccess: () => setPublishOpen(true),
+          })}
+          onClose={() => setPublishOpen(false)}
         />
       )}
 
