@@ -71,6 +71,8 @@ import BrushEraserModal from "@/components/editor/BrushEraserModal";
 import { Save, FolderOpen, Share2, Link2, Mail, MessageCircle, Send, Plus, Layers, Lock, Unlock, Eye, EyeOff, Circle as CircleIcon, Square as SquareIcon, Triangle, Heart, Star, AlignHorizontalJustifyCenter, Clipboard, ClipboardPaste, UserPlus } from "lucide-react";
 import RequestPhotoModal from "@/components/editor/RequestPhotoModal";
 import PublishModal, { exportCanvasToPng } from "@/components/editor/PublishModal";
+import TextPresetsModal from "@/components/editor/TextPresetsModal";
+import { insertTextPreset, type TextPreset } from "@/lib/textPresets";
 // Side-effect: customId/collaboratorReceivedAt/collaboratorName se serializan
 // en TODO toObject(). Sin esto el fabric_json en BD pierde customId y el
 // auto-patch de Solicitar Foto falla.
@@ -2075,6 +2077,22 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
     return () => window.clearTimeout(t);
   }, [authUser, loaded, currentProjectId, saveState, doSave]);
 
+  // ─── Modal "Combos pro de texto" — paridad mobile con desktop ─────────
+  // 10 presets curados de texto profesionales (DJ, eventos, promos, etc.).
+  // Catálogo en lib/textPresets.ts compartido con GeneratedEditor.
+  const [textPresetsModalOpen, setTextPresetsModalOpen] = useState(false);
+  const addTextPreset = useCallback(async (preset: TextPreset) => {
+    const fc = fabricRef.current;
+    if (!fc) return;
+    const created = await insertTextPreset(fc, preset, canvasSize);
+    created.forEach(it => decorateNewObject(it as unknown as FabricObject));
+    fc.requestRenderAll();
+    setSaveState("unsaved");
+    setOpenSheet(null);
+    pushHistory();
+    toast.success(`Añadido "${preset.name}"`);
+  }, [canvasSize, decorateNewObject, pushHistory, toast]);
+
   // ─── Modal "Publicar" — paridad mobile con desktop ─────────────────────
   // Reutiliza el PublishModal de desktop (mismo componente). Abre share a
   // WhatsApp/Telegram/IG/FB + sección colaboradores con botones por canal
@@ -3513,6 +3531,7 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
               {openSheet === "add" && (
                 <AddElementSheet
                   onAddText={addText}
+                  onOpenTextPresets={() => { setOpenSheet(null); setTextPresetsModalOpen(true); }}
                   onAddShape={addShape}
                   onAddImage={addImageFromFile}
                 />
@@ -3696,6 +3715,15 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
           ensureSharedUrl={ensureSharedUrl}
           lastExportedDataUrl={lastExportedDataUrl}
           onClose={() => setShareOpen(false)}
+        />
+      )}
+
+      {/* Modal "Combos profesionales de texto" — 10 presets curados. */}
+      {textPresetsModalOpen && (
+        <TextPresetsModal
+          onPickEmpty={() => addText("body")}
+          onPickPreset={addTextPreset}
+          onClose={() => setTextPresetsModalOpen(false)}
         />
       )}
 
@@ -5266,9 +5294,10 @@ function sliderFill(value: number, min: number, max: number): React.CSSPropertie
 
 /** Sheet para añadir texto/forma/imagen nuevos al canvas. */
 function AddElementSheet({
-  onAddText, onAddShape, onAddImage,
+  onAddText, onOpenTextPresets, onAddShape, onAddImage,
 }: {
   onAddText: (variant: "title" | "subtitle" | "body") => void;
+  onOpenTextPresets: () => void;
   onAddShape: (kind: "rect" | "circle" | "triangle" | "heart" | "star" | "line") => void;
   onAddImage: (file: File) => void;
 }) {
@@ -5303,6 +5332,13 @@ function AddElementSheet({
             <span className="text-[10px] text-gray-400 font-semibold">{t("mobileEditor.add.body")}</span>
           </button>
         </div>
+        {/* Combos pro — abre modal con 10 presets curados (DJ/eventos/promos). */}
+        <button
+          onClick={onOpenTextPresets}
+          className="mt-2 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-gradient-to-br from-purple-600/30 to-fuchsia-600/30 border border-purple-500/40 active:scale-[0.98] transition-transform"
+        >
+          <span className="text-purple-200 text-[12px] font-semibold">✨ Combos profesionales</span>
+        </button>
       </div>
 
       {/* Formas */}

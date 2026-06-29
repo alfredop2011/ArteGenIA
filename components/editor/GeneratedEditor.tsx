@@ -62,6 +62,8 @@ import RequestPhotoModal from "@/components/editor/RequestPhotoModal";
 import MultiRequestPhotoModal, { type LayerInput as MultiLayerInput } from "@/components/editor/MultiRequestPhotoModal";
 import AutoFillModal from "@/components/editor/AutoFillModal";
 import PublishModal, { exportCanvasToPng } from "@/components/editor/PublishModal";
+import TextPresetsModal from "@/components/editor/TextPresetsModal";
+import { insertTextPreset, type TextPreset } from "@/lib/textPresets";
 import NotificationsBell from "@/components/notifications/NotificationsBell";
 import { isAdmin } from "@/lib/admin";
 // Side-effect import: extiende FabricObject.prototype.toObject para que
@@ -1931,6 +1933,34 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
     if (FEATURES.layersPanel) setActiveTool("layers");
   }, [canvasSize]);
 
+  // ─── Text Presets modal + insertor ──────────────────────────────────
+  // El user pidió "prediseños profesionales de texto" tipo Canva/Polotno.
+  // El catálogo vive en lib/textPresets.ts (10 combos curados para vertical
+  // DJ/eventos). El modal lo abre el handler del tool "Texto" del sidebar.
+  const [textModalOpen, setTextModalOpen] = useState(false);
+  const addTextPreset = useCallback(async (preset: TextPreset) => {
+    const canvas = fabricRef.current;
+    if (!canvas) return;
+    const created = await insertTextPreset(canvas, preset, canvasSize);
+    // Registrar cada IText creado como layer (en orden inverso para que el
+    // primer bloque del preset quede arriba en el panel layers).
+    const newLayers: LayerItem[] = created.map((it, i) => {
+      const newId = `text-${uid()}`;
+      (it as FabricObject & { customId?: string }).customId = newId;
+      return {
+        id: newId,
+        name: preset.blocks[i].text.slice(0, 22) || "Texto",
+        type: "text" as LayerType,
+        obj: it,
+        visible: true,
+        locked: false,
+      };
+    });
+    setLayers(prev => [...newLayers.slice().reverse(), ...prev]);
+    if (newLayers.length > 0) setSelectedLayer(newLayers[0]);
+    setSaveState("unsaved");
+  }, [canvasSize]);
+
   // ─── ADD SHAPES (rect, circle, triangle, line, star, hex, arrow, frame) ──
   /** Helper interno: registra un FabricObject como nueva capa y selecciona. */
   const addShapeToCanvas = useCallback((obj: FabricObject, name: string) => {
@@ -3529,7 +3559,7 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
                     if (tool.id === "request-photo-multi") { void handleRequestPhotoMulti(); return; }
                     if (tool.id === "auto-fill") { void handleAutoFill(); return; }
                     setActiveTool(tool.id);
-                    if (tool.id === "text") addText();
+                    if (tool.id === "text") { setTextModalOpen(true); return; }
                   }}
                   title={tool.comingSoon ? `${tool.label} · próximamente` : (tool.tooltip ?? tool.label)}
                   className={`relative w-12 h-12 rounded-2xl flex flex-col items-center justify-center gap-0.5 transition-all text-[9px] font-medium ag-sidebar-btn ${
@@ -4264,7 +4294,7 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
                     return;
                   }
                   setActiveTool(tool.id);
-                  if (tool.id === "text") addText();
+                  if (tool.id === "text") { setTextModalOpen(true); return; }
                 }}
                 title={tool.comingSoon ? `${tool.label} · próximamente` : (tool.tooltip ?? tool.label)}
                 className={`group relative ${isMobile ? "w-11 h-11" : "w-12 h-12"} rounded-2xl flex items-center justify-center transition-all ${
@@ -4961,6 +4991,15 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
               toast.success(`${applied} texto${applied === 1 ? "" : "s"} actualizados`);
             }
           }}
+        />
+      )}
+
+      {/* Modal "Texto" — botón "Texto vacío" + grid de 10 presets pro. */}
+      {textModalOpen && (
+        <TextPresetsModal
+          onPickEmpty={addText}
+          onPickPreset={addTextPreset}
+          onClose={() => setTextModalOpen(false)}
         />
       )}
 
