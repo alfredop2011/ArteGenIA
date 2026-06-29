@@ -443,6 +443,65 @@ export const TEXT_PRESETS: TextPreset[] = [
 ];
 
 /**
+ * Detecta si un color hex es perceptualmente oscuro (luminance < 0.5).
+ * Usa la fórmula clásica de Rec. 601 (ojo humano más sensible al verde).
+ */
+function isHexDark(hex: string): boolean {
+    const c = hex.replace("#", "");
+    if (c.length !== 6) return false;
+    const r = parseInt(c.slice(0, 2), 16);
+    const g = parseInt(c.slice(2, 4), 16);
+    const b = parseInt(c.slice(4, 6), 16);
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    return luminance < 0.5;
+}
+
+/**
+ * Heurística para detectar si el fondo del canvas es oscuro:
+ *  1. Si canvas.backgroundColor está definido como hex → usar ese
+ *  2. Si hay backgroundImage → asumir oscuro (foto típicamente lo es)
+ *  3. Si hay un Rect grande (>800×800) que cubre el canvas (común en
+ *     templates ArteGenIA donde el "fondo" es un Rect) → usar su fill
+ *  4. Fallback: asumir CLARO (caso flyer en blanco)
+ */
+function isCanvasBackgroundDark(canvas: FabricCanvas): boolean {
+    const bg = canvas.backgroundColor as unknown;
+    if (typeof bg === "string" && bg.startsWith("#")) {
+        return isHexDark(bg);
+    }
+    if (canvas.backgroundImage) return true;
+    // Buscar rect grande de fondo (común en templates ArteGenIA)
+    const objects = canvas.getObjects();
+    for (const obj of objects) {
+        const w = (obj.width ?? 0) * (obj.scaleX ?? 1);
+        const h = (obj.height ?? 0) * (obj.scaleY ?? 1);
+        if (w > 800 && h > 800) {
+            const fill = (obj as { fill?: unknown }).fill;
+            if (typeof fill === "string" && fill.startsWith("#")) {
+                return isHexDark(fill);
+            }
+        }
+    }
+    return false; // default: asumir light bg
+}
+
+/**
+ * Adapta el color de un bloque al fondo del canvas:
+ *  - Si fill = blanco puro y fondo CLARO → cambia a negro (legible)
+ *  - Si fill = negro y fondo OSCURO → cambia a blanco (legible)
+ *  - Cualquier otro color (dorado, rojo, etc.) se mantiene intacto
+ *    porque es decisión intencional del preset
+ */
+function adaptColorToBackground(originalFill: string, isDarkBg: boolean): string {
+    const f = originalFill.toLowerCase();
+    const isWhite = f === "#ffffff" || f === "#fff";
+    const isBlack = f === "#000000" || f === "#000" || f === "#0e0e14";
+    if (isWhite && !isDarkBg) return "#0e0e14";
+    if (isBlack && isDarkBg) return "#ffffff";
+    return originalFill;
+}
+
+/**
  * Inserta un preset al canvas Fabric. Cada bloque se añade como IText
  * individual (NO Group) para que el user pueda editar/mover/borrar cada
  * uno por separado igual que cualquier texto creado con "Añadir texto".
@@ -473,7 +532,12 @@ export async function insertTextPreset(
     const baseY = canvasSize.h * 0.22;
     const baseX = allLeft ? canvasSize.w * 0.10 : canvasSize.w / 2;
 
+    // Detectar fondo UNA SOLA VEZ — todos los bloques del preset usan
+    // la misma adaptación (evita inconsistencia visual entre bloques).
+    const isDarkBg = isCanvasBackgroundDark(canvas);
+
     for (const block of preset.blocks) {
+        const adaptedFill = adaptColorToBackground(block.fill, isDarkBg);
         const it = new fabric.IText(block.text, {
             left: baseX,
             top: baseY + block.yOffsetPx,
@@ -481,7 +545,7 @@ export async function insertTextPreset(
             fontSize: block.fontSize,
             fontWeight: block.fontWeight,
             fontStyle: block.fontStyle ?? "normal",
-            fill: block.fill,
+            fill: adaptedFill,
             textAlign: block.textAlign,
             charSpacing: block.letterSpacing ?? 0,
             lineHeight: block.lineHeight ?? 1.16,

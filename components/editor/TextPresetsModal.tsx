@@ -158,9 +158,10 @@ function PresetCard({
     return (
         <button
             onClick={onClick}
-            className="group relative aspect-[3/4] rounded-xl bg-gradient-to-br from-gray-900 to-black border border-white/10 hover:border-purple-400/50 transition-all overflow-hidden flex flex-col">
-            {/* Área de preview */}
-            <div className={`flex-1 ${allLeft ? "px-2.5 pt-2" : "p-2"} overflow-hidden relative`}>
+            className="group relative aspect-[3/4] rounded-xl bg-white border border-gray-200 hover:border-purple-500 hover:shadow-lg hover:shadow-purple-500/20 hover:-translate-y-0.5 transition-all duration-200 overflow-hidden flex flex-col">
+            {/* Área de preview — fondo claro estilo Polotno, sutil gradient
+                para dar profundidad sin restar legibilidad al texto */}
+            <div className={`flex-1 ${allLeft ? "px-2.5 pt-2.5" : "p-2"} overflow-hidden relative bg-gradient-to-br from-white to-gray-50`}>
                 <div className="relative" style={{ textAlign: allLeft ? "left" : "center" }}>
                     {preset.blocks.map((block, i) => (
                         <PreviewBlock
@@ -173,12 +174,24 @@ function PresetCard({
                     ))}
                 </div>
             </div>
-            {/* Nombre del preset */}
-            <div className="px-2 py-1.5 text-[9px] text-gray-400 text-center font-medium truncate border-t border-white/5 bg-black/30 shrink-0">
+            {/* Nombre del preset — footer con tint sutil */}
+            <div className="px-2 py-1.5 text-[9px] text-gray-500 text-center font-semibold truncate border-t border-gray-100 bg-gray-50 shrink-0">
                 {preset.name}
             </div>
         </button>
     );
+}
+
+/**
+ * Adapta el color del preview para que se vea sobre fondo blanco de la
+ * card. Los fills blancos del preset (#ffffff) se invierten a negro
+ * legible. Otros colores (dorado, rojo, etc.) se mantienen porque son
+ * decisión intencional del diseño.
+ */
+function previewColorFor(fill: string): string {
+    const f = fill.toLowerCase();
+    if (f === "#ffffff" || f === "#fff") return "#0e0e14";
+    return fill;
 }
 
 function PreviewBlock({
@@ -201,7 +214,7 @@ function PreviewBlock({
                 fontSize: `${fontSize}px`,
                 fontWeight: block.fontWeight,
                 fontStyle: block.fontStyle ?? "normal",
-                color: block.fill,
+                color: previewColorFor(block.fill),
                 textAlign: block.textAlign,
                 letterSpacing: block.letterSpacing
                     ? `${block.letterSpacing / 1000}em`
