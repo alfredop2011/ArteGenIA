@@ -26,12 +26,13 @@ interface Props {
 }
 
 const CATEGORIES: Array<{ id: TextPreset["category"] | "all"; label: string }> = [
-    { id: "all",    label: "Todos" },
-    { id: "header", label: "Encabezados" },
-    { id: "evento", label: "Eventos" },
-    { id: "dj",     label: "DJ · Lineup" },
-    { id: "promo",  label: "Promos" },
-    { id: "info",   label: "Info" },
+    { id: "all",        label: "Todos" },
+    { id: "header",     label: "Encabezados" },
+    { id: "evento",     label: "Eventos" },
+    { id: "dj",         label: "DJ · Lineup" },
+    { id: "promo",      label: "Promos" },
+    { id: "invitacion", label: "Invitaciones" },
+    { id: "info",       label: "Info" },
 ];
 
 export default function TextPresetsModal({ onPickEmpty, onPickPreset, onClose }: Props) {
