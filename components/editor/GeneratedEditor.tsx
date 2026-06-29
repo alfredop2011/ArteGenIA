@@ -1941,23 +1941,26 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
   const addTextPreset = useCallback(async (preset: TextPreset) => {
     const canvas = fabricRef.current;
     if (!canvas) return;
-    const created = await insertTextPreset(canvas, preset, canvasSize);
-    // Registrar cada IText creado como layer (en orden inverso para que el
-    // primer bloque del preset quede arriba en el panel layers).
-    const newLayers: LayerItem[] = created.map((it, i) => {
+    // Pasamos onEachCreated para asignar customId ANTES del ActiveSelection.
+    // Si lo hacemos DESPUÉS, el .set() implícito puede romper el bbox grupal.
+    const newLayers: LayerItem[] = [];
+    await insertTextPreset(canvas, preset, canvasSize, (it, i) => {
       const newId = `text-${uid()}`;
       (it as FabricObject & { customId?: string }).customId = newId;
-      return {
+      newLayers.push({
         id: newId,
         name: preset.blocks[i].text.slice(0, 22) || "Texto",
         type: "text" as LayerType,
         obj: it,
         visible: true,
         locked: false,
-      };
+      });
     });
     setLayers(prev => [...newLayers.slice().reverse(), ...prev]);
-    if (newLayers.length > 0) setSelectedLayer(newLayers[0]);
+    // NO setSelectedLayer aquí — rompería la ActiveSelection grupal que
+    // insertTextPreset acaba de aplicar. El user verá los N IText
+    // seleccionados como grupo y puede mover/editar; cuando clickee uno
+    // específico, Fabric activa el selectedLayer via su event listener.
     setSaveState("unsaved");
   }, [canvasSize]);
 

@@ -2084,9 +2084,12 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
   const addTextPreset = useCallback(async (preset: TextPreset) => {
     const fc = fabricRef.current;
     if (!fc) return;
-    const created = await insertTextPreset(fc, preset, canvasSize);
-    created.forEach(it => decorateNewObject(it as unknown as FabricObject));
-    fc.requestRenderAll();
+    // decorateNewObject va via onEachCreated → se aplica ANTES del
+    // setActiveObject(ActiveSelection) que hace insertTextPreset. Si se
+    // aplicara después, .set() implícito invalida el bbox grupal.
+    await insertTextPreset(fc, preset, canvasSize, (it) => {
+      decorateNewObject(it as unknown as FabricObject);
+    });
     setSaveState("unsaved");
     setOpenSheet(null);
     pushHistory();

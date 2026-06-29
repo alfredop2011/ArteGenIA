@@ -459,6 +459,10 @@ export async function insertTextPreset(
     canvas: FabricCanvas,
     preset: TextPreset,
     canvasSize: { w: number; h: number },
+    /** Callback opcional que se aplica a CADA IText recién creado ANTES
+     *  del setActiveObject(ActiveSelection). Úsalo para customId (desktop)
+     *  o decorateNewObject (mobile) sin romper la selección agrupada. */
+    onEachCreated?: (it: IText, index: number) => void,
 ): Promise<IText[]> {
     const fabric = await import("fabric");
     const created: IText[] = [];
@@ -488,6 +492,13 @@ export async function insertTextPreset(
         });
         canvas.add(it);
         created.push(it);
+    }
+
+    // Decoración por-objeto (customId, cornerColor, etc.) ANTES del
+    // setActiveObject — si se aplicara después, decorate llama .set()
+    // que en algunos casos invalida la ActiveSelection visualmente.
+    if (onEachCreated) {
+        created.forEach((it, i) => onEachCreated(it, i));
     }
 
     // Si el preset tiene 1 bloque → seleccionar ese. Si tiene varios →
