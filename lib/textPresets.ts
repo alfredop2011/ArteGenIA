@@ -10,10 +10,13 @@
  * dependencias). Si añades preset con font nuevo, verifica que esté
  * incluida en app/layout.tsx o el rendering fallará a serif del sistema.
  *
- * Escalado: pensado para canvas 1080×1350 (formato post 4:5). Tamaños
- * REDUCIDOS tras feedback v1 ("demasiado grandes"): ahora el preset
- * típico ocupa ~30-40% del alto del canvas. Cada preset combina al
- * menos 2 niveles de jerarquía (título grande + body legible).
+ * v3 — estilo "card" tipo Polotno (feedback usuario):
+ * - Alineación IZQUIERDA en la mayoría (más profesional para flyers)
+ * - Bloques JUNTOS verticalmente (yOffset pequeño 30-60px) — leen como
+ *   una sola unidad visual tipo "tarjeta", no como elementos sueltos
+ * - Mix DRAMÁTICO de fuentes: caption sans + display bold + body sans
+ * - Contenido específico del vertical DJ/eventos (no "TÍTULO PRINCIPAL"
+ *   genérico — usa textos plausibles que el user puede editar/mantener)
  */
 import type { Canvas as FabricCanvas, IText, Object as FabricObject } from "fabric";
 
@@ -39,89 +42,116 @@ export interface TextPreset {
     previewIndex?: number;
 }
 
-// Convenciones de tamaño (canvas 1080×1350) — REDUCIDAS tras feedback v1:
-// - Hero/Display: 90-120px (antes 130-180)
-// - H1: 60-80px    (antes 80-120)
-// - H2: 40-50px    (antes 50-70)
-// - Body: 22-30px  (antes 28-40)
-// - Caption: 16-20px (antes 20-26)
+// Escala canvas 1080×1350:
+// - Display 70-100px (titulares cortos: VIP, SALE, NIGHT)
+// - H1 50-70px (titulares medios)
+// - H2 28-36px (sub)
+// - Body 18-24px (descripción multi-line)
+// - Caption 12-16px (uppercase pequeño tipo "LOOKING FOR")
 //
-// Colores blanco (#ffffff) por defecto — el user los cambiará desde la
-// toolbar contextual. Mejor empezar legibles sobre cualquier fondo
-// oscuro (target típico de flyers DJ).
+// Spacing entre bloques: 25-60px (NO 100+ — leen como card).
 
 export const TEXT_PRESETS: TextPreset[] = [
     // ─── Encabezados básicos (3) ─────────────────────────────────────
     {
-        id: "basic-header",
-        name: "Encabezado + Body",
+        id: "card-operations",
+        name: "Título + Body",
         category: "header",
         blocks: [
             {
-                text: "TÍTULO PRINCIPAL",
-                fontFamily: "Bebas Neue",
-                fontSize: 90,
-                fontWeight: "400",
+                text: "LOOKING FOR",
+                fontFamily: "Inter",
+                fontSize: 16,
+                fontWeight: "700",
                 fill: "#ffffff",
-                textAlign: "center",
-                letterSpacing: 80,
+                textAlign: "left",
+                letterSpacing: 300,
+                yOffsetPx: 0,
+            },
+            {
+                text: "OPERATIONS\nMANAGER",
+                fontFamily: "Inter",
+                fontSize: 56,
+                fontWeight: "900",
+                fill: "#ffffff",
+                textAlign: "left",
                 lineHeight: 1,
-                yOffsetPx: 0,
+                yOffsetPx: 30,
             },
             {
-                text: "Añade aquí una descripción breve\nde tu evento o promoción",
+                text: "Will be responsible for managing activities that are\npart of the production of goods and services.\nDirect responsibilities include managing both the\noperations process, embracing design, planning,\ncontrol, performance improvement.",
                 fontFamily: "Inter",
-                fontSize: 22,
+                fontSize: 16,
                 fontWeight: "400",
                 fill: "#ffffff",
-                textAlign: "center",
+                textAlign: "left",
                 lineHeight: 1.4,
-                yOffsetPx: 110,
+                yOffsetPx: 175,
             },
         ],
     },
     {
-        id: "basic-subheader",
-        name: "Subtítulo elegante",
+        id: "card-marketing-proposal",
+        name: "Tag + Title bold",
         category: "header",
         blocks: [
             {
-                text: "Subtítulo elegante",
-                fontFamily: "Playfair Display",
-                fontSize: 48,
-                fontWeight: "600",
-                fontStyle: "italic",
-                fill: "#ffffff",
-                textAlign: "center",
-                lineHeight: 1.1,
-                yOffsetPx: 0,
-            },
-            {
-                text: "Línea de apoyo · más sutil",
+                text: "M.MK and CO",
                 fontFamily: "Inter",
-                fontSize: 18,
-                fontWeight: "400",
+                fontSize: 14,
+                fontWeight: "700",
                 fill: "#ffffff",
-                textAlign: "center",
+                textAlign: "left",
                 letterSpacing: 200,
-                yOffsetPx: 70,
+                yOffsetPx: 0,
+            },
+            {
+                text: "MARKETING\nPROPOSAL",
+                fontFamily: "Inter",
+                fontSize: 64,
+                fontWeight: "900",
+                fill: "#ffffff",
+                textAlign: "left",
+                lineHeight: 1,
+                yOffsetPx: 28,
+            },
+            {
+                text: "An operational document that outlines an advertising\nstrategy that an organization will implement to\ngenerate leads and reach its target market.",
+                fontFamily: "Inter",
+                fontSize: 15,
+                fontWeight: "400",
+                fill: "#ffffff",
+                textAlign: "left",
+                lineHeight: 1.45,
+                yOffsetPx: 165,
             },
         ],
     },
     {
-        id: "basic-body",
-        name: "Texto cuerpo",
+        id: "card-minimalism",
+        name: "Tag + Display",
         category: "header",
         blocks: [
             {
-                text: "Añade aquí el texto descriptivo de\ntu evento. Puedes escribir varias líneas\ny ajustar el ancho a tu gusto.",
+                text: "The Future Of Design",
                 fontFamily: "Inter",
-                fontSize: 24,
+                fontSize: 15,
                 fontWeight: "400",
                 fill: "#ffffff",
-                textAlign: "center",
-                lineHeight: 1.45,
+                textAlign: "left",
+                letterSpacing: 50,
                 yOffsetPx: 0,
+            },
+            {
+                text: "MINIMALISIM",
+                fontFamily: "Inter",
+                fontSize: 56,
+                fontWeight: "900",
+                fill: "#ffffff",
+                textAlign: "left",
+                letterSpacing: 30,
+                lineHeight: 1,
+                yOffsetPx: 28,
             },
         ],
     },
@@ -129,114 +159,116 @@ export const TEXT_PRESETS: TextPreset[] = [
     // ─── Eventos/Fiestas (3) ────────────────────────────────────────
     {
         id: "evento-tonight",
-        name: "Tonight · Live",
+        name: "Caption + TONIGHT",
         category: "evento",
         blocks: [
             {
-                text: "· LIVE MUSIC ·",
+                text: "LIVE MUSIC TONIGHT",
                 fontFamily: "Inter",
-                fontSize: 18,
-                fontWeight: "600",
+                fontSize: 14,
+                fontWeight: "700",
                 fill: "#ffffff",
-                textAlign: "center",
-                letterSpacing: 500,
+                textAlign: "left",
+                letterSpacing: 400,
                 yOffsetPx: 0,
             },
             {
                 text: "TONIGHT",
                 fontFamily: "Bebas Neue",
-                fontSize: 110,
+                fontSize: 100,
                 fontWeight: "400",
                 fill: "#ffffff",
-                textAlign: "center",
-                letterSpacing: 150,
+                textAlign: "left",
+                letterSpacing: 80,
                 lineHeight: 1,
-                yOffsetPx: 30,
+                yOffsetPx: 28,
             },
             {
-                text: "Música en directo · Cocktails · DJ set",
+                text: "Música en directo · Cocktails · DJ set\nDoors open 22:00 — Free entry before midnight",
                 fontFamily: "Inter",
-                fontSize: 20,
+                fontSize: 17,
                 fontWeight: "400",
                 fill: "#ffffff",
-                textAlign: "center",
-                yOffsetPx: 145,
+                textAlign: "left",
+                lineHeight: 1.5,
+                yOffsetPx: 138,
             },
         ],
     },
     {
         id: "evento-saturday-night",
-        name: "Saturday Night",
+        name: "Saturday NIGHT",
         category: "evento",
         blocks: [
             {
                 text: "Saturday",
                 fontFamily: "Playfair Display",
-                fontSize: 44,
+                fontSize: 38,
                 fontWeight: "400",
                 fontStyle: "italic",
                 fill: "#ffffff",
-                textAlign: "center",
+                textAlign: "left",
                 lineHeight: 1,
                 yOffsetPx: 0,
             },
             {
                 text: "NIGHT",
                 fontFamily: "Anton",
-                fontSize: 100,
+                fontSize: 110,
                 fontWeight: "400",
                 fill: "#ffffff",
-                textAlign: "center",
-                letterSpacing: 80,
+                textAlign: "left",
+                letterSpacing: 60,
                 lineHeight: 0.95,
-                yOffsetPx: 50,
+                yOffsetPx: 38,
             },
             {
-                text: "Una noche para recordar · 23:00 — 06:00",
+                text: "An unforgettable night with the best DJs in town.\nReserve your table — limited capacity.",
                 fontFamily: "Inter",
-                fontSize: 18,
-                fontWeight: "500",
+                fontSize: 17,
+                fontWeight: "400",
                 fill: "#ffffff",
-                textAlign: "center",
-                letterSpacing: 150,
-                yOffsetPx: 155,
+                textAlign: "left",
+                lineHeight: 1.45,
+                yOffsetPx: 165,
             },
         ],
     },
     {
         id: "evento-vip",
-        name: "VIP Access",
+        name: "EXCLUSIVE · VIP",
         category: "evento",
         blocks: [
             {
-                text: "VIP",
-                fontFamily: "Anton",
-                fontSize: 130,
-                fontWeight: "400",
+                text: "EXCLUSIVE ACCESS",
+                fontFamily: "Inter",
+                fontSize: 14,
+                fontWeight: "700",
                 fill: "#ffd700",
-                textAlign: "center",
-                letterSpacing: 50,
-                lineHeight: 1,
+                textAlign: "left",
+                letterSpacing: 500,
                 yOffsetPx: 0,
             },
             {
-                text: "ACCESS · EXCLUSIVE",
-                fontFamily: "Inter",
-                fontSize: 18,
-                fontWeight: "700",
-                fill: "#ffffff",
-                textAlign: "center",
-                letterSpacing: 600,
-                yOffsetPx: 140,
-            },
-            {
-                text: "Mesa reservada · Botella incluida · Entrada prioritaria",
-                fontFamily: "Inter",
-                fontSize: 16,
+                text: "VIP TABLE",
+                fontFamily: "Anton",
+                fontSize: 90,
                 fontWeight: "400",
                 fill: "#ffffff",
-                textAlign: "center",
-                yOffsetPx: 180,
+                textAlign: "left",
+                letterSpacing: 40,
+                lineHeight: 1,
+                yOffsetPx: 28,
+            },
+            {
+                text: "Mesa reservada · Botella incluida\nEntrada prioritaria · Zona VIP",
+                fontFamily: "Inter",
+                fontSize: 17,
+                fontWeight: "500",
+                fill: "#ffffff",
+                textAlign: "left",
+                lineHeight: 1.5,
+                yOffsetPx: 130,
             },
         ],
     },
@@ -244,89 +276,89 @@ export const TEXT_PRESETS: TextPreset[] = [
     // ─── DJ/Lineup (2) ──────────────────────────────────────────────
     {
         id: "dj-feat-special",
-        name: "DJ · Featuring",
+        name: "Featuring · DJ",
         category: "dj",
         blocks: [
             {
-                text: "FEATURING",
+                text: "TONIGHT FEATURING",
                 fontFamily: "Inter",
-                fontSize: 18,
-                fontWeight: "600",
+                fontSize: 14,
+                fontWeight: "700",
                 fill: "#ffffff",
-                textAlign: "center",
-                letterSpacing: 600,
+                textAlign: "left",
+                letterSpacing: 400,
                 yOffsetPx: 0,
             },
             {
                 text: "DJ NAME",
                 fontFamily: "Bebas Neue",
-                fontSize: 90,
+                fontSize: 80,
                 fontWeight: "400",
                 fill: "#ffffff",
-                textAlign: "center",
+                textAlign: "left",
                 letterSpacing: 80,
                 lineHeight: 1,
-                yOffsetPx: 32,
+                yOffsetPx: 28,
             },
             {
-                text: "Special Guest · TBA",
+                text: "Special guest · TBA",
                 fontFamily: "Playfair Display",
                 fontSize: 22,
                 fontWeight: "400",
                 fontStyle: "italic",
                 fill: "#ffffff",
-                textAlign: "center",
-                yOffsetPx: 130,
+                textAlign: "left",
+                yOffsetPx: 115,
             },
         ],
     },
     {
         id: "dj-lineup-card",
-        name: "Lineup",
+        name: "Lineup card",
         category: "dj",
         blocks: [
             {
                 text: "L I N E U P",
                 fontFamily: "Inter",
-                fontSize: 20,
+                fontSize: 14,
                 fontWeight: "700",
                 fill: "#ffffff",
-                textAlign: "center",
-                letterSpacing: 1200,
+                textAlign: "left",
+                letterSpacing: 800,
                 yOffsetPx: 0,
             },
             {
                 text: "Artist One",
                 fontFamily: "Bebas Neue",
-                fontSize: 56,
+                fontSize: 48,
                 fontWeight: "400",
                 fill: "#ffffff",
-                textAlign: "center",
-                letterSpacing: 50,
+                textAlign: "left",
+                letterSpacing: 30,
                 lineHeight: 1,
-                yOffsetPx: 50,
+                yOffsetPx: 30,
             },
             {
                 text: "Artist Two",
                 fontFamily: "Bebas Neue",
-                fontSize: 56,
+                fontSize: 48,
                 fontWeight: "400",
                 fill: "#ffffff",
-                textAlign: "center",
-                letterSpacing: 50,
+                textAlign: "left",
+                letterSpacing: 30,
                 lineHeight: 1,
-                yOffsetPx: 120,
+                yOffsetPx: 85,
             },
             {
                 text: "Artist Three",
                 fontFamily: "Bebas Neue",
-                fontSize: 56,
+                fontSize: 48,
                 fontWeight: "400",
                 fill: "#ffffff",
-                textAlign: "center",
-                letterSpacing: 50,
+                textAlign: "left",
+                letterSpacing: 30,
                 lineHeight: 1,
-                yOffsetPx: 190,
+                yOffsetPx: 140,
             },
         ],
     },
@@ -334,39 +366,38 @@ export const TEXT_PRESETS: TextPreset[] = [
     // ─── Promo (1) ──────────────────────────────────────────────────
     {
         id: "promo-early-bird",
-        name: "Early Bird · % OFF",
+        name: "EARLY BIRD · OFF",
         category: "promo",
         blocks: [
             {
-                text: "EARLY BIRD",
-                fontFamily: "Bebas Neue",
-                fontSize: 60,
-                fontWeight: "400",
+                text: "LIMITED OFFER",
+                fontFamily: "Inter",
+                fontSize: 14,
+                fontWeight: "700",
                 fill: "#ffffff",
-                textAlign: "center",
-                letterSpacing: 150,
-                lineHeight: 1,
+                textAlign: "left",
+                letterSpacing: 400,
                 yOffsetPx: 0,
             },
             {
                 text: "50% OFF",
                 fontFamily: "Anton",
-                fontSize: 120,
+                fontSize: 100,
                 fontWeight: "400",
                 fill: "#ff3b30",
-                textAlign: "center",
+                textAlign: "left",
                 lineHeight: 1,
-                yOffsetPx: 65,
+                yOffsetPx: 28,
             },
             {
-                text: "Solo primeras 50 entradas · Hasta agotar stock",
+                text: "Solo primeras 50 entradas · Reserva ya\nValido hasta el 30 de junio",
                 fontFamily: "Inter",
-                fontSize: 18,
+                fontSize: 17,
                 fontWeight: "500",
                 fill: "#ffffff",
-                textAlign: "center",
-                letterSpacing: 150,
-                yOffsetPx: 200,
+                textAlign: "left",
+                lineHeight: 1.5,
+                yOffsetPx: 140,
             },
         ],
     },
@@ -380,7 +411,7 @@ export const TEXT_PRESETS: TextPreset[] = [
             {
                 text: "DETALLES DEL EVENTO",
                 fontFamily: "Inter",
-                fontSize: 16,
+                fontSize: 14,
                 fontWeight: "700",
                 fill: "#ffffff",
                 textAlign: "left",
@@ -388,34 +419,24 @@ export const TEXT_PRESETS: TextPreset[] = [
                 yOffsetPx: 0,
             },
             {
-                text: "📅  Sábado 12 Julio",
+                text: "Sábado 12 Julio",
                 fontFamily: "Inter",
-                fontSize: 24,
-                fontWeight: "600",
+                fontSize: 28,
+                fontWeight: "700",
                 fill: "#ffffff",
                 textAlign: "left",
-                letterSpacing: 50,
-                yOffsetPx: 40,
+                lineHeight: 1.1,
+                yOffsetPx: 30,
             },
             {
-                text: "🕐  23:00 — 06:00",
+                text: "23:00 — 06:00\nSala Razzmatazz · BCN\nC/ Pamplona 88",
                 fontFamily: "Inter",
-                fontSize: 24,
-                fontWeight: "600",
+                fontSize: 18,
+                fontWeight: "400",
                 fill: "#ffffff",
                 textAlign: "left",
-                letterSpacing: 50,
-                yOffsetPx: 80,
-            },
-            {
-                text: "📍  Sala Razzmatazz · BCN",
-                fontFamily: "Inter",
-                fontSize: 24,
-                fontWeight: "600",
-                fill: "#ffffff",
-                textAlign: "left",
-                letterSpacing: 50,
-                yOffsetPx: 120,
+                lineHeight: 1.5,
+                yOffsetPx: 75,
             },
         ],
     },
@@ -426,9 +447,10 @@ export const TEXT_PRESETS: TextPreset[] = [
  * individual (NO Group) para que el user pueda editar/mover/borrar cada
  * uno por separado igual que cualquier texto creado con "Añadir texto".
  *
- * Posicionamiento: el primer bloque se centra horizontalmente. Los
- * siguientes se posicionan en base al yOffsetPx del preset. Origen Y
- * arranca en ~28% del canvas (típico para hero text con body debajo).
+ * v3 — alineación izquierda: los presets tipo "card" se anclan al
+ * cuadrante superior-izquierdo del canvas (15% margen). El user después
+ * los mueve/centra a gusto. Si el preset es center-aligned, se ancla a
+ * centro horizontal.
  *
  * Devuelve la lista de Fabric IText creados para que el caller los
  * registre como layers.
@@ -441,8 +463,11 @@ export async function insertTextPreset(
     const fabric = await import("fabric");
     const created: IText[] = [];
 
-    const baseY = canvasSize.h * 0.28;
-    const baseX = canvasSize.w / 2;
+    // Detectar si todos los blocks son left → ancla a margen izquierdo;
+    // si es mixto o center → centro horizontal (mejor default visual).
+    const allLeft = preset.blocks.every(b => b.textAlign === "left");
+    const baseY = canvasSize.h * 0.22;
+    const baseX = allLeft ? canvasSize.w * 0.10 : canvasSize.w / 2;
 
     for (const block of preset.blocks) {
         const it = new fabric.IText(block.text, {
