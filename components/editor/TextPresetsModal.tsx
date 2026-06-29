@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useLayoutEffect, useRef } from "react";
 import { X, Type } from "lucide-react";
 import { TEXT_PRESETS, type TextPreset, type TextBlock } from "@/lib/textPresets";
 
@@ -135,14 +135,15 @@ export default function TextPresetsModal({ onPickEmpty, onPickPreset, onClose }:
 }
 
 /**
- * Card con preview REAL del preset — renderiza TODOS los bloques con
- * su tipografía, tamaño relativo, alineación y spacing real, escalados
- * para entrar en el card. Esto le da al usuario una idea fiel de qué
- * va a obtener (a diferencia de mostrar solo el bloque dominante).
+ * Card con preview REAL del preset. La clave (feedback Polotno): NO se
+ * miniaturiza el canvas entero con una escala fija — se renderiza el
+ * GRUPO de texto a su tamaño natural (tipografía/posiciones reales del
+ * Fabric), se MIDE su bounding box y se aplica un `fit-to-box` con
+ * padding para que LLENE el thumbnail y quede centrado, como Polotno.
  *
- * Escala calculada para que el preset (típicamente ~1080×600px en
- * canvas) entre en un card de ~330×140px (desktop) o ~150×190px
- * (mobile 2-col).
+ * Así cada preset luce como una pieza tipográfica balanceada y no como
+ * una captura perdida en una tarjeta vacía. La escala es por-preset
+ * (depende de su bbox real), no un 0.13 fijo para todos.
  */
 function PresetCard({
     preset, onClick,
@@ -150,31 +151,70 @@ function PresetCard({
     preset: TextPreset;
     onClick: () => void;
 }) {
-    // Card aspect 3:4 con 2 columnas en panel ~380px → ancho card ~160px.
-    // Escala 0.13 mantiene legibilidad y proporción Polotno-like.
-    const scale = 0.13;
-    const allLeft = preset.blocks.every(b => b.textAlign === "left");
+    const areaRef = useRef<HTMLDivElement>(null);
+    const groupRef = useRef<HTMLDivElement>(null);
+    // fit = bounding box natural medido (w×h) + escala para entrar centrado.
+    const [fit, setFit] = useState<{ scale: number; w: number; h: number } | null>(null);
+
+    useLayoutEffect(() => {
+        const area = areaRef.current, group = groupRef.current;
+        if (!area || !group) return;
+        const PAD = 12;
+        const measure = () => {
+            const kids = Array.from(group.children) as HTMLElement[];
+            if (!kids.length) return;
+            // Bounding box real del grupo: ancho = línea más ancha;
+            // alto = base del bloque más bajo (top absoluto + su alto).
+            let w = 0, h = 0;
+            for (const k of kids) {
+                w = Math.max(w, k.offsetWidth);
+                h = Math.max(h, k.offsetTop + k.offsetHeight);
+            }
+            if (!w || !h) return;
+            const aw = area.clientWidth - PAD * 2;
+            const ah = area.clientHeight - PAD * 2;
+            // min(ratios) = fit-to-box; cap a 1 para no ampliar más allá de
+            // su tamaño natural (evita un bloque diminuto gigante/borroso).
+            const scale = Math.min(aw / w, ah / h, 1);
+            setFit({ scale, w, h });
+        };
+        measure();
+        // Remedir si cambia el tamaño del área (responsive/mobile).
+        const ro = new ResizeObserver(measure);
+        ro.observe(area);
+        // Y cuando carguen las fuentes (cambian las métricas → el bbox real).
+        const fonts = (document as Document & { fonts?: { ready?: Promise<unknown> } }).fonts;
+        fonts?.ready?.then(measure).catch(() => {});
+        return () => ro.disconnect();
+    }, [preset]);
 
     return (
         <button
             onClick={onClick}
             className="group relative aspect-[3/4] rounded-xl bg-white border border-gray-200 hover:border-purple-500 hover:shadow-lg hover:shadow-purple-500/20 hover:-translate-y-0.5 transition-all duration-200 overflow-hidden flex flex-col">
-            {/* Área de preview — fondo claro estilo Polotno, sutil gradient
-                para dar profundidad sin restar legibilidad al texto */}
-            <div className={`flex-1 ${allLeft ? "px-2.5 pt-2.5" : "p-2"} overflow-hidden relative bg-gradient-to-br from-white to-gray-50`}>
-                <div className="relative" style={{ textAlign: allLeft ? "left" : "center" }}>
+            {/* Área de preview — el grupo se MIDE y se escala (fit-to-box) para
+                llenar y centrarse. No es una miniatura del artboard entero. */}
+            <div ref={areaRef}
+                 className="relative flex flex-1 items-center justify-center overflow-hidden bg-gradient-to-br from-white to-gray-50">
+                <div
+                    ref={groupRef}
+                    style={{
+                        position: "relative",
+                        flex: "none",
+                        width: fit ? fit.w : "auto",
+                        height: fit ? fit.h : "auto",
+                        transform: fit ? `scale(${fit.scale})` : undefined,
+                        transformOrigin: "center",
+                        // Oculto hasta medir → sin flash de texto a tamaño natural.
+                        visibility: fit ? "visible" : "hidden",
+                    }}>
                     {preset.blocks.map((block, i) => (
-                        <PreviewBlock
-                            key={i}
-                            block={block}
-                            scale={scale}
-                            isFirst={i === 0}
-                            prevOffset={i > 0 ? preset.blocks[i - 1].yOffsetPx : 0}
-                        />
+                        <PreviewBlock key={i} block={block} measured={!!fit} />
                     ))}
                 </div>
             </div>
-            {/* Nombre del preset — footer con tint sutil */}
+            {/* Nombre del preset — etiqueta FUERA del preview, abajo, para no
+                arruinar la composición (feedback #7). */}
             <div className="px-2 py-1.5 text-[9px] text-gray-500 text-center font-semibold truncate border-t border-gray-100 bg-gray-50 shrink-0">
                 {preset.name}
             </div>
@@ -194,24 +234,26 @@ function previewColorFor(fill: string): string {
     return fill;
 }
 
-function PreviewBlock({
-    block, scale, isFirst, prevOffset,
-}: {
-    block: TextBlock;
-    scale: number;
-    isFirst: boolean;
-    prevOffset: number;
-}) {
-    const fontSize = Math.max(7, block.fontSize * scale);
-    // Spacing entre bloques: convertir el yOffset real a margin-top
-    // escalado. El primer bloque sin margin (queda pegado arriba).
-    const marginTop = isFirst ? 0 : Math.max(2, (block.yOffsetPx - prevOffset) * scale * 0.5);
-
+/**
+ * Bloque del preset renderizado a TAMAÑO NATURAL (px reales del Fabric),
+ * posicionado por su yOffsetPx absoluto. El escalado lo hace el grupo
+ * (transform: scale), así toda la tipografía se preserva con fidelidad.
+ *
+ * - measured=false (1ª pasada): width:max-content → offsetWidth = línea
+ *   más ancha real, para medir el bbox.
+ * - measured=true: width:100% del grupo ya dimensionado → textAlign
+ *   (left/center/right) se respeta dentro del bounding box.
+ */
+function PreviewBlock({ block, measured }: { block: TextBlock; measured: boolean }) {
     return (
         <div
             style={{
+                position: "absolute",
+                top: `${block.yOffsetPx}px`,
+                left: 0,
+                width: measured ? "100%" : "max-content",
                 fontFamily: block.fontFamily,
-                fontSize: `${fontSize}px`,
+                fontSize: `${block.fontSize}px`,
                 fontWeight: block.fontWeight,
                 fontStyle: block.fontStyle ?? "normal",
                 color: previewColorFor(block.fill),
@@ -220,9 +262,7 @@ function PreviewBlock({
                     ? `${block.letterSpacing / 1000}em`
                     : undefined,
                 lineHeight: block.lineHeight ?? 1.16,
-                marginTop: `${marginTop}px`,
-                whiteSpace: "pre-line",
-                overflow: "hidden",
+                whiteSpace: "pre",
             }}>
             {block.text}
         </div>
