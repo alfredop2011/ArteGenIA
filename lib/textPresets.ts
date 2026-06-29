@@ -1033,12 +1033,72 @@ function isHexDark(hex: string): boolean {
 }
 
 /**
- * Heurística para detectar si el fondo del canvas es oscuro:
- *  1. Si canvas.backgroundColor está definido como hex → usar ese
- *  2. Si hay backgroundImage → asumir oscuro (foto típicamente lo es)
- *  3. Si hay un Rect grande (>800×800) que cubre el canvas (común en
- *     templates ArteGenIA donde el "fondo" es un Rect) → usar su fill
- *  4. Fallback: asumir CLARO (caso flyer en blanco)
+ * Renderiza el canvas Fabric a un PNG temporal (multiplier bajo para
+ * velocidad), samplea pixels en el área especificada y devuelve la
+ * luminance promedio.
+ *
+ * Esto SUPERA todas las heurísticas anteriores porque analiza EL FONDO
+ * REAL que el ojo verá detrás del texto: funciona con imágenes, gradients,
+ * shapes complejas, fondos con varias zonas, etc.
+ *
+ * Devuelve null si algo falla (img no carga, ctx 2D no disponible) —
+ * el caller hace fallback a la heurística clásica.
+ */
+async function sampleAreaLuminance(
+    canvas: FabricCanvas,
+    area: { x: number; y: number; w: number; h: number },
+): Promise<number | null> {
+    try {
+        const MULT = 0.3; // 30% del tamaño real — suficiente para promedio fiable
+        const dataUrl = canvas.toDataURL({ format: "png", multiplier: MULT, quality: 0.8 });
+
+        const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+            const i = new Image();
+            i.onload = () => resolve(i);
+            i.onerror = () => reject(new Error("img load failed"));
+            i.src = dataUrl;
+        });
+
+        const tmp = document.createElement("canvas");
+        tmp.width = img.width;
+        tmp.height = img.height;
+        const ctx = tmp.getContext("2d");
+        if (!ctx) return null;
+        ctx.drawImage(img, 0, 0);
+
+        // Clamp el área al tamaño real de la imagen (multiplier 0.3)
+        const sx = Math.max(0, Math.floor(area.x * MULT));
+        const sy = Math.max(0, Math.floor(area.y * MULT));
+        const sw = Math.min(img.width - sx, Math.max(1, Math.floor(area.w * MULT)));
+        const sh = Math.min(img.height - sy, Math.max(1, Math.floor(area.h * MULT)));
+        if (sw < 2 || sh < 2) return null;
+
+        const imgData = ctx.getImageData(sx, sy, sw, sh);
+        const data = imgData.data;
+
+        // Sample 1 de cada 4 pixels (paso de 16 bytes) — velocidad sin
+        // perder precisión para áreas grandes.
+        let totalLum = 0;
+        let count = 0;
+        for (let i = 0; i < data.length; i += 16) {
+            const a = data[i + 3];
+            if (a < 128) continue; // skip transparente
+            const r = data[i], g = data[i + 1], b = data[i + 2];
+            totalLum += (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+            count++;
+        }
+        return count > 0 ? totalLum / count : null;
+    } catch {
+        return null;
+    }
+}
+
+/**
+ * Fallback heurístico (v5) cuando el sampling falla. Mantiene compatibilidad:
+ *  1. canvas.backgroundColor hex → usar luminance
+ *  2. backgroundImage existente → asumir oscuro (foto típica)
+ *  3. Rect grande (>800×800) → usar su fill
+ *  4. Fallback: asumir light bg
  */
 function isCanvasBackgroundDark(canvas: FabricCanvas): boolean {
     const bg = canvas.backgroundColor as unknown;
@@ -1046,7 +1106,6 @@ function isCanvasBackgroundDark(canvas: FabricCanvas): boolean {
         return isHexDark(bg);
     }
     if (canvas.backgroundImage) return true;
-    // Buscar rect grande de fondo (común en templates ArteGenIA)
     const objects = canvas.getObjects();
     for (const obj of objects) {
         const w = (obj.width ?? 0) * (obj.scaleX ?? 1);
@@ -1058,7 +1117,7 @@ function isCanvasBackgroundDark(canvas: FabricCanvas): boolean {
             }
         }
     }
-    return false; // default: asumir light bg
+    return false;
 }
 
 /**
@@ -1110,7 +1169,23 @@ export async function insertTextPreset(
 
     // Detectar fondo UNA SOLA VEZ — todos los bloques del preset usan
     // la misma adaptación (evita inconsistencia visual entre bloques).
-    const isDarkBg = isCanvasBackgroundDark(canvas);
+    //
+    // v7: pixel sampling REAL del área donde irá el preset (no heurística
+    // ciega). Calculamos el bbox aproximado del preset y muestreamos esa
+    // zona específica del canvas renderizado — funciona con imagen,
+    // gradient, shapes y cualquier combinación visual.
+    const lastBlock = preset.blocks[preset.blocks.length - 1];
+    const presetHeight = lastBlock.yOffsetPx + lastBlock.fontSize * (lastBlock.lineHeight ?? 1.2) * 2;
+    const sampleArea = {
+        x: allLeft ? baseX : baseX - canvasSize.w * 0.4,
+        y: baseY,
+        w: allLeft ? canvasSize.w * 0.8 : canvasSize.w * 0.8,
+        h: Math.min(presetHeight, canvasSize.h - baseY),
+    };
+    const sampledLum = await sampleAreaLuminance(canvas, sampleArea);
+    const isDarkBg = sampledLum !== null
+        ? sampledLum < 0.5
+        : isCanvasBackgroundDark(canvas); // fallback si sampling falla
 
     for (const block of preset.blocks) {
         const adaptedFill = adaptColorToBackground(block.fill, isDarkBg);
