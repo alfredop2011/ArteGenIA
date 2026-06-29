@@ -110,15 +110,15 @@ export default function TextPresetsModal({ onPickEmpty, onPickPreset, onClose }:
                     </div>
                 </div>
 
-                {/* Grid de presets — 1 columna en panel desktop (más espacio
-                    para ver el layout), 2 columnas en mobile bottom sheet */}
+                {/* Grid de presets — SIEMPRE 2 columnas (estilo Polotno
+                    reference, feedback v4). En mobile cards más altas para
+                    que el preview multi-bloque se lea bien. */}
                 <div className="flex-1 overflow-y-auto px-4 pb-4">
-                    <div className={isMobile ? "grid grid-cols-2 gap-3" : "flex flex-col gap-2.5"}>
+                    <div className="grid grid-cols-2 gap-2.5">
                         {presets.map(preset => (
                             <PresetCard
                                 key={preset.id}
                                 preset={preset}
-                                horizontal={!isMobile}
                                 onClick={() => { onPickPreset(preset); onClose(); }}
                             />
                         ))}
@@ -145,26 +145,22 @@ export default function TextPresetsModal({ onPickEmpty, onPickPreset, onClose }:
  * (mobile 2-col).
  */
 function PresetCard({
-    preset, horizontal, onClick,
+    preset, onClick,
 }: {
     preset: TextPreset;
-    horizontal: boolean;
     onClick: () => void;
 }) {
-    // Escala fuente real → card. En desktop panel ancho ~330, escala 0.18.
-    // En mobile card ~150, escala 0.13.
-    const scale = horizontal ? 0.18 : 0.13;
-
-    // Calculamos el yOffset relativo total para distribuir verticalmente.
-    // El primer bloque queda en yOffsetPx=0 (top del card content area).
+    // Card aspect 3:4 con 2 columnas en panel ~380px → ancho card ~160px.
+    // Escala 0.13 mantiene legibilidad y proporción Polotno-like.
+    const scale = 0.13;
     const allLeft = preset.blocks.every(b => b.textAlign === "left");
 
     return (
         <button
             onClick={onClick}
-            className={`group relative ${horizontal ? "h-[155px]" : "aspect-[4/5]"} rounded-xl bg-gradient-to-br from-gray-900 to-black border border-white/10 hover:border-purple-400/50 transition-all overflow-hidden flex flex-col`}>
+            className="group relative aspect-[3/4] rounded-xl bg-gradient-to-br from-gray-900 to-black border border-white/10 hover:border-purple-400/50 transition-all overflow-hidden flex flex-col">
             {/* Área de preview */}
-            <div className={`flex-1 ${allLeft ? "px-3 pt-2" : "p-2"} overflow-hidden relative`}>
+            <div className={`flex-1 ${allLeft ? "px-2.5 pt-2" : "p-2"} overflow-hidden relative`}>
                 <div className="relative" style={{ textAlign: allLeft ? "left" : "center" }}>
                     {preset.blocks.map((block, i) => (
                         <PreviewBlock
@@ -178,7 +174,7 @@ function PresetCard({
                 </div>
             </div>
             {/* Nombre del preset */}
-            <div className="px-2 py-1.5 text-[10px] text-gray-400 text-center font-medium truncate border-t border-white/5 bg-black/30 shrink-0">
+            <div className="px-2 py-1.5 text-[9px] text-gray-400 text-center font-medium truncate border-t border-white/5 bg-black/30 shrink-0">
                 {preset.name}
             </div>
         </button>

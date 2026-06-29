@@ -490,10 +490,24 @@ export async function insertTextPreset(
         created.push(it);
     }
 
-    // Seleccionar el primer bloque para que el user vea el resultado
-    // y pueda empezar a editar de inmediato.
-    if (created.length > 0) {
+    // Si el preset tiene 1 bloque → seleccionar ese. Si tiene varios →
+    // crear ActiveSelection que los agrupe TODOS (feedback v4: "una vez
+    // se implemente en el lienzo debe quedar todo seleccionado por
+    // defecto"). El user puede mover el grupo entero como una unidad,
+    // y al hacer click en un IText específico Fabric entra al modo
+    // individual automáticamente.
+    if (created.length === 1) {
         canvas.setActiveObject(created[0] as unknown as FabricObject);
+    } else if (created.length > 1) {
+        // discardActiveObject ANTES de crear ActiveSelection — evita que
+        // Fabric retenga la selección previa (causa "ghost selection" en
+        // algunos casos cuando el user ya tenía algo seleccionado).
+        canvas.discardActiveObject();
+        const sel = new fabric.ActiveSelection(
+            created as unknown as FabricObject[],
+            { canvas },
+        );
+        canvas.setActiveObject(sel as unknown as FabricObject);
     }
     canvas.requestRenderAll();
     return created;
