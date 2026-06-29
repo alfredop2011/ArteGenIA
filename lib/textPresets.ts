@@ -9,6 +9,11 @@
  * Tipografías = Google Fonts ya cargadas en el proyecto (sin nuevas
  * dependencias). Si añades preset con font nuevo, verifica que esté
  * incluida en app/layout.tsx o el rendering fallará a serif del sistema.
+ *
+ * Escalado: pensado para canvas 1080×1350 (formato post 4:5). Tamaños
+ * REDUCIDOS tras feedback v1 ("demasiado grandes"): ahora el preset
+ * típico ocupa ~30-40% del alto del canvas. Cada preset combina al
+ * menos 2 niveles de jerarquía (título grande + body legible).
  */
 import type { Canvas as FabricCanvas, IText, Object as FabricObject } from "fabric";
 
@@ -34,12 +39,12 @@ export interface TextPreset {
     previewIndex?: number;
 }
 
-// Convenciones de tamaño (escalado para canvas 1080×1350):
-// - Hero/Display: 130-180px
-// - H1: 80-120px
-// - H2: 50-70px
-// - Body: 28-40px
-// - Caption: 20-26px
+// Convenciones de tamaño (canvas 1080×1350) — REDUCIDAS tras feedback v1:
+// - Hero/Display: 90-120px (antes 130-180)
+// - H1: 60-80px    (antes 80-120)
+// - H2: 40-50px    (antes 50-70)
+// - Body: 22-30px  (antes 28-40)
+// - Caption: 16-20px (antes 20-26)
 //
 // Colores blanco (#ffffff) por defecto — el user los cambiará desde la
 // toolbar contextual. Mejor empezar legibles sobre cualquier fondo
@@ -49,37 +54,57 @@ export const TEXT_PRESETS: TextPreset[] = [
     // ─── Encabezados básicos (3) ─────────────────────────────────────
     {
         id: "basic-header",
-        name: "Encabezado grande",
+        name: "Encabezado + Body",
         category: "header",
         blocks: [
             {
                 text: "TÍTULO PRINCIPAL",
                 fontFamily: "Bebas Neue",
-                fontSize: 140,
+                fontSize: 90,
                 fontWeight: "400",
                 fill: "#ffffff",
                 textAlign: "center",
-                letterSpacing: 100,
+                letterSpacing: 80,
                 lineHeight: 1,
                 yOffsetPx: 0,
+            },
+            {
+                text: "Añade aquí una descripción breve\nde tu evento o promoción",
+                fontFamily: "Inter",
+                fontSize: 22,
+                fontWeight: "400",
+                fill: "#ffffff",
+                textAlign: "center",
+                lineHeight: 1.4,
+                yOffsetPx: 110,
             },
         ],
     },
     {
         id: "basic-subheader",
-        name: "Subtítulo",
+        name: "Subtítulo elegante",
         category: "header",
         blocks: [
             {
                 text: "Subtítulo elegante",
                 fontFamily: "Playfair Display",
-                fontSize: 64,
+                fontSize: 48,
                 fontWeight: "600",
                 fontStyle: "italic",
                 fill: "#ffffff",
                 textAlign: "center",
                 lineHeight: 1.1,
                 yOffsetPx: 0,
+            },
+            {
+                text: "Línea de apoyo · más sutil",
+                fontFamily: "Inter",
+                fontSize: 18,
+                fontWeight: "400",
+                fill: "#ffffff",
+                textAlign: "center",
+                letterSpacing: 200,
+                yOffsetPx: 70,
             },
         ],
     },
@@ -89,13 +114,13 @@ export const TEXT_PRESETS: TextPreset[] = [
         category: "header",
         blocks: [
             {
-                text: "Añade aquí el texto de tu evento",
+                text: "Añade aquí el texto descriptivo de\ntu evento. Puedes escribir varias líneas\ny ajustar el ancho a tu gusto.",
                 fontFamily: "Inter",
-                fontSize: 32,
+                fontSize: 24,
                 fontWeight: "400",
                 fill: "#ffffff",
                 textAlign: "center",
-                lineHeight: 1.4,
+                lineHeight: 1.45,
                 yOffsetPx: 0,
             },
         ],
@@ -108,25 +133,34 @@ export const TEXT_PRESETS: TextPreset[] = [
         category: "evento",
         blocks: [
             {
-                text: "TONIGHT",
-                fontFamily: "Bebas Neue",
-                fontSize: 180,
-                fontWeight: "400",
-                fill: "#ffffff",
-                textAlign: "center",
-                letterSpacing: 200,
-                lineHeight: 1,
-                yOffsetPx: 0,
-            },
-            {
                 text: "· LIVE MUSIC ·",
                 fontFamily: "Inter",
-                fontSize: 28,
-                fontWeight: "500",
+                fontSize: 18,
+                fontWeight: "600",
                 fill: "#ffffff",
                 textAlign: "center",
                 letterSpacing: 500,
-                yOffsetPx: 200,
+                yOffsetPx: 0,
+            },
+            {
+                text: "TONIGHT",
+                fontFamily: "Bebas Neue",
+                fontSize: 110,
+                fontWeight: "400",
+                fill: "#ffffff",
+                textAlign: "center",
+                letterSpacing: 150,
+                lineHeight: 1,
+                yOffsetPx: 30,
+            },
+            {
+                text: "Música en directo · Cocktails · DJ set",
+                fontFamily: "Inter",
+                fontSize: 20,
+                fontWeight: "400",
+                fill: "#ffffff",
+                textAlign: "center",
+                yOffsetPx: 145,
             },
         ],
     },
@@ -138,7 +172,7 @@ export const TEXT_PRESETS: TextPreset[] = [
             {
                 text: "Saturday",
                 fontFamily: "Playfair Display",
-                fontSize: 72,
+                fontSize: 44,
                 fontWeight: "400",
                 fontStyle: "italic",
                 fill: "#ffffff",
@@ -149,13 +183,23 @@ export const TEXT_PRESETS: TextPreset[] = [
             {
                 text: "NIGHT",
                 fontFamily: "Anton",
-                fontSize: 160,
+                fontSize: 100,
                 fontWeight: "400",
                 fill: "#ffffff",
                 textAlign: "center",
-                letterSpacing: 100,
+                letterSpacing: 80,
                 lineHeight: 0.95,
-                yOffsetPx: 80,
+                yOffsetPx: 50,
+            },
+            {
+                text: "Una noche para recordar · 23:00 — 06:00",
+                fontFamily: "Inter",
+                fontSize: 18,
+                fontWeight: "500",
+                fill: "#ffffff",
+                textAlign: "center",
+                letterSpacing: 150,
+                yOffsetPx: 155,
             },
         ],
     },
@@ -167,7 +211,7 @@ export const TEXT_PRESETS: TextPreset[] = [
             {
                 text: "VIP",
                 fontFamily: "Anton",
-                fontSize: 200,
+                fontSize: 130,
                 fontWeight: "400",
                 fill: "#ffd700",
                 textAlign: "center",
@@ -178,12 +222,21 @@ export const TEXT_PRESETS: TextPreset[] = [
             {
                 text: "ACCESS · EXCLUSIVE",
                 fontFamily: "Inter",
-                fontSize: 24,
-                fontWeight: "600",
+                fontSize: 18,
+                fontWeight: "700",
                 fill: "#ffffff",
                 textAlign: "center",
-                letterSpacing: 800,
-                yOffsetPx: 220,
+                letterSpacing: 600,
+                yOffsetPx: 140,
+            },
+            {
+                text: "Mesa reservada · Botella incluida · Entrada prioritaria",
+                fontFamily: "Inter",
+                fontSize: 16,
+                fontWeight: "400",
+                fill: "#ffffff",
+                textAlign: "center",
+                yOffsetPx: 180,
             },
         ],
     },
@@ -197,8 +250,8 @@ export const TEXT_PRESETS: TextPreset[] = [
             {
                 text: "FEATURING",
                 fontFamily: "Inter",
-                fontSize: 22,
-                fontWeight: "500",
+                fontSize: 18,
+                fontWeight: "600",
                 fill: "#ffffff",
                 textAlign: "center",
                 letterSpacing: 600,
@@ -207,23 +260,23 @@ export const TEXT_PRESETS: TextPreset[] = [
             {
                 text: "DJ NAME",
                 fontFamily: "Bebas Neue",
-                fontSize: 130,
+                fontSize: 90,
                 fontWeight: "400",
                 fill: "#ffffff",
                 textAlign: "center",
                 letterSpacing: 80,
                 lineHeight: 1,
-                yOffsetPx: 40,
+                yOffsetPx: 32,
             },
             {
-                text: "· SPECIAL GUEST ·",
+                text: "Special Guest · TBA",
                 fontFamily: "Playfair Display",
-                fontSize: 30,
+                fontSize: 22,
                 fontWeight: "400",
                 fontStyle: "italic",
                 fill: "#ffffff",
                 textAlign: "center",
-                yOffsetPx: 190,
+                yOffsetPx: 130,
             },
         ],
     },
@@ -235,7 +288,7 @@ export const TEXT_PRESETS: TextPreset[] = [
             {
                 text: "L I N E U P",
                 fontFamily: "Inter",
-                fontSize: 28,
+                fontSize: 20,
                 fontWeight: "700",
                 fill: "#ffffff",
                 textAlign: "center",
@@ -245,35 +298,35 @@ export const TEXT_PRESETS: TextPreset[] = [
             {
                 text: "Artist One",
                 fontFamily: "Bebas Neue",
-                fontSize: 80,
+                fontSize: 56,
                 fontWeight: "400",
                 fill: "#ffffff",
                 textAlign: "center",
                 letterSpacing: 50,
                 lineHeight: 1,
-                yOffsetPx: 60,
+                yOffsetPx: 50,
             },
             {
                 text: "Artist Two",
                 fontFamily: "Bebas Neue",
-                fontSize: 80,
+                fontSize: 56,
                 fontWeight: "400",
                 fill: "#ffffff",
                 textAlign: "center",
                 letterSpacing: 50,
                 lineHeight: 1,
-                yOffsetPx: 150,
+                yOffsetPx: 120,
             },
             {
                 text: "Artist Three",
                 fontFamily: "Bebas Neue",
-                fontSize: 80,
+                fontSize: 56,
                 fontWeight: "400",
                 fill: "#ffffff",
                 textAlign: "center",
                 letterSpacing: 50,
                 lineHeight: 1,
-                yOffsetPx: 240,
+                yOffsetPx: 190,
             },
         ],
     },
@@ -287,33 +340,33 @@ export const TEXT_PRESETS: TextPreset[] = [
             {
                 text: "EARLY BIRD",
                 fontFamily: "Bebas Neue",
-                fontSize: 90,
+                fontSize: 60,
                 fontWeight: "400",
                 fill: "#ffffff",
                 textAlign: "center",
-                letterSpacing: 200,
+                letterSpacing: 150,
                 lineHeight: 1,
                 yOffsetPx: 0,
             },
             {
                 text: "50% OFF",
                 fontFamily: "Anton",
-                fontSize: 180,
+                fontSize: 120,
                 fontWeight: "400",
                 fill: "#ff3b30",
                 textAlign: "center",
                 lineHeight: 1,
-                yOffsetPx: 100,
+                yOffsetPx: 65,
             },
             {
-                text: "Limited tickets · Hurry up",
+                text: "Solo primeras 50 entradas · Hasta agotar stock",
                 fontFamily: "Inter",
-                fontSize: 24,
+                fontSize: 18,
                 fontWeight: "500",
                 fill: "#ffffff",
                 textAlign: "center",
-                letterSpacing: 200,
-                yOffsetPx: 300,
+                letterSpacing: 150,
+                yOffsetPx: 200,
             },
         ],
     },
@@ -325,33 +378,43 @@ export const TEXT_PRESETS: TextPreset[] = [
         category: "info",
         blocks: [
             {
-                text: "📅  SÁBADO 12 JULIO",
+                text: "DETALLES DEL EVENTO",
                 fontFamily: "Inter",
-                fontSize: 32,
+                fontSize: 16,
+                fontWeight: "700",
+                fill: "#ffffff",
+                textAlign: "left",
+                letterSpacing: 400,
+                yOffsetPx: 0,
+            },
+            {
+                text: "📅  Sábado 12 Julio",
+                fontFamily: "Inter",
+                fontSize: 24,
                 fontWeight: "600",
                 fill: "#ffffff",
                 textAlign: "left",
-                letterSpacing: 100,
-                yOffsetPx: 0,
+                letterSpacing: 50,
+                yOffsetPx: 40,
             },
             {
                 text: "🕐  23:00 — 06:00",
                 fontFamily: "Inter",
-                fontSize: 32,
+                fontSize: 24,
                 fontWeight: "600",
                 fill: "#ffffff",
                 textAlign: "left",
-                letterSpacing: 100,
-                yOffsetPx: 60,
+                letterSpacing: 50,
+                yOffsetPx: 80,
             },
             {
                 text: "📍  Sala Razzmatazz · BCN",
                 fontFamily: "Inter",
-                fontSize: 32,
+                fontSize: 24,
                 fontWeight: "600",
                 fill: "#ffffff",
                 textAlign: "left",
-                letterSpacing: 100,
+                letterSpacing: 50,
                 yOffsetPx: 120,
             },
         ],
@@ -365,7 +428,7 @@ export const TEXT_PRESETS: TextPreset[] = [
  *
  * Posicionamiento: el primer bloque se centra horizontalmente. Los
  * siguientes se posicionan en base al yOffsetPx del preset. Origen Y
- * arranca en ~25% del canvas (típico para hero text).
+ * arranca en ~28% del canvas (típico para hero text con body debajo).
  *
  * Devuelve la lista de Fabric IText creados para que el caller los
  * registre como layers.
@@ -378,7 +441,7 @@ export async function insertTextPreset(
     const fabric = await import("fabric");
     const created: IText[] = [];
 
-    const baseY = canvasSize.h * 0.25;
+    const baseY = canvasSize.h * 0.28;
     const baseX = canvasSize.w / 2;
 
     for (const block of preset.blocks) {
