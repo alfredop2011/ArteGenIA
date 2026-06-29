@@ -25,14 +25,21 @@ interface Props {
     onClose: () => void;
 }
 
+/**
+ * Categorías por OBJETIVO del usuario (Jobs-To-Be-Done) — feedback v9
+ * del user: "¿PARA QUÉ LO NECESITAS? Encuentra más rápido".
+ *
+ * Mucho mejor UX que agrupar por TIPO de contenido (eventos, DJ, info).
+ * El user no piensa "necesito un preset de DJ", piensa "necesito
+ * anunciar a mis artistas" o "necesito vender entradas".
+ */
 const CATEGORIES: Array<{ id: TextPreset["category"] | "all"; label: string }> = [
-    { id: "all",        label: "Todos" },
-    { id: "header",     label: "Encabezados" },
-    { id: "evento",     label: "Eventos" },
-    { id: "dj",         label: "DJ · Lineup" },
-    { id: "promo",      label: "Promos" },
-    { id: "invitacion", label: "Invitaciones" },
-    { id: "info",       label: "Info" },
+    { id: "all",                label: "Todas" },
+    { id: "promo-evento",       label: "Promocionar evento" },
+    { id: "vender-entradas",    label: "Vender entradas" },
+    { id: "lanzamiento",        label: "Lanzamiento" },
+    { id: "captar-alumnos",     label: "Captar alumnos" },
+    { id: "anunciar-artistas",  label: "Anunciar artistas" },
 ];
 
 export default function TextPresetsModal({ onPickEmpty, onPickPreset, onClose }: Props) {

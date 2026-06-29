@@ -36,7 +36,22 @@ export interface TextBlock {
 export interface TextPreset {
     id: string;
     name: string;                 // display en UI
-    category: "header" | "evento" | "dj" | "promo" | "info" | "invitacion";
+    /**
+     * Categorías por OBJETIVO del usuario (Jobs-To-Be-Done). En vez de
+     * agrupar por TIPO de contenido (eventos, DJ, info), agrupamos por
+     * QUÉ está intentando conseguir el organizador/DJ/profesor:
+     *  - promo-evento: anunciar que pasa algo (awareness)
+     *  - vender-entradas: incitar la compra (urgencia, precio, oferta)
+     *  - lanzamiento: nuevo capítulo (apertura, aniversario, fechas grandes)
+     *  - captar-alumnos: academias, workshops, clases (educación)
+     *  - anunciar-artistas: lineup, residentes, headliner, B2B
+     */
+    category:
+        | "promo-evento"
+        | "vender-entradas"
+        | "lanzamiento"
+        | "captar-alumnos"
+        | "anunciar-artistas";
     blocks: TextBlock[];
     /** Para preview en grid: usamos el bloque dominante (mayor fontSize) */
     previewIndex?: number;
@@ -56,7 +71,7 @@ export const TEXT_PRESETS: TextPreset[] = [
     {
         id: "card-operations",
         name: "Título + Body",
-        category: "header",
+        category: "promo-evento",
         blocks: [
             {
                 text: "LOOKING FOR",
@@ -93,7 +108,7 @@ export const TEXT_PRESETS: TextPreset[] = [
     {
         id: "card-marketing-proposal",
         name: "Tag + Title bold",
-        category: "header",
+        category: "promo-evento",
         blocks: [
             {
                 text: "M.MK and CO",
@@ -130,7 +145,7 @@ export const TEXT_PRESETS: TextPreset[] = [
     {
         id: "card-minimalism",
         name: "Tag + Display",
-        category: "header",
+        category: "promo-evento",
         blocks: [
             {
                 text: "The Future Of Design",
@@ -160,7 +175,7 @@ export const TEXT_PRESETS: TextPreset[] = [
     {
         id: "evento-tonight",
         name: "Caption + TONIGHT",
-        category: "evento",
+        category: "promo-evento",
         blocks: [
             {
                 text: "LIVE MUSIC TONIGHT",
@@ -198,7 +213,7 @@ export const TEXT_PRESETS: TextPreset[] = [
     {
         id: "evento-saturday-night",
         name: "Saturday NIGHT",
-        category: "evento",
+        category: "promo-evento",
         blocks: [
             {
                 text: "Saturday",
@@ -237,7 +252,7 @@ export const TEXT_PRESETS: TextPreset[] = [
     {
         id: "evento-vip",
         name: "EXCLUSIVE · VIP",
-        category: "evento",
+        category: "promo-evento",
         blocks: [
             {
                 text: "EXCLUSIVE ACCESS",
@@ -277,7 +292,7 @@ export const TEXT_PRESETS: TextPreset[] = [
     {
         id: "dj-feat-special",
         name: "Featuring · DJ",
-        category: "dj",
+        category: "anunciar-artistas",
         blocks: [
             {
                 text: "TONIGHT FEATURING",
@@ -315,7 +330,7 @@ export const TEXT_PRESETS: TextPreset[] = [
     {
         id: "dj-lineup-card",
         name: "Lineup card",
-        category: "dj",
+        category: "anunciar-artistas",
         blocks: [
             {
                 text: "L I N E U P",
@@ -367,7 +382,7 @@ export const TEXT_PRESETS: TextPreset[] = [
     {
         id: "promo-early-bird",
         name: "EARLY BIRD · OFF",
-        category: "promo",
+        category: "vender-entradas",
         blocks: [
             {
                 text: "LIMITED OFFER",
@@ -406,7 +421,7 @@ export const TEXT_PRESETS: TextPreset[] = [
     {
         id: "info-date-time-place",
         name: "Fecha · Hora · Lugar",
-        category: "info",
+        category: "promo-evento",
         blocks: [
             {
                 text: "DETALLES DEL EVENTO",
@@ -445,7 +460,7 @@ export const TEXT_PRESETS: TextPreset[] = [
     {
         id: "evento-opening",
         name: "Grand Opening",
-        category: "evento",
+        category: "lanzamiento",
         blocks: [
             {
                 text: "NEW VENUE · NEW VIBES",
@@ -483,7 +498,7 @@ export const TEXT_PRESETS: TextPreset[] = [
     {
         id: "evento-anniversary",
         name: "Aniversario",
-        category: "evento",
+        category: "lanzamiento",
         blocks: [
             {
                 text: "CELEBRATING TOGETHER",
@@ -521,7 +536,7 @@ export const TEXT_PRESETS: TextPreset[] = [
     {
         id: "evento-afterhours",
         name: "After Hours",
-        category: "evento",
+        category: "promo-evento",
         blocks: [
             {
                 text: "UNDERGROUND",
@@ -559,7 +574,7 @@ export const TEXT_PRESETS: TextPreset[] = [
     {
         id: "evento-rooftop",
         name: "Rooftop Sunset",
-        category: "evento",
+        category: "promo-evento",
         blocks: [
             {
                 text: "SUNSET SESSION",
@@ -599,7 +614,7 @@ export const TEXT_PRESETS: TextPreset[] = [
     {
         id: "dj-headliner",
         name: "Headliner",
-        category: "dj",
+        category: "anunciar-artistas",
         blocks: [
             {
                 text: "MAIN STAGE",
@@ -637,7 +652,7 @@ export const TEXT_PRESETS: TextPreset[] = [
     {
         id: "dj-b2b",
         name: "B2B Session",
-        category: "dj",
+        category: "anunciar-artistas",
         blocks: [
             {
                 text: "SPECIAL COLLAB",
@@ -675,7 +690,7 @@ export const TEXT_PRESETS: TextPreset[] = [
     {
         id: "dj-festival",
         name: "Festival Lineup",
-        category: "dj",
+        category: "anunciar-artistas",
         blocks: [
             {
                 text: "FESTIVAL LINEUP",
@@ -715,7 +730,7 @@ export const TEXT_PRESETS: TextPreset[] = [
     {
         id: "promo-2x1",
         name: "2x1 Happy Hour",
-        category: "promo",
+        category: "vender-entradas",
         blocks: [
             {
                 text: "HAPPY HOUR",
@@ -752,7 +767,7 @@ export const TEXT_PRESETS: TextPreset[] = [
     {
         id: "promo-free-entry",
         name: "Free Entry",
-        category: "promo",
+        category: "vender-entradas",
         blocks: [
             {
                 text: "LIMITED OFFER",
@@ -790,7 +805,7 @@ export const TEXT_PRESETS: TextPreset[] = [
     {
         id: "promo-guestlist",
         name: "Guestlist",
-        category: "promo",
+        category: "vender-entradas",
         blocks: [
             {
                 text: "RESERVA TU SPOT",
@@ -830,7 +845,7 @@ export const TEXT_PRESETS: TextPreset[] = [
     {
         id: "info-price-list",
         name: "Lista de Precios",
-        category: "info",
+        category: "promo-evento",
         blocks: [
             {
                 text: "PRECIOS",
@@ -866,7 +881,7 @@ export const TEXT_PRESETS: TextPreset[] = [
     {
         id: "info-contact",
         name: "Contacto · RRSS",
-        category: "info",
+        category: "promo-evento",
         blocks: [
             {
                 text: "CONTACTO",
@@ -904,7 +919,7 @@ export const TEXT_PRESETS: TextPreset[] = [
     {
         id: "inv-birthday",
         name: "Cumpleaños",
-        category: "invitacion",
+        category: "lanzamiento",
         blocks: [
             {
                 text: "BIRTHDAY PARTY",
@@ -942,7 +957,7 @@ export const TEXT_PRESETS: TextPreset[] = [
     {
         id: "inv-save-date",
         name: "Save the Date",
-        category: "invitacion",
+        category: "lanzamiento",
         blocks: [
             {
                 text: "MARK YOUR CALENDAR",
@@ -980,7 +995,7 @@ export const TEXT_PRESETS: TextPreset[] = [
     {
         id: "inv-elegant",
         name: "You're Invited",
-        category: "invitacion",
+        category: "lanzamiento",
         blocks: [
             {
                 text: "WITH PLEASURE",
@@ -1021,7 +1036,7 @@ export const TEXT_PRESETS: TextPreset[] = [
     {
         id: "evento-workshop",
         name: "Workshop · Clases",
-        category: "evento",
+        category: "captar-alumnos",
         blocks: [
             {
                 text: "WORKSHOP INTENSIVO",
@@ -1059,7 +1074,7 @@ export const TEXT_PRESETS: TextPreset[] = [
     {
         id: "evento-festival-3-days",
         name: "Festival 3 días",
-        category: "evento",
+        category: "promo-evento",
         blocks: [
             {
                 text: "3 DÍAS · 2 ESCENARIOS",
@@ -1097,7 +1112,7 @@ export const TEXT_PRESETS: TextPreset[] = [
     {
         id: "evento-summer-party",
         name: "Summer Pool Party",
-        category: "evento",
+        category: "promo-evento",
         blocks: [
             {
                 text: "SUMMER VIBES",
@@ -1137,7 +1152,7 @@ export const TEXT_PRESETS: TextPreset[] = [
     {
         id: "dj-set-time",
         name: "DJ Set + Horario",
-        category: "dj",
+        category: "anunciar-artistas",
         blocks: [
             {
                 text: "TONIGHT'S SET",
@@ -1175,7 +1190,7 @@ export const TEXT_PRESETS: TextPreset[] = [
     {
         id: "dj-residentes",
         name: "Residentes semanales",
-        category: "dj",
+        category: "anunciar-artistas",
         blocks: [
             {
                 text: "RESIDENTES",
@@ -1215,7 +1230,7 @@ export const TEXT_PRESETS: TextPreset[] = [
     {
         id: "promo-pre-sale",
         name: "Pre-sale 30%",
-        category: "promo",
+        category: "vender-entradas",
         blocks: [
             {
                 text: "SOLO ESTA SEMANA",
@@ -1252,7 +1267,7 @@ export const TEXT_PRESETS: TextPreset[] = [
     {
         id: "promo-flash-sale",
         name: "Flash Sale 24h",
-        category: "promo",
+        category: "vender-entradas",
         blocks: [
             {
                 text: "SOLO 24 HORAS",
@@ -1290,7 +1305,7 @@ export const TEXT_PRESETS: TextPreset[] = [
     {
         id: "promo-bring-friend",
         name: "Trae un amigo · 2x1",
-        category: "promo",
+        category: "vender-entradas",
         blocks: [
             {
                 text: "VEN ACOMPAÑADO",
@@ -1330,7 +1345,7 @@ export const TEXT_PRESETS: TextPreset[] = [
     {
         id: "inv-wedding",
         name: "Boda · Wedding",
-        category: "invitacion",
+        category: "lanzamiento",
         blocks: [
             {
                 text: "WE ARE GETTING MARRIED",
@@ -1369,7 +1384,7 @@ export const TEXT_PRESETS: TextPreset[] = [
     {
         id: "inv-babyshower",
         name: "Baby Shower",
-        category: "invitacion",
+        category: "lanzamiento",
         blocks: [
             {
                 text: "WELCOME BABY",
@@ -1407,7 +1422,7 @@ export const TEXT_PRESETS: TextPreset[] = [
     {
         id: "inv-baptism",
         name: "Bautizo",
-        category: "invitacion",
+        category: "lanzamiento",
         blocks: [
             {
                 text: "CON GRAN ALEGRÍA",
@@ -1445,7 +1460,7 @@ export const TEXT_PRESETS: TextPreset[] = [
     {
         id: "inv-quinceanera",
         name: "Mis Quince",
-        category: "invitacion",
+        category: "lanzamiento",
         blocks: [
             {
                 text: "CELEBRANDO MIS",
@@ -1485,7 +1500,7 @@ export const TEXT_PRESETS: TextPreset[] = [
     {
         id: "info-menu",
         name: "Menú · 3 platos",
-        category: "info",
+        category: "promo-evento",
         blocks: [
             {
                 text: "MENÚ DE LA CASA",
@@ -1522,7 +1537,7 @@ export const TEXT_PRESETS: TextPreset[] = [
     {
         id: "info-weekly-schedule",
         name: "Agenda semanal",
-        category: "info",
+        category: "promo-evento",
         blocks: [
             {
                 text: "AGENDA DE LA SEMANA",
@@ -1555,10 +1570,202 @@ export const TEXT_PRESETS: TextPreset[] = [
             },
         ],
     },
+    // ─── Captar alumnos extras v9 (5) ───────────────────────────────
+    {
+        id: "captar-matricula-abierta",
+        name: "Matrícula abierta",
+        category: "captar-alumnos",
+        blocks: [
+            {
+                text: "PLAZAS LIMITADAS",
+                fontFamily: "Inter",
+                fontSize: 14,
+                fontWeight: "700",
+                fill: "#22c55e",
+                textAlign: "left",
+                letterSpacing: 500,
+                yOffsetPx: 0,
+            },
+            {
+                text: "MATRÍCULA\nABIERTA",
+                fontFamily: "Anton",
+                fontSize: 80,
+                fontWeight: "400",
+                fill: "#ffffff",
+                textAlign: "left",
+                letterSpacing: 30,
+                lineHeight: 0.95,
+                yOffsetPx: 28,
+            },
+            {
+                text: "Reserva tu plaza para el nuevo curso\nInscripción hasta el 30 de septiembre",
+                fontFamily: "Inter",
+                fontSize: 17,
+                fontWeight: "500",
+                fill: "#ffffff",
+                textAlign: "left",
+                lineHeight: 1.5,
+                yOffsetPx: 195,
+            },
+        ],
+    },
+    {
+        id: "captar-prueba-gratis",
+        name: "Clase prueba gratis",
+        category: "captar-alumnos",
+        blocks: [
+            {
+                text: "PRIMERA CLASE",
+                fontFamily: "Inter",
+                fontSize: 14,
+                fontWeight: "700",
+                fill: "#ffd700",
+                textAlign: "left",
+                letterSpacing: 500,
+                yOffsetPx: 0,
+            },
+            {
+                text: "GRATIS",
+                fontFamily: "Anton",
+                fontSize: 140,
+                fontWeight: "400",
+                fill: "#22c55e",
+                textAlign: "left",
+                letterSpacing: 30,
+                lineHeight: 1,
+                yOffsetPx: 28,
+            },
+            {
+                text: "Ven a probar sin compromiso\nReserva por WhatsApp · Plazas limitadas",
+                fontFamily: "Inter",
+                fontSize: 17,
+                fontWeight: "500",
+                fill: "#ffffff",
+                textAlign: "left",
+                lineHeight: 1.5,
+                yOffsetPx: 195,
+            },
+        ],
+    },
+    {
+        id: "captar-nuevo-curso",
+        name: "Nuevo curso · Niveles",
+        category: "captar-alumnos",
+        blocks: [
+            {
+                text: "TEMPORADA 2026",
+                fontFamily: "Inter",
+                fontSize: 14,
+                fontWeight: "700",
+                fill: "#a855f7",
+                textAlign: "left",
+                letterSpacing: 500,
+                yOffsetPx: 0,
+            },
+            {
+                text: "Nuevo Curso",
+                fontFamily: "Playfair Display",
+                fontSize: 64,
+                fontWeight: "700",
+                fontStyle: "italic",
+                fill: "#ffffff",
+                textAlign: "left",
+                lineHeight: 1,
+                yOffsetPx: 28,
+            },
+            {
+                text: "Iniciación  ·  Intermedio  ·  Avanzado\nGrupos reducidos · Profesores titulados\nInicio: 15 de septiembre",
+                fontFamily: "Inter",
+                fontSize: 17,
+                fontWeight: "400",
+                fill: "#ffffff",
+                textAlign: "left",
+                lineHeight: 1.6,
+                yOffsetPx: 110,
+            },
+        ],
+    },
+    {
+        id: "captar-academia-tipos",
+        name: "Academia · Disciplinas",
+        category: "captar-alumnos",
+        blocks: [
+            {
+                text: "ACADEMIA DE BAILE",
+                fontFamily: "Inter",
+                fontSize: 14,
+                fontWeight: "700",
+                fill: "#ff6b9d",
+                textAlign: "left",
+                letterSpacing: 500,
+                yOffsetPx: 0,
+            },
+            {
+                text: "Aprende\na bailar",
+                fontFamily: "Playfair Display",
+                fontSize: 72,
+                fontWeight: "700",
+                fontStyle: "italic",
+                fill: "#ffffff",
+                textAlign: "left",
+                lineHeight: 1,
+                yOffsetPx: 28,
+            },
+            {
+                text: "Salsa  ·  Bachata  ·  Kizomba  ·  Reggaeton\nClases de lunes a sábado\nDesde 35€/mes",
+                fontFamily: "Inter",
+                fontSize: 17,
+                fontWeight: "400",
+                fill: "#ffffff",
+                textAlign: "left",
+                lineHeight: 1.6,
+                yOffsetPx: 200,
+            },
+        ],
+    },
+    {
+        id: "captar-masterclass",
+        name: "Masterclass · Invitado",
+        category: "captar-alumnos",
+        blocks: [
+            {
+                text: "ARTISTA INVITADO",
+                fontFamily: "Inter",
+                fontSize: 14,
+                fontWeight: "700",
+                fill: "#ffd700",
+                textAlign: "left",
+                letterSpacing: 500,
+                yOffsetPx: 0,
+            },
+            {
+                text: "MASTERCLASS",
+                fontFamily: "Bebas Neue",
+                fontSize: 78,
+                fontWeight: "400",
+                fill: "#ffffff",
+                textAlign: "left",
+                letterSpacing: 80,
+                lineHeight: 1,
+                yOffsetPx: 28,
+            },
+            {
+                text: "Aprende del mejor · 3 horas intensivas\nNivel intermedio-avanzado · Cupo limitado",
+                fontFamily: "Inter",
+                fontSize: 17,
+                fontWeight: "400",
+                fill: "#ffffff",
+                textAlign: "left",
+                lineHeight: 1.5,
+                yOffsetPx: 120,
+            },
+        ],
+    },
+
     {
         id: "info-rules",
         name: "Normas de la casa",
-        category: "info",
+        category: "promo-evento",
         blocks: [
             {
                 text: "NORMAS DE LA CASA",
