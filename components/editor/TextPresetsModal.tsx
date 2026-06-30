@@ -54,8 +54,14 @@ export default function TextPresetsModal({ onPickEmpty, onPickPreset, onClose }:
         return () => window.removeEventListener("resize", check);
     }, []);
 
+    // En "Todas" los presets de "Anunciar artistas" van PRIMERO ("ponlos de
+    // primero"). sort() es estable → el resto conserva su orden del array.
     const presets = activeCat === "all"
-        ? TEXT_PRESETS
+        ? [...TEXT_PRESETS].sort(
+            (a, b) =>
+                Number(b.category === "anunciar-artistas") -
+                Number(a.category === "anunciar-artistas"),
+          )
         : TEXT_PRESETS.filter(p => p.category === activeCat);
 
     // Desktop: panel anclado a la izquierda (ancho fijo). Mobile: bottom
