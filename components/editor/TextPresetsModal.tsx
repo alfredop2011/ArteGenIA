@@ -35,11 +35,12 @@ interface Props {
  */
 const CATEGORIES: Array<{ id: TextPreset["category"] | "all"; label: string }> = [
     { id: "all",                label: "Todas" },
+    // "Anunciar artistas" primero ("ponlos de primero", feedback usuario).
+    { id: "anunciar-artistas",  label: "Anunciar artistas" },
     { id: "promo-evento",       label: "Promocionar evento" },
     { id: "vender-entradas",    label: "Vender entradas" },
     { id: "lanzamiento",        label: "Lanzamiento" },
     { id: "captar-alumnos",     label: "Captar alumnos" },
-    { id: "anunciar-artistas",  label: "Anunciar artistas" },
 ];
 
 export default function TextPresetsModal({ onPickEmpty, onPickPreset, onClose }: Props) {
@@ -99,8 +100,9 @@ export default function TextPresetsModal({ onPickEmpty, onPickPreset, onClose }:
 
                 {/* Tabs categorías */}
                 <div className="px-4 pt-3 pb-2 shrink-0">
-                    <div className="text-gray-500 text-[9px] uppercase tracking-wider font-semibold mb-1.5 px-0.5">
-                        Combos profesionales
+                    <div className="mb-1.5 px-0.5">
+                        <div className="text-white text-[11px] font-bold">¿Para qué lo necesitas?</div>
+                        <div className="text-gray-500 text-[9px]">Encuentra más rápido</div>
                     </div>
                     <div className="flex gap-1 overflow-x-auto pb-1 -mx-1 px-1">
                         {CATEGORIES.map(cat => (
