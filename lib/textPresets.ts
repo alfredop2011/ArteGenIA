@@ -70,11 +70,11 @@ export const TEXT_PRESETS: TextPreset[] = [
     // ─── Encabezados básicos (3) ─────────────────────────────────────
     {
         id: "card-operations",
-        name: "Título + Body",
+        name: "Próximo evento + Body",
         category: "promo-evento",
         blocks: [
             {
-                text: "LOOKING FOR",
+                text: "PRÓXIMO EVENTO",
                 fontFamily: "Inter",
                 fontSize: 16,
                 fontWeight: "700",
@@ -84,7 +84,7 @@ export const TEXT_PRESETS: TextPreset[] = [
                 yOffsetPx: 0,
             },
             {
-                text: "OPERATIONS\nMANAGER",
+                text: "SOUL &\nFUNK",
                 fontFamily: "Inter",
                 fontSize: 56,
                 fontWeight: "900",
@@ -94,34 +94,34 @@ export const TEXT_PRESETS: TextPreset[] = [
                 yOffsetPx: 30,
             },
             {
-                text: "Will be responsible for managing activities that are\npart of the production of goods and services.\nDirect responsibilities include managing both the\noperations process, embracing design, planning,\ncontrol, performance improvement.",
+                text: "Una noche de vinilo clásico, soul, funk y groove.\nDJ residente, cocktails de autor y la mejor selección.\nSolo vinilo, solo verdad.\n\nSábado 27 de Julio · 22:00h · [Nombre del local]",
                 fontFamily: "Inter",
                 fontSize: 16,
                 fontWeight: "400",
                 fill: "#ffffff",
                 textAlign: "left",
-                lineHeight: 1.4,
+                lineHeight: 1.5,
                 yOffsetPx: 175,
             },
         ],
     },
     {
         id: "card-marketing-proposal",
-        name: "Tag + Title bold",
+        name: "Marca + Evento bold",
         category: "promo-evento",
         blocks: [
             {
-                text: "M.MK and CO",
+                text: "PRESENTA",
                 fontFamily: "Inter",
                 fontSize: 14,
                 fontWeight: "700",
                 fill: "#ffffff",
                 textAlign: "left",
-                letterSpacing: 200,
+                letterSpacing: 400,
                 yOffsetPx: 0,
             },
             {
-                text: "MARKETING\nPROPOSAL",
+                text: "LATIN\nFEVER",
                 fontFamily: "Inter",
                 fontSize: 64,
                 fontWeight: "900",
@@ -131,24 +131,24 @@ export const TEXT_PRESETS: TextPreset[] = [
                 yOffsetPx: 28,
             },
             {
-                text: "An operational document that outlines an advertising\nstrategy that an organization will implement to\ngenerate leads and reach its target market.",
+                text: "La noche latina que estabas esperando.\nSalsa, bachata y reggaeton hasta las 06:00.\nEntradas desde 10€ · Guestlist antes de las 23:00.",
                 fontFamily: "Inter",
                 fontSize: 15,
                 fontWeight: "400",
                 fill: "#ffffff",
                 textAlign: "left",
-                lineHeight: 1.45,
+                lineHeight: 1.5,
                 yOffsetPx: 165,
             },
         ],
     },
     {
         id: "card-minimalism",
-        name: "Tag + Display",
+        name: "Tagline minimal",
         category: "promo-evento",
         blocks: [
             {
-                text: "The Future Of Design",
+                text: "La noche que esperabas",
                 fontFamily: "Inter",
                 fontSize: 15,
                 fontWeight: "400",
@@ -158,7 +158,7 @@ export const TEXT_PRESETS: TextPreset[] = [
                 yOffsetPx: 0,
             },
             {
-                text: "MINIMALISIM",
+                text: "MADRID",
                 fontFamily: "Inter",
                 fontSize: 56,
                 fontWeight: "900",
@@ -381,15 +381,15 @@ export const TEXT_PRESETS: TextPreset[] = [
     // ─── Promo (1) ──────────────────────────────────────────────────
     {
         id: "promo-early-bird",
-        name: "EARLY BIRD · OFF",
+        name: "Early Bird · Ahora o nunca",
         category: "vender-entradas",
         blocks: [
             {
-                text: "LIMITED OFFER",
+                text: "AHORA O NUNCA",
                 fontFamily: "Inter",
                 fontSize: 14,
                 fontWeight: "700",
-                fill: "#ffffff",
+                fill: "#ff3b30",
                 textAlign: "left",
                 letterSpacing: 400,
                 yOffsetPx: 0,
@@ -405,10 +405,10 @@ export const TEXT_PRESETS: TextPreset[] = [
                 yOffsetPx: 28,
             },
             {
-                text: "Solo primeras 50 entradas · Reserva ya\nValido hasta el 30 de junio",
+                text: "Solo las primeras 50 entradas · Se acaban ya\nReserva antes del 30 de junio o paga el doble",
                 fontFamily: "Inter",
                 fontSize: 17,
-                fontWeight: "500",
+                fontWeight: "600",
                 fill: "#ffffff",
                 textAlign: "left",
                 lineHeight: 1.5,
