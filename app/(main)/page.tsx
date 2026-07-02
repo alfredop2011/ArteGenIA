@@ -540,6 +540,47 @@ export default function Home() {
         {/* ═════ EST#14 — Comparativa vs Canva (argumento competitivo) ═════ */}
         <HomeVsCanva />
 
+        {/* ═════ Anti-clon vs ChatGPT — feedback estratégico 2 jul 2026 ═════
+             Muchos organizadores están usando ChatGPT/MidJourney → todos los
+             flyers acaban pareciéndose (mismo look magenta+cyan, fondos hiper-
+             realistas idénticos). Este teaser dirige a /vs-chatgpt donde la
+             tesis se desarrolla con evidencia visual + comparativa. */}
+        <section className="mt-10 sm:mt-14">
+          <div className="rounded-2xl p-6 sm:p-8 relative overflow-hidden"
+               style={{
+                 background: "linear-gradient(135deg, rgba(239,68,68,0.08), rgba(168,85,247,0.06))",
+                 border: "1px solid rgba(239,68,68,0.25)",
+               }}>
+            <div className="relative">
+              <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-red-500/10 border border-red-500/25 mb-3">
+                <span className="text-[10px] font-bold text-red-300 uppercase tracking-widest">
+                  El problema del clon
+                </span>
+              </div>
+              <h2 className="text-xl sm:text-3xl font-black mb-2 leading-tight" style={{ color: "var(--home-text)" }}>
+                Todos usan ChatGPT para flyers.{" "}
+                <span className="bg-gradient-to-r from-red-400 to-pink-400 bg-clip-text text-transparent">
+                  Todos acaban con el mismo flyer.
+                </span>
+              </h2>
+              <p className="text-sm max-w-2xl mb-5" style={{ color: "var(--home-text-muted)" }}>
+                El promotor con ChatGPT es reemplazable. El promotor con ArteGenIA construye
+                <strong style={{ color: "var(--home-text)" }}> identidad visual propia</strong> que se reconoce a distancia.
+              </p>
+              <Link
+                href="/vs-chatgpt"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-[13px] font-bold text-white transition-transform hover:scale-[1.03]"
+                style={{
+                  background: "linear-gradient(135deg, #ef4444, #a855f7)",
+                  boxShadow: "0 8px 20px rgba(239,68,68,0.3)",
+                }}
+              >
+                Ver la evidencia →
+              </Link>
+            </div>
+          </div>
+        </section>
+
         {/* ═════ FAQ — 3 preguntas (era 4) ═════ */}
         <section className="mt-10 sm:mt-14">
           <h2 className="text-xl sm:text-2xl font-black text-center mb-5" style={{ color: "var(--home-text)" }}>
