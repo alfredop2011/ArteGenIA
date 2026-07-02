@@ -242,8 +242,10 @@ function PricingContent() {
               Precios simples · Sin permanencia
             </span>
           </div>
-          <h1 className="text-[36px] md:text-[56px] font-black leading-[1.05] mb-4 tracking-tight">
-            Empieza gratis.<br/>
+          {/* text-balance para wrap visual limpio sin <br/> que rompen
+              el textContent (SEO/screen readers ven "gratis.Escala"). */}
+          <h1 className="text-[36px] md:text-[56px] font-black leading-[1.05] mb-4 tracking-tight text-balance">
+            Empieza gratis.{" "}
             <span className="shimmer-text">Escala cuando crezcas.</span>
           </h1>
           <p className="text-[15px] md:text-[17px] text-gray-400 leading-relaxed">

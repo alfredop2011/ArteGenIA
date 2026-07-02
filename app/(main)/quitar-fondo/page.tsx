@@ -492,8 +492,13 @@ export default function QuitarFondoPage() {
                 <span className="text-purple-300 text-[11px]">✨</span>
                 <span className="text-[10px] uppercase tracking-widest font-bold text-purple-300">IA Avanzada</span>
               </div>
-              <h1 className="text-[40px] md:text-[56px] font-black leading-[1.02] mb-5 tracking-tight">
-                Quita el fondo<br/>de cualquier foto gratis<br/>
+              {/* H1 sin <br/> intercalados — los <br/> sin espacios los
+                  convierten los parsers HTML (Google, screen readers, y
+                  textContent JS) en "fondode..." sin espacios. Uso
+                  text-balance para que el wrap visual sea limpio sin
+                  romper el texto lógico. */}
+              <h1 className="text-[40px] md:text-[56px] font-black leading-[1.02] mb-5 tracking-tight text-balance">
+                Quita el fondo de cualquier foto gratis{" "}
                 <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-amber-400 bg-clip-text text-transparent">
                   con IA en 5 segundos
                 </span>
