@@ -121,51 +121,85 @@ recurrentes con flyers de eventos, **NO es cliente**.
 
 ---
 
-## Mensajes master por segmento
+## Mensajes master por segmento — v3 (ángulo anti-clon)
+
+⚠️ **Cambio v3 (2 jul 2026)**: reescritos con narrativa anti-clon vs
+ChatGPT. Ya no lideramos con "5 min en lugar de 45" (tiempo) sino con
+"identidad propia vs flyer reemplazable" (ego). Ver estrategia
+completa en [`docs/positioning-anti-clon-chatgpt.md`](./positioning-anti-clon-chatgpt.md).
+
+**Por qué**: "IA para flyers" ya no diferencia — todos usan ChatGPT.
+El nuevo diferenciador es "IA que NO hace flyer clon". El tiempo sigue
+siendo relevante pero secundario. En S2 (bodas) mantenemos ángulo
+tiempo/margen porque el clon ahí duele menos (cada cliente es único).
+
+---
 
 ### Mensaje S1 · DJ residente en sala pequeña
 
 > **Hola [NOMBRE]**, soy Alfredo, fundador de **ArteGenIA**.
 >
-> Vi que resides en **[SALA]** cada [DÍA] — sinceramente ese sitio tiene
-> una vibe brutal.
+> Sigo lo que haces en **[SALA]** los [DÍA]. Se ve tu sello, no un flyer
+> reciclado — de eso va este mensaje.
 >
-> Sé que muchos DJs residentes en salas locales acaban haciendo el flyer
-> semanal ellos mismos porque nadie más lo va a hacer. Perdiendo 30-45 min
-> cada semana en Canva.
+> Esta temporada he notado algo raro en Instagram: los flyers de las
+> salas de barrio empiezan a parecerse todos. Fondo hiperrealista con
+> multitud borrosa, neones magenta+cyan, misma tipografía centrada. Es
+> el efecto de que todo el mundo pide su flyer a ChatGPT con el mismo
+> prompt.
 >
-> He creado una herramienta con IA para que ese flyer semanal te lleve
-> **5 minutos en lugar de 45**. Te preparé un ejemplo con tu nombre y el
-> próximo jueves:
+> Tu sala se juega su identidad ahí. Si el flyer del jueves podría ser
+> de cualquier otra sala del barrio, la gente no viene por TI — viene
+> por el DJ del cartel de esa semana. Y cuando no eres tú el cartel, no
+> vuelven.
+>
+> He construido **ArteGenIA** para lo contrario: flyers que mantienen
+> tu look semana a semana, con las mismas paletas y tipografías, para
+> que tu residencia se reconozca a distancia. En 5 min por flyer, sin
+> ser diseñador.
+>
+> Te preparé un ejemplo con tu nombre y tu próximo [DÍA]:
 >
 > [LINK]
 >
-> Si te sirve, te regalo el plan Pro (100 flyers/mes) sin coste durante 1
-> mes para que pruebes con eventos reales. Si en ese mes no lo usas, no
-> pasa nada.
+> Si te representa, te regalo el plan Pro (100 flyers/mes) sin coste
+> durante 1 mes. Sin permanencia.
 >
-> ¿5 min por videollamada esta semana?
+> ¿5 min esta semana?
 >
 > — Alfredo
 
-### Mensaje S2 · DJ móvil / bodas ← MÁS PREMIUM
+**Notas S1**:
+- Toca punto ego "reemplazable" (residencia sin identidad = pierde
+  fidelización)
+- Concreta el look ChatGPT visualmente (magenta+cyan, multitud)
+- Cierra con oferta (Pro gratis 1 mes) para reducir fricción
+
+---
+
+### Mensaje S2 · DJ móvil / bodas ← MÁS PREMIUM (mantiene ángulo tiempo/margen)
 
 > **Hola [NOMBRE]**, soy Alfredo, creador de **ArteGenIA**.
 >
 > Vi que haces bodas y eventos privados desde [AÑO]. Enhorabuena por lo
 > que llevas montado, se ve nivel.
 >
-> Te escribo porque ArteGenIA resuelve un dolor específico de los DJs
-> móviles: **cada cliente te pide un flyer distinto** con su fecha, nombre,
-> lugar. Acabas haciendo Canva mediocre o pagando 40€ a un freelance.
+> Te escribo porque **ArteGenIA** resuelve un dolor específico de los
+> DJs móviles: cada cliente te pide un flyer distinto con su fecha,
+> nombre, lugar. Acabas haciendo un Canva mediocre a las 11 de la noche
+> o pagando 40€ a un freelance que se come tu margen.
 >
 > Con nosotros:
 > - Escribes los datos del cliente
 > - Eliges 1 de 45 combos profesionales de texto
 > - En 5 min tienes el flyer listo para mandar por WhatsApp
-> - Puedes cobrarlo como añadido al servicio (30-60€) → nueva línea de ingresos
+> - Puedes cobrarlo como añadido al servicio (30-60€) → nueva línea de ingresos que ANTES no tenías
 >
-> Te preparé 3 flyers de ejemplo tipo boda + comunión + cumple 50:
+> Extra: cada flyer sale con tu paleta y tipografías. Cuando el novio
+> lo comparta con familia, se ve que es TU marca — no un genérico que
+> podría ser de cualquier DJ.
+>
+> Te preparé 3 ejemplos tipo boda + comunión + cumple 50:
 >
 > [LINK]
 >
@@ -176,55 +210,146 @@ recurrentes con flyers de eventos, **NO es cliente**.
 >
 > — Alfredo
 
+**Notas S2**:
+- Ángulo tiempo/margen (dolor real: cada cliente = flyer distinto)
+- Sub-mención de identidad en penúltimo párrafo (efecto marca al
+  compartir) sin sacar el foco de la propuesta económica
+
+---
+
 ### Mensaje S3 · DJ que también organiza (dual)
 
 > **Hola [NOMBRE]**, soy Alfredo, creador de **ArteGenIA**.
 >
 > Sigo lo que estáis montando con **[NOMBRE_CICLO/FIESTA]** desde hace
-> tiempo. Line-ups muy sólidos y con constancia — poca gente lo hace.
+> tiempo. Line-ups sólidos, constancia real — muy poca gente lo hace.
 >
-> He construido una herramienta que resuelve UN dolor específico de los
-> que organizan con line-up de varios DJs: **coordinar las fotos de todos
-> los invitados sin perder días persiguiendo por WhatsApp**.
+> Justo por eso te escribo. He notado que en el gremio los flyers están
+> empezando a parecerse: fondos hiperrealistas neón, mismas
+> tipografías, misma composición. Todo el mundo lo saca del mismo
+> prompt de ChatGPT. Y cuando **tu ciclo se parece al del rival**, tu
+> marca deja de significar algo.
 >
-> Cómo funciona en tu caso:
-> 1. Añades a los 5-6 DJs del próximo evento con sus WhatsApp
-> 2. Les mandas UN link donde suben su foto
-> 3. La foto entra directa al slot del flyer
-> 4. Al terminar, publicas a Instagram con las menciones (@dj1 @dj2...)
->    ya incluidas en el caption
+> Cuando construyes un ciclo, tu marca visual es tu foso defensivo.
+> Es lo que hace que la gente sepa que es TU noche antes de leer el
+> nombre. Sin eso, un mes puedes tener 300 personas y el siguiente 80
+> porque otra fiesta usó una imagen parecida el mismo fin de semana.
 >
-> Nadie más hace esto — Canva no lo tiene.
+> **ArteGenIA** hace dos cosas específicas para tu caso:
+>
+> 1. **Identidad visual consistente** — las plantillas mantienen tu
+>    paleta y tus tipografías, no un mix aleatorio como te da ChatGPT.
+> 2. **Colaboradores para line-up** — añades a los 5-6 DJs del próximo
+>    evento, les mandas UN link, ellos suben su foto, entra directa al
+>    slot del flyer. Publicas a Instagram con las menciones (@dj1
+>    @dj2...) ya incluidas en el caption. Nadie más hace esto.
 >
 > Te preparo un flyer de ejemplo con el line-up de tu próximo evento si
 > me pasas los nombres. ¿5 min por Meet?
 >
 > — Alfredo
 
+**Notas S3**:
+- Aquí el ángulo anti-clon es el MÁS PODEROSO — este segmento tiene
+  marca propia que defender
+- Toca miedo real ("300 → 80 personas por parecerse al rival")
+- Feature de Colaboradores queda como #2, no como hook
+
+---
+
 ### Mensaje S4 · Promotor / manager de club ⭐
 
 > **Hola [NOMBRE]**, soy Alfredo, fundador de **ArteGenIA**.
 >
-> Sigo el IG de **[SALA]** desde hace [X SEMANAS] y me llama la atención
-> la constancia de vuestra comunicación. Se nota que tenéis a alguien
-> pensándolo bien.
+> Sigo el IG de **[SALA]** desde hace [X SEMANAS] y noto una cosa:
+> vuestros flyers tienen constancia. Se ve que tenéis a alguien
+> pensándolo bien y no salís del "ChatGPT + fondo neón" como el 80% de
+> las salas del barrio.
 >
-> Justo por eso te escribo: he construido una herramienta pensada para
-> managers de salas como la vuestra que **hacen 2-3 flyers por semana**.
-> Reducimos el tiempo por flyer de 30-45 min a 5 min con IA.
+> Justo por eso te escribo. Esta temporada tenéis un problema nuevo:
+> la sala de al lado ha empezado a sacar flyers hechos con IA que se
+> ven "aceptables". Baratos, rápidos, hechos por el sobrino con
+> ChatGPT. La gente que hace scroll en Instagram no distingue vuestra
+> propuesta de la suya en 1 segundo — y ese es el tiempo que tenéis
+> para captar la atención.
 >
-> Lo que ganas:
-> - Hacer los 3 flyers de la semana en 15 min total
-> - Delegar en un asistente porque el flow es simple
-> - Constancia visual sin depender de un diseñador externo
+> Vuestro foso defensivo es la identidad visual. Que cuando alguien vea
+> un flyer con vuestra paleta, vuestras tipografías y vuestro flow,
+> sepa que es **[SALA]** antes de leer el nombre. Y eso ChatGPT no lo
+> puede dar — genera algo distinto cada vez.
 >
-> Te preparo 3 flyers de ejemplo con el próximo evento de [SALA] si me
-> pasas el line-up. **Si te sirve, te doy 1 mes del plan Enterprise
-> (350 flyers/mes) sin coste** para que veas si te cambia la operativa.
+> **ArteGenIA** está construido para eso: tus 3 flyers de la semana
+> mantienen coherencia visual sin que tú tengas que ser diseñador.
+> Hechos en 15 min total (los 3), delegables en un asistente porque el
+> flow es sencillo.
+>
+> Te preparo 3 flyers de ejemplo con el próximo evento de **[SALA]**
+> si me pasas el line-up. Si te sirve, te doy 1 mes del plan Enterprise
+> (350 flyers/mes) sin coste para que veas si te cambia la operativa.
 >
 > ¿15 min por videollamada esta semana?
 >
 > — Alfredo
+
+**Notas S4**:
+- Segmento con MAYOR presupuesto → mensaje más largo permitido
+- Compliment inicial ("no salís del ChatGPT del 80%") posiciona al
+  prospecto por ENCIMA del genérico — activa orgullo profesional
+- Nombra al rival implícitamente ("la sala de al lado / el sobrino")
+- Cierra con oferta económica generosa (Enterprise gratis)
+
+---
+
+## Frases citables reutilizables (para follow-up / DMs / stories)
+
+Cuando alguien no responde al primer DM, mándalo **una vez más al día
++3** con UNA sola frase citable. Nunca 2 mensajes largos seguidos.
+
+- "Cuando todos usan ChatGPT para flyers, todos acaban con el mismo flyer."
+- "Tu marca visual es tu foso defensivo. Sin ella, eres uno más."
+- "En el gremio hay dos tipos de promotores: el que su flyer es
+  reemplazable, y el que su flyer es un lugar."
+- "Los flyers hechos con ChatGPT se ven todos igual porque el modelo
+  eligió los colores, no tú."
+- "Si tu flyer podría ser de cualquier fiesta, tu marca no existe."
+
+---
+
+## Fallback si el prospecto ya usa Canva o ChatGPT
+
+Si en la respuesta te dicen "ya uso Canva" / "ya uso ChatGPT", NO
+insistas en features. Usa esta réplica:
+
+> Perfecto — sé que Canva y ChatGPT sacan flyer.
+>
+> La diferencia es que **cada respuesta de ChatGPT es distinta**, y
+> **Canva es genérico** — hay 1 millón de plantillas y ninguna es
+> específica para tu tipo de evento. El resultado en ambos casos: los
+> flyers de la temporada se van pareciendo entre salas.
+>
+> ArteGenIA hace lo contrario: plantillas curadas para tu vertical
+> (DJ / sala / bodas / academia) que mantienen consistencia entre
+> flyers tuyos, no entre los tuyos y los del rival.
+>
+> Aquí tienes 5 min de comparación honesta:
+> `https://artegenia.com/vs-chatgpt`
+>
+> Si tras verlo sigues pensando que Canva o ChatGPT te bastan, no pasa
+> nada. Solo pido que lo mires antes de decidir.
+
+---
+
+## Historial de versiones
+
+- **v3 (2 jul 2026)**: reescritura completa con ángulo anti-clon.
+  Basado en insight del user sobre oportunidad del clon ChatGPT.
+  Añadido fallback + frases citables + réplica objeción Canva/ChatGPT.
+- **v2 (2 jul 2026)**: reestructurado a 4 segmentos reales (después de
+  descartar "DJ genérico"). Cada mensaje personalizado por dolor
+  específico del segmento.
+- **v1 (~jun 2026)**: playbook inicial con mensaje único para "DJs
+  Madrid/BCN". Deprecado porque el segmento no existía en la
+  realidad.
 
 ---
 
