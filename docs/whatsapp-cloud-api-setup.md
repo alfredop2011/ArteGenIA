@@ -124,7 +124,10 @@ Templates → "Crear plantilla" desde Business Manager → WhatsApp Manager.
   No compartas este código con nadie.
   ```
   - Ejemplo para {{1}}: `123456`
-- **Botón** (opcional): "Copiar código" — One-tap autofill
+- **Botón**: ⚠️ Elegir tipo **"Contraseña de un solo uso (OTP)"**
+  (NO "Copy code" genérico). Esto activa el copy-code automático
+  en el teléfono del usuario y es el tipo esperado por Meta para
+  templates de Authentication.
 
 Esta categoría tiene reglas estrictas: el body NO puede tener nada de
 marketing, solo el código.
@@ -135,6 +138,8 @@ marketing, solo el código.
 - **Idioma**: Spanish (es)
 - **Nombre exacto**: `collaborator_photo_received_v1`
 - **Componente Header** (Text): `Foto recibida ✨`
+  - Soporte Meta confirmó: 1 emoji en Header es aceptable. Evitar
+    ≥2 emojis o iconos decorativos innecesarios.
 - **Componente Body**:
   ```
   Hola {{1}}, {{2}} ha subido su foto al flyer "{{3}}".
@@ -148,11 +153,26 @@ marketing, solo el código.
   - Ejemplo {{3}}: `Festival Bass Revolution`
   - Ejemplo {{4}}: `Ya está colocada en su slot del flyer.` (o `Quedan 2 fotos pendientes.`)
 - **Componente Footer**: `ArteGenIA · Notificación automática`
-- **Botón** (Call to Action): "Abrir flyer" → URL dinámica `https://artegenia.com/editor/{{1}}`
-  - Marcamos `{{1}}` como variable para que se rellene con el project_id
+- **Botón** (Call to Action): "Abrir flyer" → URL dinámica
+  - ⚠️ Configurar como URL dinámica con parte fija separada:
+    - Parte fija: `https://artegenia.com/editor/`
+    - Variable: `{{1}}` (project_id)
+  - NO usar `https://artegenia.com/editor/{{1}}` como URL completa —
+    Meta requiere el split explícito de fija + variable.
 
-⏳ Aprobación: 24-48h normalmente. Si te rechazan, Meta te dice por qué
-(suele ser por marketing language en categoría Utility). Edita y reenvía.
+### Validación previa (soporte Meta, jul 2026)
+
+Antes de la aprobación oficial, un agente de soporte revisó ambas
+plantillas y confirmó que **cumplen las normas generales**. Puntos
+clave que validaron:
+
+1. Body de OTP: sencillo y directo, sin marketing → ✅
+2. Variables `{{n}}` bien rodeadas de texto claro → ✅
+3. URL dinámica con parte fija + variable final → ✅
+4. Emoji moderado en Header ("Foto recibida ✨") → ✅
+
+⏳ Aprobación real: 24-48h típico tras submit. Con validación previa
+del soporte, riesgo de rechazo es bajo.
 
 ---
 
