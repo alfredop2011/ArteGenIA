@@ -857,6 +857,8 @@ export type TranslationKey =
   | "eventos.modal.save"
   | "eventos.modal.copied"
   | "eventos.modal.share"
+  | "eventos.modal.addCalendar"
+  | "eventos.modal.directions"
   | "eventos.modal.buyOnline"
   | "eventos.modal.freeEntry"
   | "eventos.modal.consultOrganizer"
@@ -1786,6 +1788,8 @@ const es: Dict = {
   "eventos.modal.save": "Guardar",
   "eventos.modal.copied": "¡Copiado!",
   "eventos.modal.share": "Compartir",
+  "eventos.modal.addCalendar": "Añadir al calendario",
+  "eventos.modal.directions": "Cómo llegar",
   "eventos.modal.buyOnline": "Comprar entradas online",
   "eventos.modal.freeEntry": "Entrada libre — no necesitas reservar",
   "eventos.modal.consultOrganizer": "Consulta el precio con el organizador",
@@ -2701,6 +2705,8 @@ const en: Dict = {
   "eventos.modal.save": "Save",
   "eventos.modal.copied": "Copied!",
   "eventos.modal.share": "Share",
+  "eventos.modal.addCalendar": "Add to calendar",
+  "eventos.modal.directions": "Get directions",
   "eventos.modal.buyOnline": "Buy tickets online",
   "eventos.modal.freeEntry": "Free admission — no booking needed",
   "eventos.modal.consultOrganizer": "Ask the organiser about the price",
@@ -3616,6 +3622,8 @@ const fr: Dict = {
   "eventos.modal.save": "Enregistrer",
   "eventos.modal.copied": "Copié !",
   "eventos.modal.share": "Partager",
+  "eventos.modal.addCalendar": "Ajouter au calendrier",
+  "eventos.modal.directions": "Itinéraire",
   "eventos.modal.buyOnline": "Acheter des billets en ligne",
   "eventos.modal.freeEntry": "Entrée libre — pas besoin de réserver",
   "eventos.modal.consultOrganizer": "Demande le prix à l'organisateur",
@@ -4531,6 +4539,8 @@ const pt: Dict = {
   "eventos.modal.save": "Guardar",
   "eventos.modal.copied": "Copiado!",
   "eventos.modal.share": "Partilhar",
+  "eventos.modal.addCalendar": "Adicionar à agenda",
+  "eventos.modal.directions": "Como chegar",
   "eventos.modal.buyOnline": "Comprar bilhetes online",
   "eventos.modal.freeEntry": "Entrada livre — não precisas de reservar",
   "eventos.modal.consultOrganizer": "Consulta o preço com o organizador",

@@ -15,6 +15,7 @@ import {
   MapPin,
   Globe,
   Calendar as CalendarIcon,
+  CalendarPlus,
   LayoutGrid,
   ChevronLeft,
   ChevronRight,
@@ -1828,6 +1829,48 @@ function CalendarView({
 
 // ─── Modal detalle ──────────────────────────────────────────────────────────
 
+// ─── "Añadir al calendario" (.ics universal) + "Cómo llegar" (Maps) ────────
+const pad2 = (n: number) => String(n).padStart(2, "0");
+
+/** Rango de fecha/hora del evento en formato ICS local flotante (sin TZ).
+ *  Fin = inicio + 3h; usa Date para cruzar medianoche correctamente. */
+function icsRange(date: string, time: string): { start: string; end: string } {
+  const [h, m] = (time || "20:00").split(":").map(Number);
+  const startD = new Date(`${date}T${pad2(h || 20)}:${pad2(m || 0)}:00`);
+  const endD = new Date(startD.getTime() + 3 * 60 * 60 * 1000);
+  const fmt = (d: Date) =>
+    `${d.getFullYear()}${pad2(d.getMonth() + 1)}${pad2(d.getDate())}T${pad2(d.getHours())}${pad2(d.getMinutes())}00`;
+  return { start: fmt(startD), end: fmt(endD) };
+}
+
+/** Descarga un .ics del evento — universal (Apple/Google/Outlook lo abren). */
+function downloadEventIcs(e: EventItem) {
+  const { start, end } = icsRange(e.date, e.time);
+  const loc = [e.venue, e.neighborhood, e.city].filter(Boolean).join(", ");
+  const esc = (s: string) => (s || "").replace(/([,;\\])/g, "\\$1").replace(/\n/g, "\\n");
+  const ics = [
+    "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Peligro Oficial//Agenda//ES", "CALSCALE:GREGORIAN",
+    "BEGIN:VEVENT", `UID:${e.id}@peligroficial.com`,
+    `DTSTART:${start}`, `DTEND:${end}`,
+    `SUMMARY:${esc(e.title)}`, `LOCATION:${esc(loc)}`, "DESCRIPTION:Vía Peligro Oficial",
+    "END:VEVENT", "END:VCALENDAR",
+  ].join("\r\n");
+  const url = URL.createObjectURL(new Blob([ics], { type: "text/calendar;charset=utf-8" }));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${(e.title || "evento").replace(/[^\w\s-]/g, "").trim().slice(0, 40) || "evento"}.ics`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+/** Link a Google Maps (abre app o web en cualquier plataforma). */
+function eventMapsUrl(e: EventItem): string {
+  const q = [e.venue, e.neighborhood, e.city].filter(Boolean).join(", ");
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`;
+}
+
 function EventModal({
   event,
   isFav,
@@ -1907,6 +1950,26 @@ function EventModal({
             >
               <Share2 size={15} /> {copied ? t("eventos.modal.copied") : t("eventos.modal.share")}
             </button>
+          </div>
+
+          {/* Añadir al calendario + Cómo llegar — imprescindibles en una agenda. */}
+          <div className="mt-2 flex gap-2">
+            <button
+              onClick={() => downloadEventIcs(event)}
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2.5 text-sm font-medium"
+              style={{ background: "var(--home-card-bg)", color: "var(--home-text)" }}
+            >
+              <CalendarPlus size={15} /> {t("eventos.modal.addCalendar")}
+            </button>
+            <a
+              href={eventMapsUrl(event)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2.5 text-sm font-medium"
+              style={{ background: "var(--home-card-bg)", color: "var(--home-text)" }}
+            >
+              <Navigation size={15} /> {t("eventos.modal.directions")}
+            </a>
           </div>
 
           {/* RSVP: "Voy" + contador de asistentes (anónimo, recuerda en localStorage). */}
