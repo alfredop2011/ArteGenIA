@@ -523,11 +523,17 @@ export default function Home() {
           <p className="text-sm text-center mb-5 max-w-xl mx-auto" style={{ color: "var(--home-text-muted)" }}>
             Diseñado para tu tipo de público.
           </p>
+          {/* Los 4 audiences reales (v2, 2 jul 2026) — descartamos "DJ
+              genérico" tras validar con el mercado. Los que SÍ tienen dolor:
+              1. Sala / promotor de club (2-3 flyers/semana)
+              2. DJ móvil / bodas (cada cliente su flyer)
+              3. DJ residente (su noche semanal en sala pequeña)
+              4. Academia (cursos, talleres, workshops) */}
           <div className="flex md:grid md:grid-cols-4 gap-3 overflow-x-auto scrollbar-hide -mx-3 px-3 sm:mx-0 sm:px-0 pb-2">
-            <AudienceCard icon={GraduationCap} accent="#a855f7" title="Academias" desc="Capta alumnos con flyers de clases y workshops." />
-            <AudienceCard icon={PartyPopper}   accent="#ec4899" title="Productoras" desc="Conciertos, fiestas, festivales. Vende más entradas." />
-            <AudienceCard icon={Sparkles}      accent="#facc15" title="DJs / Freelance" desc="Tu marca personal lista para Instagram." />
-            <AudienceCard icon={Music}         accent="#22d3ee" title="Discotecas" desc="Lineup semanal sin gastar en diseñador." />
+            <AudienceCard icon={Music}         accent="#22d3ee" title="Sala / Club" desc="2-3 flyers por semana en 5 min cada uno." />
+            <AudienceCard icon={PartyPopper}   accent="#ec4899" title="DJ móvil / Bodas" desc="Cada cliente su flyer sin pagar diseñador." />
+            <AudienceCard icon={Sparkles}      accent="#facc15" title="DJ residente" desc="Tu noche semanal, siempre lista a tiempo." />
+            <AudienceCard icon={GraduationCap} accent="#a855f7" title="Academia" desc="Capta alumnos con clases y workshops." />
           </div>
         </section>
 
