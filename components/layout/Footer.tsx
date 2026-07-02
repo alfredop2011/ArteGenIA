@@ -36,8 +36,16 @@ export default function Footer() {
             <span>© {year}</span>
           </div>
 
-          {/* Links legales */}
+          {/* Links legales + ayuda */}
           <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs">
+            <Link
+              href="/ayuda"
+              className="transition-colors hover:opacity-80 font-semibold"
+              style={{ color: "var(--home-text-muted)" }}
+            >
+              Ayuda
+            </Link>
+            <span style={{ color: "var(--home-text-soft)" }}>·</span>
             <Link
               href="/privacidad"
               className="transition-colors hover:opacity-80"
