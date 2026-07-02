@@ -354,7 +354,7 @@ function PricingContent() {
               <Check text="Editor completo (texto + imagen + forma)"/>
               <Check text="48+ plantillas profesionales"/>
               <Check text="Sin watermark · descarga limpia"/>
-              <Check text="10 créditos IA al mes (= 5 fotos sin fondo)"/>
+              <Check text="10 créditos IA al mes · No se acumulan (se resetean cada mes)"/>
               <Check text="Exportar PNG y JPG"/>
               <Check text="Multi-formato (Story, Post, Square)"/>
               <Check text="4 idiomas (ES/EN/FR/PT)"/>
@@ -404,7 +404,7 @@ function PricingContent() {
                     <span className="text-[13px] text-gray-400">/mes</span>
                   </div>
                   <p className="text-[11px] text-emerald-300 font-semibold mt-1">
-                    ⚡ 100 créditos · Sin permanencia · Cancela cuando quieras
+                    ⚡ 100 créditos/mes + rollover hasta 50 · Cancela cuando quieras
                   </p>
                 </>
               )}
@@ -412,7 +412,7 @@ function PricingContent() {
 
             <ul className="space-y-3 flex-1 mb-7">
               <Check strong text="Todo lo de Free"/>
-              <Check strong text="100 créditos IA al mes (= 50 fotos sin fondo)"/>
+              <Check strong text="100 créditos IA al mes · Rollover hasta +50 acumulables"/>
               <Check strong text="Exportar PDF imprenta de alta calidad"/>
               <Check strong text="Asistente IA · Capas Mágicas · Generador IA"/>
               <Check strong text="Soporte prioritario por email"/>
@@ -469,6 +469,7 @@ function PricingContent() {
 
             <ul className="space-y-3 flex-1 mb-7">
               <Check strong text="Todo lo de Pro"/>
+              <Check strong text="350 créditos IA al mes · Rollover hasta +50 acumulables"/>
               <Check strong text="Múltiples usuarios en un equipo"/>
               <Check strong text="Brand Kit (logo + paleta de marca)"/>
               <Check strong text="Plantillas exclusivas por industria"/>
@@ -505,6 +506,115 @@ function PricingContent() {
         <p className="text-center text-[12px] text-gray-500 mt-8 max-w-xl mx-auto leading-relaxed">
           Todos los planes incluyen el editor completo SIN watermark. La diferencia está en límites de IA, exportación profesional y soporte. ¿Dudas? <a href="mailto:hola@artegenia.com" className="text-purple-300 hover:text-purple-200 underline">Escríbenos</a>.
         </p>
+
+        {/* ═════ CÓMO FUNCIONAN LOS CRÉDITOS ═════
+            El pricing no explicaba el rollover — un user que paga 9,99€ no
+            sabía si se acumulan o se pierden. Añadimos esta sección con
+            ejemplo concreto mes a mes para transparencia total. */}
+        <div className="mt-16 max-w-4xl mx-auto">
+          <div className="text-center mb-8">
+            <p className="text-[11px] uppercase tracking-widest text-emerald-300 font-bold mb-2">
+              Transparencia total
+            </p>
+            <h2 className="text-[22px] md:text-[28px] font-black">
+              ¿Cómo funcionan los créditos?
+            </h2>
+            <p className="text-[13px] text-gray-400 mt-2 max-w-2xl mx-auto">
+              Cada acción con IA consume créditos. Cada plan tiene una asignación mensual y la posibilidad de acumular parte de lo que no gastes.
+            </p>
+          </div>
+
+          {/* Coste por acción */}
+          <div className="rounded-2xl border border-white/[0.06] bg-[#13131f] p-6 mb-6">
+            <h3 className="text-[15px] font-bold mb-4">Qué cuesta cada acción</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {[
+                { label: "Descargar flyer", cost: "1 crédito" },
+                { label: "Quitar fondo IA", cost: "2 créditos" },
+                { label: "Recortar persona", cost: "2 créditos" },
+                { label: "Generar con IA", cost: "3–5 créditos" },
+              ].map((item) => (
+                <div key={item.label} className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-4">
+                  <div className="text-[11px] text-gray-500 uppercase tracking-wider mb-1">
+                    {item.label}
+                  </div>
+                  <div className="text-[16px] font-black text-white">
+                    {item.cost}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Rollover visual */}
+          <div className="rounded-2xl border border-purple-500/30 bg-gradient-to-br from-purple-500/[0.06] to-transparent p-6 mb-6">
+            <h3 className="text-[15px] font-bold mb-1 text-purple-200">
+              Rollover — así se acumulan
+            </h3>
+            <p className="text-[12px] text-gray-400 mb-5">
+              En Pro y Enterprise conservas hasta 50 créditos del mes anterior si no los gastaste. En Free no hay rollover (se resetean).
+            </p>
+            <div className="rounded-xl bg-[#0e0e14] border border-white/[0.08] overflow-hidden">
+              <div className="grid grid-cols-4 px-4 py-3 border-b border-white/[0.06] bg-white/[0.02]">
+                <div className="text-[10px] uppercase tracking-wider text-gray-500 font-bold">Mes</div>
+                <div className="text-[10px] uppercase tracking-wider text-gray-500 font-bold">Recibes</div>
+                <div className="text-[10px] uppercase tracking-wider text-gray-500 font-bold">Gastas</div>
+                <div className="text-[10px] uppercase tracking-wider text-purple-300 font-bold text-right">Al empezar mes siguiente</div>
+              </div>
+              {[
+                { m: "Julio (día 1)", get: "100 frescos", spend: "30", next: "70 sobrantes → conservas 50 + 100 = 150" },
+                { m: "Agosto (día 1)", get: "100 frescos", spend: "80", next: "70 sobrantes → conservas 50 + 100 = 150" },
+                { m: "Septiembre", get: "100 frescos", spend: "10", next: "140 sobrantes → conservas 50 + 100 = 150" },
+              ].map((row, i) => (
+                <div key={i} className="grid grid-cols-4 px-4 py-3 border-b border-white/[0.04] last:border-0">
+                  <div className="text-[12px] text-gray-300 font-semibold">{row.m}</div>
+                  <div className="text-[12px] text-emerald-300 font-semibold">+ {row.get}</div>
+                  <div className="text-[12px] text-red-300">− {row.spend}</div>
+                  <div className="text-[11px] text-gray-300 text-right leading-snug">{row.next}</div>
+                </div>
+              ))}
+            </div>
+            <p className="text-[11px] text-gray-500 mt-3 leading-relaxed">
+              El cap de 50 evita el abuso (comprar un mes y no volver). Los créditos frescos del nuevo mes SIEMPRE se abonan al 100%.
+            </p>
+          </div>
+
+          {/* FAQ rápido */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="rounded-xl border border-white/[0.06] bg-[#13131f] p-5">
+              <h4 className="text-[13px] font-bold text-white mb-1">
+                Si cancelo, ¿pierdo los créditos?
+              </h4>
+              <p className="text-[12px] text-gray-400 leading-relaxed">
+                No pierdes los créditos que te quedan hasta el final del ciclo pagado. Después, la cuenta baja a Free (10 créditos/mes sin rollover).
+              </p>
+            </div>
+            <div className="rounded-xl border border-white/[0.06] bg-[#13131f] p-5">
+              <h4 className="text-[13px] font-bold text-white mb-1">
+                ¿Puedo comprar créditos sueltos?
+              </h4>
+              <p className="text-[12px] text-gray-400 leading-relaxed">
+                Todavía no. Si te quedas corto puntualmente, escríbenos y te ayudamos. Estamos evaluando añadir topups.
+              </p>
+            </div>
+            <div className="rounded-xl border border-white/[0.06] bg-[#13131f] p-5">
+              <h4 className="text-[13px] font-bold text-white mb-1">
+                ¿Cuándo se resetean?
+              </h4>
+              <p className="text-[12px] text-gray-400 leading-relaxed">
+                El día 1 de cada mes a las 05:00 (hora España). Recibes automáticamente tu asignación fresca sin hacer nada.
+              </p>
+            </div>
+            <div className="rounded-xl border border-white/[0.06] bg-[#13131f] p-5">
+              <h4 className="text-[13px] font-bold text-white mb-1">
+                ¿Los créditos caducan?
+              </h4>
+              <p className="text-[12px] text-gray-400 leading-relaxed">
+                Los créditos del rollover (hasta 50) se conservan mes a mes mientras tengas plan Pro/Enterprise activo. Free: se resetean cada mes.
+              </p>
+            </div>
+          </div>
+        </div>
 
         {/* Comparativa rápida — opcional, estilo shadcn */}
         <div className="mt-20 max-w-4xl mx-auto">
