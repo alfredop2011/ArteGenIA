@@ -35,6 +35,28 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     const [showUserMenu, setShowUserMenu] = useState(false);
     const [showMobileMenu, setShowMobileMenu] = useState(false);
 
+    // Abrir AuthModal desde ?auth=login o ?auth=signup — las rutas
+    // /login y /signup redirigen aquí (evitan 404 para URLs que un user
+    // pueda teclear a mano o los buscadores puedan indexar).
+    // Uso window.location.search directo en vez de useSearchParams()
+    // porque Next 16 requiere Suspense boundary alrededor del hook y
+    // AppShell renderiza a nivel de layout raíz — más simple leer del
+    // window en un useEffect client-only.
+    useEffect(() => {
+        if (typeof window === "undefined") return;
+        const params = new URLSearchParams(window.location.search);
+        const authParam = params.get("auth");
+        if ((authParam === "login" || authParam === "signup") && !user) {
+            setShowAuth(true);
+            // Limpiamos el param con history.replaceState — sin scroll ni
+            // remount RSC. La próxima vez que el user llegue con la URL
+            // no re-abre el modal (respeta si el user ya lo cerró).
+            const url = new URL(window.location.href);
+            url.searchParams.delete("auth");
+            window.history.replaceState({}, "", url.toString());
+        }
+    }, [pathname, user]);
+
     // ─── ONBOARDING: modal de tipo de organizador ───────────────────────
     // Se muestra automaticamente cuando hay user logueado y NUNCA respondio
     // (organizer_type === null). Tras responder o cerrar, el campo deja
