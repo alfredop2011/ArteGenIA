@@ -148,8 +148,8 @@ export default function HomeVsCanva() {
           ArteGenIA es mejor si tu día a día son flyers de eventos/clases y quieres ahorrar tiempo.
         </p>
 
-        {/* CTA */}
-        <div className="text-center">
+        {/* CTAs — probar + ver comparativa completa */}
+        <div className="flex flex-wrap items-center justify-center gap-3">
           <Link
             href="/templates"
             className="inline-flex items-center gap-2 px-6 py-3 rounded-full text-[14px] font-black text-white transition-transform active:scale-95 hover:scale-105"
@@ -160,6 +160,17 @@ export default function HomeVsCanva() {
           >
             <Sparkles size={14} strokeWidth={2.5} />
             Probar gratis — sin tarjeta →
+          </Link>
+          <Link
+            href="/comparativa-canva"
+            className="inline-flex items-center gap-2 px-5 py-3 rounded-full text-[13px] font-semibold transition-colors"
+            style={{
+              background: "var(--home-card-bg)",
+              border: "1px solid var(--home-card-border)",
+              color: "var(--home-text)",
+            }}
+          >
+            Ver comparativa completa →
           </Link>
         </div>
       </div>

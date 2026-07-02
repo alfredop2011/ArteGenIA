@@ -530,10 +530,10 @@ export default function Home() {
               3. DJ residente (su noche semanal en sala pequeña)
               4. Academia (cursos, talleres, workshops) */}
           <div className="flex md:grid md:grid-cols-4 gap-3 overflow-x-auto scrollbar-hide -mx-3 px-3 sm:mx-0 sm:px-0 pb-2">
-            <AudienceCard icon={Music}         accent="#22d3ee" title="Sala / Club" desc="2-3 flyers por semana en 5 min cada uno." />
-            <AudienceCard icon={PartyPopper}   accent="#ec4899" title="DJ móvil / Bodas" desc="Cada cliente su flyer sin pagar diseñador." />
-            <AudienceCard icon={Sparkles}      accent="#facc15" title="DJ residente" desc="Tu noche semanal, siempre lista a tiempo." />
-            <AudienceCard icon={GraduationCap} accent="#a855f7" title="Academia" desc="Capta alumnos con clases y workshops." />
+            <AudienceCard icon={Music}         accent="#22d3ee" title="Sala / Club"       desc="2-3 flyers por semana en 5 min cada uno."   href="/para-salas" />
+            <AudienceCard icon={PartyPopper}   accent="#ec4899" title="DJ móvil / Bodas"  desc="Cada cliente su flyer sin pagar diseñador." href="/para-djs-boda" />
+            <AudienceCard icon={Sparkles}      accent="#facc15" title="DJ residente"     desc="Tu noche semanal, siempre lista a tiempo."   href="/para-djs" />
+            <AudienceCard icon={GraduationCap} accent="#a855f7" title="Academia"          desc="Capta alumnos con clases y workshops."       href="/para-academias" />
           </div>
         </section>
 
@@ -602,21 +602,20 @@ export default function Home() {
 
 /** AudienceCard — visual con bg gradient del accent color (no solo border).
  *  Mas atractivo visualmente en mobile donde el contraste con fondo claro
- *  era casi imperceptible. Ancho fijo en mobile para scroll horizontal. */
-function AudienceCard({ icon: Icon, accent, title, desc }: {
+ *  era casi imperceptible. Ancho fijo en mobile para scroll horizontal.
+ *
+ *  Con href se convierte en Link a la landing específica del segmento
+ *  (/para-salas, /para-djs-boda, etc.) para conversión SEO segmentada.
+ *  Sin href se comporta como el card estático original. */
+function AudienceCard({ icon: Icon, accent, title, desc, href }: {
   icon: typeof GraduationCap;
   accent: string;
   title: string;
   desc: string;
+  href?: string;
 }) {
-  return (
-    <div
-      className="shrink-0 w-[200px] sm:w-auto rounded-2xl p-4 transition-transform hover:scale-[1.02]"
-      style={{
-        background: `linear-gradient(135deg, ${accent}14, ${accent}06)`,
-        border: `1.5px solid ${accent}40`,
-      }}
-    >
+  const inner = (
+    <>
       <div
         className="w-11 h-11 rounded-xl flex items-center justify-center mb-3"
         style={{
@@ -633,8 +632,21 @@ function AudienceCard({ icon: Icon, accent, title, desc }: {
       <p className="text-xs leading-relaxed" style={{ color: "var(--home-text-muted)" }}>
         {desc}
       </p>
-    </div>
+    </>
   );
+  const cardCls = "shrink-0 w-[200px] sm:w-auto rounded-2xl p-4 transition-transform hover:scale-[1.02] block";
+  const cardStyle = {
+    background: `linear-gradient(135deg, ${accent}14, ${accent}06)`,
+    border: `1.5px solid ${accent}40`,
+  };
+  if (href) {
+    return (
+      <Link href={href} className={cardCls} style={cardStyle}>
+        {inner}
+      </Link>
+    );
+  }
+  return <div className={cardCls} style={cardStyle}>{inner}</div>;
 }
 
 function FaqItem({ q, a }: { q: string; a: string }) {
