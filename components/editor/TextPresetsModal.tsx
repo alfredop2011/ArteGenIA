@@ -40,7 +40,9 @@ const CATEGORIES: Array<{ id: TextPreset["category"] | "all"; label: string }> =
     { id: "promo-evento",       label: "Promocionar evento" },
     { id: "vender-entradas",    label: "Vender entradas" },
     { id: "lanzamiento",        label: "Lanzamiento" },
-    { id: "captar-alumnos",     label: "Captar alumnos" },
+    // "Captar alumnos" desglosado en el nicho de baile (feedback usuario).
+    { id: "clases-baile",       label: "Clases de baile" },
+    { id: "workshop",           label: "Workshop" },
 ];
 
 export default function TextPresetsModal({ onPickEmpty, onPickPreset, onClose }: Props) {

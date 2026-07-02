@@ -43,14 +43,16 @@ export interface TextPreset {
      *  - promo-evento: anunciar que pasa algo (awareness)
      *  - vender-entradas: incitar la compra (urgencia, precio, oferta)
      *  - lanzamiento: nuevo capítulo (apertura, aniversario, fechas grandes)
-     *  - captar-alumnos: academias, workshops, clases (educación)
+     *  - clases-baile: academia/clases regulares (matrícula, niveles, prueba)
+     *  - workshop: talleres/masterclass puntuales con invitado
      *  - anunciar-artistas: lineup, residentes, headliner, B2B
      */
     category:
         | "promo-evento"
         | "vender-entradas"
         | "lanzamiento"
-        | "captar-alumnos"
+        | "clases-baile"
+        | "workshop"
         | "anunciar-artistas";
     blocks: TextBlock[];
     /** Para preview en grid: usamos el bloque dominante (mayor fontSize) */
@@ -1036,7 +1038,7 @@ export const TEXT_PRESETS: TextPreset[] = [
     {
         id: "evento-workshop",
         name: "Workshop · Clases",
-        category: "captar-alumnos",
+        category: "workshop",
         blocks: [
             {
                 text: "WORKSHOP INTENSIVO",
@@ -1574,7 +1576,7 @@ export const TEXT_PRESETS: TextPreset[] = [
     {
         id: "captar-matricula-abierta",
         name: "Matrícula abierta",
-        category: "captar-alumnos",
+        category: "clases-baile",
         blocks: [
             {
                 text: "PLAZAS LIMITADAS",
@@ -1612,7 +1614,7 @@ export const TEXT_PRESETS: TextPreset[] = [
     {
         id: "captar-prueba-gratis",
         name: "Clase prueba gratis",
-        category: "captar-alumnos",
+        category: "clases-baile",
         blocks: [
             {
                 text: "PRIMERA CLASE",
@@ -1650,7 +1652,7 @@ export const TEXT_PRESETS: TextPreset[] = [
     {
         id: "captar-nuevo-curso",
         name: "Nuevo curso · Niveles",
-        category: "captar-alumnos",
+        category: "clases-baile",
         blocks: [
             {
                 text: "TEMPORADA 2026",
@@ -1688,7 +1690,7 @@ export const TEXT_PRESETS: TextPreset[] = [
     {
         id: "captar-academia-tipos",
         name: "Academia · Disciplinas",
-        category: "captar-alumnos",
+        category: "clases-baile",
         blocks: [
             {
                 text: "ACADEMIA DE BAILE",
@@ -1726,7 +1728,7 @@ export const TEXT_PRESETS: TextPreset[] = [
     {
         id: "captar-masterclass",
         name: "Masterclass · Invitado",
-        category: "captar-alumnos",
+        category: "workshop",
         blocks: [
             {
                 text: "ARTISTA INVITADO",
