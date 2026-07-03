@@ -17,6 +17,13 @@ type TemplateFabricThumbnailProps = {
     template: TemplateMeta;
     formatId?: FormatId;
     className?: string;
+    /**
+     * Si viene, renderiza un <img> con esta URL en vez del canvas Fabric.
+     * Se usa cuando la plantilla tiene un override guardado por admin —
+     * la thumbnail está ya generada como PNG en R2 y es más rápida y fiel
+     * que volver a renderizar los layers estáticos (que no reflejan el override).
+     */
+    overrideImageUrl?: string;
 };
 
 /**
@@ -37,12 +44,30 @@ function resolveLayers(template: TemplateMeta, format: FormatId): TemplateLayer[
  * Miniatura WYSIWYG: mismo modelo de capas que el editor (Fabric), escalado al hueco de la tarjeta.
  * Si no se pasa formatId, usa la primera variante de la plantilla.
  */
-export default function TemplateFabricThumbnail({ template, formatId, className = "" }: TemplateFabricThumbnailProps) {
+export default function TemplateFabricThumbnail({ template, formatId, className = "", overrideImageUrl }: TemplateFabricThumbnailProps) {
     const containerRef = useRef<HTMLDivElement | null>(null);
     const canvasElRef = useRef<HTMLCanvasElement | null>(null);
     const [scale, setScale] = useState(0.2);
 
     const variant = getVariantMeta(template, formatId);
+
+    // Fast path: si hay una thumbnail PNG del override, saltate Fabric.
+    if (overrideImageUrl) {
+        return (
+            <div
+                className={`relative flex items-center justify-center overflow-hidden bg-[#0a0a12] ${className}`}
+                aria-hidden
+            >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                    src={overrideImageUrl}
+                    alt=""
+                    className="w-full h-full object-contain pointer-events-none"
+                    loading="lazy"
+                />
+            </div>
+        );
+    }
 
     useLayoutEffect(() => {
         const node = containerRef.current;

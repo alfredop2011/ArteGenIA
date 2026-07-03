@@ -20,6 +20,7 @@ import {
   type Template,
 } from "@/data/templates";
 import { useLocale } from "@/hooks/useLocale";
+import { useTemplateOverrideImages } from "@/hooks/useTemplateOverrideImages";
 
 /**
  * /admin/templates
@@ -56,6 +57,8 @@ export default function AdminTemplatesPage() {
   const [page, setPage] = useState(1);
   // Ids de plantillas con override guardado en Supabase (editadas desde el editor visual).
   const [overrideIds, setOverrideIds] = useState<Set<number>>(new Set());
+  // Map { templateId: nueva imageUrl } de las thumbnails override-eadas.
+  const { resolveImage } = useTemplateOverrideImages();
 
   // Cargar la lista de overrides al montar la página.
   useEffect(() => {
@@ -285,6 +288,7 @@ export default function AdminTemplatesPage() {
                 dirty={edits[t.id] !== undefined}
                 onToggleTag={(tag) => toggleTag(t.id, tag)}
                 hasOverride={overrideIds.has(t.id)}
+                thumbnailUrl={resolveImage(t.id, t.image)}
               />
             ))}
           </div>
@@ -429,12 +433,14 @@ function TemplateRow({
   dirty,
   onToggleTag,
   hasOverride = false,
+  thumbnailUrl,
 }: {
   template: Template;
   effectiveTags: InternalTag[];
   dirty: boolean;
   onToggleTag: (tag: InternalTag) => void;
   hasOverride?: boolean;
+  thumbnailUrl?: string;
 }) {
   const { t } = useLocale();
   const [open, setOpen] = useState(false);
@@ -448,10 +454,10 @@ function TemplateRow({
       }`}
     >
       <div className="flex items-center gap-3 p-3">
-        {/* Thumbnail */}
+        {/* Thumbnail — usa override si existe, si no cae al catalogo */}
         <div className="w-16 h-16 rounded-xl overflow-hidden bg-white/5 shrink-0">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={template.image} alt={template.title} className="w-full h-full object-cover"/>
+          <img src={thumbnailUrl ?? template.image} alt={template.title} className="w-full h-full object-cover"/>
         </div>
 
         {/* Info */}

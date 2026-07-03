@@ -22,6 +22,7 @@ import FormatPickerModal from "@/components/templates/FormatPickerModal";
 import { supabase, type TemplatePublished } from "@/lib/supabase";
 import { useLocale } from "@/hooks/useLocale";
 import { useAuth } from "@/hooks/useAuth";
+import { useTemplateOverrideImages } from "@/hooks/useTemplateOverrideImages";
 import { isAdmin } from "@/lib/admin";
 import type { TranslationKey } from "@/lib/translations";
 import { matchesUseCase } from "@/lib/useCases";
@@ -180,6 +181,8 @@ export default function TemplatesPage() {
   const router = useRouter();
   const { t } = useLocale();
   const { user, profile } = useAuth();
+  // Map { templateId: nueva imageUrl } de plantillas con override guardado
+  const { resolveImage } = useTemplateOverrideImages();
 
   const [activeFormat, setActiveFormat] = useState<FormatId>("portrait");
   const [activeNetwork, setActiveNetwork] = useState<string | null>(null);
@@ -669,7 +672,8 @@ export default function TemplatesPage() {
                               aspect={FORMAT_ASPECT[activeFormat]}
                               isFavorite={favorites.has(tpl.id)}
                               onToggleFavorite={() => toggleFavorite(tpl.id)}
-                              onUse={() => handleUseTemplate(tpl)} />
+                              onUse={() => handleUseTemplate(tpl)}
+                              overrideImageUrl={resolveImage(tpl.id, "") || undefined} />
               ))}
             </div>
           ) : (
@@ -683,7 +687,8 @@ export default function TemplatesPage() {
                              aspect={FORMAT_ASPECT[activeFormat]}
                              isFavorite={favorites.has(tpl.id)}
                              onToggleFavorite={() => toggleFavorite(tpl.id)}
-                             onUse={() => handleUseTemplate(tpl)} />
+                             onUse={() => handleUseTemplate(tpl)}
+                             overrideImageUrl={resolveImage(tpl.id, "") || undefined} />
               ))}
             </div>
           )}
@@ -838,7 +843,7 @@ function QuickAction({ icon: Icon, label, href }: { icon: LucideIcon; label: str
 /** Card de plantilla — replica el mockup: tag arriba izq, PRO arriba dcha,
  *  heart hover, imagen full, title + meta debajo, more menu. */
 function TemplateCard({
-  template, formatId, aspect, isFavorite, onToggleFavorite, onUse,
+  template, formatId, aspect, isFavorite, onToggleFavorite, onUse, overrideImageUrl,
 }: {
   template: TemplateMeta;
   formatId: FormatId;
@@ -846,6 +851,7 @@ function TemplateCard({
   isFavorite: boolean;
   onToggleFavorite: () => void;
   onUse: () => void;
+  overrideImageUrl?: string;
 }) {
   const { t } = useLocale();
 
@@ -864,6 +870,7 @@ function TemplateCard({
              style={{ background: "var(--home-bg-soft)", border: "1px solid var(--home-card-border)", boxShadow: "0 6px 18px rgba(0,0,0,0.35)" }}>
       <div className="relative overflow-hidden cursor-pointer" style={{ aspectRatio: aspect }} onClick={onUse}>
         <TemplateFabricThumbnail template={template} formatId={formatId}
+                                 overrideImageUrl={overrideImageUrl}
                                  className="absolute inset-0 h-full w-full transition-transform duration-500 group-hover:scale-[1.04]" />
 
         {/* Tag categoria arriba izquierda */}
@@ -917,7 +924,7 @@ function TemplateCard({
  *  Pensada para escaneo rapido cuando el user quiere ver muchas plantillas
  *  con sus titulos completos (sin truncar como en grid). */
 function TemplateRow({
-  template, formatId, aspect, isFavorite, onToggleFavorite, onUse,
+  template, formatId, aspect, isFavorite, onToggleFavorite, onUse, overrideImageUrl,
 }: {
   template: TemplateMeta;
   formatId: FormatId;
@@ -925,6 +932,7 @@ function TemplateRow({
   isFavorite: boolean;
   onToggleFavorite: () => void;
   onUse: () => void;
+  overrideImageUrl?: string;
 }) {
   const { t } = useLocale();
 
@@ -954,6 +962,7 @@ function TemplateRow({
         onClick={onUse}
       >
         <TemplateFabricThumbnail template={template} formatId={formatId}
+                                 overrideImageUrl={overrideImageUrl}
                                  className="absolute inset-0 h-full w-full" />
         {template.premium && (
           <span className="absolute top-1 right-1 inline-flex items-center text-[8px] font-black px-1 py-0.5 rounded text-black"

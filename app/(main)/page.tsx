@@ -15,6 +15,7 @@ import {
 // first-load. Las layers se resuelven dentro del thumbnail (chunk lazy).
 import { templatesMeta as catalogTemplates, type TemplateMeta } from "@/data/templatesMeta";
 import type { AudienceId } from "@/data/templates";
+import { useTemplateOverrideImages } from "@/hooks/useTemplateOverrideImages";
 import type { FormatId } from "@/data/formats";
 import { useLocale } from "@/hooks/useLocale";
 import type { TranslationKey } from "@/lib/translations";
@@ -181,6 +182,7 @@ const FEATURES = [
 const FAVORITE_IDS = [44, 43, 42, 41, 38, 37, 39, 40, 35, 17];
 
 export default function Home() {
+  const { resolveImage } = useTemplateOverrideImages();
   const { t } = useLocale();
 
   const [selectedCat, setSelectedCat] = useState<CategoryOption["key"]>("all");
@@ -433,6 +435,7 @@ export default function Home() {
                   <TemplateFabricThumbnail
                     template={featured}
                     formatId={featuredFormat}
+                    overrideImageUrl={resolveImage(featured.id, "") || undefined}
                     className="absolute inset-0 h-full w-full"
                   />
                 </div>

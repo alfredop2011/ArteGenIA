@@ -71,7 +71,7 @@ export default async function EditorPage({ params, searchParams }: EditorPagePro
 
     // Override guardado por admin desde el editor visual — reemplaza variants
     // del catálogo estático. Se aplica sin recompilar.
-    const [overrideVariants, adminUser] = await Promise.all([
+    const [override, adminUser] = await Promise.all([
         getTemplateOverride(templateId),
         (async () => {
             const supabase = await createSupabaseServerClient();
@@ -85,9 +85,9 @@ export default async function EditorPage({ params, searchParams }: EditorPagePro
         <EditorRouter
             templateId={templateId}
             formatId={formatId}
-            overrideVariants={overrideVariants ?? undefined}
+            overrideVariants={override?.variants}
             isAdminUser={adminUser}
-            hasOverride={overrideVariants !== null}
+            hasOverride={override !== null}
         />
     );
 }

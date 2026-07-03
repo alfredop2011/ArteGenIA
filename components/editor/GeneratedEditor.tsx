@@ -3001,6 +3001,9 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
   // Guarda las capas actuales como override oficial de la plantilla (solo admins).
   // Toma las variants actuales del template en memoria (que ya reflejan el override
   // previo si lo habia) y reemplaza la del formato actualmente editado.
+  // Ademas genera un thumbnail 320px del canvas, lo sube a R2 y lo persiste como
+  // image_url del override — asi las cards de /templates y /admin/templates muestran
+  // el diseño editado, no la thumb del catalogo original.
   const handleSaveOverride = useCallback(async () => {
     if (typeof templateId !== "number" || !template) return;
     const currentVariant = serializeCanvasToVariant();
@@ -3017,11 +3020,49 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
       mergedVariants.push(currentVariant);
     }
     setSavingOverride(true);
+
+    // Renderiza thumbnail 320px de ancho y sube a R2. Mismo patron que
+    // handleAdminSaveDraft: guarda viewport/zoom/dimensiones, resetea al tamaño
+    // real del canvas, exporta dataUrl PNG y restaura.
+    const thumbUrl: string | null = await (async () => {
+      const fc = fabricRef.current;
+      if (!fc) return null;
+      try {
+        const prevZoom = fc.getZoom();
+        const prevW = fc.getWidth();
+        const prevH = fc.getHeight();
+        const prevVpt = fc.viewportTransform ? [...fc.viewportTransform] : [1, 0, 0, 1, 0, 0];
+        fc.discardActiveObject();
+        fc.setZoom(1);
+        fc.setViewportTransform([1, 0, 0, 1, 0, 0]);
+        fc.setDimensions({ width: canvasSize.w, height: canvasSize.h });
+        fc.renderAll();
+        const targetW = 480;
+        const multiplier = targetW / canvasSize.w;
+        const dataUrl = fc.toDataURL({ format: "png", multiplier });
+        fc.setDimensions({ width: prevW, height: prevH });
+        fc.setZoom(prevZoom);
+        fc.setViewportTransform(prevVpt as [number, number, number, number, number, number]);
+        fc.renderAll();
+        const res = await fetch("/api/admin/upload-thumbnail", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ dataUrl, draftId: `override-${templateId}` }),
+        });
+        if (!res.ok) return null;
+        const j = await res.json();
+        return (j?.url as string | undefined) ?? null;
+      } catch (e) {
+        console.warn("[handleSaveOverride] thumbnail error", e);
+        return null;
+      }
+    })();
+
     try {
       const res = await fetch("/api/admin/save-template", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ templateId, variants: mergedVariants }),
+        body: JSON.stringify({ templateId, variants: mergedVariants, imageUrl: thumbUrl }),
       });
       const json = await res.json();
       if (!res.ok || !json.ok) {
@@ -3029,13 +3070,13 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
         return;
       }
       setHasOverrideNow(true);
-      toast.success("Plantilla oficial guardada");
+      toast.success(thumbUrl ? "Plantilla oficial guardada con nueva miniatura" : "Plantilla oficial guardada (sin miniatura)");
     } catch (e) {
       toast.error(`Error de red: ${e instanceof Error ? e.message : "unknown"}`);
     } finally {
       setSavingOverride(false);
     }
-  }, [templateId, template, serializeCanvasToVariant, toast]);
+  }, [templateId, template, serializeCanvasToVariant, toast, canvasSize.w, canvasSize.h]);
 
   // Borra el override oficial → siguiente carga vuelve al catalogo estatico.
   const handleRevertOverride = useCallback(async () => {

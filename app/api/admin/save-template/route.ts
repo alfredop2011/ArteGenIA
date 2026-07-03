@@ -22,9 +22,10 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { templateId, variants } = body as {
+    const { templateId, variants, imageUrl } = body as {
       templateId?: number;
       variants?: TemplateVariant[];
+      imageUrl?: string | null;
     };
 
     if (typeof templateId !== "number" || !Number.isFinite(templateId)) {
@@ -34,7 +35,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "variants must be a non-empty array" }, { status: 400 });
     }
 
-    const result = await saveTemplateOverride(templateId, variants, user.id);
+    const result = await saveTemplateOverride(
+      templateId,
+      variants,
+      user.id,
+      typeof imageUrl === "string" && imageUrl.length > 0 ? imageUrl : null,
+    );
     if (!result.ok) {
       return NextResponse.json({ error: result.error }, { status: 500 });
     }
