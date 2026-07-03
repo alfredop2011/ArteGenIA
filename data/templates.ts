@@ -5405,8 +5405,6 @@ export const templates: Template[] = [
         variants: [
             { format: "portrait", width: 1080, height: 1350, layers: [
                 { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1350, fill: "#052e33", selectable: false },
-                { id: "bg-glow-c", type: "shape", shape: "circle", x: 540, y: 400, width: 900, height: 900, fill: "rgba(20,184,166,0.35)", opacity: 0.85, originX: "center", originY: "center", selectable: false },
-                { id: "bg-glow-r", type: "shape", shape: "circle", x: 800, y: 900, width: 500, height: 500, fill: "rgba(251,113,133,0.30)", opacity: 0.75, selectable: false },
                 { id: "particle-1", type: "shape", shape: "circle", x: 120, y: 180, width: 8, height: 8, fill: "#5eead4", opacity: 0.75, selectable: false },
                 { id: "particle-2", type: "shape", shape: "circle", x: 950, y: 260, width: 6, height: 6, fill: "#fda4af", opacity: 0.7, selectable: false },
                 { id: "particle-3", type: "shape", shape: "circle", x: 260, y: 380, width: 4, height: 4, fill: "#5eead4", opacity: 0.6, selectable: false },
@@ -5468,8 +5466,6 @@ export const templates: Template[] = [
         variants: [
             { format: "portrait", width: 1080, height: 1350, layers: [
                 { id: "bg", type: "shape", shape: "rect", x: 0, y: 0, width: 1080, height: 1350, fill: "#052e16", selectable: false },
-                { id: "bg-glow-l", type: "shape", shape: "circle", x: -200, y: 300, width: 700, height: 700, fill: "rgba(249,115,22,0.28)", opacity: 0.9, selectable: false },
-                { id: "bg-glow-r", type: "shape", shape: "circle", x: 700, y: 700, width: 700, height: 700, fill: "rgba(34,197,94,0.28)", opacity: 0.85, selectable: false },
                 { id: "particle-1", type: "shape", shape: "circle", x: 120, y: 180, width: 8, height: 8, fill: "#f97316", opacity: 0.75, selectable: false },
                 { id: "particle-2", type: "shape", shape: "circle", x: 950, y: 260, width: 6, height: 6, fill: "#86efac", opacity: 0.7, selectable: false },
                 { id: "particle-3", type: "shape", shape: "circle", x: 260, y: 380, width: 4, height: 4, fill: "#f97316", opacity: 0.6, selectable: false },
