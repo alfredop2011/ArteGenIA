@@ -1765,7 +1765,7 @@ export const templatesMeta: TemplateMeta[] = [
     "id": 73,
     "title": "Reparto en Pareja",
     "category": "Clases",
-    "image": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/07_lucia_mateo_pareja.png",
+    "image": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/06_isabela_alejandro_pareja.png",
     "premium": false,
     "audience": [
       "academias",
@@ -1931,9 +1931,9 @@ export const templatesMeta: TemplateMeta[] = [
   },
   {
     "id": 81,
-    "title": "Reggaeton Battle — 6 Artistas",
+    "title": "Reggaeton Old School — 3 Profesores",
     "category": "Clases",
-    "image": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/Profesores_Baile_Urbano_Latino_Marco_grupales.png",
+    "image": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/02_damian_reyes_perfil.png",
     "premium": false,
     "audience": [
       "academias",
