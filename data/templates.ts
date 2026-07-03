@@ -81,6 +81,15 @@ export type TemplateLayer =
         offsetX?: number;
         offsetY?: number;
     };
+    /**
+     * Recorte de la imagen a una forma (Fabric clipPath). Sirve para hacer
+     * avatares circulares o cards con esquinas redondeadas SIN mostrar las
+     * partes de la foto que sobran (pies, torso completo, etc.).
+     * Se centra en el centro de la imagen (originX/Y "center" implícito).
+     */
+    clipPath?:
+        | { type: "circle"; radius: number; offsetX?: number; offsetY?: number }
+        | { type: "rect"; width: number; height: number; rx?: number; ry?: number; offsetX?: number; offsetY?: number };
 };
 
 import type { FormatId } from "./formats";
@@ -5510,28 +5519,32 @@ export const templates: Template[] = [
                 { id: "scanline-2", type: "shape", shape: "rect", x: 0, y: 850, width: 1080, height: 2, fill: "rgba(34,211,238,0.5)", selectable: false },
                 { id: "title", type: "text", text: "REPARTO", x: 0, y: 90, width: 1080, fontSize: 130, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "center", charSpacing: 30, stroke: "#ec4899", strokeWidth: 3 },
                 { id: "subtitle", type: "text", text: "WEEKEND · 4 PROFESORES CUBANOS", x: 0, y: 245, width: 1080, fontSize: 18, fontFamily: "Anton, Impact, sans-serif", color: "#22d3ee", textAlign: "center", charSpacing: 350 },
-                { id: "grid-1-halo", type: "shape", shape: "circle", x: 270, y: 390, width: 300, height: 300, fill: "rgba(236,72,153,0.35)", opacity: 0.9, originX: "center", originY: "center", selectable: false },
-                { id: "art-1", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/03_nia_batista_perfil.png", x: 270, y: 265, scaleX: 0.28, scaleY: 0.28, originX: "center", originY: "top" },
-                { id: "grid-1-name", type: "text", text: "ANDREA G.", x: 100, y: 550, width: 400, fontSize: 28, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "center", originX: "left", originY: "top", charSpacing: 100 },
-                { id: "grid-1-role", type: "text", text: "REPARTO CUBANO", x: 100, y: 585, width: 400, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "#ec4899", fontWeight: "600", textAlign: "center", originX: "left", originY: "top", charSpacing: 400 },
-                { id: "grid-2-halo", type: "shape", shape: "circle", x: 810, y: 390, width: 300, height: 300, fill: "rgba(34,211,238,0.35)", opacity: 0.9, originX: "center", originY: "center", selectable: false },
-                { id: "art-2", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/04_malik_santos_perfil.png", x: 810, y: 265, scaleX: 0.28, scaleY: 0.28, originX: "center", originY: "top" },
-                { id: "grid-2-name", type: "text", text: "MARCOS L.", x: 580, y: 550, width: 400, fontSize: 28, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "center", originX: "left", originY: "top", charSpacing: 100 },
-                { id: "grid-2-role", type: "text", text: "REPARTO CUBANO", x: 580, y: 585, width: 400, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "#22d3ee", fontWeight: "600", textAlign: "center", originX: "left", originY: "top", charSpacing: 400 },
-                { id: "grid-3-halo", type: "shape", shape: "circle", x: 270, y: 720, width: 280, height: 280, fill: "rgba(34,211,238,0.35)", opacity: 0.9, originX: "center", originY: "center", selectable: false },
-                { id: "art-3", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/Profe-baileAnamaria.png", x: 270, y: 610, scaleX: 0.25, scaleY: 0.25, originX: "center", originY: "top" },
-                { id: "grid-3-name", type: "text", text: "LUCÍA S.", x: 100, y: 875, width: 400, fontSize: 26, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "center", originX: "left", originY: "top", charSpacing: 100 },
-                { id: "grid-3-role", type: "text", text: "REPARTO CUBANO", x: 100, y: 910, width: 400, fontSize: 10, fontFamily: "Montserrat, sans-serif", color: "#22d3ee", fontWeight: "600", textAlign: "center", originX: "left", originY: "top", charSpacing: 400 },
-                { id: "grid-4-halo", type: "shape", shape: "circle", x: 810, y: 720, width: 280, height: 280, fill: "rgba(236,72,153,0.35)", opacity: 0.9, originX: "center", originY: "center", selectable: false },
-                { id: "art-4", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/Profe-jean.png", x: 810, y: 610, scaleX: 0.25, scaleY: 0.25, originX: "center", originY: "top" },
-                { id: "grid-4-name", type: "text", text: "DIEGO P.", x: 580, y: 875, width: 400, fontSize: 26, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "center", originX: "left", originY: "top", charSpacing: 100 },
-                { id: "grid-4-role", type: "text", text: "REPARTO CUBANO", x: 580, y: 910, width: 400, fontSize: 10, fontFamily: "Montserrat, sans-serif", color: "#ec4899", fontWeight: "600", textAlign: "center", originX: "left", originY: "top", charSpacing: 400 },
-                { id: "info-band", type: "shape", shape: "rect", x: 0, y: 970, width: 1080, height: 380, fill: "rgba(5,5,15,0.92)", selectable: false },
-                { id: "date", type: "text", text: "SÁB 27 · DOM 28 DE JUNIO", x: 0, y: 1000, width: 1080, fontSize: 28, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "center", charSpacing: 280 },
-                { id: "hours", type: "text", text: "8 CLASES · 4 ESTILOS · 2 DÍAS", x: 0, y: 1055, width: 1080, fontSize: 17, fontFamily: "Anton, Impact, sans-serif", color: "#22d3ee", textAlign: "center", charSpacing: 300 },
-                { id: "venue", type: "text", text: "REPUBLICA LATINA  ·  C/ TROCADERO 8  ·  SEVILLA", x: 0, y: 1120, width: 1080, fontSize: 16, fontFamily: "Montserrat, sans-serif", color: "#ec4899", fontWeight: "600", textAlign: "center", charSpacing: 200 },
-                { id: "price", type: "text", text: "PACK 2 DÍAS  85€  ·  ANTICIPADA HASTA 20 JUN", x: 0, y: 1170, width: 1080, fontSize: 17, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "center", charSpacing: 200 },
-                { id: "cta", type: "text", text: "REPARTOSEVILLA.COM  ·  20 PLAZAS", x: 0, y: 1245, width: 1080, fontSize: 13, fontFamily: "Montserrat, sans-serif", color: "rgba(34,211,238,0.85)", fontWeight: "700", textAlign: "center", charSpacing: 400 },
+                { id: "grid-1-halo", type: "shape", shape: "circle", x: 270, y: 390, width: 340, height: 340, fill: "rgba(236,72,153,0.35)", opacity: 0.9, originX: "center", originY: "center", selectable: false },
+                { id: "grid-1-ring", type: "shape", shape: "circle", x: 270, y: 390, width: 300, height: 300, fill: "transparent", stroke: "#ec4899", strokeWidth: 4, originX: "center", originY: "center", selectable: false },
+                { id: "art-1", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/03_nia_batista_perfil.png", x: 270, y: 507, scaleX: 0.36, scaleY: 0.36, originX: "center", originY: "center", clipPath: { type: "circle", radius: 415, offsetY: -325 } },
+                { id: "grid-1-name", type: "text", text: "ANDREA G.", x: 100, y: 580, width: 400, fontSize: 28, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "center", originX: "left", originY: "top", charSpacing: 100 },
+                { id: "grid-1-role", type: "text", text: "REPARTO CUBANO", x: 100, y: 615, width: 400, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "#ec4899", fontWeight: "600", textAlign: "center", originX: "left", originY: "top", charSpacing: 400 },
+                { id: "grid-2-halo", type: "shape", shape: "circle", x: 810, y: 390, width: 340, height: 340, fill: "rgba(34,211,238,0.35)", opacity: 0.9, originX: "center", originY: "center", selectable: false },
+                { id: "grid-2-ring", type: "shape", shape: "circle", x: 810, y: 390, width: 300, height: 300, fill: "transparent", stroke: "#22d3ee", strokeWidth: 4, originX: "center", originY: "center", selectable: false },
+                { id: "art-2", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/04_malik_santos_perfil.png", x: 810, y: 507, scaleX: 0.36, scaleY: 0.36, originX: "center", originY: "center", clipPath: { type: "circle", radius: 415, offsetY: -325 } },
+                { id: "grid-2-name", type: "text", text: "MARCOS L.", x: 580, y: 580, width: 400, fontSize: 28, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "center", originX: "left", originY: "top", charSpacing: 100 },
+                { id: "grid-2-role", type: "text", text: "REPARTO CUBANO", x: 580, y: 615, width: 400, fontSize: 11, fontFamily: "Montserrat, sans-serif", color: "#22d3ee", fontWeight: "600", textAlign: "center", originX: "left", originY: "top", charSpacing: 400 },
+                { id: "grid-3-halo", type: "shape", shape: "circle", x: 270, y: 780, width: 320, height: 320, fill: "rgba(34,211,238,0.35)", opacity: 0.9, originX: "center", originY: "center", selectable: false },
+                { id: "grid-3-ring", type: "shape", shape: "circle", x: 270, y: 780, width: 280, height: 280, fill: "transparent", stroke: "#22d3ee", strokeWidth: 4, originX: "center", originY: "center", selectable: false },
+                { id: "art-3", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/Profe-baileAnamaria.png", x: 270, y: 830, scaleX: 0.55, scaleY: 0.55, originX: "center", originY: "center", clipPath: { type: "circle", radius: 260, offsetY: -100 } },
+                { id: "grid-3-name", type: "text", text: "LUCÍA S.", x: 100, y: 950, width: 400, fontSize: 26, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "center", originX: "left", originY: "top", charSpacing: 100 },
+                { id: "grid-3-role", type: "text", text: "REPARTO CUBANO", x: 100, y: 983, width: 400, fontSize: 10, fontFamily: "Montserrat, sans-serif", color: "#22d3ee", fontWeight: "600", textAlign: "center", originX: "left", originY: "top", charSpacing: 400 },
+                { id: "grid-4-halo", type: "shape", shape: "circle", x: 810, y: 780, width: 320, height: 320, fill: "rgba(236,72,153,0.35)", opacity: 0.9, originX: "center", originY: "center", selectable: false },
+                { id: "grid-4-ring", type: "shape", shape: "circle", x: 810, y: 780, width: 280, height: 280, fill: "transparent", stroke: "#ec4899", strokeWidth: 4, originX: "center", originY: "center", selectable: false },
+                { id: "art-4", type: "image", src: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/Profe-jean.png", x: 810, y: 830, scaleX: 0.55, scaleY: 0.55, originX: "center", originY: "center", clipPath: { type: "circle", radius: 260, offsetY: -100 } },
+                { id: "grid-4-name", type: "text", text: "DIEGO P.", x: 580, y: 950, width: 400, fontSize: 26, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "center", originX: "left", originY: "top", charSpacing: 100 },
+                { id: "grid-4-role", type: "text", text: "REPARTO CUBANO", x: 580, y: 983, width: 400, fontSize: 10, fontFamily: "Montserrat, sans-serif", color: "#ec4899", fontWeight: "600", textAlign: "center", originX: "left", originY: "top", charSpacing: 400 },
+                { id: "info-band", type: "shape", shape: "rect", x: 0, y: 1030, width: 1080, height: 320, fill: "rgba(5,5,15,0.92)", selectable: false },
+                { id: "date", type: "text", text: "SÁB 27 · DOM 28 DE JUNIO", x: 0, y: 1055, width: 1080, fontSize: 26, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "center", charSpacing: 280 },
+                { id: "hours", type: "text", text: "8 CLASES · 4 ESTILOS · 2 DÍAS", x: 0, y: 1105, width: 1080, fontSize: 15, fontFamily: "Anton, Impact, sans-serif", color: "#22d3ee", textAlign: "center", charSpacing: 300 },
+                { id: "venue", type: "text", text: "REPUBLICA LATINA  ·  SEVILLA", x: 0, y: 1160, width: 1080, fontSize: 15, fontFamily: "Montserrat, sans-serif", color: "#ec4899", fontWeight: "600", textAlign: "center", charSpacing: 300 },
+                { id: "price", type: "text", text: "PACK 2 DÍAS · 85€ · ANTICIPADA", x: 0, y: 1210, width: 1080, fontSize: 16, fontFamily: "Anton, Impact, sans-serif", color: "#ffffff", textAlign: "center", charSpacing: 220 },
+                { id: "cta", type: "text", text: "REPARTOSEVILLA.COM", x: 0, y: 1275, width: 1080, fontSize: 12, fontFamily: "Montserrat, sans-serif", color: "rgba(34,211,238,0.85)", fontWeight: "700", textAlign: "center", charSpacing: 500 },
             ] },
         ],
     },

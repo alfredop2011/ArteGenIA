@@ -258,6 +258,34 @@ export async function applyTemplateLayers(
                         offsetY: layer.shadow.offsetY ?? 0,
                     }));
                 }
+                // Aplicar clipPath (recorte circular/rect) si la capa lo define.
+                // Sirve para hacer avatares circulares sin que la foto se salga
+                // del contenedor. El clipPath es RELATIVO al centro del objeto:
+                // offsetX/Y=0 lo centra en el medio de la imagen, offsetY
+                // negativo lo sube hacia la cara (útil para fotos de cuerpo).
+                if (layer.clipPath) {
+                    const cp = layer.clipPath;
+                    if (cp.type === "circle") {
+                        img.clipPath = new Circle({
+                            radius: cp.radius,
+                            originX: "center",
+                            originY: "center",
+                            left: cp.offsetX ?? 0,
+                            top: cp.offsetY ?? 0,
+                        });
+                    } else if (cp.type === "rect") {
+                        img.clipPath = new Rect({
+                            width: cp.width,
+                            height: cp.height,
+                            rx: cp.rx ?? 0,
+                            ry: cp.ry ?? 0,
+                            originX: "center",
+                            originY: "center",
+                            left: cp.offsetX ?? 0,
+                            top: cp.offsetY ?? 0,
+                        });
+                    }
+                }
                 addWithId(canvas, img, layer.id);
             } catch (e) {
                 // Logging detallado: si bg-magic falla, queremos ver el src
