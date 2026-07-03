@@ -1616,9 +1616,9 @@ export const templatesMeta: TemplateMeta[] = [
   },
   {
     "id": 66,
-    "title": "Festival Kizomba — 6 Artistas",
+    "title": "Festival Kizomba — 5 Profesores",
     "category": "Clases",
-    "image": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/05_valentina_damian_pareja.png",
+    "image": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/02_damian_reyes_perfil.png",
     "premium": false,
     "audience": [
       "academias",
