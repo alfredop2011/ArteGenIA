@@ -1,4 +1,4 @@
-import { Circle, FabricImage, type FabricObject, Rect, Shadow, Textbox, type Canvas, type StaticCanvas } from "fabric";
+import { Circle, Ellipse, FabricImage, type FabricObject, Polygon, Rect, Shadow, Textbox, type Canvas, type StaticCanvas } from "fabric";
 import type { TemplateLayer } from "@/data/templates";
 
 /** Wrapper: añade el objeto al canvas asignando customId desde layer.id
@@ -279,6 +279,23 @@ export async function applyTemplateLayers(
                             height: cp.height,
                             rx: cp.rx ?? 0,
                             ry: cp.ry ?? 0,
+                            originX: "center",
+                            originY: "center",
+                            left: cp.offsetX ?? 0,
+                            top: cp.offsetY ?? 0,
+                            angle: cp.angle ?? 0,
+                        });
+                    } else if (cp.type === "ellipse") {
+                        img.clipPath = new Ellipse({
+                            rx: cp.rx,
+                            ry: cp.ry,
+                            originX: "center",
+                            originY: "center",
+                            left: cp.offsetX ?? 0,
+                            top: cp.offsetY ?? 0,
+                        });
+                    } else if (cp.type === "polygon") {
+                        img.clipPath = new Polygon(cp.points, {
                             originX: "center",
                             originY: "center",
                             left: cp.offsetX ?? 0,
