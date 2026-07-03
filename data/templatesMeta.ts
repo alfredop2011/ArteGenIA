@@ -1532,7 +1532,7 @@ export const templatesMeta: TemplateMeta[] = [
   },
   {
     "id": 62,
-    "title": "Masterclass Kizomba — Nelo Paim",
+    "title": "Masterclass Kizomba Fusión",
     "category": "Clases",
     "image": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/Profe-jean.png",
     "premium": false,
@@ -1553,7 +1553,7 @@ export const templatesMeta: TemplateMeta[] = [
   },
   {
     "id": 63,
-    "title": "Kizomba Weekend — Kaysha & Sandra",
+    "title": "Kizomba Weekend en Pareja",
     "category": "Clases",
     "image": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/05_valentina_damian_pareja.png",
     "premium": false,
@@ -1637,7 +1637,7 @@ export const templatesMeta: TemplateMeta[] = [
   },
   {
     "id": 67,
-    "title": "Masterclass Timba — Yulien Oviedo",
+    "title": "Masterclass Timba Cubana",
     "category": "Clases",
     "image": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/02_damian_reyes_perfil.png",
     "premium": false,
@@ -1658,7 +1658,7 @@ export const templatesMeta: TemplateMeta[] = [
   },
   {
     "id": 68,
-    "title": "Timba Session — Pareja",
+    "title": "Timba Session en Pareja",
     "category": "Clases",
     "image": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/06_isabela_alejandro_pareja.png",
     "premium": false,
@@ -1742,7 +1742,7 @@ export const templatesMeta: TemplateMeta[] = [
   },
   {
     "id": 72,
-    "title": "Masterclass Reparto — El Chulo",
+    "title": "Masterclass Reparto Cubano",
     "category": "Clases",
     "image": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/04_malik_santos_perfil.png",
     "premium": false,
@@ -1763,7 +1763,7 @@ export const templatesMeta: TemplateMeta[] = [
   },
   {
     "id": 73,
-    "title": "Reparto en Pareja — Bebeshito",
+    "title": "Reparto en Pareja",
     "category": "Clases",
     "image": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/07_lucia_mateo_pareja.png",
     "premium": false,
