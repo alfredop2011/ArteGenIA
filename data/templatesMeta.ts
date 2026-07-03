@@ -1469,5 +1469,485 @@ export const templatesMeta: TemplateMeta[] = [
         "height": 1350
       }
     ]
+  },
+  {
+    "id": 59,
+    "title": "DJ Lineup 4",
+    "category": "Festival",
+    "image": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dj/Dj-2.png",
+    "premium": false,
+    "audience": [
+      "productoras"
+    ],
+    "internalTags": [
+      "complete"
+    ],
+    "variants": [
+      {
+        "format": "portrait",
+        "width": 1080,
+        "height": 1350
+      }
+    ]
+  },
+  {
+    "id": 60,
+    "title": "DJ Lineup 6",
+    "category": "Festival",
+    "image": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dj/Dj-3.png",
+    "premium": false,
+    "audience": [
+      "productoras"
+    ],
+    "internalTags": [
+      "complete"
+    ],
+    "variants": [
+      {
+        "format": "portrait",
+        "width": 1080,
+        "height": 1350
+      }
+    ]
+  },
+  {
+    "id": 61,
+    "title": "DJ Lineup 8",
+    "category": "Festival",
+    "image": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dj/Dj-1.png",
+    "premium": false,
+    "audience": [
+      "productoras"
+    ],
+    "internalTags": [
+      "complete"
+    ],
+    "variants": [
+      {
+        "format": "portrait",
+        "width": 1080,
+        "height": 1350
+      }
+    ]
+  },
+  {
+    "id": 62,
+    "title": "Masterclass Kizomba — Nelo Paim",
+    "category": "Clases",
+    "image": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/Profe-jean.png",
+    "premium": false,
+    "audience": [
+      "academias",
+      "productoras"
+    ],
+    "internalTags": [
+      "beta"
+    ],
+    "variants": [
+      {
+        "format": "portrait",
+        "width": 1080,
+        "height": 1350
+      }
+    ]
+  },
+  {
+    "id": 63,
+    "title": "Kizomba Weekend — Kaysha & Sandra",
+    "category": "Clases",
+    "image": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/05_valentina_damian_pareja.png",
+    "premium": false,
+    "audience": [
+      "academias",
+      "productoras"
+    ],
+    "internalTags": [
+      "beta"
+    ],
+    "variants": [
+      {
+        "format": "portrait",
+        "width": 1080,
+        "height": 1350
+      }
+    ]
+  },
+  {
+    "id": 64,
+    "title": "Semba Intensivo — 3 Profesores",
+    "category": "Clases",
+    "image": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/06_isabela_alejandro_pareja.png",
+    "premium": false,
+    "audience": [
+      "academias",
+      "productoras"
+    ],
+    "internalTags": [
+      "beta"
+    ],
+    "variants": [
+      {
+        "format": "portrait",
+        "width": 1080,
+        "height": 1350
+      }
+    ]
+  },
+  {
+    "id": 65,
+    "title": "Kizomba 4 Estilos — Workshop",
+    "category": "Clases",
+    "image": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/07_lucia_mateo_pareja.png",
+    "premium": false,
+    "audience": [
+      "academias",
+      "productoras"
+    ],
+    "internalTags": [
+      "beta"
+    ],
+    "variants": [
+      {
+        "format": "portrait",
+        "width": 1080,
+        "height": 1350
+      }
+    ]
+  },
+  {
+    "id": 66,
+    "title": "Festival Kizomba — 6 Artistas",
+    "category": "Clases",
+    "image": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/05_valentina_damian_pareja.png",
+    "premium": false,
+    "audience": [
+      "academias",
+      "productoras"
+    ],
+    "internalTags": [
+      "beta"
+    ],
+    "variants": [
+      {
+        "format": "portrait",
+        "width": 1080,
+        "height": 1350
+      }
+    ]
+  },
+  {
+    "id": 67,
+    "title": "Masterclass Timba — Yulien Oviedo",
+    "category": "Clases",
+    "image": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/02_damian_reyes_perfil.png",
+    "premium": false,
+    "audience": [
+      "academias",
+      "productoras"
+    ],
+    "internalTags": [
+      "beta"
+    ],
+    "variants": [
+      {
+        "format": "portrait",
+        "width": 1080,
+        "height": 1350
+      }
+    ]
+  },
+  {
+    "id": 68,
+    "title": "Timba Session — Pareja",
+    "category": "Clases",
+    "image": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/06_isabela_alejandro_pareja.png",
+    "premium": false,
+    "audience": [
+      "academias",
+      "productoras"
+    ],
+    "internalTags": [
+      "beta"
+    ],
+    "variants": [
+      {
+        "format": "portrait",
+        "width": 1080,
+        "height": 1350
+      }
+    ]
+  },
+  {
+    "id": 69,
+    "title": "Cuba Fest — Line-up Timba",
+    "category": "Clases",
+    "image": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/04_malik_santos_perfil.png",
+    "premium": false,
+    "audience": [
+      "academias",
+      "productoras"
+    ],
+    "internalTags": [
+      "beta"
+    ],
+    "variants": [
+      {
+        "format": "portrait",
+        "width": 1080,
+        "height": 1350
+      }
+    ]
+  },
+  {
+    "id": 70,
+    "title": "Semana Timba — 3 Profesores",
+    "category": "Clases",
+    "image": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/03_nia_batista_perfil.png",
+    "premium": false,
+    "audience": [
+      "academias",
+      "productoras"
+    ],
+    "internalTags": [
+      "beta"
+    ],
+    "variants": [
+      {
+        "format": "portrait",
+        "width": 1080,
+        "height": 1350
+      }
+    ]
+  },
+  {
+    "id": 71,
+    "title": "Intensivo Timba — Fin de Semana",
+    "category": "Clases",
+    "image": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/07_lucia_mateo_pareja.png",
+    "premium": false,
+    "audience": [
+      "academias",
+      "productoras"
+    ],
+    "internalTags": [
+      "beta"
+    ],
+    "variants": [
+      {
+        "format": "portrait",
+        "width": 1080,
+        "height": 1350
+      }
+    ]
+  },
+  {
+    "id": 72,
+    "title": "Masterclass Reparto — El Chulo",
+    "category": "Clases",
+    "image": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/04_malik_santos_perfil.png",
+    "premium": false,
+    "audience": [
+      "academias",
+      "productoras"
+    ],
+    "internalTags": [
+      "beta"
+    ],
+    "variants": [
+      {
+        "format": "portrait",
+        "width": 1080,
+        "height": 1350
+      }
+    ]
+  },
+  {
+    "id": 73,
+    "title": "Reparto en Pareja — Bebeshito",
+    "category": "Clases",
+    "image": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/07_lucia_mateo_pareja.png",
+    "premium": false,
+    "audience": [
+      "academias",
+      "productoras"
+    ],
+    "internalTags": [
+      "beta"
+    ],
+    "variants": [
+      {
+        "format": "portrait",
+        "width": 1080,
+        "height": 1350
+      }
+    ]
+  },
+  {
+    "id": 74,
+    "title": "Reparto Weekend — 4 Profesores",
+    "category": "Clases",
+    "image": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/03_nia_batista_perfil.png",
+    "premium": false,
+    "audience": [
+      "academias",
+      "productoras"
+    ],
+    "internalTags": [
+      "beta"
+    ],
+    "variants": [
+      {
+        "format": "portrait",
+        "width": 1080,
+        "height": 1350
+      }
+    ]
+  },
+  {
+    "id": 75,
+    "title": "Reparto Bootcamp — 3 Profesores",
+    "category": "Clases",
+    "image": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/02_damian_reyes_perfil.png",
+    "premium": false,
+    "audience": [
+      "academias",
+      "productoras"
+    ],
+    "internalTags": [
+      "beta"
+    ],
+    "variants": [
+      {
+        "format": "portrait",
+        "width": 1080,
+        "height": 1350
+      }
+    ]
+  },
+  {
+    "id": 76,
+    "title": "Reparto Line-up — 5 Artistas",
+    "category": "Clases",
+    "image": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/02_damian_reyes_perfil.png",
+    "premium": false,
+    "audience": [
+      "academias",
+      "productoras"
+    ],
+    "internalTags": [
+      "beta"
+    ],
+    "variants": [
+      {
+        "format": "portrait",
+        "width": 1080,
+        "height": 1350
+      }
+    ]
+  },
+  {
+    "id": 77,
+    "title": "Masterclass Reggaeton Old School",
+    "category": "Clases",
+    "image": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/Profe-jean.png",
+    "premium": false,
+    "audience": [
+      "academias",
+      "productoras"
+    ],
+    "internalTags": [
+      "beta"
+    ],
+    "variants": [
+      {
+        "format": "portrait",
+        "width": 1080,
+        "height": 1350
+      }
+    ]
+  },
+  {
+    "id": 78,
+    "title": "Reggaeton Perreo — Pareja",
+    "category": "Clases",
+    "image": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/05_valentina_damian_pareja.png",
+    "premium": false,
+    "audience": [
+      "academias",
+      "productoras"
+    ],
+    "internalTags": [
+      "beta"
+    ],
+    "variants": [
+      {
+        "format": "portrait",
+        "width": 1080,
+        "height": 1350
+      }
+    ]
+  },
+  {
+    "id": 79,
+    "title": "Reggaeton Bootcamp — 3 Profesores",
+    "category": "Clases",
+    "image": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/04_malik_santos_perfil.png",
+    "premium": false,
+    "audience": [
+      "academias",
+      "productoras"
+    ],
+    "internalTags": [
+      "beta"
+    ],
+    "variants": [
+      {
+        "format": "portrait",
+        "width": 1080,
+        "height": 1350
+      }
+    ]
+  },
+  {
+    "id": 80,
+    "title": "Intensivo Reggaeton — 4 Profesores",
+    "category": "Clases",
+    "image": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/02_damian_reyes_perfil.png",
+    "premium": false,
+    "audience": [
+      "academias",
+      "productoras"
+    ],
+    "internalTags": [
+      "beta"
+    ],
+    "variants": [
+      {
+        "format": "portrait",
+        "width": 1080,
+        "height": 1350
+      }
+    ]
+  },
+  {
+    "id": 81,
+    "title": "Reggaeton Battle — 6 Artistas",
+    "category": "Clases",
+    "image": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/Profesores_Baile_Urbano_Latino_Marco_grupales.png",
+    "premium": false,
+    "audience": [
+      "academias",
+      "productoras"
+    ],
+    "internalTags": [
+      "beta"
+    ],
+    "variants": [
+      {
+        "format": "portrait",
+        "width": 1080,
+        "height": 1350
+      }
+    ]
   }
 ];
