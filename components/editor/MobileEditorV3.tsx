@@ -48,7 +48,7 @@ import {
   // Z.17 — Borrador mágico/manual
   Brush,
 } from "lucide-react";
-import { templates, getVariant, type Template, type TemplateLayer } from "@/data/templates";
+import { templates, getVariant, type Template, type TemplateLayer, type TemplateVariant } from "@/data/templates";
 import { FORMATS, PUBLIC_FORMATS, type FormatId, getFormatByDimensions } from "@/data/formats";
 import { applyTemplateLayers } from "@/lib/fabricApplyTemplateLayers";
 import { useAuth } from "@/hooks/useAuth";
@@ -82,6 +82,12 @@ type Props = {
   templateId?: number;
   projectId?: string;
   formatId?: FormatId;
+  /** Overrides del catalogo persistidos por admin en el editor visual. */
+  overrideVariants?: TemplateVariant[];
+  /** Marker de admin — reservado para habilitar botones oficial en mobile en el futuro. */
+  isAdminUser?: boolean;
+  /** True si existe override para esta plantilla — reservado (badge/UI futura). */
+  hasOverride?: boolean;
 };
 
 /** Sheet temporal que puede estar abierto. null = canvas limpio (caso comun).
@@ -89,7 +95,7 @@ type Props = {
  *  objeto seleccionado (patron Canva). */
 type SheetId = null | "foto" | "estilo" | "ia" | "plantillas" | "export" | "more" | "add" | "layers" | "format" | "assistant";
 
-export default function MobileEditorV3({ templateId, projectId, formatId }: Props) {
+export default function MobileEditorV3({ templateId, projectId, formatId, overrideVariants }: Props) {
   const router = useRouter();
   // ─── Persistencia (Fase E) ──────────────────────────────────────────────
   // Si recibimos projectId, abrimos un proyecto guardado. Cargamos el JSON
@@ -326,12 +332,13 @@ export default function MobileEditorV3({ templateId, projectId, formatId }: Prop
   // ─── Cargar template (modo plantilla nueva) ────────────────────────────
   useEffect(() => {
     if (!templateId) return;
-    const t = templates.find(t => t.id === templateId);
-    if (t) {
+    const base = templates.find(t => t.id === templateId);
+    if (base) {
+      const t = overrideVariants ? { ...base, variants: overrideVariants } : base;
       setTemplate(t);
       setDocTitle(t.title);
     }
-  }, [templateId]);
+  }, [templateId, overrideVariants]);
 
   // ─── Cargar proyecto guardado (modo Fase E) ────────────────────────────
   // Lee la fila projects + setea Template (si templateId existe) + guarda

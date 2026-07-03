@@ -383,9 +383,18 @@ type GeneratedEditorProps = {
    *   - Cuando se publica, mueve a templates_published
    */
   draftId?: string;
+  /**
+   * Overrides del catalogo estatico persistidos en Supabase por un admin desde
+   * el editor visual. Reemplaza `variants` de la plantilla base sin recompilar.
+   */
+  overrideVariants?: TemplateVariant[];
+  /** True si el usuario logueado es admin (habilita botones Guardar/Revertir override). */
+  isAdminUser?: boolean;
+  /** True si esta plantilla ya tiene un override guardado (habilita "Revertir"). */
+  hasOverride?: boolean;
 };
 
-export default function GeneratedEditor({ templateId, formatId, projectId, publishedTemplate, draftId }: GeneratedEditorProps = {}) {
+export default function GeneratedEditor({ templateId, formatId, projectId, publishedTemplate, draftId, overrideVariants, isAdminUser, hasOverride }: GeneratedEditorProps = {}) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -498,6 +507,10 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
   const [adminSaving, setAdminSaving] = useState(false);
   const [adminPublishing, setAdminPublishing] = useState(false);
   const [adminSavedRecently, setAdminSavedRecently] = useState(false);
+  // Override oficial (admin edita plantilla del catalogo desde el editor visual)
+  const [savingOverride, setSavingOverride] = useState(false);
+  const [revertingOverride, setRevertingOverride] = useState(false);
+  const [hasOverrideNow, setHasOverrideNow] = useState<boolean>(Boolean(hasOverride));
   const isEditingPublished = adminInternalTags.some(t => t.startsWith("replaces:"));
 
   // ADMIN CATEGORIAS Y AUDIENCIAS (mismas que TemplateCreatorWrapper)
@@ -728,8 +741,12 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
     }
     // Modo plantilla: cargar la plantilla por id
     if (typeof templateId === "number") {
-      const tpl = templates.find(t => t.id === templateId);
-      if (tpl) {
+      const base = templates.find(t => t.id === templateId);
+      if (base) {
+        // Si hay override server-side, mezcla merged variants con el resto del template
+        const tpl: Template = overrideVariants
+          ? { ...base, variants: overrideVariants }
+          : base;
         setTemplate(tpl);
         setDocTitle(tpl.title);
         const v = getVariant(tpl, formatId);
@@ -749,7 +766,7 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
       if (raw) setData(JSON.parse(raw));
       else router.push("/create");
     } catch { router.push("/create"); }
-  }, [router, templateId, formatId]);
+  }, [router, templateId, formatId, overrideVariants]);
 
   // ─── INIT CANVAS ──────────────────────────────────────────────────────────
 
@@ -2981,6 +2998,68 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
     };
   }, [canvasSize.w, canvasSize.h, data?.format]);
 
+  // Guarda las capas actuales como override oficial de la plantilla (solo admins).
+  // Toma las variants actuales del template en memoria (que ya reflejan el override
+  // previo si lo habia) y reemplaza la del formato actualmente editado.
+  const handleSaveOverride = useCallback(async () => {
+    if (typeof templateId !== "number" || !template) return;
+    const currentVariant = serializeCanvasToVariant();
+    if (!currentVariant) {
+      toast.error("No se pudo serializar el canvas");
+      return;
+    }
+    // Fusiona: variants del template en memoria + reemplaza la del formato actual
+    const mergedVariants: TemplateVariant[] = template.variants.map((v) =>
+      v.format === currentVariant.format ? currentVariant : v,
+    );
+    // Si no habia ninguna con el formato actual (raro), la añadimos
+    if (!template.variants.some((v) => v.format === currentVariant.format)) {
+      mergedVariants.push(currentVariant);
+    }
+    setSavingOverride(true);
+    try {
+      const res = await fetch("/api/admin/save-template", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ templateId, variants: mergedVariants }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.ok) {
+        toast.error(`Error al guardar: ${json.error ?? res.status}`);
+        return;
+      }
+      setHasOverrideNow(true);
+      toast.success("Plantilla oficial guardada");
+    } catch (e) {
+      toast.error(`Error de red: ${e instanceof Error ? e.message : "unknown"}`);
+    } finally {
+      setSavingOverride(false);
+    }
+  }, [templateId, template, serializeCanvasToVariant, toast]);
+
+  // Borra el override oficial → siguiente carga vuelve al catalogo estatico.
+  const handleRevertOverride = useCallback(async () => {
+    if (typeof templateId !== "number") return;
+    if (!confirm("¿Revertir esta plantilla al catálogo original? Los cambios guardados como oficial se perderán.")) return;
+    setRevertingOverride(true);
+    try {
+      const res = await fetch(`/api/admin/template-override/${templateId}`, {
+        method: "DELETE",
+      });
+      const json = await res.json();
+      if (!res.ok || !json.ok) {
+        toast.error(`Error al revertir: ${json.error ?? res.status}`);
+        return;
+      }
+      setHasOverrideNow(false);
+      toast.success("Plantilla revertida al original. Recarga para ver los cambios.");
+    } catch (e) {
+      toast.error(`Error de red: ${e instanceof Error ? e.message : "unknown"}`);
+    } finally {
+      setRevertingOverride(false);
+    }
+  }, [templateId, toast]);
+
   const handleAdminSaveDraft = useCallback(async () => {
     if (!draftId) return;
     const newVariant = serializeCanvasToVariant();
@@ -3356,6 +3435,32 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
           >
             {adminSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin"/> : (adminSavedRecently ? <><span className="w-2 h-2 rounded-full bg-emerald-400"/><span className="hidden sm:inline">Guardado</span></> : <><Save className="w-3.5 h-3.5" strokeWidth={2}/><span className="hidden sm:inline">Guardar borrador</span></>)}
           </button>
+        )}
+
+        {/* ADMIN OVERRIDE — Guardar como plantilla oficial + Revertir (solo admin + modo template) */}
+        {isAdminUser && typeof templateId === "number" && !isAdminMode && (
+          <>
+            <button
+              onClick={handleSaveOverride}
+              disabled={savingOverride}
+              title="Guardar los cambios actuales como la versión oficial de esta plantilla"
+              className="flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white text-xs font-semibold transition-all shadow-lg shadow-amber-500/30 hover:shadow-amber-500/50 disabled:opacity-60"
+            >
+              {savingOverride ? <Loader2 className="w-3.5 h-3.5 animate-spin"/> : <Save className="w-3.5 h-3.5" strokeWidth={2} />}
+              <span className="hidden sm:inline">{savingOverride ? "Guardando…" : "Guardar oficial"}</span>
+            </button>
+            {hasOverrideNow && (
+              <button
+                onClick={handleRevertOverride}
+                disabled={revertingOverride}
+                title="Borrar el override y volver al catálogo original"
+                className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.10] border border-white/10 text-white text-xs font-semibold transition-all disabled:opacity-60"
+              >
+                {revertingOverride ? <Loader2 className="w-3.5 h-3.5 animate-spin"/> : <span className="w-2 h-2 rounded-full bg-amber-400"/>}
+                <span className="hidden lg:inline">Revertir</span>
+              </button>
+            )}
+          </>
         )}
 
         {/* Publicar - compartir en redes + Peligro Oficial (NO admin) */}

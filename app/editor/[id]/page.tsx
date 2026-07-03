@@ -5,6 +5,9 @@ import GeneratedEditorWrapper from "@/components/editor/GeneratedEditorWrapper";
 import PublishedTemplateLoader from "@/components/editor/PublishedTemplateLoader";
 import { templates } from "@/data/templates";
 import { isValidFormatId, type FormatId } from "@/data/formats";
+import { getTemplateOverride } from "@/lib/templateOverrides";
+import { createSupabaseServerClient } from "@/lib/supabaseServer";
+import { isAdmin } from "@/lib/admin";
 
 type EditorPageProps = {
     params: Promise<{ id: string }>;
@@ -66,6 +69,25 @@ export default async function EditorPage({ params, searchParams }: EditorPagePro
         );
     }
 
+    // Override guardado por admin desde el editor visual — reemplaza variants
+    // del catálogo estático. Se aplica sin recompilar.
+    const [overrideVariants, adminUser] = await Promise.all([
+        getTemplateOverride(templateId),
+        (async () => {
+            const supabase = await createSupabaseServerClient();
+            const { data: { user } } = await supabase.auth.getUser();
+            return user && isAdmin(user.email) ? true : false;
+        })(),
+    ]);
+
     // EditorRouter elige MobileEditorV3 (< 768px) o GeneratedEditor (desktop)
-    return <EditorRouter templateId={templateId} formatId={formatId} />;
+    return (
+        <EditorRouter
+            templateId={templateId}
+            formatId={formatId}
+            overrideVariants={overrideVariants ?? undefined}
+            isAdminUser={adminUser}
+            hasOverride={overrideVariants !== null}
+        />
+    );
 }

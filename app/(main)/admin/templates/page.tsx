@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
+import Link from "next/link";
 import {
   Search, Copy, Check, X, ChevronDown, AlertTriangle,
   ChevronLeft, ChevronRight, ArrowDownWideNarrow, ArrowUpWideNarrow,
+  ExternalLink,
 } from "lucide-react";
 
 // Tamano de pagina del listado admin. Pensado para evitar listas muy largas
@@ -52,6 +54,22 @@ export default function AdminTemplatesPage() {
   const [sortOrder, setSortOrder] = useState<"desc" | "asc">("desc");
   // Pagina actual del paginador.
   const [page, setPage] = useState(1);
+  // Ids de plantillas con override guardado en Supabase (editadas desde el editor visual).
+  const [overrideIds, setOverrideIds] = useState<Set<number>>(new Set());
+
+  // Cargar la lista de overrides al montar la página.
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch("/api/admin/template-override/list");
+        if (!res.ok) return;
+        const json = await res.json();
+        setOverrideIds(new Set((json.ids as number[]) ?? []));
+      } catch {
+        // Silencioso: si falla no se muestran badges, no bloquea la página.
+      }
+    })();
+  }, []);
 
   // Tags efectivos de una plantilla (estado local si fue editada, sino original)
   const effectiveTags = (t: Template): InternalTag[] => {
@@ -266,6 +284,7 @@ export default function AdminTemplatesPage() {
                 effectiveTags={effectiveTags(t)}
                 dirty={edits[t.id] !== undefined}
                 onToggleTag={(tag) => toggleTag(t.id, tag)}
+                hasOverride={overrideIds.has(t.id)}
               />
             ))}
           </div>
@@ -409,11 +428,13 @@ function TemplateRow({
   effectiveTags,
   dirty,
   onToggleTag,
+  hasOverride = false,
 }: {
   template: Template;
   effectiveTags: InternalTag[];
   dirty: boolean;
   onToggleTag: (tag: InternalTag) => void;
+  hasOverride?: boolean;
 }) {
   const { t } = useLocale();
   const [open, setOpen] = useState(false);
@@ -443,6 +464,14 @@ function TemplateRow({
                 {t("admin.tpl.modified")}
               </span>
             )}
+            {hasOverride && (
+              <span
+                className="px-1.5 py-0.5 rounded-md bg-amber-500/25 border border-amber-500/40 text-amber-200 text-[9px] font-bold tracking-wide"
+                title="Esta plantilla tiene un override guardado desde el editor visual"
+              >
+                ✏️ Editada
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-3 mt-0.5">
             <p className="text-[11px] text-gray-500">{template.category}</p>
@@ -466,6 +495,18 @@ function TemplateRow({
             </div>
           )}
         </div>
+
+        {/* Abrir en editor visual (para editar el diseño y guardar como oficial) */}
+        <Link
+          href={`/editor/${template.id}?format=portrait`}
+          target="_blank"
+          rel="noopener"
+          className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-amber-500/15 border border-amber-500/30 text-amber-200 hover:bg-amber-500/25 transition-colors shrink-0 text-[11px] font-semibold"
+          title="Abrir en el editor visual para modificar el diseño"
+        >
+          <ExternalLink size={12}/>
+          <span className="hidden sm:inline">Editar diseño</span>
+        </Link>
 
         {/* Expand */}
         <button

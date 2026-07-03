@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import GeneratedEditor from "@/components/editor/GeneratedEditor";
 import MobileEditorV3 from "@/components/editor/MobileEditorV3";
 import type { FormatId } from "@/data/formats";
+import type { TemplateVariant } from "@/data/templates";
 
 /**
  * EditorRouter: decide MobileEditorV3 (< 768px) vs GeneratedEditor (desktop).
@@ -18,6 +19,9 @@ type Props = {
   templateId?: number;
   projectId?: string;
   formatId?: FormatId;
+  overrideVariants?: TemplateVariant[];
+  isAdminUser?: boolean;
+  hasOverride?: boolean;
 };
 
 export default function EditorRouter(props: Props) {
