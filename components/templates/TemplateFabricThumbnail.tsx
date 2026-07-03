@@ -50,26 +50,12 @@ export default function TemplateFabricThumbnail({ template, formatId, className 
     const [scale, setScale] = useState(0.2);
 
     const variant = getVariantMeta(template, formatId);
+    const hasOverride = Boolean(overrideImageUrl);
 
-    // Fast path: si hay una thumbnail PNG del override, saltate Fabric.
-    if (overrideImageUrl) {
-        return (
-            <div
-                className={`relative flex items-center justify-center overflow-hidden bg-[#0a0a12] ${className}`}
-                aria-hidden
-            >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                    src={overrideImageUrl}
-                    alt=""
-                    className="w-full h-full object-contain pointer-events-none"
-                    loading="lazy"
-                />
-            </div>
-        );
-    }
-
+    // Los hooks siempre corren en el mismo orden — no importa si hay override.
+    // El early-return del fast-path va DESPUES de todos los hooks (regla de React).
     useLayoutEffect(() => {
+        if (hasOverride) return;
         const node = containerRef.current;
         if (!node) return;
 
@@ -87,9 +73,10 @@ export default function TemplateFabricThumbnail({ template, formatId, className 
         const ro = new ResizeObserver(measure);
         ro.observe(node);
         return () => ro.disconnect();
-    }, [variant.width, variant.height]);
+    }, [variant.width, variant.height, hasOverride]);
 
     useEffect(() => {
+        if (hasOverride) return;
         const el = canvasElRef.current;
         if (!el) return;
 
@@ -113,7 +100,25 @@ export default function TemplateFabricThumbnail({ template, formatId, className 
             void canvas.dispose();
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps -- capas definidas por template.id+formatId en datos estáticos
-    }, [template.id, variant.format, variant.width, variant.height]);
+    }, [template.id, variant.format, variant.width, variant.height, hasOverride]);
+
+    // Fast path: si hay una thumbnail PNG del override, renderiza <img> directo.
+    if (hasOverride) {
+        return (
+            <div
+                className={`relative flex items-center justify-center overflow-hidden bg-[#0a0a12] ${className}`}
+                aria-hidden
+            >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                    src={overrideImageUrl}
+                    alt=""
+                    className="w-full h-full object-contain pointer-events-none"
+                    loading="lazy"
+                />
+            </div>
+        );
+    }
 
     return (
         <div
