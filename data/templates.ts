@@ -217,15 +217,111 @@ export type Template = {
 };
 
 /**
- * Devuelve la variante solicitada por formatId. Si no se pasa formatId
- * (o no existe en la plantilla) devuelve la primera variante.
+ * Dimensiones (px) por formato — misma tabla que data/formats.ts.
+ * Duplicada aqui para evitar import circular y mantener este helper puro.
+ */
+const FORMAT_DIMS: Record<FormatId, { w: number; h: number }> = {
+    "square":       { w: 1080, h: 1080 },
+    "portrait":     { w: 1080, h: 1350 },
+    "story":        { w: 1080, h: 1920 },
+    "print":        { w: 1240, h: 1748 },
+    "fb-cover":     { w: 1920, h: 1005 },
+    "flyer-legacy": { w: 430,  h: 540  },
+};
+
+/**
+ * Sintetiza una variant en un formato distinto reescalando y centrando los
+ * layers de la variant base. Se usa cuando el usuario pide un formato que
+ * no existe en el catalogo para esa plantilla.
+ *
+ * Estrategia:
+ *   - Escala uniforme = min(targetW/baseW, targetH/baseH) para NO deformar
+ *   - Centra el resultado en el nuevo canvas con offset dx/dy
+ *   - Ajusta fontSize proporcionalmente al scale (para que texto respete el
+ *     mismo tamaño relativo)
+ *
+ * Limitaciones conocidas:
+ *   - Layout muy horizontal (fb-cover 16:8) desde vertical (4:5) queda con
+ *     mucho margen a los lados. Es un fallback razonable, no una version
+ *     rediseñada.
+ *   - Layers absolutos (`x: 0` con width 1080 llenando pantalla) NO se
+ *     estiran; se centran.
+ */
+function synthesizeVariant(base: TemplateVariant, targetFormat: FormatId): TemplateVariant {
+    const dims = FORMAT_DIMS[targetFormat];
+    // Si por alguna razon el formato no matchea o coincide con base, devuelve base
+    if (!dims || (base.width === dims.w && base.height === dims.h)) {
+        return { ...base, format: targetFormat };
+    }
+
+    const sx = dims.w / base.width;
+    const sy = dims.h / base.height;
+    const scale = Math.min(sx, sy);
+    const dx = (dims.w - base.width * scale) / 2;
+    const dy = (dims.h - base.height * scale) / 2;
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const scaleLayer = (layer: any): TemplateLayer => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const l: any = { ...layer };
+        if (typeof l.x === "number") l.x = l.x * scale + dx;
+        if (typeof l.y === "number") l.y = l.y * scale + dy;
+        if (typeof l.width === "number") l.width *= scale;
+        if (typeof l.height === "number") l.height *= scale;
+        if (typeof l.radius === "number") l.radius *= scale;
+        if (typeof l.rx === "number") l.rx *= scale;
+        if (typeof l.ry === "number") l.ry *= scale;
+        if (typeof l.x2 === "number") l.x2 = l.x2 * scale + dx;
+        if (typeof l.y2 === "number") l.y2 = l.y2 * scale + dy;
+        if (typeof l.fontSize === "number") l.fontSize *= scale;
+        if (typeof l.strokeWidth === "number") l.strokeWidth *= scale;
+        if (typeof l.scaleX === "number") l.scaleX *= scale;
+        if (typeof l.scaleY === "number") l.scaleY *= scale;
+        // Puntos de polygon: relativos al bbox, se escalan
+        if (Array.isArray(l.points)) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            l.points = l.points.map((p: any) => ({ x: p.x * scale, y: p.y * scale }));
+        }
+        // clipPath: escala radios y offsets
+        if (l.clipPath && typeof l.clipPath === "object") {
+            const cp = { ...l.clipPath };
+            if (typeof cp.radius === "number") cp.radius *= scale;
+            if (typeof cp.rx === "number") cp.rx *= scale;
+            if (typeof cp.ry === "number") cp.ry *= scale;
+            if (typeof cp.width === "number") cp.width *= scale;
+            if (typeof cp.height === "number") cp.height *= scale;
+            if (typeof cp.offsetX === "number") cp.offsetX *= scale;
+            if (typeof cp.offsetY === "number") cp.offsetY *= scale;
+            l.clipPath = cp;
+        }
+        return l as TemplateLayer;
+    };
+
+    return {
+        ...base,
+        format: targetFormat,
+        width: dims.w,
+        height: dims.h,
+        layers: base.layers.map(scaleLayer),
+    };
+}
+
+/**
+ * Devuelve la variante solicitada por formatId. Si no se pasa formatId,
+ * devuelve la primera variante. Si el formato pedido no existe en la
+ * plantilla, SINTETIZA una tomando la variant portrait como base
+ * (o la primera si tampoco hay portrait). Esto permite abrir cualquier
+ * plantilla en cualquier formato sin tener que diseñar los 4 a mano.
  */
 export function getVariant(template: Template, formatId?: FormatId): TemplateVariant {
-    if (formatId) {
-        const v = template.variants.find((x) => x.format === formatId);
-        if (v) return v;
-    }
-    return template.variants[0];
+    if (!formatId) return template.variants[0];
+
+    const exact = template.variants.find((x) => x.format === formatId);
+    if (exact) return exact;
+
+    // No hay variant declarada — sintetizamos desde portrait (o el primero)
+    const base = template.variants.find((x) => x.format === "portrait") ?? template.variants[0];
+    return synthesizeVariant(base, formatId);
 }
 
 export const templates: Template[] = [
