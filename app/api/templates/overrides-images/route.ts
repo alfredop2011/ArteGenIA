@@ -1,6 +1,12 @@
 import { NextResponse } from "next/server";
 import { listAllTemplateOverrides } from "@/lib/templateOverrides";
 
+// Sin cache — cuando un admin edita/revierte una plantilla, la propagacion debe
+// ser inmediata. La tabla template_overrides tiene <100 rows tipicamente, la
+// query a Supabase es milisegundos.
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 /**
  * GET /api/templates/overrides-images
  *
@@ -8,8 +14,6 @@ import { listAllTemplateOverrides } from "@/lib/templateOverrides";
  * thumbnail nueva de cada plantilla que tenga override. Los listados client-side
  * (/templates, /admin/templates, home) fetch este endpoint al mount y sobrescriben
  * el `image` de las cards afectadas.
- *
- * Cachea 60s en edge; los cambios de admin propagan en <1 min.
  */
 export async function GET() {
   try {
@@ -22,7 +26,8 @@ export async function GET() {
       { images: map },
       {
         headers: {
-          "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
+          // Impedir cualquier cache edge/CDN/browser.
+          "Cache-Control": "no-store, max-age=0, must-revalidate",
         },
       },
     );
