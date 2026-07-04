@@ -162,6 +162,20 @@ async function getLiveKeys() {
     console.log("  templates_draft: (skip, tabla no existe)");
   }
 
+  // 2e. template_overrides.image_url (thumbnails de Guardar oficial admin)
+  try {
+    const { data: overrides } = await supabase
+      .from("template_overrides")
+      .select("image_url");
+    for (const o of overrides ?? []) {
+      const k = extractKey(o.image_url);
+      if (k) live.add(k);
+    }
+    console.log(`  template_overrides: ${overrides?.length ?? 0} rows`);
+  } catch {
+    console.log("  template_overrides: (skip, tabla no existe)");
+  }
+
   console.log(`  TOTAL keys vivas: ${live.size}`);
   return live;
 }

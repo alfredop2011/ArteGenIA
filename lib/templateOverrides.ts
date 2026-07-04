@@ -1,6 +1,35 @@
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { templates, type Template, type TemplateVariant } from "@/data/templates";
 import { templatesMeta, type TemplateMeta } from "@/data/templatesMeta";
+import { deleteFromR2 } from "@/lib/r2";
+
+/**
+ * Extrae la key de R2 a partir de una URL publica.
+ * Ej: "https://pub-xxx.r2.dev/template-thumbs/override-80-123.png"
+ *      → "template-thumbs/override-80-123.png"
+ * Solo devuelve la key si la URL matchea nuestro bucket publico — asi
+ * evitamos borrar cosas ajenas por error.
+ */
+function extractR2Key(url: string | null | undefined): string | null {
+  if (!url) return null;
+  const base = process.env.R2_PUBLIC_URL || "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev";
+  if (!url.startsWith(base)) return null;
+  const path = url.slice(base.length).replace(/^\/+/, "");
+  return path.length > 0 ? path : null;
+}
+
+/** Borra un thumbnail huerfano de R2 sin tirar el flujo si falla. */
+async function safeDeleteR2Thumb(url: string | null): Promise<void> {
+  const key = extractR2Key(url);
+  if (!key) return;
+  // Solo borra dentro de template-thumbs/ como safety guard adicional.
+  if (!key.startsWith("template-thumbs/")) return;
+  try {
+    await deleteFromR2(key);
+  } catch (e) {
+    console.warn("[templateOverrides] no se pudo borrar thumb huerfano", key, e);
+  }
+}
 
 /**
  * Overrides de plantillas guardados por admin desde el editor visual.
@@ -111,13 +140,27 @@ export async function getTemplatesMetaWithOverrides(): Promise<TemplateMeta[]> {
   });
 }
 
-/** Upsert de un override. Guarda variants y opcionalmente image_url (thumbnail R2). */
+/** Upsert de un override. Guarda variants y opcionalmente image_url (thumbnail R2).
+ *  Cuando llega un imageUrl nuevo, borra el thumbnail anterior de R2 para no
+ *  acumular archivos huerfanos (el user paga por almacenamiento). */
 export async function saveTemplateOverride(
   templateId: number,
   variants: TemplateVariant[],
   userId: string,
   imageUrl: string | null = null,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
+  // Antes de sobrescribir, lee el image_url previo — si es distinto al nuevo
+  // lo borramos de R2 tras el upsert.
+  let previousImageUrl: string | null = null;
+  if (imageUrl !== null) {
+    const { data: prev } = await supabaseAdmin
+      .from("template_overrides")
+      .select("image_url")
+      .eq("template_id", templateId)
+      .maybeSingle();
+    previousImageUrl = (prev?.image_url as string | null) ?? null;
+  }
+
   const payload: Record<string, unknown> = {
     template_id: templateId,
     variants,
@@ -135,11 +178,25 @@ export async function saveTemplateOverride(
     console.error("[templateOverrides] saveTemplateOverride error", error);
     return { ok: false, error: error.message };
   }
+
+  // Borra el thumbnail viejo (si existia y es distinto del nuevo). No bloqueante.
+  if (previousImageUrl && previousImageUrl !== imageUrl) {
+    void safeDeleteR2Thumb(previousImageUrl);
+  }
   return { ok: true };
 }
 
-/** Borra el override de una plantilla (revertir al catálogo). */
+/** Borra el override de una plantilla (revertir al catálogo).
+ *  Tambien borra el thumbnail asociado en R2. */
 export async function deleteTemplateOverride(templateId: number): Promise<{ ok: true } | { ok: false; error: string }> {
+  // Lee el image_url antes de borrar para poder limpiar R2.
+  const { data: prev } = await supabaseAdmin
+    .from("template_overrides")
+    .select("image_url")
+    .eq("template_id", templateId)
+    .maybeSingle();
+  const previousImageUrl = (prev?.image_url as string | null) ?? null;
+
   const { error } = await supabaseAdmin
     .from("template_overrides")
     .delete()
@@ -148,5 +205,8 @@ export async function deleteTemplateOverride(templateId: number): Promise<{ ok: 
     console.error("[templateOverrides] deleteTemplateOverride error", error);
     return { ok: false, error: error.message };
   }
+
+  // Limpieza R2 no bloqueante.
+  if (previousImageUrl) void safeDeleteR2Thumb(previousImageUrl);
   return { ok: true };
 }
