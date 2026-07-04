@@ -2902,7 +2902,46 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
       charSpacing?: number; lineHeight?: number;
       opacity?: number; scaleX?: number; scaleY?: number;
       shape?: string; selectable?: boolean;
+      stroke?: string; strokeWidth?: number;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      clipPath?: any;
     };
+
+    // Fabric.js guarda clipPath como un objeto Fabric (Circle, Rect, Ellipse, Polygon).
+    // El shape que espera applyTemplateLayers es un objeto plano con type + medidas + offset.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    function serializeClipPath(cp: any): AnyLayer["clipPath"] {
+      if (!cp) return undefined;
+      const t = String(cp.type ?? "").toLowerCase();
+      if (t === "circle") {
+        return { type: "circle", radius: cp.radius ?? 100, offsetX: cp.left ?? 0, offsetY: cp.top ?? 0 };
+      }
+      if (t === "rect") {
+        return {
+          type: "rect",
+          width: cp.width ?? 100,
+          height: cp.height ?? 100,
+          rx: cp.rx,
+          ry: cp.ry,
+          offsetX: cp.left ?? 0,
+          offsetY: cp.top ?? 0,
+          angle: cp.angle,
+        };
+      }
+      if (t === "ellipse") {
+        return { type: "ellipse", rx: cp.rx ?? 50, ry: cp.ry ?? 50, offsetX: cp.left ?? 0, offsetY: cp.top ?? 0 };
+      }
+      if (t === "polygon") {
+        return {
+          type: "polygon",
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          points: Array.isArray(cp.points) ? cp.points.map((p: any) => ({ x: p.x, y: p.y })) : [],
+          offsetX: cp.left ?? 0,
+          offsetY: cp.top ?? 0,
+        };
+      }
+      return undefined;
+    }
 
     const layersOut: AnyLayer[] = objs.map((o, i) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -2911,8 +2950,9 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
 
       // TEXT: textbox, i-text, text — Fabric guarda en .text directamente
       if (oType === "textbox" || oType === "i-text" || oType === "text" || oType === "Textbox" || oType === "IText") {
+        const originalId = typeof obj.customId === "string" ? obj.customId : undefined;
         return {
-          id: `text-${i}`, type: "text",
+          id: originalId ?? `text-${i}`, type: "text",
           text: obj.text ?? "",
           x: obj.left ?? 0,
           y: obj.top ?? 0,
@@ -2928,14 +2968,17 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
           angle: obj.angle ?? 0,
           charSpacing: obj.charSpacing ?? 0,
           lineHeight: obj.lineHeight ?? 1.16,
+          stroke: obj.stroke ?? undefined,
+          strokeWidth: obj.strokeWidth ?? undefined,
         };
       }
 
       // IMAGE: FabricImage. El src está en _element.src o getSrc()
       if (oType === "image" || oType === "Image" || oType === "FabricImage") {
         const src = obj._element?.src ?? obj.getSrc?.() ?? "";
+        const originalId = typeof obj.customId === "string" ? obj.customId : undefined;
         return {
-          id: `image-${i}`, type: "image",
+          id: originalId ?? `image-${i}`, type: "image",
           src,
           x: obj.left ?? 0,
           y: obj.top ?? 0,
@@ -2945,13 +2988,17 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
           angle: obj.angle ?? 0,
           originX: obj.originX ?? "left",
           originY: obj.originY ?? "top",
+          // Preserva clipPath del catalogo (circle/rect/ellipse/polygon).
+          // Sin esto las fotos que estaban recortadas al circulo aparecen enteras.
+          clipPath: serializeClipPath(obj.clipPath),
         };
       }
 
       // SHAPE rect
       if (oType === "rect" || oType === "Rect") {
+        const originalId = typeof obj.customId === "string" ? obj.customId : undefined;
         return {
-          id: `shape-${i}`, type: "shape", shape: "rect",
+          id: originalId ?? `shape-${i}`, type: "shape", shape: "rect",
           x: obj.left ?? 0, y: obj.top ?? 0,
           width: (obj.width ?? 100) * (obj.scaleX ?? 1),
           height: (obj.height ?? 100) * (obj.scaleY ?? 1),
@@ -2959,14 +3006,21 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
           opacity: obj.opacity ?? 1,
           selectable: obj.selectable ?? true,
           angle: obj.angle ?? 0,
+          originX: obj.originX ?? "left",
+          originY: obj.originY ?? "top",
+          stroke: obj.stroke ?? undefined,
+          strokeWidth: obj.strokeWidth ?? undefined,
+          // radius del catalogo → rx en Fabric. applyTemplateLayers usa layer.radius.
+          radius: obj.rx ?? obj.ry ?? undefined,
         };
       }
 
       // SHAPE circle
       if (oType === "circle" || oType === "Circle") {
         const radius = (obj.radius ?? 50) * (obj.scaleX ?? 1);
+        const originalId = typeof obj.customId === "string" ? obj.customId : undefined;
         return {
-          id: `shape-${i}`, type: "shape", shape: "circle",
+          id: originalId ?? `shape-${i}`, type: "shape", shape: "circle",
           x: obj.left ?? 0, y: obj.top ?? 0,
           width: radius * 2, // applyTemplateLayers usa width/2 como radius
           height: radius * 2,
@@ -2974,6 +3028,10 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
           opacity: obj.opacity ?? 1,
           selectable: obj.selectable ?? true,
           angle: obj.angle ?? 0,
+          originX: obj.originX ?? "left",
+          originY: obj.originY ?? "top",
+          stroke: obj.stroke ?? undefined,
+          strokeWidth: obj.strokeWidth ?? undefined,
         };
       }
 
