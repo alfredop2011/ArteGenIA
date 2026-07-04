@@ -9,6 +9,13 @@ import { getTemplateOverride } from "@/lib/templateOverrides";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { isAdmin } from "@/lib/admin";
 
+// SIN CACHE. Cuando un admin edita y guarda oficial una plantilla, la
+// siguiente carga del editor DEBE leer el override fresco. Con cache de
+// Next.js el server component servía la versión anterior y el usuario
+// veía en el editor un diseño distinto al que acababa de guardar.
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 type EditorPageProps = {
     params: Promise<{ id: string }>;
     searchParams: Promise<{ format?: string; mode?: string }>;
