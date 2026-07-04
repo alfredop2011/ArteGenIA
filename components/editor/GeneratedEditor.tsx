@@ -3035,6 +3035,88 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
         };
       }
 
+      // SHAPE triangle (Fabric.Triangle) — extiende Rect, tiene width/height
+      if (oType === "triangle" || oType === "Triangle") {
+        const originalId = typeof obj.customId === "string" ? obj.customId : undefined;
+        return {
+          id: originalId ?? `shape-${i}`, type: "shape", shape: "triangle",
+          x: obj.left ?? 0, y: obj.top ?? 0,
+          width: (obj.width ?? 100) * (obj.scaleX ?? 1),
+          height: (obj.height ?? 100) * (obj.scaleY ?? 1),
+          fill: obj.fill ?? "#fff",
+          opacity: obj.opacity ?? 1,
+          selectable: obj.selectable ?? true,
+          angle: obj.angle ?? 0,
+          originX: obj.originX ?? "left",
+          originY: obj.originY ?? "top",
+          stroke: obj.stroke ?? undefined,
+          strokeWidth: obj.strokeWidth ?? undefined,
+        };
+      }
+
+      // SHAPE ellipse (Fabric.Ellipse) — rx/ry distintos
+      if (oType === "ellipse" || oType === "Ellipse") {
+        const rx = (obj.rx ?? 50) * (obj.scaleX ?? 1);
+        const ry = (obj.ry ?? 50) * (obj.scaleY ?? 1);
+        const originalId = typeof obj.customId === "string" ? obj.customId : undefined;
+        return {
+          id: originalId ?? `shape-${i}`, type: "shape", shape: "ellipse",
+          x: obj.left ?? 0, y: obj.top ?? 0,
+          width: rx * 2, height: ry * 2,
+          rx, ry,
+          fill: obj.fill ?? "#fff",
+          opacity: obj.opacity ?? 1,
+          selectable: obj.selectable ?? true,
+          angle: obj.angle ?? 0,
+          originX: obj.originX ?? "left",
+          originY: obj.originY ?? "top",
+          stroke: obj.stroke ?? undefined,
+          strokeWidth: obj.strokeWidth ?? undefined,
+        };
+      }
+
+      // SHAPE polygon (Fabric.Polygon) — para estrella, hexagono, marco custom
+      if (oType === "polygon" || oType === "Polygon") {
+        const originalId = typeof obj.customId === "string" ? obj.customId : undefined;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const points = Array.isArray(obj.points) ? obj.points.map((p: any) => ({ x: p.x, y: p.y })) : [];
+        return {
+          id: originalId ?? `shape-${i}`, type: "shape", shape: "polygon",
+          x: obj.left ?? 0, y: obj.top ?? 0,
+          width: (obj.width ?? 100) * (obj.scaleX ?? 1),
+          height: (obj.height ?? 100) * (obj.scaleY ?? 1),
+          points,
+          fill: obj.fill ?? "#fff",
+          opacity: obj.opacity ?? 1,
+          selectable: obj.selectable ?? true,
+          angle: obj.angle ?? 0,
+          originX: obj.originX ?? "left",
+          originY: obj.originY ?? "top",
+          stroke: obj.stroke ?? undefined,
+          strokeWidth: obj.strokeWidth ?? undefined,
+        };
+      }
+
+      // SHAPE line (Fabric.Line) — dos puntos
+      if (oType === "line" || oType === "Line") {
+        const originalId = typeof obj.customId === "string" ? obj.customId : undefined;
+        return {
+          id: originalId ?? `shape-${i}`, type: "shape", shape: "line",
+          x: obj.x1 ?? obj.left ?? 0,
+          y: obj.y1 ?? obj.top ?? 0,
+          x2: obj.x2 ?? (obj.left ?? 0) + (obj.width ?? 100),
+          y2: obj.y2 ?? (obj.top ?? 0) + (obj.height ?? 0),
+          width: (obj.width ?? 100) * (obj.scaleX ?? 1),
+          height: (obj.height ?? 100) * (obj.scaleY ?? 1),
+          fill: obj.stroke ?? obj.fill ?? "#fff",
+          stroke: obj.stroke ?? undefined,
+          strokeWidth: obj.strokeWidth ?? 2,
+          opacity: obj.opacity ?? 1,
+          selectable: obj.selectable ?? true,
+          angle: obj.angle ?? 0,
+        };
+      }
+
       // Fallback: rect generico magenta para detectar tipos no manejados
       console.warn("[SERIALIZE] tipo desconocido:", oType, obj);
       return {

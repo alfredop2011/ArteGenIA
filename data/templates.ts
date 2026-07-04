@@ -24,7 +24,7 @@ export type TemplateLayer =
     | {
     id: string;
     type: "shape";
-    shape: "rect" | "circle";
+    shape: "rect" | "circle" | "triangle" | "ellipse" | "polygon" | "line";
     x: number;
     y: number;
     width: number;
@@ -32,6 +32,14 @@ export type TemplateLayer =
     fill: string;
     opacity?: number;
     radius?: number;
+    /** Ellipse: radios distintos. Si se omiten, se usa width/2 y height/2. */
+    rx?: number;
+    ry?: number;
+    /** Polygon: lista de vertices relativos al bounding box. */
+    points?: Array<{ x: number; y: number }>;
+    /** Line: coords absolutas (x, y son x1/y1 y width/height se usan como offset x2/y2). */
+    x2?: number;
+    y2?: number;
     selectable?: boolean;
     originX?: "left" | "center" | "right";
     originY?: "top" | "center" | "bottom";

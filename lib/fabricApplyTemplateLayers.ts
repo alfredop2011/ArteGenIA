@@ -1,4 +1,4 @@
-import { Circle, Ellipse, FabricImage, type FabricObject, Polygon, Rect, Shadow, Textbox, type Canvas, type StaticCanvas } from "fabric";
+import { Circle, Ellipse, FabricImage, type FabricObject, Line, Polygon, Rect, Shadow, Textbox, Triangle, type Canvas, type StaticCanvas } from "fabric";
 import type { TemplateLayer } from "@/data/templates";
 
 /** Wrapper: añade el objeto al canvas asignando customId desde layer.id
@@ -57,6 +57,38 @@ export async function applyTemplateLayers(
                     ...common,
                     radius: (layer.width / 2) * scale,
                 }), layer.id);
+            }
+            if (layer.shape === "triangle") {
+                addWithId(canvas, new Triangle({
+                    ...common,
+                    width: layer.width * scale,
+                    height: layer.height * scale,
+                }), layer.id);
+            }
+            if (layer.shape === "ellipse") {
+                addWithId(canvas, new Ellipse({
+                    ...common,
+                    rx: (layer.rx ?? layer.width / 2) * scale,
+                    ry: (layer.ry ?? layer.height / 2) * scale,
+                }), layer.id);
+            }
+            if (layer.shape === "polygon") {
+                const pts = (layer.points ?? []).map((p) => ({ x: p.x * scale, y: p.y * scale }));
+                addWithId(canvas, new Polygon(pts, {
+                    ...common,
+                }), layer.id);
+            }
+            if (layer.shape === "line") {
+                addWithId(canvas, new Line(
+                    [layer.x * scale, layer.y * scale, (layer.x2 ?? layer.x + layer.width) * scale, (layer.y2 ?? layer.y + layer.height) * scale],
+                    {
+                        stroke: layer.stroke ?? layer.fill,
+                        strokeWidth: (layer.strokeWidth ?? 2) * scale,
+                        opacity: layer.opacity ?? 1,
+                        selectable: true,
+                        evented: true,
+                    },
+                ), layer.id);
             }
         }
 
