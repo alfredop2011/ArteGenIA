@@ -24,7 +24,7 @@ export type TemplateLayer =
     | {
     id: string;
     type: "shape";
-    shape: "rect" | "circle" | "triangle" | "ellipse" | "polygon" | "line";
+    shape: "rect" | "circle" | "triangle" | "ellipse" | "polygon" | "line" | "path";
     x: number;
     y: number;
     width: number;
@@ -40,6 +40,9 @@ export type TemplateLayer =
     /** Line: coords absolutas (x, y son x1/y1 y width/height se usan como offset x2/y2). */
     x2?: number;
     y2?: number;
+    /** Path: string SVG (ej. "M 0 0 L 100 100 Z"). Usado por Flecha y otras
+     *  formas custom. */
+    pathData?: string;
     selectable?: boolean;
     originX?: "left" | "center" | "right";
     originY?: "top" | "center" | "bottom";

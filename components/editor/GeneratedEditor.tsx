@@ -3097,6 +3097,32 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
         };
       }
 
+      // SHAPE path (Fabric.Path) — usado por Flecha del panel de formas
+      if (oType === "path" || oType === "Path") {
+        const originalId = typeof obj.customId === "string" ? obj.customId : undefined;
+        // Fabric guarda path como Array de commands [[cmd, x, y, ...], ...].
+        // Reconstruimos el string SVG concatenando cada comando.
+        let pathData = "";
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        if (Array.isArray(obj.path)) pathData = (obj.path as any[]).map((c) => c.join(" ")).join(" ");
+        else if (typeof obj.path === "string") pathData = obj.path;
+        return {
+          id: originalId ?? `shape-${i}`, type: "shape", shape: "path",
+          x: obj.left ?? 0, y: obj.top ?? 0,
+          width: (obj.width ?? 100) * (obj.scaleX ?? 1),
+          height: (obj.height ?? 100) * (obj.scaleY ?? 1),
+          pathData,
+          fill: obj.fill ?? "#fff",
+          opacity: obj.opacity ?? 1,
+          selectable: obj.selectable ?? true,
+          angle: obj.angle ?? 0,
+          originX: obj.originX ?? "left",
+          originY: obj.originY ?? "top",
+          stroke: obj.stroke ?? undefined,
+          strokeWidth: obj.strokeWidth ?? undefined,
+        };
+      }
+
       // SHAPE line (Fabric.Line) — dos puntos
       if (oType === "line" || oType === "Line") {
         const originalId = typeof obj.customId === "string" ? obj.customId : undefined;

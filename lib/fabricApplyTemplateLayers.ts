@@ -1,4 +1,4 @@
-import { Circle, Ellipse, FabricImage, type FabricObject, Line, Polygon, Rect, Shadow, Textbox, Triangle, type Canvas, type StaticCanvas } from "fabric";
+import { Circle, Ellipse, FabricImage, type FabricObject, Line, Path, Polygon, Rect, Shadow, Textbox, Triangle, type Canvas, type StaticCanvas } from "fabric";
 import type { TemplateLayer } from "@/data/templates";
 
 /** Wrapper: añade el objeto al canvas asignando customId desde layer.id
@@ -89,6 +89,11 @@ export async function applyTemplateLayers(
                         evented: true,
                     },
                 ), layer.id);
+            }
+            if (layer.shape === "path" && layer.pathData) {
+                addWithId(canvas, new Path(layer.pathData, {
+                    ...common,
+                }), layer.id);
             }
         }
 
