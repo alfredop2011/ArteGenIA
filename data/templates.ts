@@ -230,59 +230,128 @@ const FORMAT_DIMS: Record<FormatId, { w: number; h: number }> = {
 };
 
 /**
- * Sintetiza una variant en un formato distinto reescalando y centrando los
- * layers de la variant base. Se usa cuando el usuario pide un formato que
- * no existe en el catalogo para esa plantilla.
+ * Sintetiza una variant en un formato distinto adaptando el layout con reglas
+ * heuristicas por tipo de layer:
  *
- * Estrategia:
- *   - Escala uniforme = min(targetW/baseW, targetH/baseH) para NO deformar
- *   - Centra el resultado en el nuevo canvas con offset dx/dy
- *   - Ajusta fontSize proporcionalmente al scale (para que texto respete el
- *     mismo tamaño relativo)
+ *   1. Backgrounds (rect que cubre casi todo el canvas base) → se estiran al
+ *      nuevo canvas sin escalar contenido. Evita margenes negros.
+ *   2. Elementos full-width (x=0 y width=canvasBase, tipico de titulos y
+ *      overlays) → recalculan width al nuevo canvas manteniendo la banda
+ *      vertical relativa. fontSize se ajusta al scale menor.
+ *   3. Elementos "sueltos" (fotos, cards, iconos) → aplican scale uniforme
+ *      = min(sx, sy) para NO deformar imagenes, y su posicion se reajusta a
+ *      la MISMA banda vertical relativa (si estaba en el top 30%, va al top
+ *      30% del canvas destino).
  *
  * Limitaciones conocidas:
- *   - Layout muy horizontal (fb-cover 16:8) desde vertical (4:5) queda con
- *     mucho margen a los lados. Es un fallback razonable, no una version
- *     rediseñada.
- *   - Layers absolutos (`x: 0` con width 1080 llenando pantalla) NO se
- *     estiran; se centran.
+ *   - Layouts muy horizontales (fb-cover 16:8) desde vertical (4:5) siempre
+ *     comprimen mucho el contenido — el resultado es funcional, no fideo. Si
+ *     un caso concreto necesita mejor pulido, añade la variant explicitamente
+ *     al catalogo.
+ *   - No detectamos overlaps: al reflowar puede haber elementos que se pisen
+ *     en el ratio destino. El admin siempre puede reordenar manualmente y
+ *     Guardar oficial una version limpia.
  */
 function synthesizeVariant(base: TemplateVariant, targetFormat: FormatId): TemplateVariant {
     const dims = FORMAT_DIMS[targetFormat];
-    // Si por alguna razon el formato no matchea o coincide con base, devuelve base
     if (!dims || (base.width === dims.w && base.height === dims.h)) {
         return { ...base, format: targetFormat };
     }
 
-    const sx = dims.w / base.width;
-    const sy = dims.h / base.height;
+    const baseW = base.width;
+    const baseH = base.height;
+    const sx = dims.w / baseW;
+    const sy = dims.h / baseH;
+    // Scale uniforme para NO deformar imagenes/circulos/etc.
     const scale = Math.min(sx, sy);
-    const dx = (dims.w - base.width * scale) / 2;
-    const dy = (dims.h - base.height * scale) / 2;
+
+    // Detectores heuristicos
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    function isBackground(l: any): boolean {
+        return (
+            l.type === "shape" &&
+            l.shape === "rect" &&
+            typeof l.width === "number" &&
+            typeof l.height === "number" &&
+            (l.x ?? 0) <= 20 &&
+            (l.y ?? 0) <= 20 &&
+            l.width >= baseW - 40 &&
+            l.height >= baseH - 40
+        );
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    function isFullWidthBand(l: any): boolean {
+        return (
+            typeof l.width === "number" &&
+            (l.x ?? 0) <= 20 &&
+            l.width >= baseW - 40
+        );
+    }
+
+    // Recalcula Y para preservar la banda vertical relativa del layer.
+    function remapY(y: number): number {
+        const rel = y / baseH;
+        return rel * dims.h;
+    }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const scaleLayer = (layer: any): TemplateLayer => {
+    const transformLayer = (layer: any): TemplateLayer => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const l: any = { ...layer };
-        if (typeof l.x === "number") l.x = l.x * scale + dx;
-        if (typeof l.y === "number") l.y = l.y * scale + dy;
+
+        // ─── CASO 1: Background que cubre todo el canvas ──────────────────
+        // Se estira al nuevo canvas sin escalar internos (no aplica a hijos).
+        if (isBackground(l)) {
+            l.x = 0;
+            l.y = 0;
+            l.width = dims.w;
+            l.height = dims.h;
+            return l as TemplateLayer;
+        }
+
+        // ─── CASO 2: Full-width bands (titulos centrados, overlays, líneas) ─
+        // Se recalcula width al canvas destino, se remapea Y a su banda
+        // relativa, y fontSize se escala con el min(sx, sy) para legibilidad.
+        if (isFullWidthBand(l)) {
+            l.x = 0;
+            l.width = dims.w;
+            if (typeof l.y === "number") l.y = remapY(l.y);
+            if (typeof l.height === "number") l.height *= scale;
+            if (typeof l.fontSize === "number") l.fontSize *= scale;
+            if (typeof l.strokeWidth === "number") l.strokeWidth *= scale;
+            if (typeof l.radius === "number") l.radius *= scale;
+            return l as TemplateLayer;
+        }
+
+        // ─── CASO 3: Elementos sueltos (fotos, cards, iconos, texto absoluto) ─
+        // Scale uniforme sobre el elemento + reposicion X centrada en el
+        // nuevo canvas + Y remapeada a su banda relativa.
+        if (typeof l.x === "number") {
+            // Preserva la posicion horizontal relativa dentro del canvas base
+            const relX = (l.x + (typeof l.width === "number" ? l.width / 2 : 0)) / baseW;
+            const newCenterX = relX * dims.w;
+            if (typeof l.width === "number") l.x = newCenterX - (l.width * scale) / 2;
+            else l.x = newCenterX;
+        }
+        if (typeof l.y === "number") l.y = remapY(l.y);
         if (typeof l.width === "number") l.width *= scale;
         if (typeof l.height === "number") l.height *= scale;
         if (typeof l.radius === "number") l.radius *= scale;
         if (typeof l.rx === "number") l.rx *= scale;
         if (typeof l.ry === "number") l.ry *= scale;
-        if (typeof l.x2 === "number") l.x2 = l.x2 * scale + dx;
-        if (typeof l.y2 === "number") l.y2 = l.y2 * scale + dy;
+        if (typeof l.x2 === "number") {
+            const relX2 = l.x2 / baseW;
+            l.x2 = relX2 * dims.w;
+        }
+        if (typeof l.y2 === "number") l.y2 = remapY(l.y2);
         if (typeof l.fontSize === "number") l.fontSize *= scale;
         if (typeof l.strokeWidth === "number") l.strokeWidth *= scale;
         if (typeof l.scaleX === "number") l.scaleX *= scale;
         if (typeof l.scaleY === "number") l.scaleY *= scale;
-        // Puntos de polygon: relativos al bbox, se escalan
         if (Array.isArray(l.points)) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             l.points = l.points.map((p: any) => ({ x: p.x * scale, y: p.y * scale }));
         }
-        // clipPath: escala radios y offsets
         if (l.clipPath && typeof l.clipPath === "object") {
             const cp = { ...l.clipPath };
             if (typeof cp.radius === "number") cp.radius *= scale;
@@ -302,7 +371,7 @@ function synthesizeVariant(base: TemplateVariant, targetFormat: FormatId): Templ
         format: targetFormat,
         width: dims.w,
         height: dims.h,
-        layers: base.layers.map(scaleLayer),
+        layers: base.layers.map(transformLayer),
     };
 }
 
