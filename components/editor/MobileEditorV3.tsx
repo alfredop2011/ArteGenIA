@@ -2342,21 +2342,12 @@ export default function MobileEditorV3({ templateId, projectId, formatId, overri
     a.click();
   }, []);
 
-  // Fase Z.7 — créditos export (la const `credits` se declara más arriba en Z.16.1)
-  const [pendingExportPayload, setPendingExportPayload] = useState<{
-    fmtId: FormatId;
-    fileFormat: "png" | "jpg" | "pdf" | "svg";
-  } | null>(null);
+  // P0.T1 — Las descargas son gratis e ilimitadas en todos los planes.
+  // Los créditos se gastan SOLO en acciones IA. Free exporta con watermark
+  // (shouldWatermark); PDF/SVG siguen gateados por plan Pro (requirePro).
 
-  /** Mapea formato → módulo de créditos (CREDIT_COST). PNG/JPG=1cr, PDF/SVG=3cr. */
-  const formatToCreditModule = (fileFormat: "png"|"jpg"|"pdf"|"svg"): CreditModule => {
-    if (fileFormat === "pdf") return "download_pdf";
-    if (fileFormat === "svg") return "download_svg";
-    return "download_png"; // jpg también = 1 crédito (mismo CREDIT_COST.download_png)
-  };
-
-  /** Lógica REAL de export (renombrada para wrappear con modal créditos).
-   *  Llamada solo tras confirmar consumo en handleConfirmExport. */
+  /** Lógica REAL de export. Se llama directo desde exportSingleFormat /
+   *  exportAllFormats — ya no hay modal de créditos para descargas. */
   const _executeExport = useCallback(async (fmtId: FormatId) => {
     if (!template) return;
     setExporting(true);
@@ -2408,8 +2399,8 @@ export default function MobileEditorV3({ templateId, projectId, formatId, overri
   }, [template, formatId, doExport, renderVariantOffscreen, authProfile?.plan, toast, downloadDataUrl, exportFileFormat]);
 
   /** Wrapper público que pasamos al sheet de export. Hace guards (auth,
-   *  pro/pdf/svg, plantilla) y abre modal de créditos. La descarga real
-   *  ocurre solo tras confirmar. */
+   *  pro/pdf/svg, plantilla) y descarga directo — sin modal de créditos
+   *  (P0.T1: las descargas son gratis). */
   const exportSingleFormat = useCallback(async (fmtId: FormatId) => {
     if (!template) return;
     if (exportFileFormat === "pdf" && !requirePro("pdf")) return;
@@ -2417,39 +2408,22 @@ export default function MobileEditorV3({ templateId, projectId, formatId, overri
     if (!authUser) {
       setAuthModalConfig({
         title: "Inicia sesión para descargar",
-        subtitle: "Necesitas una cuenta gratis para descargar tus flyers. Tienes 10 créditos al registrarte.",
-        onSuccess: () => setPendingExportPayload({ fmtId, fileFormat: exportFileFormat }),
+        subtitle: "Necesitas una cuenta gratis para descargar tus flyers. Es gratis e ilimitado.",
+        onSuccess: () => { void _executeExport(fmtId); },
       });
       return;
     }
-    // Abrir modal de créditos. El user confirma → handleConfirmExport ejecuta.
-    setPendingExportPayload({ fmtId, fileFormat: exportFileFormat });
-  }, [template, exportFileFormat, requirePro, authUser]);
-
-  /** Tras confirmar modal: consume crédito server-side + ejecuta export. */
-  const handleConfirmExport = useCallback(async () => {
-    if (!pendingExportPayload) return;
-    const moduleKey = formatToCreditModule(pendingExportPayload.fileFormat);
-    const result = await credits.consume(moduleKey, { format: pendingExportPayload.fileFormat });
-    if (!result.success) {
-      toast.error("Sin créditos suficientes");
-      return;
-    }
-    await _executeExport(pendingExportPayload.fmtId);
-    setPendingExportPayload(null);
-  }, [pendingExportPayload, credits, _executeExport, toast]);
+    await _executeExport(fmtId);
+  }, [template, exportFileFormat, requirePro, authUser, _executeExport]);
 
   const exportAllFormats = useCallback(async () => {
     if (!template) return;
-    // Z.7 — Multi-formato consume N créditos (1 por formato). Usamos download_png
-    // como módulo para todos los formatos en este lote (simplifica el cobro).
-    // El user debería decidir formato base en el sheet antes de "exportar todos".
     if (exportFileFormat === "pdf" && !requirePro("pdf")) return;
     if (exportFileFormat === "svg" && !requirePro("svg")) return;
     if (!authUser) {
       setAuthModalConfig({
         title: "Inicia sesión para descargar",
-        subtitle: "Necesitas una cuenta gratis para descargar tus flyers en todos los formatos. 10 créditos al registrarte.",
+        subtitle: "Necesitas una cuenta gratis para descargar tus flyers en todos los formatos.",
         onSuccess: () => {},
       });
       return;
@@ -2460,24 +2434,11 @@ export default function MobileEditorV3({ templateId, projectId, formatId, overri
     });
     if (available.length === 0) return;
 
-    // Coste = N formatos × CREDIT_COST.download_png
-    const moduleKey = formatToCreditModule(exportFileFormat);
-    const totalCost = CREDIT_COST[moduleKey] * available.length;
-    if ((credits.balance ?? 0) < totalCost) {
-      toast.error(`Necesitas ${totalCost} créditos para descargar ${available.length} formatos`);
-      return;
-    }
-
+    // P0.T1 — multi-formato sin coste: descarga el lote entero directamente.
     setExporting(true);
     try {
       let done = 0;
       for (const fmt of available) {
-        // Consumir crédito por formato + ejecutar export
-        const result = await credits.consume(moduleKey, { format: exportFileFormat, batch: true });
-        if (!result.success) {
-          toast.error(`Sin créditos a mitad del lote (${done}/${available.length} descargados)`);
-          break;
-        }
         await _executeExport(fmt);
         done++;
         await new Promise(r => setTimeout(r, 400));
@@ -2486,7 +2447,7 @@ export default function MobileEditorV3({ templateId, projectId, formatId, overri
     } finally {
       setExporting(false);
     }
-  }, [template, exportFileFormat, requirePro, authUser, toast, credits, _executeExport]);
+  }, [template, exportFileFormat, requirePro, authUser, toast, _executeExport]);
 
   // ─── Aplicar paleta ──────────────────────────────────────────────────────
   const applyPalette = useCallback((palette: Palette) => {
@@ -3640,36 +3601,8 @@ export default function MobileEditorV3({ templateId, projectId, formatId, overri
         />
       )}
 
-      {/* Fase Z.7 — Modal de confirmación de crédito antes de export.
-          Z.25 — anade bloque exportDetails con formato + dimensiones + tipo. */}
-      <ConfirmCreditModal
-        open={pendingExportPayload !== null}
-        onClose={() => setPendingExportPayload(null)}
-        onConfirm={handleConfirmExport}
-        actionLabel={
-          pendingExportPayload
-            ? `Descargar flyer en ${pendingExportPayload.fileFormat.toUpperCase()}`
-            : "Descargar flyer"
-        }
-        amount={
-          pendingExportPayload
-            ? CREDIT_COST[formatToCreditModule(pendingExportPayload.fileFormat)]
-            : 1
-        }
-        balance={credits.balance ?? 0}
-        daysUntilReset={credits.daysUntilReset ?? undefined}
-        plan={authProfile?.plan}
-        exportDetails={(() => {
-          if (!pendingExportPayload) return undefined;
-          const fmt = getFormatByDimensions(canvasSize.w, canvasSize.h);
-          return {
-            formatName: fmt?.name,
-            formatSubtitle: fmt?.subtitle,
-            dimensions: `${canvasSize.w} × ${canvasSize.h} px`,
-            fileType: pendingExportPayload.fileFormat,
-          };
-        })()}
-      />
+      {/* P0.T1 — El modal de créditos para export fue eliminado: las
+          descargas son gratis e ilimitadas. Créditos solo para IA. */}
 
       {/* Z.17 — Borrador mágico/manual mobile */}
       <BrushEraserModal

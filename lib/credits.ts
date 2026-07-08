@@ -45,12 +45,16 @@ export const CREDIT_COST = {
   // Coste real $0.015-0.03 según texto. 2 créditos = $0.025 → margen ~25%
   // si entrada es típica (300-500 palabras).
   rellenar_plantilla: 2,
-  // Descargas (Fase Z.1 — política "todas las descargas consumen")
-  download_png: 1,
-  download_jpg: 1,
-  download_png_4k: 2,
-  download_pdf: 3,
-  download_svg: 3,
+  // Descargas — GRATIS desde jul 2026 (decisión de negocio P0.T1).
+  // Los créditos se gastan SOLO en acciones de IA. El upgrade a Pro se
+  // motiva con: sin watermark + PDF/SVG imprenta (gate por plan, no por
+  // créditos). Mantener las keys a 0 en vez de borrarlas conserva la
+  // compatibilidad de tipos con analytics y cualquier caller antiguo.
+  download_png: 0,
+  download_jpg: 0,
+  download_png_4k: 0,
+  download_pdf: 0,
+  download_svg: 0,
 } as const;
 
 export type CreditModule = keyof typeof CREDIT_COST;

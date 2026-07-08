@@ -21,7 +21,9 @@ export default defineConfig({
     globals: true,
     setupFiles: ["./vitest.setup.ts"],
     include: ["**/*.test.{ts,tsx}"],
-    exclude: ["**/node_modules/**", "**/e2e/**", "**/.next/**"],
+    // .claude/worktrees contiene copias del repo de sesiones de agente —
+    // sus tests corren contra código stale y dan falsos rojos.
+    exclude: ["**/node_modules/**", "**/e2e/**", "**/.next/**", "**/.claude/**"],
   },
   resolve: {
     alias: {

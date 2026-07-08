@@ -23,7 +23,6 @@ import dynamic from "next/dynamic";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/lib/toast";
 import { useCredits } from "@/hooks/useCredits";
-import { CREDIT_COST } from "@/lib/credits";
 import {
   trackModuleOpened,
   trackModuleCompleted,
@@ -31,18 +30,13 @@ import {
   type UserPlan,
 } from "@/lib/analytics";
 
-// UX#8 perf — AuthModal y ConfirmCreditModal solo se abren cuando el user
-// interactúa (click upload sin auth, click descargar). Cargarlos eager
-// añade ~30KB al first-load para nada. Dynamic import los mueve a chunks
-// que solo se descargan cuando se necesitan = LCP más rápido en mobile.
-// ssr:false porque dependen de hooks que solo viven en cliente (Auth, Stripe).
+// UX#8 perf — AuthModal solo se abre cuando el user interactúa (click
+// upload sin auth). Dynamic import lo mueve a un chunk que solo se
+// descarga cuando se necesita = LCP más rápido en mobile.
+// ssr:false porque depende de hooks que solo viven en cliente (Auth).
 const AuthModal = dynamic(() => import("@/components/auth/AuthModal"), {
   ssr: false,
 });
-const ConfirmCreditModal = dynamic(
-  () => import("@/components/credits/ConfirmCreditModal").then(m => m.ConfirmCreditModal),
-  { ssr: false },
-);
 
 type FlowState = "upload" | "processing" | "preview";
 
@@ -63,7 +57,6 @@ export default function QuitarFondoPage() {
   const [fileInfo, setFileInfo] = useState<{ name: string; width: number; height: number } | null>(null);
   // Fase Z.1 — créditos + modal pre-descarga (1 crédito por PNG)
   const credits = useCredits();
-  const [showDownloadConfirm, setShowDownloadConfirm] = useState(false);
   // Progress 0-100 animado (BiRefNet no expone progreso real, simulamos UX agradable).
   // Avanza hasta 90% durante processing, salta a 100% cuando termina.
   const [progressPct, setProgressPct] = useState(0);
@@ -222,36 +215,21 @@ export default function QuitarFondoPage() {
     }
   }, [removedUrl, toast]);
 
-  /** Click en el botón "Descargar PNG": abre modal de confirmación. */
-  const handleDownload = useCallback(() => {
+  /** P0.T1 — Descarga directa y gratuita. El crédito de IA ya se consumió
+   *  server-side al quitar el fondo (/api/remove-bg cobra quitar_fondo);
+   *  descargar el resultado no cuesta nada. */
+  const handleDownload = useCallback(async () => {
     if (!removedUrl) return;
-    setShowDownloadConfirm(true);
-  }, [removedUrl]);
-
-  /** Confirmación del modal: pre-fetch blob ANTES de consumir crédito.
-   *  Si la imagen no está disponible (R2 down, CORS, etc.), NO consumimos
-   *  el crédito y mostramos error. Esto elimina la necesidad de refund
-   *  client-side y protege al usuario de pagar sin recibir. */
-  const handleConfirmDownload = useCallback(async () => {
-    if (!removedUrl) return;
-    // Z.13 — pre-validar antes de consumir
     let blob: Blob;
     try {
       const res = await fetch(removedUrl);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       blob = await res.blob();
     } catch (e) {
-      console.error("[handleConfirmDownload] blob fetch failed:", e);
+      console.error("[handleDownload] blob fetch failed:", e);
       toast.error("No se pudo cargar la imagen. Intenta de nuevo.");
-      return; // NO consumimos crédito si la imagen no carga
-    }
-    // Ahora sí: consumir crédito
-    const result = await credits.consume("download_png");
-    if (!result.success) {
-      toast.error("Sin créditos suficientes");
       return;
     }
-    // Descargar el blob que ya tenemos en memoria (no re-fetch)
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -261,16 +239,16 @@ export default function QuitarFondoPage() {
     a.remove();
     URL.revokeObjectURL(url);
     toast.success("Descargado");
-    // Z.9 — track descarga PNG sin fondo
+    // Z.9 — track descarga PNG sin fondo (gratis desde P0.T1)
     trackExportCompleted({
       format: "png",
-      credits_consumed: 1,
+      credits_consumed: 0,
       resolution: "standard",
       has_ai_layers: true,
       plan: planForAnalytics,
       source: "quitar_fondo",
     });
-  }, [removedUrl, credits, toast, planForAnalytics]);
+  }, [removedUrl, toast, planForAnalytics]);
 
   /** Z.8 — Guarda el PNG sin fondo en /api/assets para reutilizar. */
   const handleSaveToGallery = useCallback(async () => {
@@ -1066,16 +1044,8 @@ export default function QuitarFondoPage() {
         </div>
       )}
 
-      {/* Modal de confirmación de descarga (Fase Z.1 — consume 1 crédito) */}
-      <ConfirmCreditModal
-        open={showDownloadConfirm}
-        onClose={() => setShowDownloadConfirm(false)}
-        onConfirm={handleConfirmDownload}
-        actionLabel="Descargar PNG sin fondo"
-        amount={CREDIT_COST.download_png}
-        balance={credits.balance ?? 0}
-        daysUntilReset={credits.daysUntilReset ?? undefined}
-      />
+      {/* P0.T1 — La descarga del resultado es gratis (el crédito de IA ya
+          se cobró al quitar el fondo). Modal de confirmación eliminado. */}
     </main>
   );
 }

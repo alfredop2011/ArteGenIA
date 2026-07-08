@@ -121,12 +121,13 @@ export function CreditsBadge({ plan }: { plan?: string | null }) {
             </p>
           )}
 
-          {/* Costes por acción */}
+          {/* Costes por acción — P0.T1: los créditos solo se gastan en IA.
+              Las descargas (PNG/JPG y PDF/SVG para Pro) son gratis. */}
           <div className="border-t border-ag pt-3 mb-3">
             <p className="text-[10px] uppercase tracking-wider font-bold text-ag-soft mb-2">Coste por acción</p>
             <ul className="space-y-1 text-xs">
               <li className="flex justify-between">
-                <span className="text-ag-muted">Quitar fondo · descarga PNG/JPG</span>
+                <span className="text-ag-muted">Quitar fondo</span>
                 <span className="font-semibold text-ag-primary">{CREDIT_COST.quitar_fondo} cr</span>
               </li>
               <li className="flex justify-between">
@@ -138,8 +139,8 @@ export function CreditsBadge({ plan }: { plan?: string | null }) {
                 <span className="font-semibold text-ag-primary">{CREDIT_COST.capas_magicas} cr</span>
               </li>
               <li className="flex justify-between">
-                <span className="text-ag-muted">Descargar PDF imprenta · SVG</span>
-                <span className="font-semibold text-ag-primary">{CREDIT_COST.download_pdf} cr</span>
+                <span className="text-ag-muted">Descargas PNG/JPG</span>
+                <span className="font-semibold text-emerald-400">Gratis</span>
               </li>
             </ul>
           </div>

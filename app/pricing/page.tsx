@@ -249,7 +249,7 @@ function PricingContent() {
             <span className="shimmer-text">Escala cuando crezcas.</span>
           </h1>
           <p className="text-[15px] md:text-[17px] text-gray-400 leading-relaxed">
-            Editor completo siempre gratis. <span className="text-emerald-300 font-bold">Sin watermark</span>, incluso en el plan Free.
+            Editor completo siempre gratis. <span className="text-emerald-300 font-bold">Descargas ilimitadas</span>, incluso en el plan Free.
             Cuando vendas más, sube a Pro. Sin permanencia, sin trucos.
           </p>
         </div>
@@ -353,12 +353,12 @@ function PricingContent() {
             <ul className="space-y-3 flex-1 mb-7">
               <Check text="Editor completo (texto + imagen + forma)"/>
               <Check text="48+ plantillas profesionales"/>
-              <Check text="Sin watermark · descarga limpia"/>
+              <Check text="Descargas PNG/JPG gratis e ilimitadas"/>
               <Check text="10 créditos IA al mes · No se acumulan (se resetean cada mes)"/>
-              <Check text="Exportar PNG y JPG"/>
               <Check text="Multi-formato (Story, Post, Square)"/>
               <Check text="4 idiomas (ES/EN/FR/PT)"/>
               <Check text="Mis flyers (guardar proyectos)"/>
+              <Cross text="Con marca de agua discreta"/>
               <Cross text="Exportar PDF imprenta"/>
             </ul>
 
@@ -412,12 +412,12 @@ function PricingContent() {
 
             <ul className="space-y-3 flex-1 mb-7">
               <Check strong text="Todo lo de Free"/>
+              <Check strong text="Sin marca de agua · descarga limpia"/>
               <Check strong text="100 créditos IA al mes · Rollover hasta +50 acumulables"/>
               <Check strong text="Exportar PDF imprenta de alta calidad"/>
               <Check strong text="Asistente IA · Capas Mágicas · Generador IA"/>
               <Check strong text="Soporte prioritario por email"/>
               <Check strong text="Uso comercial sin restricciones"/>
-              <Check strong text="Más herramientas IA próximamente"/>
             </ul>
 
             <button
@@ -504,7 +504,7 @@ function PricingContent() {
 
         {/* Sub-texto debajo */}
         <p className="text-center text-[12px] text-gray-500 mt-8 max-w-xl mx-auto leading-relaxed">
-          Todos los planes incluyen el editor completo SIN watermark. La diferencia está en límites de IA, exportación profesional y soporte. ¿Dudas? <a href="mailto:hola@artegenia.com" className="text-purple-300 hover:text-purple-200 underline">Escríbenos</a>.
+          Todos los planes incluyen el editor completo con descargas PNG/JPG ilimitadas. La diferencia está en la marca de agua, los límites de IA, la exportación profesional y el soporte. ¿Dudas? <a href="mailto:hola@artegenia.com" className="text-purple-300 hover:text-purple-200 underline">Escríbenos</a>.
         </p>
 
         {/* ═════ CÓMO FUNCIONAN LOS CRÉDITOS ═════
@@ -529,7 +529,7 @@ function PricingContent() {
             <h3 className="text-[15px] font-bold mb-4">Qué cuesta cada acción</h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {[
-                { label: "Descargar flyer", cost: "1 crédito" },
+                { label: "Descargar flyer", cost: "Gratis" },
                 { label: "Quitar fondo IA", cost: "2 créditos" },
                 { label: "Recortar persona", cost: "2 créditos" },
                 { label: "Generar con IA", cost: "3–5 créditos" },
@@ -636,11 +636,11 @@ function PricingContent() {
             </div>
             {[
               { f: "Editor completo", free: "✓", pro: "✓", ent: "Próximamente" },
-              { f: "Sin watermark", free: "✓", pro: "✓", ent: "Próximamente" },
+              { f: "Descargas PNG / JPG ilimitadas", free: "✓", pro: "✓", ent: "Próximamente" },
+              { f: "Sin marca de agua", free: "—", pro: "✓", ent: "Próximamente" },
               { f: "Plantillas profesionales", free: "48+", pro: "48+", ent: "Próximamente" },
               { f: "Créditos IA al mes", free: "10", pro: "100", ent: "Próximamente" },
               { f: "Fotos sin fondo equivalentes", free: "5/mes", pro: "50/mes", ent: "Próximamente" },
-              { f: "Exportar PNG / JPG", free: "✓", pro: "✓", ent: "Próximamente" },
               { f: "Exportar PDF imprenta", free: "—", pro: "✓", ent: "Próximamente" },
               { f: "Equipo multi-usuario", free: "—", pro: "—", ent: "Próximamente" },
               { f: "Brand Kit", free: "—", pro: "—", ent: "Próximamente" },
@@ -870,7 +870,7 @@ function PricingContent() {
             },
             {
               q: "¿Qué pasa con mis flyers si cancelo?",
-              a: "Tus flyers se quedan guardados en tu cuenta. Solo perderás las funciones premium (IA ilimitada, PDF imprenta) — sigues sin watermark.",
+              a: "Tus flyers se quedan guardados en tu cuenta y sigues descargándolos gratis en PNG/JPG. Solo pierdes las funciones Pro: descarga sin marca de agua, PDF imprenta y los créditos IA ampliados.",
             },
             {
               q: "¿Cuándo me conviene Enterprise vs Pro?",

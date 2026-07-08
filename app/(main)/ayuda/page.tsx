@@ -60,7 +60,11 @@ const FAQ: FaqSection[] = [
         items: [
             {
                 q: "¿Qué son los créditos?",
-                a: "Los créditos se consumen cuando usas funciones que tienen coste real: descargar flyer (1 crédito), quitar fondo (1 crédito), recortar persona (2 créditos), generar con IA (3-5 créditos). Los planes tienen distintas cantidades mensuales.",
+                a: "Los créditos se consumen solo en funciones de IA con coste real: quitar fondo (1 crédito), recortar persona (2 créditos), generar con IA (3-5 créditos). Descargar tus flyers en PNG o JPG es gratis e ilimitado en todos los planes. Los planes tienen distintas cantidades mensuales de créditos.",
+            },
+            {
+                q: "¿Descargar cuesta créditos?",
+                a: "No. Las descargas en PNG y JPG son gratis e ilimitadas para todos, incluido el plan Free (con una pequeña marca de agua). Con Pro descargas sin marca de agua y además desbloqueas PDF de imprenta y SVG.",
             },
             {
                 q: "¿Cuántos créditos tengo cada mes?",
@@ -158,8 +162,8 @@ const FAQ: FaqSection[] = [
                 a: "El editor pide bastante potencia gráfica. Si notas lag, cierra otras pestañas y prueba de nuevo. En móviles de antes de 2020 puede ir menos fluido que en desktop.",
             },
             {
-                q: "Se descontaron créditos pero el flyer no se descargó",
-                a: "El sistema devuelve créditos automáticamente si la descarga falla. Si no ves el reembolso en tu balance, escríbenos con la fecha y hora aproximada y te ajustamos manualmente.",
+                q: "Se descontaron créditos pero la acción de IA falló",
+                a: "Las descargas no consumen créditos, así que ahí no hay nada que devolver. Para acciones de IA (quitar fondo, generar imagen...), el sistema devuelve el crédito automáticamente si la acción falla. Si no ves el reembolso en tu balance, escríbenos con la fecha y hora aproximada y te ajustamos manualmente.",
             },
         ],
     },

@@ -2416,10 +2416,9 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
     });
   }, [canvasSize, authProfile?.plan, toast]);
 
-  // Fase Z.7 — modal de confirmación de crédito antes de export.
-  // PNG/JPG = 1 crédito (CREDIT_COST.download_png).
+  // P0.T1 — Las descargas ya no consumen créditos (solo acciones IA).
+  // useCredits sigue vivo para los modales de IA (quitar fondo, borrador...).
   const credits = useCredits();
-  const [pendingExportFormat, setPendingExportFormat] = useState<"png" | "jpg" | "pdf" | "svg" | null>(null);
 
   // ─── Z.16 — Quitar fondo en imagen del canvas ──────────────────────────────
   // Estado del objeto pendiente + objeto procesando (para overlay loading).
@@ -2600,9 +2599,6 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
     }
   }, [pendingRemoveBg, credits, toast]);
 
-  /** Wrapper publico: pide sesion → muestra modal créditos → consume → exporta.
-   *  Flow: requireAuth → setPendingExportFormat (abre modal) → handleConfirmExport
-   *  → consume crédito server-side → doExport(format) → descarga real. */
   /** Auto-trigger del download si el editor carga con `?download=pdf|svg`.
    *  Pasa cuando el user volvió del checkout Stripe tras upgradear desde el
    *  UpgradeModal. Espera al canvas listo + plan Pro confirmado, luego dispara
@@ -2622,11 +2618,13 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
       u.searchParams.delete("download");
       window.history.replaceState({}, "", u.toString());
     }
-    // Pequeno delay para que el canvas termine de hidratarse
+    // Pequeno delay para que el canvas termine de hidratarse.
+    // P0.T1 — descarga directa: ya no hay modal de créditos para exports.
     const t = setTimeout(() => {
-      setPendingExportFormat(dl as "pdf" | "svg");
+      void doExport(dl as "pdf" | "svg");
     }, 500);
     return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams, authUser, authProfile?.plan, canvasSize.w]);
 
   const exportFlyer = useCallback((format: "png" | "jpg" | "pdf" | "svg" = "png") => {
@@ -2634,32 +2632,18 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
     // UpgradeModal en vez del flujo de descarga.
     if (format === "pdf" && !requirePro("pdf")) return;
     if (format === "svg" && !requirePro("svg")) return;
+    // P0.T1 — Las descargas son gratis e ilimitadas en todos los planes
+    // (los créditos se gastan solo en acciones IA). Free exporta con
+    // watermark (ver shouldWatermark en doExport); Pro/Enterprise limpio.
     requireAuth(
-      () => setPendingExportFormat(format),
+      () => { void doExport(format); },
       {
         title: "Descarga tu diseño",
         subtitle: "Inicia sesión para descargar. Es gratis.",
       },
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [requireAuth, authProfile?.plan]);
-
-  /** Tras confirmar modal: consume crédito según formato y dispara descarga. */
-  const handleConfirmExport = useCallback(async () => {
-    if (!pendingExportFormat) return;
-    // P1.1 — coste por formato. PDF/SVG = 3 créditos, PNG/JPG = 1.
-    const moduleKey: CreditModule =
-      pendingExportFormat === "pdf" ? "download_pdf" :
-      pendingExportFormat === "svg" ? "download_svg" :
-      "download_png";
-    const result = await credits.consume(moduleKey, { format: pendingExportFormat });
-    if (!result.success) {
-      toast.error("Sin créditos suficientes");
-      return;
-    }
-    await doExport(pendingExportFormat);
-    setPendingExportFormat(null);
-  }, [pendingExportFormat, credits, doExport, toast]);
+  }, [requireAuth, authProfile?.plan, doExport]);
 
   // ─── SAVE TO SUPABASE ─────────────────────────────────────────────────────
 
@@ -5151,28 +5135,9 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
         />
       )}
 
-      {/* Fase Z.7 — Modal de confirmación de crédito antes de export.
-          Z.25 — anade bloque de detalles para que el user sepa formato +
-          dimensiones + tipo de archivo antes de gastar el credito. */}
-      <ConfirmCreditModal
-        open={pendingExportFormat !== null}
-        onClose={() => setPendingExportFormat(null)}
-        onConfirm={handleConfirmExport}
-        actionLabel={`Descargar flyer en ${pendingExportFormat?.toUpperCase() ?? "imagen"}`}
-        amount={CREDIT_COST.download_png}
-        balance={credits.balance ?? 0}
-        daysUntilReset={credits.daysUntilReset ?? undefined}
-        plan={authProfile?.plan}
-        exportDetails={(() => {
-          const fmt = getFormatByDimensions(canvasSize.w, canvasSize.h);
-          return {
-            formatName: fmt?.name,
-            formatSubtitle: fmt?.subtitle,
-            dimensions: `${canvasSize.w} × ${canvasSize.h} px`,
-            fileType: pendingExportFormat ?? undefined,
-          };
-        })()}
-      />
+      {/* P0.T1 — El modal de créditos para export fue eliminado: las
+          descargas son gratis e ilimitadas en todos los planes. Los créditos
+          se gastan solo en acciones IA (quitar fondo, generar, etc.). */}
 
       {/* Z.16 — Modal de confirmación para Quitar fondo en editor */}
       <ConfirmCreditModal
@@ -5240,8 +5205,8 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
             // ── Exportar ────────────────────────────────────
             { id: "export-png", label: "Exportar como PNG", desc: "Descargar imagen PNG", group: "Exportar", icon: <Download className="w-4 h-4" strokeWidth={2} />, run: () => exportFlyer("png") },
             { id: "export-jpg", label: "Exportar como JPG", desc: "Descargar imagen JPG", group: "Exportar", icon: <Download className="w-4 h-4" strokeWidth={2} />, run: () => exportFlyer("jpg") },
-            { id: "export-pdf", label: "Exportar como PDF (Pro)", desc: "PDF imprenta · 3 créditos", group: "Exportar", icon: <Download className="w-4 h-4" strokeWidth={2} />, run: () => exportFlyer("pdf") },
-            { id: "export-svg", label: "Exportar como SVG (Pro)", desc: "Vectorial escalable · 3 créditos", group: "Exportar", icon: <Download className="w-4 h-4" strokeWidth={2} />, run: () => exportFlyer("svg") },
+            { id: "export-pdf", label: "Exportar como PDF (Pro)", desc: "PDF imprenta · solo Pro", group: "Exportar", icon: <Download className="w-4 h-4" strokeWidth={2} />, run: () => exportFlyer("pdf") },
+            { id: "export-svg", label: "Exportar como SVG (Pro)", desc: "Vectorial escalable · solo Pro", group: "Exportar", icon: <Download className="w-4 h-4" strokeWidth={2} />, run: () => exportFlyer("svg") },
 
             // ── Navegación ────────────────────────────────────
             { id: "go-projects", label: "Mis diseños", desc: "Ver mis diseños guardados", group: "Navegación", icon: <FolderOpen className="w-4 h-4" strokeWidth={2} />, run: () => router.push("/projects") },

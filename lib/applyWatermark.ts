@@ -187,14 +187,15 @@ function roundRect(
  *  3. La UI muestre "(con marca de agua)" en el boton de descarga para que
  *     el usuario sepa de antemano lo que va a recibir
  */
-// V8.2: activado. Crea incentivo real para validar interes en plan Pro.
-// Sin diferencia visible entre free y pro, nadie se apunta a la waitlist.
-// Fase T.12 — Watermark desactivado para TODOS los planes (incluido Free).
-// Decisión de producto: "Sin watermark, siempre" es diferenciador fuerte vs
-// Canva. La conversión Pro ahora descansa en otros pillars: IA ilimitada,
-// PDF imprenta, soporte prioritario.
-// Para reactivar: cambiar a true. shouldWatermark() respetará por plan.
-const WATERMARK_ENABLED = false;
+// Historial de la decisión:
+//  - V8.2: activado (incentivo para validar interés en Pro).
+//  - Fase T.12: desactivado para todos ("sin watermark, siempre" vs Canva)
+//    — en ese momento las descargas COSTABAN créditos, ese era el gate.
+//  - P0.T1 (jul 2026): REACTIVADO para Free. Las descargas pasaron a ser
+//    gratis e ilimitadas en todos los planes, así que el watermark vuelve
+//    a ser la palanca principal de upgrade: Free descarga con marca sutil,
+//    Pro/Enterprise descargan limpio. Decisión de negocio explícita (B2).
+const WATERMARK_ENABLED = true;
 
 /**
  * Helper booleano: ¿este perfil debe llevar watermark al descargar?
