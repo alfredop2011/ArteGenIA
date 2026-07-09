@@ -33,6 +33,10 @@ export const PRO_PRICE_ID = process.env.STRIPE_PRO_PRICE_ID ?? "";
 export const PRO_PRICE_ID_YEARLY = process.env.STRIPE_PRO_PRICE_ID_YEARLY ?? "";
 export const ENTERPRISE_PRICE_ID = process.env.STRIPE_ENTERPRISE_PRICE_ID ?? "";
 export const ENTERPRISE_PRICE_ID_YEARLY = process.env.STRIPE_ENTERPRISE_PRICE_ID_YEARLY ?? "";
+// P0.T2 — Precio "Fundador" 7,99€/mes. Oculto de /pricing (decisión D);
+// se distribuye solo por payment link privado en DMs/WhatsApp. Otorga el
+// mismo plan "pro" que el precio normal, solo cambia el importe.
+export const PRO_FOUNDER_PRICE_ID = process.env.STRIPE_PRO_FOUNDER_PRICE_ID ?? "";
 
 export type PlanKey = "pro" | "enterprise";
 export type BillingInterval = "month" | "year";
@@ -55,6 +59,7 @@ export function priceIdFor(plan: PlanKey, interval: BillingInterval = "month"): 
 export function planFromPriceId(priceId: string): PlanKey | null {
   if (!priceId) return null;
   if (priceId === ENTERPRISE_PRICE_ID || priceId === ENTERPRISE_PRICE_ID_YEARLY) return "enterprise";
-  if (priceId === PRO_PRICE_ID || priceId === PRO_PRICE_ID_YEARLY) return "pro";
+  // El precio Fundador da plan Pro igual que el precio normal (solo cambia importe).
+  if (priceId === PRO_PRICE_ID || priceId === PRO_PRICE_ID_YEARLY || priceId === PRO_FOUNDER_PRICE_ID) return "pro";
   return null;
 }
