@@ -511,6 +511,11 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
   const [savingOverride, setSavingOverride] = useState(false);
   const [revertingOverride, setRevertingOverride] = useState(false);
   const [hasOverrideNow, setHasOverrideNow] = useState<boolean>(Boolean(hasOverride));
+  // P1.T3 — Onboarding asistido: admin guarda el flyer en la cuenta de un cliente
+  const [seedClientOpen, setSeedClientOpen] = useState(false);
+  const [seedClientEmail, setSeedClientEmail] = useState("");
+  const [seedClientTitle, setSeedClientTitle] = useState("");
+  const [seedingClient, setSeedingClient] = useState(false);
   const isEditingPublished = adminInternalTags.some(t => t.startsWith("replaces:"));
 
   // ADMIN CATEGORIAS Y AUDIENCIAS (mismas que TemplateCreatorWrapper)
@@ -3251,6 +3256,78 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
     }
   }, [templateId, toast]);
 
+  // P1.T3 — Onboarding asistido: serializa el canvas actual + thumbnail y lo
+  // guarda como proyecto en la galería "Mis creaciones" del cliente. Si el
+  // cliente no tiene cuenta, se crea + se le envía invitación por email.
+  const handleSeedToClient = useCallback(async () => {
+    const canvas = fabricRef.current;
+    if (!canvas) { toast.error("Canvas no disponible"); return; }
+    const email = seedClientEmail.trim().toLowerCase();
+    if (!email.includes("@")) { toast.error("Introduce un email válido"); return; }
+    const title = seedClientTitle.trim() || docTitle || "Flyer";
+
+    setSeedingClient(true);
+    try {
+      // Serializa igual que doSave (preserva customId para colaboradores/stickers).
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const fabricJson = (canvas.toJSON as any)(["customId", "collaboratorReceivedAt", "collaboratorName"]) as object;
+
+      // Genera thumbnail 480px reseteando viewport (mismo patrón que override).
+      let thumbnailDataUrl: string | undefined;
+      try {
+        const prevZoom = canvas.getZoom();
+        const prevW = canvas.getWidth();
+        const prevH = canvas.getHeight();
+        const prevVpt = canvas.viewportTransform ? [...canvas.viewportTransform] : [1, 0, 0, 1, 0, 0];
+        canvas.discardActiveObject();
+        canvas.setZoom(1);
+        canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
+        canvas.setDimensions({ width: canvasSize.w, height: canvasSize.h });
+        canvas.renderAll();
+        thumbnailDataUrl = canvas.toDataURL({ format: "png", multiplier: 480 / canvasSize.w });
+        canvas.setDimensions({ width: prevW, height: prevH });
+        canvas.setZoom(prevZoom);
+        canvas.setViewportTransform(prevVpt as [number, number, number, number, number, number]);
+        canvas.renderAll();
+      } catch (e) {
+        console.warn("[seedToClient] thumbnail error", e);
+      }
+
+      const fmt = data?.format === "cuadrado" ? "square" : data?.format === "evento" ? "fb-cover" : "portrait";
+      const res = await fetch("/api/admin/seed-to-client", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          clientEmail: email,
+          title,
+          templateId: templateId ?? template?.id ?? null,
+          fabricJson,
+          thumbnailDataUrl,
+          format: fmt,
+          width: canvasSize.w,
+          height: canvasSize.h,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.ok) {
+        toast.error(`Error: ${json.error ?? res.status}`);
+        return;
+      }
+      toast.success(
+        json.invited
+          ? `Flyer guardado. Invitación enviada a ${email}`
+          : `Flyer guardado en la cuenta de ${email}`,
+      );
+      setSeedClientOpen(false);
+      setSeedClientEmail("");
+      setSeedClientTitle("");
+    } catch (e) {
+      toast.error(`Error de red: ${e instanceof Error ? e.message : "unknown"}`);
+    } finally {
+      setSeedingClient(false);
+    }
+  }, [seedClientEmail, seedClientTitle, docTitle, canvasSize.w, canvasSize.h, templateId, template, data?.format, toast]);
+
   const handleAdminSaveDraft = useCallback(async () => {
     if (!draftId) return;
     const newVariant = serializeCanvasToVariant();
@@ -3651,6 +3728,15 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
                 <span className="hidden lg:inline">Revertir</span>
               </button>
             )}
+            {/* P1.T3 — Guardar el flyer editado en la cuenta de un cliente */}
+            <button
+              onClick={() => { setSeedClientTitle(docTitle); setSeedClientOpen(true); }}
+              title="Guardar este flyer en la galería de un cliente (crea su cuenta si no existe)"
+              className="flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-sky-600 to-cyan-600 hover:from-sky-500 hover:to-cyan-500 text-white text-xs font-semibold transition-all shadow-lg shadow-sky-500/30 hover:shadow-sky-500/50"
+            >
+              <Send className="w-3.5 h-3.5" strokeWidth={2} />
+              <span className="hidden sm:inline">A cliente</span>
+            </button>
           </>
         )}
 
@@ -5162,6 +5248,61 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
         onCreditsConsumed={() => void credits.refetch()}
         onError={(msg) => toast.error(msg)}
       />
+
+      {/* P1.T3 — Modal onboarding asistido: guardar flyer en cuenta de cliente */}
+      {seedClientOpen && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4" onClick={() => !seedingClient && setSeedClientOpen(false)}>
+          <div className="w-full max-w-md rounded-2xl bg-[#13131f] border border-white/10 p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-2.5 mb-1">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-sky-500 to-cyan-500 flex items-center justify-center shrink-0">
+                <Send className="w-4 h-4 text-white" strokeWidth={2.2}/>
+              </div>
+              <h3 className="text-[17px] font-bold text-white">Guardar en cuenta de cliente</h3>
+            </div>
+            <p className="text-[13px] text-gray-400 mb-5 leading-relaxed">
+              El flyer se guardará en la galería &quot;Mis creaciones&quot; del cliente.
+              Si no tiene cuenta, se crea y se le envía una invitación por email.
+            </p>
+
+            <label className="block text-[11px] uppercase tracking-wider font-bold text-gray-500 mb-1.5">Email del cliente</label>
+            <input
+              type="email"
+              value={seedClientEmail}
+              onChange={(e) => setSeedClientEmail(e.target.value)}
+              placeholder="cliente@email.com"
+              autoFocus
+              className="w-full px-3.5 py-2.5 mb-4 rounded-xl bg-white/[0.04] border border-white/10 text-white text-[14px] placeholder-gray-600 focus:outline-none focus:border-sky-500/60"
+            />
+
+            <label className="block text-[11px] uppercase tracking-wider font-bold text-gray-500 mb-1.5">Título del flyer</label>
+            <input
+              type="text"
+              value={seedClientTitle}
+              onChange={(e) => setSeedClientTitle(e.target.value)}
+              placeholder="Ej. Tardeo SBK · 16 mayo"
+              className="w-full px-3.5 py-2.5 mb-6 rounded-xl bg-white/[0.04] border border-white/10 text-white text-[14px] placeholder-gray-600 focus:outline-none focus:border-sky-500/60"
+            />
+
+            <div className="flex gap-2.5">
+              <button
+                onClick={() => setSeedClientOpen(false)}
+                disabled={seedingClient}
+                className="flex-1 py-2.5 rounded-xl bg-white/[0.05] border border-white/10 text-gray-300 text-[13px] font-semibold hover:bg-white/[0.08] transition-colors disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleSeedToClient}
+                disabled={seedingClient || !seedClientEmail.includes("@")}
+                className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-sky-600 to-cyan-600 text-white text-[13px] font-bold hover:from-sky-500 hover:to-cyan-500 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {seedingClient ? <Loader2 className="w-4 h-4 animate-spin"/> : <Send className="w-4 h-4" strokeWidth={2}/>}
+                {seedingClient ? "Guardando…" : "Guardar e invitar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
 
       {paletteOpen && (
