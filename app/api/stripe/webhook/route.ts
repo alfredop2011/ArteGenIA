@@ -285,8 +285,32 @@ export async function POST(req: NextRequest) {
     switch (event.type) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
-        const userId = session.client_reference_id ?? session.metadata?.supabase_user_id;
-        if (!userId) break;
+        let userId = session.client_reference_id ?? session.metadata?.supabase_user_id ?? null;
+        // Fundador (P0.T2) — el precio Fundador se vende por Stripe Payment Link
+        // privado (DM/WhatsApp). El comprador NO está logueado en la app, así que
+        // el session no trae client_reference_id. Resolvemos por email igual que
+        // resolveUserIdFromSubscription: customer_details.email → profiles.email.
+        if (!userId) {
+          const email = session.customer_details?.email ?? session.customer_email;
+          if (email) {
+            const sb = adminClient();
+            const { data: byEmail } = await sb
+              .from("profiles")
+              .select("id")
+              .ilike("email", email)
+              .maybeSingle();
+            if (byEmail?.id) userId = byEmail.id;
+          }
+        }
+        if (!userId) {
+          // Pagó por payment link con un email que no tiene cuenta. Logueamos
+          // para reconciliar manualmente (crear cuenta / asignar plan a mano).
+          console.error(
+            "[stripe-webhook] checkout.session.completed SIN userId resoluble (¿payment link con email sin cuenta?) — revisar manualmente",
+            { session_id: session.id, email: session.customer_details?.email ?? session.customer_email },
+          );
+          break;
+        }
         // P0.2 — Persistir customer_id en profiles para que los siguientes
         // webhooks puedan resolver por columna sin depender de metadata.
         const customerId =
