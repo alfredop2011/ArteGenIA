@@ -27,6 +27,10 @@ export type Profile = {
     created_at: string;
     organizer_type: OrganizerType | null;
     organizer_type_answered_at: string | null;
+    // Presente solo si el user tiene una suscripción real en Stripe (lo
+    // persiste el webhook en checkout.session.completed). Null en planes de
+    // cortesía / grants manuales → no hay portal de facturación que abrir.
+    stripe_customer_id: string | null;
 };
 
 export type Project = {

@@ -301,17 +301,25 @@ function PricingContent() {
                   {isEnterprise ? "Eres Enterprise" : "Eres Pro"}
                 </div>
                 <div className="text-[11px] text-gray-400">
-                  Cancela, cambia de plan o actualiza tu tarjeta cuando quieras
+                  {profile?.stripe_customer_id
+                    ? "Cancela, cambia de plan o actualiza tu tarjeta cuando quieras"
+                    : "Plan de cortesía · sin suscripción de pago que gestionar"}
                 </div>
               </div>
             </div>
-            <button
-              onClick={openCustomerPortal}
-              disabled={portalLoading}
-              className="px-5 py-2.5 rounded-xl bg-white/[0.08] border border-white/[0.16] text-white font-bold text-[12.5px] hover:bg-white/[0.12] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {portalLoading ? "Abriendo…" : "Gestionar suscripción →"}
-            </button>
+            {/* El portal de facturación solo tiene sentido si hay una suscripción
+                real en Stripe (stripe_customer_id persistido por el webhook). En
+                planes de cortesía / grants manuales no hay nada que gestionar, así
+                que ocultamos el botón en vez de mostrar uno que da error. */}
+            {profile?.stripe_customer_id && (
+              <button
+                onClick={openCustomerPortal}
+                disabled={portalLoading}
+                className="px-5 py-2.5 rounded-xl bg-white/[0.08] border border-white/[0.16] text-white font-bold text-[12.5px] hover:bg-white/[0.12] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {portalLoading ? "Abriendo…" : "Gestionar suscripción →"}
+              </button>
+            )}
           </div>
         )}
 
