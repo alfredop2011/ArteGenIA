@@ -125,6 +125,11 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       { source: "/planes", destination: "/pricing", permanent: true },
+      // Soporte: la URL de soporte del perfil público de Stripe apunta a
+      // /support; la página de ayuda vive en /ayuda. Redirigimos para que ese
+      // link (y /soporte en español) no caigan en 404.
+      { source: "/support", destination: "/ayuda", permanent: true },
+      { source: "/soporte", destination: "/ayuda", permanent: true },
     ];
   },
   async headers() {
