@@ -295,8 +295,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                             <>
                                 {/* Créditos — Fase Z.1 nuevo sistema unificado.
                                     Lee balance de user_credits via /api/credits.
-                                    El campo legacy profile.credits queda intacto pero
-                                    sin usar (deprecado, pendiente borrar en Z.x). */}
+                                    (La columna legacy profiles.credits se eliminó
+                                    en la migración 2026_07_11_drop_profiles_credits.) */}
                                 <CreditsBadge plan={profile?.plan} />
 
                                 {/* Notificaciones - SOLO desktop */}

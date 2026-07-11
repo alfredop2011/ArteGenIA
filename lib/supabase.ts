@@ -23,7 +23,6 @@ export type Profile = {
     name: string | null;
     avatar_url: string | null;
     plan: "free" | "pro" | "enterprise";
-    credits: number;
     created_at: string;
     organizer_type: OrganizerType | null;
     organizer_type_answered_at: string | null;
