@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useLocale } from "@/hooks/useLocale";
+import { trackFbEvent } from "@/components/analytics/FacebookPixel";
 
 type Props = {
     onClose: () => void;
@@ -87,6 +88,10 @@ export default function AuthModal({ onClose, title, subtitle, onAuthSuccess, nex
                 if (cancelled) return;
                 if (!signInErr) {
                     // ¡Confirmado! Sesión activa, salimos del modal.
+                    // Meta Pixel — conversión de REGISTRO (nuevo usuario que
+                    // confirma su cuenta). Clave para que Facebook optimice la
+                    // entrega de ads hacia gente que se registra.
+                    trackFbEvent("CompleteRegistration", { method: "email" });
                     onAuthSuccess?.();
                     onClose();
                     return;

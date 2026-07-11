@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/lib/toast";
 import AuthModal from "@/components/auth/AuthModal";
 import { supabase } from "@/lib/supabase";
+import { trackFbEvent } from "@/components/analytics/FacebookPixel";
 
 /**
  * /pricing — 3 planes (Free, Pro, Enterprise) estilo shadcn limpio.
@@ -58,6 +59,22 @@ function PricingContent() {
     if (success) {
       if (successPlan === "enterprise") toast.success("🚀 ¡Bienvenido a Enterprise!");
       else toast.success("¡Bienvenido a Pro! 🎉");
+      // Meta Pixel — conversión de COMPRA (mide/optimiza tus ads). Dedup por
+      // session_id de Stripe para no contar doble si se refresca ?success=1.
+      try {
+        const sid = sp.get("session_id");
+        const dedupKey = sid ? `fb_purchase_${sid}` : null;
+        if (!dedupKey || !sessionStorage.getItem(dedupKey)) {
+          const value = successPlan === "enterprise" ? 34.99
+            : sp.get("interval") === "year" ? 95.90 : 9.99;
+          trackFbEvent("Purchase", {
+            value,
+            currency: "EUR",
+            content_name: `plan_${successPlan ?? "pro"}`,
+          });
+          if (dedupKey) sessionStorage.setItem(dedupKey, "1");
+        }
+      } catch { /* noop — el tracking nunca rompe el flujo */ }
       // Tras volver de Stripe Checkout, el webhook tarda 1-3s en propagar
       // el plan a nuestra BD. Refrescamos el profile con reintentos cortos
       // hasta detectar el cambio o tras 5 intentos (~10s) — así el badge
