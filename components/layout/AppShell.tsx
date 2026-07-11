@@ -126,11 +126,15 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     // Z.15: "Mis flyers" + "Mis creaciones" se fusionaron en "Mis recursos".
     // Z.15.1: "Colaboradores" también se movió a tab dentro de /mis-recursos
     // para liberar espacio en el nav. Los hrefs viejos siguen via redirect.
-    const navLinks = [
+    const navLinks: { href: string; label: string; badge?: string }[] = [
         { href: "/create", label: t("nav.create") },
-        { href: "/eventos", label: "Agenda" },
+        // Agenda: solo con sesión iniciada (es un extra para usuarios, no un
+        // gancho de entrada; además libera espacio en la nav para invitados).
+        ...(user ? [{ href: "/eventos", label: "Agenda" }] : []),
         { href: "/quitar-fondo", label: "Quitar fondo" },
-        { href: "/capas-magicas", label: "Capas Mágicas", badge: userIsAdmin ? undefined : "Próximamente" },
+        // Capas Mágicas SIN badge "Próximamente" en la nav (ocupaba demasiado
+        // espacio). El teaser sigue dentro de la propia página /capas-magicas.
+        { href: "/capas-magicas", label: "Capas Mágicas" },
         { href: "/templates", label: t("nav.templates") },
         { href: "/mis-recursos", label: "Mis recursos" },
         { href: "/pricing", label: t("nav.pricing") },
@@ -463,18 +467,13 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                                 <Wand2 size={20} strokeWidth={1.8} />
                                 Quitar fondo
                             </Link>
-                            {/* Capas Mágicas: visible para todos. Si no admin,
-                                badge "Próximamente". La página propia muestra
-                                teaser landing si no admin. */}
+                            {/* Capas Mágicas: visible para todos. Sin badge
+                                "Próximamente" (ocupaba espacio); el teaser vive
+                                dentro de la propia página /capas-magicas. */}
                             <Link href="/capas-magicas" onClick={() => setShowMobileMenu(false)}
                                 className="flex items-center gap-3 px-4 py-3 rounded-xl text-base text-purple-300 active:bg-purple-500/10">
                                 <Wand2 size={20} strokeWidth={1.8} />
                                 <span className="flex-1">Capas Mágicas</span>
-                                {!userIsAdmin && (
-                                    <span className="text-[9px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded-full bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/40 text-purple-300">
-                                        Próximamente
-                                    </span>
-                                )}
                             </Link>
                             <Link href="/pricing" onClick={() => setShowMobileMenu(false)}
                                 className="flex items-center gap-3 px-4 py-3 rounded-xl text-base text-gray-300 active:bg-white/10">
