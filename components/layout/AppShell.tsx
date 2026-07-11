@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
-import { Bell, Crown, Image as ImageIcon, History, LogOut, Plus, LayoutGrid, FolderOpen, Menu, Users, CreditCard, Wand2, Settings } from "lucide-react";
+import { Bell, Crown, Image as ImageIcon, History, LogOut, Plus, LayoutGrid, FolderOpen, Menu, Users, CreditCard, Wand2, Settings, HelpCircle } from "lucide-react";
 import NotificationsBell from "@/components/notifications/NotificationsBell";
 import { CreditsBadge } from "@/components/credits/CreditsBadge";
 import { useAuth } from "@/hooks/useAuth";
@@ -364,6 +364,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                                                     <Settings size={15} strokeWidth={1.8} />
                                                     Mi cuenta
                                                 </Link>
+                                                <Link href="/ayuda" onClick={() => setShowUserMenu(false)}
+                                                    style={{ color: "#4b5563" }}
+                                                    className="appshell-dropdown-link flex items-center gap-2 px-3 py-2 rounded-xl text-sm hover:bg-ag-card transition-colors no-underline">
+                                                    <HelpCircle size={15} strokeWidth={1.8} />
+                                                    Ayuda
+                                                </Link>
                                                 {isAdmin(user?.email) && (
                                                     <Link href="/admin/templates" onClick={() => setShowUserMenu(false)}
                                                         style={{ color: "#4b5563" }}
@@ -479,6 +485,11 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                                 className="flex items-center gap-3 px-4 py-3 rounded-xl text-base text-gray-300 active:bg-white/10">
                                 <History size={20} strokeWidth={1.8} />
                                 {t("nav.history")}
+                            </Link>
+                            <Link href="/ayuda" onClick={() => setShowMobileMenu(false)}
+                                className="flex items-center gap-3 px-4 py-3 rounded-xl text-base text-gray-300 active:bg-white/10">
+                                <HelpCircle size={20} strokeWidth={1.8} />
+                                Ayuda
                             </Link>
                             {user && (
                                 <Link href="/cuenta" onClick={() => setShowMobileMenu(false)}
