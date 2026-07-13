@@ -68,7 +68,7 @@ import { useCredits } from "@/hooks/useCredits";
 import { CREDIT_COST, type CreditModule } from "@/lib/credits";
 // Z.17 — Borrador mágico/manual full-screen reutilizable desktop+mobile
 import BrushEraserModal from "@/components/editor/BrushEraserModal";
-import { Save, FolderOpen, Share2, Link2, Mail, MessageCircle, Send, Plus, Layers, Lock, Unlock, Move, Eye, EyeOff, Circle as CircleIcon, Square as SquareIcon, Triangle, Heart, Star, AlignHorizontalJustifyCenter, Clipboard, ClipboardPaste, UserPlus } from "lucide-react";
+import { Save, FolderOpen, Share2, Link2, Mail, MessageCircle, Send, Plus, Layers, Lock, Unlock, Eye, EyeOff, Circle as CircleIcon, Square as SquareIcon, Triangle, Heart, Star, AlignHorizontalJustifyCenter, Clipboard, ClipboardPaste, UserPlus } from "lucide-react";
 import RequestPhotoModal from "@/components/editor/RequestPhotoModal";
 import PublishModal, { exportCanvasToPng } from "@/components/editor/PublishModal";
 import TextPresetsModal from "@/components/editor/TextPresetsModal";
@@ -309,12 +309,6 @@ export default function MobileEditorV3({ templateId, projectId, formatId, overri
           cornerStyle: "circle", transparentCorners: false,
           borderColor: "#a855f7", borderScaleFactor: 1.5,
           cornerSize: 14, touchCornerSize: 44, padding: 4,
-          // Modo a prueba de errores (igual que en la carga): fijos por
-          // defecto. Fabric no serializa lockMovement/hasControls, así que
-          // hay que re-aplicarlos al reconstruir el canvas (undo/redo/reset).
-          lockMovementX: true, lockMovementY: true,
-          lockScalingX: true, lockScalingY: true,
-          lockRotation: true, hasControls: false,
         });
       });
       fc.requestRenderAll();
@@ -508,17 +502,6 @@ export default function MobileEditorV3({ templateId, projectId, formatId, overri
           cornerSize: 14,
           touchCornerSize: 44,
           padding: 4,
-          // Modo a prueba de errores: los elementos de la plantilla nacen con
-          // posición/tamaño/rotación FIJOS para que el usuario no rompa el
-          // diseño sin querer al tocar. Sigue pudiendo seleccionarlos (tap)
-          // para editar el texto y el estilo. El chip "Mover" los desbloquea
-          // si de verdad quiere recolocarlos (toggleLockActive).
-          lockMovementX: true,
-          lockMovementY: true,
-          lockScalingX: true,
-          lockScalingY: true,
-          lockRotation: true,
-          hasControls: false,
         });
       });
       const initial: Record<string, string> = {};
@@ -1595,12 +1578,6 @@ export default function MobileEditorV3({ templateId, projectId, formatId, overri
           cornerStyle: "circle", transparentCorners: false,
           borderColor: "#a855f7", borderScaleFactor: 1.5,
           cornerSize: 14, touchCornerSize: 44, padding: 4,
-          // Modo a prueba de errores (igual que en la carga): fijos por
-          // defecto. Fabric no serializa lockMovement/hasControls, así que
-          // hay que re-aplicarlos al reconstruir el canvas (undo/redo/reset).
-          lockMovementX: true, lockMovementY: true,
-          lockScalingX: true, lockScalingY: true,
-          lockRotation: true, hasControls: false,
         });
       });
       // Reset blockValues a los textos originales del template
@@ -2889,10 +2866,10 @@ export default function MobileEditorV3({ templateId, projectId, formatId, overri
               onClick={toggleLockActive}
               icon={
                 (fabricRef.current?.getActiveObject()?.lockMovementX)
-                  ? <Move size={15} strokeWidth={2.2}/>
-                  : <Lock size={15} strokeWidth={2.2}/>
+                  ? <Lock size={15} strokeWidth={2.2}/>
+                  : <Unlock size={15} strokeWidth={2.2}/>
               }
-              label={(fabricRef.current?.getActiveObject()?.lockMovementX) ? "Mover" : "Fijar"}
+              label="Bloquear"
             />
             <ChipBtn
               onClick={handleDelete}
@@ -3211,7 +3188,7 @@ export default function MobileEditorV3({ templateId, projectId, formatId, overri
           {/* Barra flotante estilo Instagram: pill redondeada, elevada y
               separada de los bordes (px/pb) → se ve mejor y NUNCA queda
               pegada a la barra del navegador. */}
-          <nav className="h-[60px] rounded-2xl border border-white/10 bg-[#15151f]/95 backdrop-blur-xl shadow-[0_10px_30px_rgba(0,0,0,0.55)] flex items-center justify-around">
+          <nav className="h-[60px] rounded-2xl border border-white/10 bg-[#15151f]/95 backdrop-blur-xl shadow-[0_10px_30px_rgba(0,0,0,0.55)] flex items-center px-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {/* Z.25 — botón Formatos sustituye al de Plantillas (que sacaba
               del editor). Ahora abre el sheet de formatos in-situ.
               Para volver a plantillas, el usuario usa el back del header. */}
@@ -3238,6 +3215,14 @@ export default function MobileEditorV3({ templateId, projectId, formatId, overri
             label={t("mobileEditor.bottomBar.style")}
             active={openSheet === "estilo"}
             onClick={() => setOpenSheet(s => s === "estilo" ? null : "estilo")}
+          />
+          {/* Asistente IA — "dime los datos y los coloco". Botón directo en la
+              barra (además del auto-open la 1ª vez). */}
+          <BarBtn
+            icon={<Wand2 size={18} strokeWidth={2}/>}
+            label="Asistente"
+            active={openSheet === "assistant"}
+            onClick={() => setOpenSheet(s => s === "assistant" ? null : "assistant")}
           />
           <BarBtn
             icon={<Sparkles size={18} strokeWidth={2}/>}
@@ -3920,7 +3905,7 @@ function BarBtn({
   return (
     <button
       onClick={onClick}
-      className={`flex-1 h-full flex flex-col items-center justify-center gap-0.5 ${active ? "text-purple-400" : "text-gray-400"}`}
+      className={`shrink-0 w-[64px] h-full flex flex-col items-center justify-center gap-0.5 ${active ? "text-purple-400" : "text-gray-400"}`}
     >
       <div className={`w-10 h-7 rounded-lg flex items-center justify-center ${active ? "bg-purple-500/15" : ""}`}>
         {icon}
