@@ -578,19 +578,22 @@ export default function MobileEditorV3({ templateId, projectId, formatId, overri
     if (!wrapper) return;
     const r = wrapper.getBoundingClientRect();
     if (r.width === 0 || r.height === 0) return;
-    const bounds = obj.getBoundingRect();
-    // Margenes para que el bbox NO ocupe el 100% del wrapper. Asi se ve
-    // contexto alrededor y la transicion es menos abrupta.
-    const PAD_RATIO = 0.45; // bbox ocupa ~55% del wrapper
-    const zoomW = (r.width * PAD_RATIO) / bounds.width;
-    const zoomH = (r.height * PAD_RATIO) / bounds.height;
-    // Tope superior — no hacer zoom infinito en textos minusculos
-    const zoom = Math.min(zoomW, zoomH, 4);
-    // Centrar el bbox en el wrapper
-    const cx = bounds.left + bounds.width / 2;
-    const cy = bounds.top + bounds.height / 2;
-    const tx = r.width / 2 - cx * zoom;
-    const ty = r.height / 2 - cy * zoom;
+    // Coords LÓGICAS del objeto (no viewport → no se acumulan en llamadas
+    // sucesivas al cambiar de bloque).
+    const c = obj.getCenterPoint();
+    const w = obj.getScaledWidth();
+    const h = obj.getScaledHeight();
+    if (w === 0 || h === 0) return;
+    // Zoom SUAVE: el bbox ocupa ~60% del ancho, pero solo contamos ~45% del
+    // alto del wrapper como "zona visible" (el resto lo tapa la UI de edición
+    // + teclado). Tope bajo para no dar un zoom brusco.
+    const zoomW = (r.width * 0.6) / w;
+    const zoomH = (r.height * 0.45) / h;
+    const zoom = Math.min(zoomW, zoomH, 2.2);
+    const tx = r.width / 2 - c.x * zoom;
+    // Colocamos el centro del elemento al ~32% desde arriba → queda en la
+    // franja visible del lienzo, por encima de la UI de edición/teclado.
+    const ty = r.height * 0.32 - c.y * zoom;
     fc.setDimensions({ width: r.width, height: r.height });
     fc.setZoom(zoom);
     fc.setViewportTransform([zoom, 0, 0, zoom, tx, ty]);
@@ -614,9 +617,27 @@ export default function MobileEditorV3({ templateId, projectId, formatId, overri
     fc.requestRenderAll();
   }, [canvasSize.w, canvasSize.h]);
 
-  // Suprimimos warning del lint — focusOnObject queda como helper exportable
-  // por si se necesita en pinch-zoom manual en el futuro.
-  void focusOnObject;
+  // ─── Foco en el elemento que se está editando (estilo Canva) ───────────
+  // Al editar un texto, centramos el lienzo en ese elemento (en la franja
+  // visible superior, sobre la UI de edición/teclado). editingObjRef guarda
+  // el objeto en foco para que el re-encaje por teclado/resize lo respete
+  // (ver ResizeObserver más abajo).
+  const editingObjRef = useRef<FabricObject | null>(null);
+  useEffect(() => {
+    const fc = fabricRef.current;
+    if (!fc || !loaded) return;
+    if (activeSubTool === "editar" && activeBlockId) {
+      const block = blocks.find(b => b.id === activeBlockId);
+      const obj = block && fc.getObjects().find(o => {
+        const cid = (o as FabricObject & { customId?: string }).customId;
+        return cid && block.layerIds.includes(cid);
+      });
+      if (obj) { editingObjRef.current = obj; focusOnObject(fc, obj); return; }
+    }
+    // Ya no editamos texto → volver a fit-to-view (todo el flyer visible).
+    editingObjRef.current = null;
+    fitToView(fc);
+  }, [activeSubTool, activeBlockId, loaded, blocks, focusOnObject, fitToView]);
 
   // ─── Toolbar flotante SOBRE el elemento (estilo Canva) ─────────────────
   // Posición en pantalla del pill de acciones, anclado encima (o debajo si no
@@ -673,10 +694,16 @@ export default function MobileEditorV3({ templateId, projectId, formatId, overri
     // zoom manual via pinch si necesita ver detalle. Editar texto NO hace
     // zoom auto (esto provocaba confusion al cambiar de bloque).
     fitToView(fc);
-    const ro = new ResizeObserver(() => fitToView(fc));
+    // Al redimensionar el wrapper (abrir/cerrar teclado, aparecer UI de
+    // edición), re-encajamos — PERO si estamos editando un elemento, lo
+    // re-enfocamos en su lugar (sino el teclado "desharía" el foco).
+    const ro = new ResizeObserver(() => {
+      const o = editingObjRef.current;
+      if (o) focusOnObject(fc, o); else fitToView(fc);
+    });
     ro.observe(wrapper);
     return () => ro.disconnect();
-  }, [loaded, fitToView]);
+  }, [loaded, fitToView, focusOnObject]);
 
   // ─── Selection handlers — ref para evitar re-suscripcion ────────────────
   // Usamos ref de layerToBlock para que el listener se suscriba UNA sola vez
@@ -2877,8 +2904,9 @@ export default function MobileEditorV3({ templateId, projectId, formatId, overri
         </div>
 
         {/* TOOLBAR CONTEXTUAL FLOTANTE (chip estilo Canva) — flota SOBRE el
-            elemento seleccionado (posición en pantalla via selBar). */}
-        {selBar && selectedLayerId && !openSheet && (
+            elemento seleccionado. Se oculta al editar texto (teclado): ahí
+            manda la UI de edición (pills + input) y el pill estorbaría. */}
+        {selBar && selectedLayerId && !openSheet && activeSubTool !== "editar" && (
           <div
             className="fixed z-40 flex items-center bg-[#1c1c2a]/95 backdrop-blur-xl border border-purple-500/30 rounded-full shadow-2xl shadow-black/50 px-1 py-1 gap-0.5 overflow-x-auto max-w-[calc(100vw-16px)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             style={{ left: selBar.x, top: selBar.y, transform: `translate(-50%, ${selBar.below ? "0%" : "-100%"})` }}
