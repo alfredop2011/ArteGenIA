@@ -1122,33 +1122,59 @@ function BeforeAfterCard({
     amber: "from-amber-500 to-orange-500",
     emerald: "from-emerald-500 to-teal-500",
   }[accentColor];
+
+  // Slider interactivo: `pos` = % del divisor. Izquierda del divisor = ANTES
+  // (foto sobre gradiente, como si tuviera fondo). Derecha = DESPUÉS (foto sobre
+  // checkerboard, fondo quitado). La MISMA foto está en ambas capas y alineada,
+  // así que al arrastrar solo cambia el fondo bajo la persona → reveal limpio.
+  const [pos, setPos] = useState(50);
+  const areaRef = useRef<HTMLDivElement>(null);
+  const dragging = useRef(false);
+  const updateFromClientX = useCallback((clientX: number) => {
+    const el = areaRef.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    setPos(Math.max(2, Math.min(98, ((clientX - r.left) / r.width) * 100)));
+  }, []);
+  useEffect(() => {
+    const move = (e: PointerEvent) => { if (dragging.current) updateFromClientX(e.clientX); };
+    const up = () => { dragging.current = false; };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+    return () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); };
+  }, [updateFromClientX]);
+
   return (
     <div className="rounded-3xl bg-white/[0.025] border border-white/[0.06] overflow-hidden">
-      <div className="grid grid-cols-2 gap-0.5 bg-white/[0.04] relative">
-        {/* ANTES — foto real sobre el gradiente (simula que tenía fondo) */}
-        <div className={`relative overflow-hidden bg-gradient-to-br ${bgGradient} aspect-[4/5] flex items-center justify-center`}>
-          <span className="absolute top-3 left-3 z-10 text-[9.5px] uppercase tracking-widest font-black px-2 py-1 rounded bg-black/40 backdrop-blur-sm text-white">
-            Antes
-          </span>
+      <div
+        ref={areaRef}
+        onPointerDown={(e) => { dragging.current = true; updateFromClientX(e.clientX); }}
+        className="relative aspect-[4/3] overflow-hidden bg-white/[0.04] select-none touch-none cursor-ew-resize"
+      >
+        {/* Base = DESPUÉS (checkerboard + foto) */}
+        <div className="absolute inset-0" style={CHECKERBOARD}>
           {imgUrl
-            ? <img src={imgUrl} alt="" loading="lazy" className="absolute inset-0 w-full h-full object-contain object-bottom"/>
-            : <span className="text-[80px] drop-shadow-2xl">{emoji}</span>}
+            ? <img src={imgUrl} alt="" loading="lazy" draggable={false} className="absolute inset-0 w-full h-full object-contain object-bottom pointer-events-none"/>
+            : <span className="absolute inset-0 flex items-center justify-center text-[80px] pointer-events-none">{emoji}</span>}
         </div>
-        {/* DESPUÉS — misma foto sobre checkerboard (fondo quitado) */}
-        <div className="relative overflow-hidden aspect-[4/5] flex items-center justify-center" style={CHECKERBOARD}>
-          <span className="absolute top-3 right-3 z-10 text-[9.5px] uppercase tracking-widest font-black px-2 py-1 rounded bg-black/40 backdrop-blur-sm text-white">
-            Después
-          </span>
+        {/* Overlay = ANTES (gradiente + foto), recortado hasta el divisor */}
+        <div className={`absolute inset-0 bg-gradient-to-br ${bgGradient}`} style={{ clipPath: `inset(0 ${100 - pos}% 0 0)` }}>
           {imgUrl
-            ? <img src={imgUrl} alt="" loading="lazy" className="absolute inset-0 w-full h-full object-contain object-bottom"/>
-            : <span className="text-[80px]">{emoji}</span>}
+            ? <img src={imgUrl} alt="" loading="lazy" draggable={false} className="absolute inset-0 w-full h-full object-contain object-bottom pointer-events-none"/>
+            : <span className="absolute inset-0 flex items-center justify-center text-[80px] drop-shadow-2xl pointer-events-none">{emoji}</span>}
         </div>
-        {/* Flecha circular en el medio */}
-        <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-gradient-to-br ${accent} flex items-center justify-center shadow-lg`}>
-          <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="5" y1="12" x2="19" y2="12"/>
-            <polyline points="12 5 19 12 12 19"/>
-          </svg>
+        {/* Etiquetas */}
+        <span className="absolute top-3 left-3 z-10 text-[9.5px] uppercase tracking-widest font-black px-2 py-1 rounded bg-black/40 backdrop-blur-sm text-white pointer-events-none">Antes</span>
+        <span className="absolute top-3 right-3 z-10 text-[9.5px] uppercase tracking-widest font-black px-2 py-1 rounded bg-black/40 backdrop-blur-sm text-white pointer-events-none">Después</span>
+        {/* Divisor + tirador arrastrable */}
+        <div className="absolute top-0 bottom-0 z-20 pointer-events-none" style={{ left: `${pos}%` }}>
+          <div className="absolute inset-y-0 -translate-x-1/2 w-0.5 bg-white/80"/>
+          <div className={`absolute top-1/2 left-0 -translate-x-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-gradient-to-br ${accent} flex items-center justify-center shadow-lg ring-2 ring-white/70`}>
+            <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 6l-4 6 4 6"/>
+              <path d="M15 6l4 6-4 6"/>
+            </svg>
+          </div>
         </div>
       </div>
       {/* Footer con icono + título + desc */}
