@@ -2694,9 +2694,12 @@ export default function MobileEditorV3({ templateId, projectId, formatId, overri
     <div
       className="w-full flex flex-col overflow-hidden bg-[#0a0a14] text-white relative"
       style={{
-        // Si el teclado esta visible, restamos su altura para que el canvas
-        // + sheet queden completamente sobre el. Sino h-screen normal.
-        height: kbHeight > 0 ? `calc(100vh - ${kbHeight}px)` : "100vh",
+        // 100dvh (no 100vh): en móvil, 100vh incluye la zona DETRÁS de la
+        // barra del navegador, así que la bottom-nav quedaba tapada y no se
+        // podía tocar. 100dvh = altura VISIBLE real → la barra de abajo queda
+        // por encima del navegador y es tappable. Si el teclado está visible,
+        // restamos su altura para que canvas + sheet queden sobre él.
+        height: kbHeight > 0 ? `calc(100dvh - ${kbHeight}px)` : "100dvh",
         transition: "height 0.15s ease-out",
       }}>
 
