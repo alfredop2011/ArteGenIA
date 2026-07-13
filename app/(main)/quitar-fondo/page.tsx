@@ -546,14 +546,14 @@ export default function QuitarFondoPage() {
               {/* Thumbnails de ejemplos: persona, zapato, perfume, coche */}
               <div className="flex items-center gap-4 mt-5">
                 <div className="flex gap-2">
-                  <ExampleThumb gradient="from-rose-500 to-purple-600" emoji="💃"/>
-                  <ExampleThumb gradient="from-amber-500 to-red-600" emoji="🎤"/>
-                  <ExampleThumb gradient="from-emerald-500 to-teal-600" emoji="🎓"/>
-                  <ExampleThumb gradient="from-blue-500 to-purple-600" emoji="🎵"/>
+                  <ExampleThumb gradient="from-rose-500 to-purple-600" imgUrl="https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/06_isabela_alejandro_pareja.png"/>
+                  <ExampleThumb gradient="from-amber-500 to-red-600" imgUrl="https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dj/Dj-1.png"/>
+                  <ExampleThumb gradient="from-emerald-500 to-teal-600" imgUrl="https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/03_nia_batista_perfil.png"/>
+                  <ExampleThumb gradient="from-blue-500 to-purple-600" imgUrl="https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/04_malik_santos_perfil.png"/>
                 </div>
                 <div className="flex-1">
                   <p className="text-[12px] font-bold mb-0.5">Sin fondo. Sin complicaciones.</p>
-                  <p className="text-[10.5px] text-gray-400">Parejas de baile, artistas, logos y más.</p>
+                  <p className="text-[10.5px] text-gray-400">Parejas de baile, DJs, artistas y más.</p>
                 </div>
               </div>
             </div>
@@ -1058,10 +1058,12 @@ function FeatureChip({ icon, text }: { icon: string; text: string }) {
 }
 
 /** Thumbnail decorativo (16×16) bajo la dropzone para ilustrar casos de uso. */
-function ExampleThumb({ gradient, emoji }: { gradient: string; emoji: string }) {
+function ExampleThumb({ gradient, emoji, imgUrl }: { gradient: string; emoji?: string; imgUrl?: string }) {
   return (
-    <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center text-[20px] shadow-sm border border-white/10`}>
-      <span aria-hidden>{emoji}</span>
+    <div className={`w-12 h-12 rounded-xl overflow-hidden bg-gradient-to-br ${gradient} flex items-center justify-center text-[20px] shadow-sm border border-white/10`}>
+      {imgUrl
+        ? <img src={imgUrl} alt="" loading="lazy" className="w-full h-full object-contain object-bottom"/>
+        : <span aria-hidden>{emoji}</span>}
     </div>
   );
 }
