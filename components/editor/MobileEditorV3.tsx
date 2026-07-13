@@ -1494,6 +1494,41 @@ export default function MobileEditorV3({ templateId, projectId, formatId, overri
     toast.success(`${applied} campos rellenados con IA`);
   }, [assistantResult, blocks, applyBlockToCanvas, toast]);
 
+  // ─── Auto-abrir el Asistente IA la 1ª vez (guía para nuevos usuarios) ──────
+  // Objetivo: quien llega desde un anuncio y abre una plantilla ve de inmediato
+  // "dime los datos y te los coloco en el flyer", en vez de tener que descubrir
+  // el botón. Solo en modo plantilla (con campos que rellenar), una vez por
+  // navegador, y sin interrumpir en proyectos guardados / flujo Capas Mágicas.
+  const assistantAutoOpenedRef = useRef(false);
+  useEffect(() => {
+    if (assistantAutoOpenedRef.current) return;
+    if (!loaded || !template) return;
+    if (projectId) return;                    // proyecto guardado → no interrumpir
+    if (blocks.length === 0) return;          // nada que rellenar
+    if (isFromMagicLayersRef.current) return; // flujo Capas Mágicas
+    // No colisionar con el tour de onboarding: si está visible, esperar; y no
+    // arrancar hasta que el tour se haya visto (en la 1ª visita se encadena
+    // tour → asistente al terminarlo). El efecto re-corre al cambiar onboardingStep.
+    if (onboardingStep >= 0) return;
+    let onbSeen = false;
+    try { onbSeen = window.localStorage.getItem(ONBOARDING_KEY) === "1"; } catch { /* SSR/priv */ }
+    if (!onbSeen) return;
+    // Ya no molestar a usuarios que ya lo vieron una vez.
+    let seen = false;
+    try { seen = localStorage.getItem("ag_mobile_assistant_intro_v1") === "1"; } catch { /* SSR/priv */ }
+    if (seen) return;
+    assistantAutoOpenedRef.current = true;
+    // Pequeño respiro para que la UI se asiente antes de subir el sheet.
+    // Marcamos "visto" solo al abrir de verdad (no si se desmonta).
+    const id = window.setTimeout(() => {
+      try { localStorage.setItem("ag_mobile_assistant_intro_v1", "1"); } catch { /* noop */ }
+      // No pisar un sheet que el usuario haya abierto en esos ms.
+      setOpenSheet(prev => (prev == null ? "assistant" : prev));
+    }, 500);
+    return () => window.clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loaded, template, projectId, blocks.length, onboardingStep]);
+
   // ─── Reiniciar plantilla (Fase M.1) ────────────────────────────────────
   // Vuelve al diseño original limpio. Limpia canvas, re-aplica template
   // layers, resetea blockValues/paleta/remix. Push history para poder
