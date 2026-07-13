@@ -200,8 +200,14 @@ export default function MobileEditorV3({ templateId, projectId, formatId, overri
   const [loaded, setLoaded] = useState(false);
 
   const blocks = useMemo<EditableBlock[]>(() => {
-    return templateId ? getBlocksForTemplate(templateId) : [];
-  }, [templateId]);
+    // templateId viene de la URL en modo plantilla. En modo proyecto guardado
+    // el prop es projectId (templateId undefined), pero el efecto de carga sí
+    // setea `template` desde project.template_id → caemos a `template.id`.
+    // Sin este fallback, el Asistente IA en un proyecto guardado enviaría
+    // blocks=[] y /api/assistant respondería 400 "Falta prompt o bloques".
+    const tid = templateId ?? template?.id;
+    return tid ? getBlocksForTemplate(tid) : [];
+  }, [templateId, template]);
 
   const [blockValues, setBlockValues] = useState<Record<string, string>>({});
   const [activeBlockId, setActiveBlockId] = useState<string | null>(null);
@@ -1434,6 +1440,13 @@ export default function MobileEditorV3({ templateId, projectId, formatId, overri
       return;
     }
     if (!prompt.trim()) { toast.error("Escribe primero qué evento es"); return; }
+    // Defensivo: si no hay campos editables, el endpoint respondería 400.
+    // Con el fallback de `blocks` a template.id esto no debería pasar, pero
+    // evita cualquier 400 crudo mostrando un aviso claro.
+    if (blocks.length === 0) {
+      toast.error("Esta plantilla no tiene campos que el Asistente pueda rellenar");
+      return;
+    }
     setAssistantLoading(true);
     setAssistantResult(null);
     try {
