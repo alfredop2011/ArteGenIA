@@ -617,27 +617,18 @@ export default function MobileEditorV3({ templateId, projectId, formatId, overri
     fc.requestRenderAll();
   }, [canvasSize.w, canvasSize.h]);
 
-  // ─── Foco en el elemento que se está editando (estilo Canva) ───────────
-  // Al editar un texto, centramos el lienzo en ese elemento (en la franja
-  // visible superior, sobre la UI de edición/teclado). editingObjRef guarda
-  // el objeto en foco para que el re-encaje por teclado/resize lo respete
-  // (ver ResizeObserver más abajo).
-  const editingObjRef = useRef<FabricObject | null>(null);
+  // Estilo Canva: al editar texto (o cambiar de bloque, o abrir/cerrar el
+  // teclado) mantenemos TODO el flyer visible (fit-to-view) en el espacio que
+  // queda sobre la UI de edición + teclado. Canva NO hace zoom al elemento;
+  // muestra el diseño entero. Un pequeño delay deja que el layout (footer de
+  // edición + teclado) se asiente antes de recalcular el encaje.
   useEffect(() => {
     const fc = fabricRef.current;
     if (!fc || !loaded) return;
-    if (activeSubTool === "editar" && activeBlockId) {
-      const block = blocks.find(b => b.id === activeBlockId);
-      const obj = block && fc.getObjects().find(o => {
-        const cid = (o as FabricObject & { customId?: string }).customId;
-        return cid && block.layerIds.includes(cid);
-      });
-      if (obj) { editingObjRef.current = obj; focusOnObject(fc, obj); return; }
-    }
-    // Ya no editamos texto → volver a fit-to-view (todo el flyer visible).
-    editingObjRef.current = null;
-    fitToView(fc);
-  }, [activeSubTool, activeBlockId, loaded, blocks, focusOnObject, fitToView]);
+    const id = window.setTimeout(() => fitToView(fc), 60);
+    return () => window.clearTimeout(id);
+  }, [activeSubTool, activeBlockId, kbHeight, loaded, fitToView]);
+  void focusOnObject; // reservado para pinch-zoom manual futuro
 
   // ─── Toolbar flotante SOBRE el elemento (estilo Canva) ─────────────────
   // Posición en pantalla del pill de acciones, anclado encima (o debajo si no
@@ -694,16 +685,12 @@ export default function MobileEditorV3({ templateId, projectId, formatId, overri
     // zoom manual via pinch si necesita ver detalle. Editar texto NO hace
     // zoom auto (esto provocaba confusion al cambiar de bloque).
     fitToView(fc);
-    // Al redimensionar el wrapper (abrir/cerrar teclado, aparecer UI de
-    // edición), re-encajamos — PERO si estamos editando un elemento, lo
-    // re-enfocamos en su lugar (sino el teclado "desharía" el foco).
-    const ro = new ResizeObserver(() => {
-      const o = editingObjRef.current;
-      if (o) focusOnObject(fc, o); else fitToView(fc);
-    });
+    // Al redimensionar el wrapper (abrir/cerrar teclado, aparecer la UI de
+    // edición) re-encajamos el flyer completo — estilo Canva.
+    const ro = new ResizeObserver(() => fitToView(fc));
     ro.observe(wrapper);
     return () => ro.disconnect();
-  }, [loaded, fitToView, focusOnObject]);
+  }, [loaded, fitToView]);
 
   // ─── Selection handlers — ref para evitar re-suscripcion ────────────────
   // Usamos ref de layerToBlock para que el listener se suscriba UNA sola vez
