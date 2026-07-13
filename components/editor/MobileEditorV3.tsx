@@ -652,7 +652,10 @@ export default function MobileEditorV3({ templateId, projectId, formatId, overri
       // de Editar), NO reseteamos el sub-tool — el usuario sigue editando
       // texto, solo cambio de bloque. Sin este check el panel se cerraba.
       if (!programmaticSelectionRef.current) {
-        setActiveSubTool(null);
+        // Al tocar un TEXTO, abrir directamente "Editar" con ese texto (como
+        // Canva) para cambiar las palabras sin un paso extra. El resto de
+        // tipos (imagen/forma) sin sub-tool — que el usuario elija.
+        setActiveSubTool(t === "text" ? "editar" : null);
       } else {
         programmaticSelectionRef.current = false;
       }
@@ -1495,10 +1498,11 @@ export default function MobileEditorV3({ templateId, projectId, formatId, overri
     }
   }, [template, authUser, blocks, blockValues, toast]);
 
-  const applyAssistantResult = useCallback(() => {
-    if (!assistantResult) return;
+  const applyAssistantResult = useCallback((values: Record<string, string>) => {
     let applied = 0;
-    Object.entries(assistantResult).forEach(([blockId, value]) => {
+    Object.entries(values).forEach(([blockId, value]) => {
+      // Vacío → NO pisar el texto original del flyer (deja el placeholder).
+      if (!value.trim()) return;
       const block = blocks.find(b => b.id === blockId);
       if (!block) return;
       applyBlockToCanvas(block, value);
@@ -1508,8 +1512,8 @@ export default function MobileEditorV3({ templateId, projectId, formatId, overri
     setAssistantResult(null);
     setAssistantMissing([]);
     setOpenSheet(null);
-    toast.success(`${applied} campos rellenados con IA`);
-  }, [assistantResult, blocks, applyBlockToCanvas, toast]);
+    toast.success(applied > 0 ? `${applied} campos rellenados con IA` : "Nada que aplicar");
+  }, [blocks, applyBlockToCanvas, toast]);
 
   // ─── Auto-abrir el Asistente IA la 1ª vez (guía para nuevos usuarios) ──────
   // Objetivo: quien llega desde un anuncio y abre una plantilla ve de inmediato
@@ -5040,13 +5044,17 @@ function AssistantSheet({
   missing: string[];
   isAuthed: boolean;
   onRun: (prompt: string) => void;
-  onApply: () => void;
+  onApply: (values: Record<string, string>) => void;
   onCancel: () => void;
   onLogin: () => void;
   blocks: EditableBlock[];
 }) {
   const { t } = useLocale();
   const [prompt, setPrompt] = useState("");
+  // Valores editables del resultado: el usuario puede rellenar los vacíos y
+  // corregir cualquiera antes de aplicar. Se sincroniza cuando llega result.
+  const [edited, setEdited] = useState<Record<string, string>>({});
+  useEffect(() => { if (result) setEdited(result); }, [result]);
 
   // Si no esta logueado, mostrar CTA grande de login en lugar del flujo IA.
   if (!isAuthed) {
@@ -5075,22 +5083,53 @@ function AssistantSheet({
     );
   }
 
+  // Ejemplos por CATEGORÍA real del template (data/templates.ts): "Clases",
+  // "Club / Discoteca", "Fiesta", "Conciertos"/"Concierto", "Festival",
+  // "Gala", "Corporativo". (Antes las claves eran "Clases de baile"/"Fiestas"
+  // y NO coincidían → siempre salían los genéricos.)
   const examples: Record<string, string[]> = {
-    "Clases de baile": [
-      "Clase de bachata sábado 22 nov 16-20h, Studio Kiz, 70€ early bird 60€",
-      "Workshop kizomba con João & Catarina, todo el día domingo, Madrid 90€",
+    "Clases": [
+      "Clase de bachata sábado 22 nov 16-20h, Studio Kiz Madrid, 70€ (early bird 60€)",
+      "Clases de salsa todos los martes 20:00, Estudio del Sol, bono mes 50€",
+      "Workshop kizomba con João & Catarina, domingo todo el día, Madrid, 90€",
+    ],
+    "Club / Discoteca": [
+      "Fiesta latina sábado 25 nov 23h hasta cierre, Sala Razzmatazz, 15€ con consumición",
+      "Reggaetón night viernes 8 dic 00:00, Club Oz Madrid, chicas gratis antes de la 1",
+      "Open format sábado 30 nov, DJ residente, La Riviera, entrada 12€",
+    ],
+    "Fiesta": [
+      "Fiesta fin de curso sábado 21 jun 22h, Sala Apolo, 10€ anticipada",
+      "Halloween party 31 oct 22h, mejor disfraz premio 500€, Sala Florida 135",
+      "Cumpleaños sorpresa sábado 14 dic 21:00, terraza privada, RSVP por WhatsApp",
     ],
     "Conciertos": [
       "Concierto Don Filosofín viernes 20 jun 21h, Sala Apolo Barcelona, entrada libre",
-      "Festival reggaeton sábado 12 julio 20h, Wizink Center Madrid, desde 45€",
+      "Concierto acústico jueves 5 dic 20:30, Café Berlín Madrid, 18€",
+      "Directo de rock sábado 12 jul 21h, Wizink Center, desde 45€",
     ],
-    "Fiestas": [
-      "Fiesta latina sábado 25 nov 23h hasta cierre, Sala Razzmatazz, 15€ con consumición",
-      "Halloween party 31 oct 22h, mejor disfraz premio 500€, Sala Florida 135",
+    "Concierto": [
+      "Concierto Don Filosofín viernes 20 jun 21h, Sala Apolo Barcelona, entrada libre",
+      "Concierto acústico jueves 5 dic 20:30, Café Berlín Madrid, 18€",
+      "Directo de rock sábado 12 jul 21h, Wizink Center, desde 45€",
+    ],
+    "Festival": [
+      "Festival de salsa 3 días 14-16 marzo, Palacio de Congresos, abono 90€",
+      "Festival reggaetón sábado 12 julio 18h, recinto ferial, desde 45€",
+      "Festival indie 5-6 sept, varias bandas, bono 2 días 55€",
+    ],
+    "Gala": [
+      "Gala benéfica sábado 14 dic 20:00, Hotel Ritz Madrid, donativo 80€",
+      "Gala de danza domingo 22 jun 19h, Teatro Real, entradas desde 25€",
+    ],
+    "Corporativo": [
+      "Evento de empresa jueves 12 dic 18:00, sede central, confirmar por email",
+      "Networking profesional martes 3 feb 19h, coworking Madrid centro, gratis",
     ],
     "_default": [
       "Mi evento sábado 20 diciembre a las 20:00, Madrid centro, entrada 25€",
-      "Workshop de fotografía digital fin de semana 14-15 enero, online o presencial",
+      "Taller fin de semana 14-15 enero, online o presencial, plazas limitadas",
+      "Quedada sábado 8 marzo 18:00, lugar por confirmar, entrada libre",
     ],
   };
   const cat = category && examples[category] ? category : "_default";
@@ -5115,7 +5154,7 @@ function AssistantSheet({
           <div className="px-3 py-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30">
             <div className="text-[12px] font-bold text-amber-300 mb-1">⚠️ Te faltan datos</div>
             <p className="text-[11px] text-amber-200/90 leading-snug mb-2">
-              Esto no me lo diste, así que lo dejé de ejemplo. Añádelo a tu descripción y vuelve a generar, o edítalo luego a mano:
+              Esto no me lo diste. Rellénalo abajo directamente (los campos en ámbar), o vuelve a generar añadiéndolo a tu descripción:
             </p>
             <div className="flex flex-wrap gap-1.5">
               {missing.map((id) => (
@@ -5126,17 +5165,27 @@ function AssistantSheet({
             </div>
           </div>
         )}
+        <p className="text-[10.5px] text-gray-500 leading-snug -mt-1">
+          Revisa y <b className="text-gray-300">edita lo que quieras</b> aquí mismo antes de aplicar. Los campos en ámbar están vacíos.
+        </p>
         <div className="flex flex-col gap-1.5 max-h-[280px] overflow-y-auto">
-          {Object.entries(result).map(([blockId, value]) => {
+          {Object.entries(result).map(([blockId]) => {
             const block = blocks.find(b => b.id === blockId);
+            const val = edited[blockId] ?? "";
+            const isEmpty = !val.trim();
             return (
-              <div key={blockId} className="px-3 py-2 rounded-xl bg-[#13131f] border border-white/[0.06]">
-                <div className="text-[9px] text-purple-400 font-bold uppercase tracking-wider mb-0.5">
-                  {block?.label ?? blockId}
+              <div key={blockId} className={`px-3 py-2 rounded-xl bg-[#13131f] border ${isEmpty ? "border-amber-500/45" : "border-white/[0.06]"}`}>
+                <div className="text-[9px] font-bold uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                  <span className="text-purple-400">{block?.label ?? blockId}</span>
+                  {isEmpty && <span className="text-amber-400 normal-case font-semibold tracking-normal">· rellénalo</span>}
                 </div>
-                <div className="text-[12px] text-white font-medium leading-snug">
-                  {value || <span className="text-gray-500 italic">{t("mobileEditor.assistant.emptyValue")}</span>}
-                </div>
+                <input
+                  value={val}
+                  onChange={e => setEdited(prev => ({ ...prev, [blockId]: e.target.value }))}
+                  placeholder="Escribe aquí…"
+                  style={{ fontSize: 16 }}
+                  className="w-full bg-transparent text-white font-medium leading-snug outline-none placeholder:text-gray-600 placeholder:italic"
+                />
               </div>
             );
           })}
@@ -5149,7 +5198,7 @@ function AssistantSheet({
             {t("mobileEditor.assistant.retry")}
           </button>
           <button
-            onClick={onApply}
+            onClick={() => onApply(edited)}
             className="flex-1 py-2.5 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 text-white text-[12px] font-bold active:scale-[0.97] shadow-lg shadow-emerald-500/30"
           >
             {t("mobileEditor.assistant.apply")}
