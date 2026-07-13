@@ -3252,6 +3252,15 @@ export default function MobileEditorV3({ templateId, projectId, formatId, overri
               setShowPagesSheet(true);
             }}
           />
+          {/* "Más" — menú de opciones secundarias (Capas, Reiniciar, Mis
+              flyers, Tutorial). Antes solo en el ⋮ de arriba (poco visible);
+              ahora también aquí, en la barra donde está el pulgar. */}
+          <BarBtn
+            icon={<MoreHorizontal size={18} strokeWidth={2}/>}
+            label="Más"
+            active={openSheet === "more"}
+            onClick={() => setOpenSheet(s => s === "more" ? null : "more")}
+          />
         </nav>
         </div>
       )}
@@ -3539,18 +3548,9 @@ export default function MobileEditorV3({ templateId, projectId, formatId, overri
                       setOnboardingStep(0);
                     }}
                   />
-                  <MoreRowLink
-                    icon={<Wand2 size={18}/>}
-                    label={t("mobileEditor.more.aiAssistant")}
-                    subtitle={t("mobileEditor.more.aiAssistantSub")}
-                    onClick={() => setOpenSheet("assistant")}
-                  />
-                  <MoreRowLink
-                    icon={<LayoutGrid size={18}/>}
-                    label={t("mobileEditor.more.changeFormat")}
-                    subtitle={t("mobileEditor.more.changeFormatSub")}
-                    onClick={() => setOpenSheet("format")}
-                  />
+                  {/* Asistente IA y Cambiar formato salieron de aquí: ahora
+                      son botones directos en la barra flotante (Asistente /
+                      Formatos), así que no se duplican en este menú. */}
                   <MoreRowLink
                     icon={<XIcon size={18}/>}
                     label={t("mobileEditor.more.resetTemplate")}
