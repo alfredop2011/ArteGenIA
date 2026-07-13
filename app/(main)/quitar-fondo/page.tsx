@@ -656,7 +656,7 @@ export default function QuitarFondoPage() {
               <BeforeAfterCard
                 category="Pareja de baile"
                 desc="Salsa, bachata, tango, kizomba."
-                emoji="💃"
+                imgUrl="https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/06_isabela_alejandro_pareja.png"
                 bgGradient="from-rose-500 via-pink-600 to-purple-700"
                 accentColor="rose"
                 iconPath="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2 M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"
@@ -664,23 +664,20 @@ export default function QuitarFondoPage() {
               <BeforeAfterCard
                 category="Artistas / DJ"
                 desc="Fotos para flyers de conciertos."
-                emoji="🎤"
+                imgUrl="https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dj/Dj-1.png"
                 bgGradient="from-amber-500 via-orange-600 to-red-700"
                 accentColor="amber"
                 iconPath="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z M19 10v2a7 7 0 0 1-14 0v-2 M12 19v4 M8 23h8"
               />
               <BeforeAfterCard
-                category="Logos / Escuelas"
-                desc="Marcas, promotoras, academias."
-                emoji="🎓"
+                category="Solistas y artistas"
+                desc="Bailarines, cantantes, presentadores."
+                imgUrl="https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/03_nia_batista_perfil.png"
                 bgGradient="from-emerald-500 via-teal-600 to-blue-700"
                 accentColor="emerald"
-                iconPath="M22 10v6 M2 10l10-5 10 5-10 5z M6 12v5c3 3 9 3 12 0v-5"
+                iconPath="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2 M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"
               />
             </div>
-            <p className="text-center text-[11px] text-gray-500 mt-6">
-              💡 Ilustraciones genéricas — cuando subas fotos reales del nicho, reemplaza estas tarjetas.
-            </p>
           </div>
 
           {/* ─── POR QUÉ ELEGIR ARTEGENIA — 4 features cards ────────────── */}
@@ -1107,13 +1104,14 @@ const CHECKERBOARD: React.CSSProperties = {
   backgroundColor: "#1a1a24",
 };
 
-/** Card "Antes y después" — ilustración SVG estilizada del nicho.
- *  TODO cuando tengamos fotos reales: reemplazar SVG con <Image src=fotoReal/>.
- *  Mantener las cajas "Antes" (con bgGradient) y "Después" (checkerboard) idénticas. */
+/** Card "Antes y después" — foto REAL de nicho recortada (PNG transparente).
+ *  La misma foto se muestra sobre un gradiente ("Antes", como si tuviera fondo)
+ *  y sobre el checkerboard ("Después", fondo ya quitado). Si no hay imgUrl, cae
+ *  a un emoji de placeholder. */
 function BeforeAfterCard({
-  category, desc, emoji, bgGradient, accentColor, iconPath,
+  category, desc, emoji, imgUrl, bgGradient, accentColor, iconPath,
 }: {
-  category: string; desc: string; emoji: string;
+  category: string; desc: string; emoji?: string; imgUrl?: string;
   bgGradient: string; accentColor: "rose"|"amber"|"emerald";
   iconPath: string;
 }) {
@@ -1125,19 +1123,23 @@ function BeforeAfterCard({
   return (
     <div className="rounded-3xl bg-white/[0.025] border border-white/[0.06] overflow-hidden">
       <div className="grid grid-cols-2 gap-0.5 bg-white/[0.04] relative">
-        {/* ANTES — gradiente como fondo + silueta SVG blanca */}
-        <div className={`relative bg-gradient-to-br ${bgGradient} aspect-[4/5] flex items-center justify-center`}>
-          <span className="absolute top-3 left-3 text-[9.5px] uppercase tracking-widest font-black px-2 py-1 rounded bg-black/40 backdrop-blur-sm text-white">
+        {/* ANTES — foto real sobre el gradiente (simula que tenía fondo) */}
+        <div className={`relative overflow-hidden bg-gradient-to-br ${bgGradient} aspect-[4/5] flex items-center justify-center`}>
+          <span className="absolute top-3 left-3 z-10 text-[9.5px] uppercase tracking-widest font-black px-2 py-1 rounded bg-black/40 backdrop-blur-sm text-white">
             Antes
           </span>
-          <span className="text-[80px] drop-shadow-2xl">{emoji}</span>
+          {imgUrl
+            ? <img src={imgUrl} alt="" loading="lazy" className="absolute inset-0 w-full h-full object-contain object-bottom"/>
+            : <span className="text-[80px] drop-shadow-2xl">{emoji}</span>}
         </div>
-        {/* DESPUÉS — checkerboard + misma silueta */}
-        <div className="relative aspect-[4/5] flex items-center justify-center" style={CHECKERBOARD}>
-          <span className="absolute top-3 right-3 text-[9.5px] uppercase tracking-widest font-black px-2 py-1 rounded bg-black/40 backdrop-blur-sm text-white">
+        {/* DESPUÉS — misma foto sobre checkerboard (fondo quitado) */}
+        <div className="relative overflow-hidden aspect-[4/5] flex items-center justify-center" style={CHECKERBOARD}>
+          <span className="absolute top-3 right-3 z-10 text-[9.5px] uppercase tracking-widest font-black px-2 py-1 rounded bg-black/40 backdrop-blur-sm text-white">
             Después
           </span>
-          <span className="text-[80px]">{emoji}</span>
+          {imgUrl
+            ? <img src={imgUrl} alt="" loading="lazy" className="absolute inset-0 w-full h-full object-contain object-bottom"/>
+            : <span className="text-[80px]">{emoji}</span>}
         </div>
         {/* Flecha circular en el medio */}
         <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-gradient-to-br ${accent} flex items-center justify-center shadow-lg`}>
