@@ -618,6 +618,53 @@ export default function MobileEditorV3({ templateId, projectId, formatId, overri
   // por si se necesita en pinch-zoom manual en el futuro.
   void focusOnObject;
 
+  // ─── Toolbar flotante SOBRE el elemento (estilo Canva) ─────────────────
+  // Posición en pantalla del pill de acciones, anclado encima (o debajo si no
+  // cabe) del objeto seleccionado. Mapeamos coords lógicas del objeto → píxel
+  // con el viewportTransform (mismo que usa fitToView) → robusto con el zoom.
+  const [selBar, setSelBar] = useState<{ x: number; y: number; below: boolean } | null>(null);
+  const updateSelBar = useCallback(() => {
+    const fc = fabricRef.current;
+    const obj = fc?.getActiveObject();
+    if (!fc || !obj) { setSelBar(null); return; }
+    try {
+      const c = obj.getCenterPoint();
+      const half = obj.getScaledHeight() / 2;
+      const vt = fc.viewportTransform || [1, 0, 0, 1, 0, 0];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const canvasEl = ((fc as any).upperCanvasEl ?? (fc as any).lowerCanvasEl) as HTMLCanvasElement | undefined;
+      if (!canvasEl) { setSelBar(null); return; }
+      const cr = canvasEl.getBoundingClientRect();
+      const x = cr.left + (c.x * vt[0] + vt[4]);
+      const topY = cr.top + ((c.y - half) * vt[3] + vt[5]);
+      const botY = cr.top + ((c.y + half) * vt[3] + vt[5]);
+      const wantTop = topY - 14;
+      const below = wantTop < cr.top + 6;   // no cabe encima → colócalo debajo
+      setSelBar({ x, y: below ? botY + 14 : wantTop, below });
+    } catch { setSelBar(null); }
+  }, []);
+
+  // Recolocar al seleccionar / deseleccionar y al mover/redimensionar/rotar.
+  useEffect(() => {
+    if (selectedLayerId) updateSelBar();
+    else setSelBar(null);
+  }, [selectedLayerId, openSheet, activeSubTool, updateSelBar]);
+  useEffect(() => {
+    const fc = fabricRef.current;
+    if (!fc || !loaded) return;
+    const onTransform = () => updateSelBar();
+    fc.on("object:moving", onTransform);
+    fc.on("object:scaling", onTransform);
+    fc.on("object:rotating", onTransform);
+    fc.on("object:modified", onTransform);
+    return () => {
+      fc.off("object:moving", onTransform);
+      fc.off("object:scaling", onTransform);
+      fc.off("object:rotating", onTransform);
+      fc.off("object:modified", onTransform);
+    };
+  }, [loaded, updateSelBar]);
+
   useEffect(() => {
     const fc = fabricRef.current;
     const wrapper = wrapperRef.current;
@@ -2829,9 +2876,13 @@ export default function MobileEditorV3({ templateId, projectId, formatId, overri
           )}
         </div>
 
-        {/* TOOLBAR CONTEXTUAL FLOTANTE (chip estilo Canva) — solo si hay seleccion */}
-        {selectedLayerId && !openSheet && (
-          <div className="absolute left-1/2 -translate-x-1/2 bottom-2 z-20 flex items-center bg-[#1c1c2a]/95 backdrop-blur-xl border border-purple-500/30 rounded-full shadow-2xl shadow-black/50 px-1 py-1 gap-0.5">
+        {/* TOOLBAR CONTEXTUAL FLOTANTE (chip estilo Canva) — flota SOBRE el
+            elemento seleccionado (posición en pantalla via selBar). */}
+        {selBar && selectedLayerId && !openSheet && (
+          <div
+            className="fixed z-40 flex items-center bg-[#1c1c2a]/95 backdrop-blur-xl border border-purple-500/30 rounded-full shadow-2xl shadow-black/50 px-1 py-1 gap-0.5 overflow-x-auto max-w-[calc(100vw-16px)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            style={{ left: selBar.x, top: selBar.y, transform: `translate(-50%, ${selBar.below ? "0%" : "-100%"})` }}
+          >
             <ChipBtn
               onClick={() => setActiveSubTool("editar")}
               icon={<TypeIcon size={17} strokeWidth={2.2}/>}
@@ -2880,6 +2931,20 @@ export default function MobileEditorV3({ templateId, projectId, formatId, overri
               icon={<Trash2 size={15} strokeWidth={2.2}/>}
               label="Borrar"
               danger
+            />
+            {/* "Listo" — cierra la selección (deselecciona el elemento). */}
+            <ChipBtn
+              onClick={() => {
+                const fc = fabricRef.current;
+                fc?.discardActiveObject();
+                fc?.requestRenderAll();
+                setSelectedLayerId(null);
+                setSelectedType(null);
+                setActiveSubTool(null);
+                setSelBar(null);
+              }}
+              icon={<Check size={16} strokeWidth={2.6}/>}
+              label="Listo"
             />
           </div>
         )}
