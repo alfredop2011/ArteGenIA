@@ -68,7 +68,7 @@ import { useCredits } from "@/hooks/useCredits";
 import { CREDIT_COST, type CreditModule } from "@/lib/credits";
 // Z.17 — Borrador mágico/manual full-screen reutilizable desktop+mobile
 import BrushEraserModal from "@/components/editor/BrushEraserModal";
-import { Save, FolderOpen, Share2, Link2, Mail, MessageCircle, Send, Plus, Layers, Lock, Unlock, Eye, EyeOff, Circle as CircleIcon, Square as SquareIcon, Triangle, Heart, Star, AlignHorizontalJustifyCenter, Clipboard, ClipboardPaste, UserPlus } from "lucide-react";
+import { Save, FolderOpen, Share2, Link2, Mail, MessageCircle, Send, Plus, Layers, Lock, Unlock, Move, Eye, EyeOff, Circle as CircleIcon, Square as SquareIcon, Triangle, Heart, Star, AlignHorizontalJustifyCenter, Clipboard, ClipboardPaste, UserPlus } from "lucide-react";
 import RequestPhotoModal from "@/components/editor/RequestPhotoModal";
 import PublishModal, { exportCanvasToPng } from "@/components/editor/PublishModal";
 import TextPresetsModal from "@/components/editor/TextPresetsModal";
@@ -309,6 +309,12 @@ export default function MobileEditorV3({ templateId, projectId, formatId, overri
           cornerStyle: "circle", transparentCorners: false,
           borderColor: "#a855f7", borderScaleFactor: 1.5,
           cornerSize: 14, touchCornerSize: 44, padding: 4,
+          // Modo a prueba de errores (igual que en la carga): fijos por
+          // defecto. Fabric no serializa lockMovement/hasControls, así que
+          // hay que re-aplicarlos al reconstruir el canvas (undo/redo/reset).
+          lockMovementX: true, lockMovementY: true,
+          lockScalingX: true, lockScalingY: true,
+          lockRotation: true, hasControls: false,
         });
       });
       fc.requestRenderAll();
@@ -502,6 +508,17 @@ export default function MobileEditorV3({ templateId, projectId, formatId, overri
           cornerSize: 14,
           touchCornerSize: 44,
           padding: 4,
+          // Modo a prueba de errores: los elementos de la plantilla nacen con
+          // posición/tamaño/rotación FIJOS para que el usuario no rompa el
+          // diseño sin querer al tocar. Sigue pudiendo seleccionarlos (tap)
+          // para editar el texto y el estilo. El chip "Mover" los desbloquea
+          // si de verdad quiere recolocarlos (toggleLockActive).
+          lockMovementX: true,
+          lockMovementY: true,
+          lockScalingX: true,
+          lockScalingY: true,
+          lockRotation: true,
+          hasControls: false,
         });
       });
       const initial: Record<string, string> = {};
@@ -1574,6 +1591,12 @@ export default function MobileEditorV3({ templateId, projectId, formatId, overri
           cornerStyle: "circle", transparentCorners: false,
           borderColor: "#a855f7", borderScaleFactor: 1.5,
           cornerSize: 14, touchCornerSize: 44, padding: 4,
+          // Modo a prueba de errores (igual que en la carga): fijos por
+          // defecto. Fabric no serializa lockMovement/hasControls, así que
+          // hay que re-aplicarlos al reconstruir el canvas (undo/redo/reset).
+          lockMovementX: true, lockMovementY: true,
+          lockScalingX: true, lockScalingY: true,
+          lockRotation: true, hasControls: false,
         });
       });
       // Reset blockValues a los textos originales del template
@@ -1841,7 +1864,11 @@ export default function MobileEditorV3({ templateId, projectId, formatId, overri
     }
   }, [canvasSize.w, canvasSize.h, decorateNewObject, pushHistory, toast]);
 
-  // ─── Lock / Unlock (Fase I.3) ──────────────────────────────────────────
+  // ─── Fijar / Mover (Fase I.3 → modo a prueba de errores) ───────────────
+  // Por defecto los objetos están FIJOS (no se mueven/redimensionan/rotan sin
+  // querer). Este toggle es el botón "Mover": desbloquea para recolocar y
+  // vuelve a "Fijar" al terminar. setLockTick refresca el label del chip.
+  const [, setLockTick] = useState(0);
   const toggleLockActive = useCallback(() => {
     const fc = fabricRef.current;
     const obj = fc?.getActiveObject();
@@ -1854,13 +1881,16 @@ export default function MobileEditorV3({ templateId, projectId, formatId, overri
       lockScalingX: next,
       lockScalingY: next,
       lockRotation: next,
-      hasControls: !next, // sin handles cuando esta bloqueado
+      hasControls: !next, // sin handles cuando está fijo
     });
     fc.requestRenderAll();
     setSaveState("unsaved");
     pushHistory();
-    toast.success(next ? t("mobileEditor.toast.objectLocked") : t("mobileEditor.toast.objectUnlocked"));
-  }, [pushHistory, toast, t]);
+    setLockTick(v => v + 1);
+    toast.success(next
+      ? "🔒 Posición fija — no se moverá sin querer"
+      : "✋ Ahora puedes moverlo, redimensionarlo y rotarlo");
+  }, [pushHistory, toast]);
 
   /** Reemplaza la imagen activa preservando posicion + escala.
    *  Carga el archivo local via FileReader → data URL → FabricImage. */
@@ -2852,10 +2882,10 @@ export default function MobileEditorV3({ templateId, projectId, formatId, overri
               onClick={toggleLockActive}
               icon={
                 (fabricRef.current?.getActiveObject()?.lockMovementX)
-                  ? <Lock size={15} strokeWidth={2.2}/>
-                  : <Unlock size={15} strokeWidth={2.2}/>
+                  ? <Move size={15} strokeWidth={2.2}/>
+                  : <Lock size={15} strokeWidth={2.2}/>
               }
-              label="Bloquear"
+              label={(fabricRef.current?.getActiveObject()?.lockMovementX) ? "Mover" : "Fijar"}
             />
             <ChipBtn
               onClick={handleDelete}
