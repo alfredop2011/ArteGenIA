@@ -3207,7 +3207,11 @@ export default function MobileEditorV3({ templateId, projectId, formatId, overri
           </div>
         </div>
       ) : (
-        <nav className="h-[68px] border-t border-white/[0.08] bg-[#0a0a14] flex items-center justify-around shrink-0 safe-area-bottom">
+        <div className="shrink-0 px-3 pt-1.5 pb-2 safe-area-bottom">
+          {/* Barra flotante estilo Instagram: pill redondeada, elevada y
+              separada de los bordes (px/pb) → se ve mejor y NUNCA queda
+              pegada a la barra del navegador. */}
+          <nav className="h-[60px] rounded-2xl border border-white/10 bg-[#15151f]/95 backdrop-blur-xl shadow-[0_10px_30px_rgba(0,0,0,0.55)] flex items-center justify-around">
           {/* Z.25 — botón Formatos sustituye al de Plantillas (que sacaba
               del editor). Ahora abre el sheet de formatos in-situ.
               Para volver a plantillas, el usuario usa el back del header. */}
@@ -3264,6 +3268,7 @@ export default function MobileEditorV3({ templateId, projectId, formatId, overri
             }}
           />
         </nav>
+        </div>
       )}
 
       {/* ═══ SHEETS TEMPORALES (overlay sobre canvas, no permanentes) ════ */}
