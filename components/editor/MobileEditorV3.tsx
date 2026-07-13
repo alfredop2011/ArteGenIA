@@ -1445,6 +1445,8 @@ export default function MobileEditorV3({ templateId, projectId, formatId, overri
   // sugeridos por Claude Haiku → aplica a blockValues y al canvas.
   const [assistantLoading, setAssistantLoading] = useState(false);
   const [assistantResult, setAssistantResult] = useState<Record<string, string> | null>(null);
+  // Campos que el usuario NO dio (la IA los marca) → se los pedimos tras generar.
+  const [assistantMissing, setAssistantMissing] = useState<string[]>([]);
 
   const runAssistant = useCallback(async (prompt: string) => {
     if (!template) return;
@@ -1493,14 +1495,15 @@ export default function MobileEditorV3({ templateId, projectId, formatId, overri
         else toast.error(`La IA respondió ${res.status} — intenta de nuevo`);
         return;
       }
-      const data = await res.json() as { values?: Record<string, string> };
-      console.log("[assistant] received values:", data.values);
+      const data = await res.json() as { values?: Record<string, string>; missing?: string[] };
+      console.log("[assistant] received values:", data.values, "missing:", data.missing);
       const values = data.values ?? {};
       if (Object.keys(values).length === 0) {
         toast.error("La IA no devolvió valores — intenta con otra descripción");
         return;
       }
       setAssistantResult(values);
+      setAssistantMissing(Array.isArray(data.missing) ? data.missing : []);
     } catch (e) {
       console.error("[assistant] fetch error:", e);
       toast.error(`Error de conexión: ${(e as Error).message}`);
@@ -1520,6 +1523,7 @@ export default function MobileEditorV3({ templateId, projectId, formatId, overri
       applied++;
     });
     setAssistantResult(null);
+    setAssistantMissing([]);
     setOpenSheet(null);
     toast.success(`${applied} campos rellenados con IA`);
   }, [assistantResult, blocks, applyBlockToCanvas, toast]);
@@ -3592,10 +3596,11 @@ export default function MobileEditorV3({ templateId, projectId, formatId, overri
                   category={template.category}
                   loading={assistantLoading}
                   result={assistantResult}
+                  missing={assistantMissing}
                   isAuthed={!!authUser}
                   onRun={runAssistant}
                   onApply={applyAssistantResult}
-                  onCancel={() => setAssistantResult(null)}
+                  onCancel={() => { setAssistantResult(null); setAssistantMissing([]); }}
                   onLogin={() => { setOpenSheet(null); router.push("/?login=1"); }}
                   blocks={blocks}
                 />
@@ -5033,11 +5038,13 @@ function OnboardingOverlay({
 /** Sheet del Asistente IA. Usuario escribe en lenguaje natural lo que
  *  quiere comunicar y la IA rellena los bloques editables del flyer. */
 function AssistantSheet({
-  category, loading, result, isAuthed, onRun, onApply, onCancel, onLogin, blocks,
+  category, loading, result, missing, isAuthed, onRun, onApply, onCancel, onLogin, blocks,
 }: {
   category?: string;
   loading: boolean;
   result: Record<string, string> | null;
+  /** blockIds que el usuario no proporcionó — se los pedimos tras generar. */
+  missing: string[];
   isAuthed: boolean;
   onRun: (prompt: string) => void;
   onApply: () => void;
@@ -5109,6 +5116,23 @@ function AssistantSheet({
         <p className="text-[11px] text-gray-400 leading-snug">
           {t("mobileEditor.assistant.previewDesc")}
         </p>
+        {/* "Te falta" — la IA marca los datos que el usuario no dio (no los
+            inventa). Se los pedimos para que el flyer quede completo. */}
+        {missing.length > 0 && (
+          <div className="px-3 py-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30">
+            <div className="text-[12px] font-bold text-amber-300 mb-1">⚠️ Te faltan datos</div>
+            <p className="text-[11px] text-amber-200/90 leading-snug mb-2">
+              Esto no me lo diste, así que lo dejé de ejemplo. Añádelo a tu descripción y vuelve a generar, o edítalo luego a mano:
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {missing.map((id) => (
+                <span key={id} className="text-[11px] px-2 py-1 rounded-lg bg-amber-500/15 border border-amber-500/30 text-amber-100 font-semibold">
+                  {blocks.find(b => b.id === id)?.label ?? id}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
         <div className="flex flex-col gap-1.5 max-h-[280px] overflow-y-auto">
           {Object.entries(result).map(([blockId, value]) => {
             const block = blocks.find(b => b.id === blockId);
@@ -5155,6 +5179,21 @@ function AssistantSheet({
           </p>
         </div>
       </div>
+
+      {/* Guía: qué suele llevar este flyer, para que el usuario lo incluya en
+          su descripción y no se le olvide nada. */}
+      {blocks.length > 0 && (
+        <div className="px-3 py-2 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+          <div className="text-[10px] font-bold text-gray-400 mb-1.5">📋 Dime estos datos y los coloco:</div>
+          <div className="flex flex-wrap gap-1.5">
+            {blocks.map((b) => (
+              <span key={b.id} className="text-[10.5px] px-2 py-0.5 rounded-md bg-purple-500/10 border border-purple-500/20 text-purple-200">
+                {b.label}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
 
       <textarea
         value={prompt}

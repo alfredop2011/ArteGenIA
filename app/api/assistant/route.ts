@@ -66,21 +66,21 @@ El usuario te describe un evento en lenguaje natural. Tu tarea: extraer los dato
 
 Responde ÚNICAMENTE con JSON válido, sin texto adicional, sin markdown, sin backticks.
 
-Estructura de respuesta — un objeto con las claves de los blockId del template:
+Estructura de respuesta:
 {
-  "block_id_1": "texto rellenado",
-  "block_id_2": "otro texto",
-  ...
+  "values": { "block_id_1": "texto rellenado", "block_id_2": "otro texto", ... },
+  "missing": ["block_id_x", "block_id_y"]
 }
 
 Reglas:
-- SOLO usa los blockIds proporcionados — no inventes ni omitas
+- "values": incluye TODOS los blockIds proporcionados.
 - Respeta el FORMATO del ejemplo cuando exista (MAYÚSCULAS si el ejemplo está en mayúsculas, "22 NOV" para fechas, "70€" para precios, etc.)
-- Si el usuario NO menciona algún campo, deja el valor del ejemplo o un placeholder genérico
-- Mantén los textos CORTOS y para flyer (sin frases largas)
-- Si hay campos como "footer-cta", "footer-where" — pon info de contacto/reserva si la tienes, sino texto genérico
-- Para fechas separadas en día/mes/año/horario, REPARTE bien la info
-- Si el evento es "clase de baile", el "título" debe ser el estilo (ej: "Salsa", "Bachata")`;
+- CLAVE — no inventes datos reales: si el usuario NO menciona un campo (precio, fecha, hora, lugar, contacto...), NO te inventes un valor falso. En "values" deja el ejemplo/placeholder original de ese campo, y añade su blockId a "missing".
+- "missing": lista de los blockIds para los que el usuario NO dio información real (los que quedaron con placeholder). Sirve para que la app se los pida al usuario. Si el usuario lo dio todo, devuelve "missing": [].
+- Mantén los textos CORTOS y para flyer (sin frases largas).
+- Si hay campos como "footer-cta", "footer-where" — pon info de contacto/reserva SOLO si la tienes; si no, déjala como placeholder y márcala en "missing".
+- Para fechas separadas en día/mes/año/horario, REPARTE bien la info.
+- Si el evento es "clase de baile", el "título" debe ser el estilo (ej: "Salsa", "Bachata").`;
 
     const userPrompt = `Bloques disponibles del template (categoría: ${category}):
 ${blocksList}
@@ -88,7 +88,7 @@ ${blocksList}
 Descripción del evento:
 "${prompt}"
 
-Recuerda: solo el JSON con las claves blockId.`;
+Recuerda: SOLO el JSON con "values" y "missing". No inventes datos que el usuario no te dio.`;
 
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -113,7 +113,8 @@ Recuerda: solo el JSON con las claves blockId.`;
     const data = await response.json() as AnthropicMessage;
     const text = data.content?.[0]?.text?.trim() ?? "";
 
-    let parsed: Record<string, string> = {};
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let parsed: any = {};
     try {
       parsed = JSON.parse(text);
     } catch {
@@ -121,16 +122,28 @@ Recuerda: solo el JSON con las claves blockId.`;
       return NextResponse.json(getFallback(blocks), { status: 200 });
     }
 
+    // Compat: acepta el formato nuevo { values, missing } o el legacy
+    // (mapa plano blockId → texto, sin missing).
+    const rawValues: Record<string, unknown> =
+      parsed && typeof parsed.values === "object" && parsed.values
+        ? parsed.values
+        : parsed;
+    const rawMissing: unknown[] = Array.isArray(parsed?.missing) ? parsed.missing : [];
+
     // Sanitizar: solo blockIds válidos, strings de máx 200 chars
     const valid: Record<string, string> = {};
     const validIds = new Set(blocks.map(b => b.id));
-    for (const [k, v] of Object.entries(parsed)) {
+    for (const [k, v] of Object.entries(rawValues)) {
       if (!validIds.has(k)) continue;
       if (typeof v !== "string") continue;
       valid[k] = v.slice(0, 200);
     }
+    // Campos que el usuario no proporcionó → la app se los pedirá.
+    const missing = rawMissing
+      .filter((id): id is string => typeof id === "string" && validIds.has(id))
+      .slice(0, 30);
 
-    return NextResponse.json({ values: valid });
+    return NextResponse.json({ values: valid, missing });
   } catch (err) {
     console.error("[assistant] error:", err);
     const msg = err instanceof Error ? err.message : "Error desconocido";
