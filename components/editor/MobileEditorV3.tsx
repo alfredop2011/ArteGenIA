@@ -4073,48 +4073,36 @@ function SubToolBtn({
   );
 }
 
-/** Editar inline — muestra los bloques editables como pills horizontales
- *  + input grande del bloque activo. Sustituye al sheet grande. */
+/** Editar inline COMPACTO (estilo Canva) — solo el input del texto que está
+ *  seleccionado. Para cambiar de texto, el usuario toca otro en el flyer (que
+ *  abre "Editar" automáticamente), en vez de una fila extra de pills. */
 function TextEditInline({
-  blocks, activeBlockId, blockValues, onChange, onSelectBlock,
+  blocks, activeBlockId, blockValues, onChange,
 }: {
   blocks: EditableBlock[];
   activeBlockId: string | null;
   blockValues: Record<string, string>;
   onChange: (b: EditableBlock, v: string) => void;
-  onSelectBlock: (id: string | null) => void;
+  /** Ya no se usa (se quitaron las pills), pero el padre lo sigue pasando. */
+  onSelectBlock?: (id: string | null) => void;
 }) {
   const active = blocks.find(b => b.id === activeBlockId) ?? blocks[0];
   const value = active ? blockValues[active.id] ?? "" : "";
+  if (!active) return null;
   return (
-    <div className="border-b border-white/[0.06] flex flex-col gap-2 px-3 pt-2.5 pb-3">
-      {/* Pills de bloques disponibles */}
-      <div className="flex gap-1.5 overflow-x-auto scrollbar-hide -mx-1 px-1">
-        {blocks.map(b => {
-          const isAct = active?.id === b.id;
-          return (
-            <button
-              key={b.id}
-              onClick={() => onSelectBlock(b.id)}
-              className={`shrink-0 px-3 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap ${isAct ? "bg-purple-500 text-white" : "bg-white/[0.05] text-gray-300"}`}
-            >
-              {b.label}
-            </button>
-          );
-        })}
-      </div>
-      {/* Input del bloque activo */}
-      {active && (
-        <input
-          type="text"
-          value={value}
-          onChange={e => onChange(active, e.target.value)}
-          placeholder={active.placeholder}
-          autoFocus
-          style={{ fontSize: 16 }}
-          className="w-full bg-[#0a0a14] border border-purple-500/40 rounded-xl px-3 py-2.5 text-white font-medium outline-none focus:border-purple-500"
-        />
-      )}
+    <div className="border-b border-white/[0.06] px-3 pt-2.5 pb-3 flex items-center gap-2">
+      <span className="shrink-0 text-[10px] font-bold uppercase tracking-wider text-purple-300 max-w-[72px] truncate">
+        {active.label}
+      </span>
+      <input
+        type="text"
+        value={value}
+        onChange={e => onChange(active, e.target.value)}
+        placeholder={active.placeholder}
+        autoFocus
+        style={{ fontSize: 16 }}
+        className="flex-1 min-w-0 bg-[#0a0a14] border border-purple-500/40 rounded-xl px-3 py-2.5 text-white font-medium outline-none focus:border-purple-500"
+      />
     </div>
   );
 }
