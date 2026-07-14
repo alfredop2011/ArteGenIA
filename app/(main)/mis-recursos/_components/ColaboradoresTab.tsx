@@ -14,6 +14,7 @@ import {
   X, Copy, Check, Loader2, MessageCircle, ShieldCheck, ArrowUpDown,
 } from "lucide-react";
 import { useLocale } from "@/hooks/useLocale";
+import { AnimatedTooltip } from "@/components/ui/AnimatedTooltip";
 
 // ─── Types ───────────────────────────────────────────────────────────────
 
@@ -154,17 +155,32 @@ export default function ColaboradoresTab() {
           onInvite={() => setInviteModalOpen(true)}
         />
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {filtered.map(c => (
-            <CollaboratorCard
-              key={c.id}
-              collab={c}
-              onEdit={() => setEditTarget(c)}
-              onReinvite={() => setReinviteTarget(c)}
-              onDelete={() => setDeleteTarget(c)}
+        <>
+          {/* Tira de avatares superpuestos con tooltip animado (estilo
+              21st.dev) — vistazo rápido de todos los colaboradores. Debajo,
+              las cards con acciones. */}
+          <div className="flex justify-center mb-7 pt-2">
+            <AnimatedTooltip
+              items={filtered.map(c => ({
+                id: c.id,
+                name: c.artist_name,
+                designation: c.role ?? (c.kind === "brand" ? "Marca" : "Colaborador"),
+                image: c.photo_url,
+              }))}
             />
-          ))}
-        </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {filtered.map(c => (
+              <CollaboratorCard
+                key={c.id}
+                collab={c}
+                onEdit={() => setEditTarget(c)}
+                onReinvite={() => setReinviteTarget(c)}
+                onDelete={() => setDeleteTarget(c)}
+              />
+            ))}
+          </div>
+        </>
       )}
 
       {/* Modales */}
