@@ -72,7 +72,13 @@ export default function CuentaPage() {
         setLoading(false);
       }
     })();
-  }, [authLoading, user, toast]);
+    // Deps ESTABLES: solo cargamos al resolver auth / cambiar de usuario. NO
+    // incluir `toast` — useToast() devuelve un objeto NUEVO en cada render, así
+    // que tenerlo en deps re-ejecutaba este efecto en cada render → re-fetch →
+    // setName(data.name) sobrescribía lo que el usuario estaba escribiendo
+    // ("no me deja editar").
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authLoading, user?.id]);
 
   const save = async () => {
     setSaving(true);
