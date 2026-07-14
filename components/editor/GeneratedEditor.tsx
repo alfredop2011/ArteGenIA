@@ -1804,6 +1804,13 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
     const newLayers: LayerItem[] = [];
     const cw = canvasSize.w;
     const ch = canvasSize.h;
+    // Cache-bust: al cargar en el canvas con crossOrigin="anonymous", si la
+    // imagen ya se cacheó SIN CORS (p. ej. la miniatura <img> del modal, que
+    // no lleva crossOrigin), el navegador reusa esa respuesta sin cabeceras
+    // CORS y la carga falla → el artista NO se añadía (en silencio). Un query
+    // único fuerza una descarga nueva, esta vez CON crossOrigin.
+    const cacheBust = (u: string) => (u ? u + (u.includes("?") ? "&" : "?") + "cb=" + Date.now() : u);
+    let failed = 0;
 
     for (const entry of entries) {
       try {
@@ -1813,7 +1820,7 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
         // sin fondo a veces devuelve la imagen con fondo blanco generado).
         let srcUrl = entry.imageSrc;
         if (entry.removeBackground) {
-          const alreadyTransparent = await isImageTransparent(entry.imageSrc).catch(() => false);
+          const alreadyTransparent = await isImageTransparent(cacheBust(entry.imageSrc)).catch(() => false);
           if (alreadyTransparent) {
             console.log("[editor] Imagen ya transparente, saltando remove-bg:", entry.id);
           } else {
@@ -1833,7 +1840,7 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
           }
         }
 
-        const img = await fabric.FabricImage.fromURL(srcUrl, { crossOrigin: "anonymous" });
+        const img = await fabric.FabricImage.fromURL(cacheBust(srcUrl), { crossOrigin: "anonymous" });
         const isLogo = entry.type === "logo";
         // Tamaños distintos: logo pequeño, artista grande
         const targetH = isLogo ? Math.min(180, ch * 0.13) : Math.min(900, ch * 0.65);
@@ -1872,6 +1879,7 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
           locked: false,
         });
       } catch (e) {
+        failed++;
         console.warn("Error añadiendo entry:", entry.id, e);
       }
     }
@@ -1879,7 +1887,13 @@ export default function GeneratedEditor({ templateId, formatId, projectId, publi
     canvas.renderAll();
     setLayers(prev => [...newLayers.reverse(), ...prev]);
     setSaveState("unsaved");
-  }, [canvasSize]);
+    if (newLayers.length > 0) {
+      toast.success(`${newLayers.length} ${newLayers.length === 1 ? "elemento añadido" : "elementos añadidos"} al flyer`);
+    }
+    if (failed > 0) {
+      toast.error(`${failed} imagen${failed === 1 ? "" : "es"} no se pudo cargar. Recarga la página (Cmd+Shift+R) e inténtalo de nuevo.`);
+    }
+  }, [canvasSize, toast]);
 
   const moveLayer = useCallback((id: string, dir: "up" | "down") => {
     const canvas = fabricRef.current;
