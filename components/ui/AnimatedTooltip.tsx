@@ -67,15 +67,15 @@ export function AnimatedTooltip({
                 }}
                 exit={{ opacity: 0, y: 20, scale: 0.6 }}
                 style={{ translateX, rotate, whiteSpace: "nowrap" }}
-                className="absolute -top-16 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center justify-center rounded-lg bg-[#0a0a14] px-4 py-2 shadow-xl border border-white/10"
+                className="absolute -top-16 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center justify-center rounded-xl bg-white px-4 py-2 shadow-2xl"
               >
                 <div className="absolute inset-x-10 z-30 w-[20%] -bottom-px bg-gradient-to-r from-transparent via-fuchsia-500 to-transparent h-px" />
                 <div className="absolute left-10 w-[40%] z-30 -bottom-px bg-gradient-to-r from-transparent via-purple-500 to-transparent h-px" />
-                <div className="font-bold text-white relative z-30 text-sm">
+                <div className="font-bold text-gray-900 relative z-30 text-sm">
                   {item.name}
                 </div>
                 {item.designation && (
-                  <div className="text-gray-400 text-xs">{item.designation}</div>
+                  <div className="text-gray-500 text-xs">{item.designation}</div>
                 )}
               </motion.div>
             )}
