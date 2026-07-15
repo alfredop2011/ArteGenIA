@@ -76,7 +76,7 @@ export const GEN_MODELS: GenModel[] = [
   { id: "bail-cuerpo-luca", vertical: "dance", crop: "cuerpo", w: 896, h: 1344,
     box: { x: 0.336, y: 0.06, w: 0.388, h: 0.933 },
     src: "models/generated/dance/bail-cuerpo-luca-v2.png", label: "Italiano 24 · línea extendida" },
-  // ── dj (8) ──
+  // ── dj (14) ──
   { id: "dj-cara-nina", vertical: "dj", crop: "cara", w: 1280, h: 1280,
     box: { x: 0.054, y: 0.027, w: 0.908, h: 0.973 },
     src: "models/generated/dj/dj-cara-nina.png", label: "Blanca 27 · rubia platino" },
@@ -101,6 +101,24 @@ export const GEN_MODELS: GenModel[] = [
   { id: "dj-cuerpo-tariq", vertical: "dj", crop: "cuerpo", w: 896, h: 1344,
     box: { x: 0.086, y: 0.019, w: 0.643, h: 0.941 },
     src: "models/generated/dj/dj-cuerpo-tariq.png", label: "Negro 31 · cortavientos" },
+  { id: "dj-medio-yuna", vertical: "dj", crop: "medio", w: 1024, h: 1280,
+    box: { x: 0.146, y: 0.042, w: 0.711, h: 0.957 },
+    src: "models/generated/dj/dj-medio-yuna.png", label: "dj-medio-yuna" },
+  { id: "dj-medio-diego", vertical: "dj", crop: "medio", w: 1024, h: 1280,
+    box: { x: 0.122, y: 0.051, w: 0.755, h: 0.948 },
+    src: "models/generated/dj/dj-medio-diego.png", label: "dj-medio-diego" },
+  { id: "dj-medio-amara", vertical: "dj", crop: "medio", w: 1024, h: 1280,
+    box: { x: 0.023, y: 0.032, w: 0.903, h: 0.967 },
+    src: "models/generated/dj/dj-medio-amara.png", label: "dj-medio-amara" },
+  { id: "dj-medio-sven", vertical: "dj", crop: "medio", w: 1024, h: 1280,
+    box: { x: 0.149, y: 0.027, w: 0.675, h: 0.972 },
+    src: "models/generated/dj/dj-medio-sven.png", label: "dj-medio-sven" },
+  { id: "dj-medio-farid", vertical: "dj", crop: "medio", w: 1024, h: 1280,
+    box: { x: 0.088, y: 0.082, w: 0.84, h: 0.917 },
+    src: "models/generated/dj/dj-medio-farid.png", label: "dj-medio-farid" },
+  { id: "dj-medio-kira", vertical: "dj", crop: "medio", w: 1024, h: 1280,
+    box: { x: 0.129, y: 0.008, w: 0.763, h: 0.991 },
+    src: "models/generated/dj/dj-medio-kira.png", label: "dj-medio-kira" },
   // ── profes (6) ──
   { id: "profe-medio-rosa", vertical: "profes", crop: "medio", w: 1024, h: 1280,
     box: { x: 0.111, y: 0.021, w: 0.862, h: 0.978 },
@@ -225,6 +243,11 @@ export type PlaceOpts = {
  * colocados con el mismo `height` salen todos a la misma altura real. Eso es lo
  * que hace posible una fila de 8 artistas alineados.
  *
+ * Devuelve x/y — la convención de TemplateLayer, no left/top de Fabric — para
+ * poder volcarlo directo en una capa. Asume los originX/originY por defecto
+ * ("left"/"top"), así que NO pongas originX:"center" encima: x/y ya vienen
+ * calculados contando el padding.
+ *
  *   { id: "dj1", type: "image", ...placeModel("dj-cara-nina", { height: 420, centerX: 200, bottomY: 900 }) }
  */
 export function placeModel(id: string, { height, centerX, bottomY }: PlaceOpts) {
@@ -232,12 +255,11 @@ export function placeModel(id: string, { height, centerX, bottomY }: PlaceOpts) 
   // alto real de la persona en px del PNG
   const personH = m.h * m.box.h;
   const scale = height / personH;
-  // originX/originY = "left"/"top": hay que descontar dónde empieza el contenido
   const personW = m.w * m.box.w;
   return {
     src: `${R2_BASE}${m.src}`,
-    left: centerX - (m.box.x * m.w + personW / 2) * scale,
-    top: bottomY - (m.box.y * m.h + personH) * scale,
+    x: centerX - (m.box.x * m.w + personW / 2) * scale,
+    y: bottomY - (m.box.y * m.h + personH) * scale,
     scaleX: scale,
     scaleY: scale,
   };

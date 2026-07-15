@@ -326,5 +326,53 @@
     "key": "models/generated/parejas/pareja-musica-latina.png",
     "url": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/generated/parejas/pareja-musica-latina.png",
     "kb": 945
+  },
+  {
+    "id": "dj-medio-yuna",
+    "vertical": "medio",
+    "r2": "dj",
+    "key": "models/generated/dj/dj-medio-yuna.png",
+    "url": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/generated/dj/dj-medio-yuna.png",
+    "kb": 488
+  },
+  {
+    "id": "dj-medio-diego",
+    "vertical": "medio",
+    "r2": "dj",
+    "key": "models/generated/dj/dj-medio-diego.png",
+    "url": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/generated/dj/dj-medio-diego.png",
+    "kb": 494
+  },
+  {
+    "id": "dj-medio-amara",
+    "vertical": "medio",
+    "r2": "dj",
+    "key": "models/generated/dj/dj-medio-amara.png",
+    "url": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/generated/dj/dj-medio-amara.png",
+    "kb": 571
+  },
+  {
+    "id": "dj-medio-sven",
+    "vertical": "medio",
+    "r2": "dj",
+    "key": "models/generated/dj/dj-medio-sven.png",
+    "url": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/generated/dj/dj-medio-sven.png",
+    "kb": 789
+  },
+  {
+    "id": "dj-medio-farid",
+    "vertical": "medio",
+    "r2": "dj",
+    "key": "models/generated/dj/dj-medio-farid.png",
+    "url": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/generated/dj/dj-medio-farid.png",
+    "kb": 447
+  },
+  {
+    "id": "dj-medio-kira",
+    "vertical": "medio",
+    "r2": "dj",
+    "key": "models/generated/dj/dj-medio-kira.png",
+    "url": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/generated/dj/dj-medio-kira.png",
+    "kb": 508
   }
 ]

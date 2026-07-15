@@ -122,6 +122,11 @@ export type PlaceOpts = {
  * colocados con el mismo \`height\` salen todos a la misma altura real. Eso es lo
  * que hace posible una fila de 8 artistas alineados.
  *
+ * Devuelve x/y — la convención de TemplateLayer, no left/top de Fabric — para
+ * poder volcarlo directo en una capa. Asume los originX/originY por defecto
+ * ("left"/"top"), así que NO pongas originX:"center" encima: x/y ya vienen
+ * calculados contando el padding.
+ *
  *   { id: "dj1", type: "image", ...placeModel("dj-cara-nina", { height: 420, centerX: 200, bottomY: 900 }) }
  */
 export function placeModel(id: string, { height, centerX, bottomY }: PlaceOpts) {
@@ -129,12 +134,11 @@ export function placeModel(id: string, { height, centerX, bottomY }: PlaceOpts) 
   // alto real de la persona en px del PNG
   const personH = m.h * m.box.h;
   const scale = height / personH;
-  // originX/originY = "left"/"top": hay que descontar dónde empieza el contenido
   const personW = m.w * m.box.w;
   return {
     src: \`\${R2_BASE}\${m.src}\`,
-    left: centerX - (m.box.x * m.w + personW / 2) * scale,
-    top: bottomY - (m.box.y * m.h + personH) * scale,
+    x: centerX - (m.box.x * m.w + personW / 2) * scale,
+    y: bottomY - (m.box.y * m.h + personH) * scale,
     scaleX: scale,
     scaleY: scale,
   };
