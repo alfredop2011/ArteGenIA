@@ -50,7 +50,7 @@ const ts = `// ═════════════════════�
 // CATÁLOGO DE MODELOS GENERADOS — 49 personas, generadas con Flux y
 // recortadas con BiRefNet. Viven en R2 bajo models/generated/.
 //
-// AUTOGENERADO por scripts/build-model-catalog (no editar a mano).
+// AUTOGENERADO por scripts/models/build-catalog.mjs — no editar a mano.
 //
 // El campo \`box\` es el bbox REAL del contenido no transparente, en fracción
 // 0..1 del lienzo. Es imprescindible: cada PNG tiene distinto padding, así que
@@ -140,21 +140,60 @@ export function placeModel(id: string, { height, centerX, bottomY }: PlaceOpts) 
   };
 }
 
+export type LineupOpts = {
+  /** Alto de las personas, igual para todas. */
+  height: number;
+  /** Y de los pies. */
+  y: number;
+  /** Margen izquierdo y derecho de la fila. */
+  from: number;
+  to: number;
+  /**
+   * Solape máximo permitido entre vecinos, en fracción del ancho de la persona
+   * (0 = sin solape, 0.25 = un cuarto). Si no caben ni con ese solape, se
+   * reduce la altura de todos por igual hasta que entren.
+   */
+  maxOverlap?: number;
+};
+
 /**
  * Reparte N modelos en una fila alineada — el patrón "grupo de 8" compuesto a
- * partir de recortes individuales.
+ * partir de recortes individuales, en vez de generar una foto de grupo.
+ *
+ * Reparte por el ANCHO REAL de cada persona, no por centros equidistantes: una
+ * bailarina con los brazos abiertos ocupa el triple que alguien de pie, así que
+ * repartir a pasos iguales la solapa con su vecina y la saca del lienzo.
+ *
+ * Si la fila no cabe, baja la altura de todos por igual — nunca deforma ni
+ * recorta a nadie, y nunca se sale de [from, to].
  *
  *   lineup(["a","b","c"], { height: 380, y: 900, from: 60, to: 1020 })
  */
-export function lineup(
-  ids: string[],
-  { height, y, from, to }: { height: number; y: number; from: number; to: number },
-) {
-  const step = (to - from) / ids.length;
-  return ids.map((id, i) => ({
-    id,
-    ...placeModel(id, { height, centerX: from + step * (i + 0.5), bottomY: y }),
-  }));
+export function lineup(ids: string[], { height, y, from, to, maxOverlap = 0.12 }: LineupOpts) {
+  const disponible = to - from;
+  const anchoDe = (id: string, h: number) => {
+    const m = genModel(id);
+    return m.w * m.box.w * (h / (m.h * m.box.h));
+  };
+
+  // ¿Cabe a la altura pedida, admitiendo el solape máximo? Si no, encogemos.
+  let h = height;
+  const totalA = (hh: number) => ids.reduce((s, id) => s + anchoDe(id, hh), 0);
+  const minTotal = (hh: number) =>
+    totalA(hh) * (1 - maxOverlap) + anchoDe(ids[ids.length - 1], hh) * maxOverlap;
+  if (minTotal(h) > disponible) h = height * (disponible / minTotal(height));
+
+  const anchos = ids.map((id) => anchoDe(id, h));
+  const total = anchos.reduce((s, w) => s + w, 0);
+  // hueco entre vecinos; negativo = solape (permitido y a menudo deseable)
+  const hueco = ids.length > 1 ? (disponible - total) / (ids.length - 1) : 0;
+
+  let cursor = from;
+  return ids.map((id, i) => {
+    const centerX = cursor + anchos[i] / 2;
+    cursor += anchos[i] + hueco;
+    return { id, ...placeModel(id, { height: h, centerX, bottomY: y }) };
+  });
 }
 `;
 

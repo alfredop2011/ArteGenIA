@@ -74,8 +74,8 @@ export const GEN_MODELS: GenModel[] = [
     box: { x: 0.113, y: 0.054, w: 0.634, h: 0.923 },
     src: "models/generated/dance/bail-cuerpo-camila.png", label: "Afrolatina 32 · salsa, tacones" },
   { id: "bail-cuerpo-luca", vertical: "dance", crop: "cuerpo", w: 896, h: 1344,
-    box: { x: 0.052, y: 0.018, w: 0.915, h: 0.958 },
-    src: "models/generated/dance/bail-cuerpo-luca.png", label: "Italiano 24 · línea extendida" },
+    box: { x: 0.336, y: 0.06, w: 0.388, h: 0.933 },
+    src: "models/generated/dance/bail-cuerpo-luca-v2.png", label: "Italiano 24 · línea extendida" },
   // ── dj (8) ──
   { id: "dj-cara-nina", vertical: "dj", crop: "cara", w: 1280, h: 1280,
     box: { x: 0.054, y: 0.027, w: 0.908, h: 0.973 },
@@ -282,7 +282,8 @@ export function lineup(ids: string[], { height, y, from, to, maxOverlap = 0.12 }
   // ¿Cabe a la altura pedida, admitiendo el solape máximo? Si no, encogemos.
   let h = height;
   const totalA = (hh: number) => ids.reduce((s, id) => s + anchoDe(id, hh), 0);
-  const minTotal = (hh: number) => totalA(hh) * (1 - maxOverlap) + anchoDe(ids[ids.length - 1], hh) * maxOverlap;
+  const minTotal = (hh: number) =>
+    totalA(hh) * (1 - maxOverlap) + anchoDe(ids[ids.length - 1], hh) * maxOverlap;
   if (minTotal(h) > disponible) h = height * (disponible / minTotal(height));
 
   const anchos = ids.map((id) => anchoDe(id, h));
