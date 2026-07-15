@@ -1,0 +1,330 @@
+[
+  {
+    "id": "bail-cara-alba",
+    "vertical": "cara",
+    "r2": "dance",
+    "key": "models/generated/dance/bail-cara-alba.png",
+    "url": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/generated/dance/bail-cara-alba.png",
+    "kb": 795
+  },
+  {
+    "id": "bail-cara-tobias",
+    "vertical": "cara",
+    "r2": "dance",
+    "key": "models/generated/dance/bail-cara-tobias.png",
+    "url": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/generated/dance/bail-cara-tobias.png",
+    "kb": 1011
+  },
+  {
+    "id": "bail-cara-yuki",
+    "vertical": "cara",
+    "r2": "dance",
+    "key": "models/generated/dance/bail-cara-yuki.png",
+    "url": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/generated/dance/bail-cara-yuki.png",
+    "kb": 1044
+  },
+  {
+    "id": "bail-cara-mateo",
+    "vertical": "cara",
+    "r2": "dance",
+    "key": "models/generated/dance/bail-cara-mateo.png",
+    "url": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/generated/dance/bail-cara-mateo.png",
+    "kb": 739
+  },
+  {
+    "id": "bail-medio-fatou",
+    "vertical": "medio",
+    "r2": "dance",
+    "key": "models/generated/dance/bail-medio-fatou.png",
+    "url": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/generated/dance/bail-medio-fatou.png",
+    "kb": 704
+  },
+  {
+    "id": "bail-medio-viktor",
+    "vertical": "medio",
+    "r2": "dance",
+    "key": "models/generated/dance/bail-medio-viktor.png",
+    "url": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/generated/dance/bail-medio-viktor.png",
+    "kb": 553
+  },
+  {
+    "id": "bail-medio-priya",
+    "vertical": "medio",
+    "r2": "dance",
+    "key": "models/generated/dance/bail-medio-priya.png",
+    "url": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/generated/dance/bail-medio-priya.png",
+    "kb": 660
+  },
+  {
+    "id": "bail-medio-hugo",
+    "vertical": "medio",
+    "r2": "dance",
+    "key": "models/generated/dance/bail-medio-hugo.png",
+    "url": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/generated/dance/bail-medio-hugo.png",
+    "kb": 478
+  },
+  {
+    "id": "bail-cuerpo-noa",
+    "vertical": "cuerpo",
+    "r2": "dance",
+    "key": "models/generated/dance/bail-cuerpo-noa.png",
+    "url": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/generated/dance/bail-cuerpo-noa.png",
+    "kb": 532
+  },
+  {
+    "id": "bail-cuerpo-daniel",
+    "vertical": "cuerpo",
+    "r2": "dance",
+    "key": "models/generated/dance/bail-cuerpo-daniel.png",
+    "url": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/generated/dance/bail-cuerpo-daniel.png",
+    "kb": 318
+  },
+  {
+    "id": "bail-cuerpo-camila",
+    "vertical": "cuerpo",
+    "r2": "dance",
+    "key": "models/generated/dance/bail-cuerpo-camila.png",
+    "url": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/generated/dance/bail-cuerpo-camila.png",
+    "kb": 462
+  },
+  {
+    "id": "bail-cuerpo-luca",
+    "vertical": "cuerpo",
+    "r2": "dance",
+    "key": "models/generated/dance/bail-cuerpo-luca.png",
+    "url": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/generated/dance/bail-cuerpo-luca.png",
+    "kb": 371
+  },
+  {
+    "id": "dj-cara-nina",
+    "vertical": "cara",
+    "r2": "dj",
+    "key": "models/generated/dj/dj-cara-nina.png",
+    "url": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/generated/dj/dj-cara-nina.png",
+    "kb": 1002
+  },
+  {
+    "id": "dj-cara-omar",
+    "vertical": "cara",
+    "r2": "dj",
+    "key": "models/generated/dj/dj-cara-omar.png",
+    "url": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/generated/dj/dj-cara-omar.png",
+    "kb": 823
+  },
+  {
+    "id": "dj-cara-keiko",
+    "vertical": "cara",
+    "r2": "dj",
+    "key": "models/generated/dj/dj-cara-keiko.png",
+    "url": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/generated/dj/dj-cara-keiko.png",
+    "kb": 1105
+  },
+  {
+    "id": "dj-medio-marcus",
+    "vertical": "medio",
+    "r2": "dj",
+    "key": "models/generated/dj/dj-medio-marcus.png",
+    "url": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/generated/dj/dj-medio-marcus.png",
+    "kb": 493
+  },
+  {
+    "id": "dj-medio-elena",
+    "vertical": "medio",
+    "r2": "dj",
+    "key": "models/generated/dj/dj-medio-elena.png",
+    "url": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/generated/dj/dj-medio-elena.png",
+    "kb": 570
+  },
+  {
+    "id": "dj-medio-lars",
+    "vertical": "medio",
+    "r2": "dj",
+    "key": "models/generated/dj/dj-medio-lars.png",
+    "url": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/generated/dj/dj-medio-lars.png",
+    "kb": 468
+  },
+  {
+    "id": "dj-cuerpo-zara",
+    "vertical": "cuerpo",
+    "r2": "dj",
+    "key": "models/generated/dj/dj-cuerpo-zara.png",
+    "url": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/generated/dj/dj-cuerpo-zara.png",
+    "kb": 341
+  },
+  {
+    "id": "dj-cuerpo-tariq",
+    "vertical": "cuerpo",
+    "r2": "dj",
+    "key": "models/generated/dj/dj-cuerpo-tariq.png",
+    "url": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/generated/dj/dj-cuerpo-tariq.png",
+    "kb": 456
+  },
+  {
+    "id": "profe-medio-rosa",
+    "vertical": "medio",
+    "r2": "profes",
+    "key": "models/generated/profes/profe-medio-rosa.png",
+    "url": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/generated/profes/profe-medio-rosa.png",
+    "kb": 612
+  },
+  {
+    "id": "profe-medio-jean",
+    "vertical": "medio",
+    "r2": "profes",
+    "key": "models/generated/profes/profe-medio-jean.png",
+    "url": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/generated/profes/profe-medio-jean.png",
+    "kb": 500
+  },
+  {
+    "id": "profe-medio-inma",
+    "vertical": "medio",
+    "r2": "profes",
+    "key": "models/generated/profes/profe-medio-inma.png",
+    "url": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/generated/profes/profe-medio-inma.png",
+    "kb": 556
+  },
+  {
+    "id": "profe-cuerpo-carlos",
+    "vertical": "cuerpo",
+    "r2": "profes",
+    "key": "models/generated/profes/profe-cuerpo-carlos.png",
+    "url": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/generated/profes/profe-cuerpo-carlos.png",
+    "kb": 377
+  },
+  {
+    "id": "profe-cuerpo-aisha",
+    "vertical": "cuerpo",
+    "r2": "profes",
+    "key": "models/generated/profes/profe-cuerpo-aisha.png",
+    "url": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/generated/profes/profe-cuerpo-aisha.png",
+    "kb": 280
+  },
+  {
+    "id": "profe-cuerpo-pablo",
+    "vertical": "cuerpo",
+    "r2": "profes",
+    "key": "models/generated/profes/profe-cuerpo-pablo.png",
+    "url": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/generated/profes/profe-cuerpo-pablo.png",
+    "kb": 373
+  },
+  {
+    "id": "cant-medio-lucia",
+    "vertical": "medio",
+    "r2": "cantantes",
+    "key": "models/generated/cantantes/cant-medio-lucia.png",
+    "url": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/generated/cantantes/cant-medio-lucia.png",
+    "kb": 543
+  },
+  {
+    "id": "cant-medio-andre",
+    "vertical": "medio",
+    "r2": "cantantes",
+    "key": "models/generated/cantantes/cant-medio-andre.png",
+    "url": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/generated/cantantes/cant-medio-andre.png",
+    "kb": 687
+  },
+  {
+    "id": "cant-medio-siri",
+    "vertical": "medio",
+    "r2": "cantantes",
+    "key": "models/generated/cantantes/cant-medio-siri.png",
+    "url": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/generated/cantantes/cant-medio-siri.png",
+    "kb": 686
+  },
+  {
+    "id": "cant-cuerpo-rocio",
+    "vertical": "cuerpo",
+    "r2": "cantantes",
+    "key": "models/generated/cantantes/cant-cuerpo-rocio.png",
+    "url": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/generated/cantantes/cant-cuerpo-rocio.png",
+    "kb": 377
+  },
+  {
+    "id": "cant-cuerpo-kwame",
+    "vertical": "cuerpo",
+    "r2": "cantantes",
+    "key": "models/generated/cantantes/cant-cuerpo-kwame.png",
+    "url": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/generated/cantantes/cant-cuerpo-kwame.png",
+    "kb": 371
+  },
+  {
+    "id": "cant-cuerpo-mina",
+    "vertical": "cuerpo",
+    "r2": "cantantes",
+    "key": "models/generated/cantantes/cant-cuerpo-mina.png",
+    "url": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/generated/cantantes/cant-cuerpo-mina.png",
+    "kb": 379
+  },
+  {
+    "id": "musico-medio-gabriel",
+    "vertical": "medio",
+    "r2": "musicos",
+    "key": "models/generated/musicos/musico-medio-gabriel.png",
+    "url": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/generated/musicos/musico-medio-gabriel.png",
+    "kb": 1079
+  },
+  {
+    "id": "musico-medio-sofia",
+    "vertical": "medio",
+    "r2": "musicos",
+    "key": "models/generated/musicos/musico-medio-sofia.png",
+    "url": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/generated/musicos/musico-medio-sofia.png",
+    "kb": 493
+  },
+  {
+    "id": "musico-cuerpo-teo",
+    "vertical": "cuerpo",
+    "r2": "musicos",
+    "key": "models/generated/musicos/musico-cuerpo-teo.png",
+    "url": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/generated/musicos/musico-cuerpo-teo.png",
+    "kb": 328
+  },
+  {
+    "id": "pareja-baile-salsa",
+    "vertical": "pareja",
+    "r2": "parejas",
+    "key": "models/generated/parejas/pareja-baile-salsa.png",
+    "url": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/generated/parejas/pareja-baile-salsa.png",
+    "kb": 354
+  },
+  {
+    "id": "pareja-baile-bachata",
+    "vertical": "pareja",
+    "r2": "parejas",
+    "key": "models/generated/parejas/pareja-baile-bachata.png",
+    "url": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/generated/parejas/pareja-baile-bachata.png",
+    "kb": 842
+  },
+  {
+    "id": "pareja-baile-urbano",
+    "vertical": "pareja",
+    "r2": "parejas",
+    "key": "models/generated/parejas/pareja-baile-urbano.png",
+    "url": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/generated/parejas/pareja-baile-urbano.png",
+    "kb": 640
+  },
+  {
+    "id": "pareja-musica-acustica",
+    "vertical": "pareja",
+    "r2": "parejas",
+    "key": "models/generated/parejas/pareja-musica-acustica.png",
+    "url": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/generated/parejas/pareja-musica-acustica.png",
+    "kb": 487
+  },
+  {
+    "id": "pareja-musica-electrica",
+    "vertical": "pareja",
+    "r2": "parejas",
+    "key": "models/generated/parejas/pareja-musica-electrica.png",
+    "url": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/generated/parejas/pareja-musica-electrica.png",
+    "kb": 599
+  },
+  {
+    "id": "pareja-musica-latina",
+    "vertical": "pareja",
+    "r2": "parejas",
+    "key": "models/generated/parejas/pareja-musica-latina.png",
+    "url": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/generated/parejas/pareja-musica-latina.png",
+    "kb": 945
+  }
+]

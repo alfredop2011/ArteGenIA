@@ -1,0 +1,66 @@
+[
+  {
+    "id": "sofia-morales",
+    "vertical": "cara",
+    "r2": "retratos",
+    "key": "models/generated/retratos/sofia-morales.png",
+    "url": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/generated/retratos/sofia-morales.png",
+    "kb": 917
+  },
+  {
+    "id": "erik-lindqvist",
+    "vertical": "cara",
+    "r2": "retratos",
+    "key": "models/generated/retratos/erik-lindqvist.png",
+    "url": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/generated/retratos/erik-lindqvist.png",
+    "kb": 779
+  },
+  {
+    "id": "mei-tanaka",
+    "vertical": "cara",
+    "r2": "retratos",
+    "key": "models/generated/retratos/mei-tanaka.png",
+    "url": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/generated/retratos/mei-tanaka.png",
+    "kb": 917
+  },
+  {
+    "id": "roberto-salas",
+    "vertical": "cara",
+    "r2": "retratos",
+    "key": "models/generated/retratos/roberto-salas.png",
+    "url": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/generated/retratos/roberto-salas.png",
+    "kb": 812
+  },
+  {
+    "id": "hanna-kovacs",
+    "vertical": "cara",
+    "r2": "retratos",
+    "key": "models/generated/retratos/hanna-kovacs.png",
+    "url": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/generated/retratos/hanna-kovacs.png",
+    "kb": 1287
+  },
+  {
+    "id": "karim-haddad",
+    "vertical": "cara",
+    "r2": "retratos",
+    "key": "models/generated/retratos/karim-haddad.png",
+    "url": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/generated/retratos/karim-haddad.png",
+    "kb": 669
+  },
+  {
+    "id": "yolanda-cruz",
+    "vertical": "cara",
+    "r2": "retratos",
+    "key": "models/generated/retratos/yolanda-cruz.png",
+    "url": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/generated/retratos/yolanda-cruz.png",
+    "kb": 1177
+  },
+  {
+    "id": "kenji-park",
+    "vertical": "cara",
+    "r2": "retratos",
+    "key": "models/generated/retratos/kenji-park.png",
+    "url": "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/generated/retratos/kenji-park.png",
+    "kb": 786
+  }
+]

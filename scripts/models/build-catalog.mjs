@@ -1,0 +1,162 @@
+// Mide el bbox real del contenido de los 49 modelos y genera data/generatedModels.ts
+//
+// Por qué medir: cada PNG tiene una cantidad distinta de padding transparente.
+// Sin el bbox real, colocar 8 personas "a la misma altura" es imposible —
+// escalar por el alto del LIENZO no alinea a las PERSONAS.
+import sharp from "/Users/developdanger/PhpstormProjects/artegenia/node_modules/sharp/lib/index.js";
+import { readFileSync, writeFileSync, existsSync } from "node:fs";
+import { resolve } from "node:path";
+
+const bbox = async (file) => {
+  const img = sharp(resolve(file));
+  const { width: W, height: H } = await img.metadata();
+  const { data, info } = await img.raw().toBuffer({ resolveWithObject: true });
+  const ch = info.channels;
+  let minX = W, minY = H, maxX = -1, maxY = -1;
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      if (data[(y * W + x) * ch + (ch - 1)] > 16) {
+        if (x < minX) minX = x; if (x > maxX) maxX = x;
+        if (y < minY) minY = y; if (y > maxY) maxY = y;
+      }
+    }
+  }
+  const r = (v) => Math.round(v * 1000) / 1000;
+  return { W, H, box: { x: r(minX / W), y: r(minY / H), w: r((maxX - minX) / W), h: r((maxY - minY) / H) } };
+};
+
+const LABEL = JSON.parse(readFileSync(resolve("labels.json"), "utf8"));
+const subidas = [
+  ...JSON.parse(readFileSync(resolve("subidas.json"), "utf8")).map((s) => ({ ...s, dir: "lote" })),
+  ...JSON.parse(readFileSync(resolve("subidas-piloto.json"), "utf8")).map((s) => ({ ...s, dir: "out2" })),
+];
+
+const rows = [];
+for (const s of subidas) {
+  const f = resolve(s.dir, `${s.id}.png`);
+  if (!existsSync(f)) { console.log(`✗ ${s.id}`); continue; }
+  const { W, H, box } = await bbox(f);
+  rows.push({ id: s.id, key: s.key, vertical: s.r2, crop: s.vertical, W, H, box, label: LABEL[s.id] ?? s.id });
+  console.log(`${s.id.padEnd(26)} ${String(W).padStart(4)}x${String(H).padEnd(4)} box ${JSON.stringify(box)}`);
+}
+
+const byV = (v) => rows.filter((r) => r.vertical === v);
+const fmt = (r) =>
+  `  { id: "${r.id}", vertical: "${r.vertical}", crop: "${r.crop}", w: ${r.W}, h: ${r.H},\n` +
+  `    box: { x: ${r.box.x}, y: ${r.box.y}, w: ${r.box.w}, h: ${r.box.h} },\n` +
+  `    src: "${r.key}", label: "${r.label}" },`;
+
+const ts = `// ═══════════════════════════════════════════════════════════════════
+// CATÁLOGO DE MODELOS GENERADOS — 49 personas, generadas con Flux y
+// recortadas con BiRefNet. Viven en R2 bajo models/generated/.
+//
+// AUTOGENERADO por scripts/build-model-catalog (no editar a mano).
+//
+// El campo \`box\` es el bbox REAL del contenido no transparente, en fracción
+// 0..1 del lienzo. Es imprescindible: cada PNG tiene distinto padding, así que
+// escalar por el alto del lienzo NO alinea a las personas entre sí. Con \`box\`,
+// placeModel() puede colocar N personas a la misma altura real — que es lo que
+// permite componer un "grupo de 8" a partir de 8 recortes individuales en vez
+// de generar una foto de grupo (Flux no sabe hacer grupos: ignora el número de
+// personas y rompe manos e instrumentos).
+// ═══════════════════════════════════════════════════════════════════
+
+export type ModelVertical = "dance" | "dj" | "profes" | "cantantes" | "musicos" | "parejas" | "retratos";
+
+/** Encuadre de la foto original. Determina qué papel puede jugar en el flyer. */
+export type ModelCrop =
+  | "cara"    // busto cerrado — la cara llena el cuadro
+  | "medio"   // medio cuerpo, cortado a la cadera
+  | "cuerpo"  // cuerpo entero, de la cabeza a los pies
+  | "pareja"; // dos personas, cuerpo entero
+
+export type GenModel = {
+  id: string;
+  vertical: ModelVertical;
+  crop: ModelCrop;
+  /** Tamaño nativo del PNG. */
+  w: number;
+  h: number;
+  /** Bbox del contenido visible, en fracción 0..1 del lienzo. */
+  box: { x: number; y: number; w: number; h: number };
+  /** Ruta relativa dentro del bucket R2. */
+  src: string;
+  label: string;
+};
+
+const R2_BASE = "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/";
+
+export const GEN_MODELS: GenModel[] = [
+${["dance", "dj", "profes", "cantantes", "musicos", "parejas", "retratos"]
+  .map((v) => `  // ── ${v} (${byV(v).length}) ──\n${byV(v).map(fmt).join("\n")}`)
+  .join("\n")}
+];
+
+const BY_ID = new Map(GEN_MODELS.map((m) => [m.id, m]));
+
+export function genModel(id: string): GenModel {
+  const m = BY_ID.get(id);
+  if (!m) throw new Error(\`genModel(): "\${id}" no existe en GEN_MODELS\`);
+  return m;
+}
+
+/** Todos los modelos de un vertical, opcionalmente filtrados por encuadre. */
+export function modelsBy(vertical: ModelVertical, crop?: ModelCrop): GenModel[] {
+  return GEN_MODELS.filter((m) => m.vertical === vertical && (!crop || m.crop === crop));
+}
+
+export type PlaceOpts = {
+  /** Alto deseado de la PERSONA en px de lienzo (no del PNG). */
+  height: number;
+  /** X del centro de la persona en el lienzo. */
+  centerX: number;
+  /** Y donde deben quedar los pies / el borde inferior de la persona. */
+  bottomY: number;
+};
+
+/**
+ * Devuelve los campos de un layer type:"image" para que la PERSONA quede con la
+ * altura pedida, centrada en centerX y con su base en bottomY.
+ *
+ * Compensa el padding transparente usando \`box\`, así que N modelos distintos
+ * colocados con el mismo \`height\` salen todos a la misma altura real. Eso es lo
+ * que hace posible una fila de 8 artistas alineados.
+ *
+ *   { id: "dj1", type: "image", ...placeModel("dj-cara-nina", { height: 420, centerX: 200, bottomY: 900 }) }
+ */
+export function placeModel(id: string, { height, centerX, bottomY }: PlaceOpts) {
+  const m = genModel(id);
+  // alto real de la persona en px del PNG
+  const personH = m.h * m.box.h;
+  const scale = height / personH;
+  // originX/originY = "left"/"top": hay que descontar dónde empieza el contenido
+  const personW = m.w * m.box.w;
+  return {
+    src: \`\${R2_BASE}\${m.src}\`,
+    left: centerX - (m.box.x * m.w + personW / 2) * scale,
+    top: bottomY - (m.box.y * m.h + personH) * scale,
+    scaleX: scale,
+    scaleY: scale,
+  };
+}
+
+/**
+ * Reparte N modelos en una fila alineada — el patrón "grupo de 8" compuesto a
+ * partir de recortes individuales.
+ *
+ *   lineup(["a","b","c"], { height: 380, y: 900, from: 60, to: 1020 })
+ */
+export function lineup(
+  ids: string[],
+  { height, y, from, to }: { height: number; y: number; from: number; to: number },
+) {
+  const step = (to - from) / ids.length;
+  return ids.map((id, i) => ({
+    id,
+    ...placeModel(id, { height, centerX: from + step * (i + 0.5), bottomY: y }),
+  }));
+}
+`;
+
+writeFileSync(resolve("/Users/developdanger/PhpstormProjects/artegenia/data/generatedModels.ts"), ts);
+console.log(`\n${rows.length} modelos → data/generatedModels.ts`);
