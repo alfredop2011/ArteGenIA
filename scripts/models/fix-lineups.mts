@@ -7,9 +7,9 @@
 // copiar la escala tal cual haría gigantes.
 import sharp from "sharp";
 import { readFileSync, writeFileSync } from "node:fs";
-import { placeModel, genModel } from "./data/generatedModels";
+import { placeModel, genModel } from "../../data/generatedModels";
 
-const TPL = "data/templates.ts";
+const TPL = new URL("../../data/templates.ts", import.meta.url).pathname;
 const R2 = "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/";
 
 // Caras únicas por hueco. Respeta el género que sugiere cada nombre inventado.

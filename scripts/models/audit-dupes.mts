@@ -1,6 +1,6 @@
 // ¿Qué plantillas repiten la MISMA foto de persona dentro del mismo flyer?
 // Eso no es "los modelos se parecen": es el mismo tío dos veces, y se ve.
-import { templates } from "./data/templates";
+import { templates } from "../../data/templates";
 
 const esPersona = (src: string) => /\/models\//.test(src) || /Filosofin/.test(src);
 const nombre = (src: string) => decodeURIComponent(src.split("/").pop() ?? src);

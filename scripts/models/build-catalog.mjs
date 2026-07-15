@@ -171,6 +171,12 @@ export type LineupOpts = {
  * Si la fila no cabe, baja la altura de todos por igual — nunca deforma ni
  * recorta a nadie, y nunca se sale de [from, to].
  *
+ * LIMITACIÓN conocida: centra por el bbox, y en poses asimétricas (un brazo
+ * extendido, una falda volando) el centro del bbox NO es el centro del cuerpo,
+ * así que el torso queda descentrado en su hueco y el reparto se ve irregular.
+ * Se nota en la #82. Para filas limpias, tira de poses compactas y simétricas
+ * (de pie, brazos cruzados) y deja las dinámicas para protagonista suelto.
+ *
  *   lineup(["a","b","c"], { height: 380, y: 900, from: 60, to: 1020 })
  */
 export function lineup(ids: string[], { height, y, from, to, maxOverlap = 0.12 }: LineupOpts) {
