@@ -13,16 +13,25 @@ const bbox = async (file) => {
   const { data, info } = await img.raw().toBuffer({ resolveWithObject: true });
   const ch = info.channels;
   let minX = W, minY = H, maxX = -1, maxY = -1;
+  // Centro de masa horizontal: el bbox se lo lleva un brazo extendido, pero el
+  // centroide sigue al torso, que es donde el ojo ve "a la persona".
+  let sumaX = 0, pesos = 0;
   for (let y = 0; y < H; y++) {
     for (let x = 0; x < W; x++) {
-      if (data[(y * W + x) * ch + (ch - 1)] > 16) {
+      const a = data[(y * W + x) * ch + (ch - 1)];
+      if (a > 16) {
         if (x < minX) minX = x; if (x > maxX) maxX = x;
         if (y < minY) minY = y; if (y > maxY) maxY = y;
+        sumaX += x * a; pesos += a;
       }
     }
   }
   const r = (v) => Math.round(v * 1000) / 1000;
-  return { W, H, box: { x: r(minX / W), y: r(minY / H), w: r((maxX - minX) / W), h: r((maxY - minY) / H) } };
+  return {
+    W, H,
+    box: { x: r(minX / W), y: r(minY / H), w: r((maxX - minX) / W), h: r((maxY - minY) / H) },
+    cx: r(pesos ? sumaX / pesos / W : 0.5),
+  };
 };
 
 const LABEL = JSON.parse(readFileSync(resolve("labels.json"), "utf8"));
@@ -35,15 +44,15 @@ const rows = [];
 for (const s of subidas) {
   const f = resolve(s.dir, `${s.id}.png`);
   if (!existsSync(f)) { console.log(`✗ ${s.id}`); continue; }
-  const { W, H, box } = await bbox(f);
-  rows.push({ id: s.id, key: s.key, vertical: s.r2, crop: s.vertical, W, H, box, label: LABEL[s.id] ?? s.id });
+  const { W, H, box, cx } = await bbox(f);
+  rows.push({ id: s.id, key: s.key, vertical: s.r2, crop: s.vertical, W, H, box, cx, label: LABEL[s.id] ?? s.id });
   console.log(`${s.id.padEnd(26)} ${String(W).padStart(4)}x${String(H).padEnd(4)} box ${JSON.stringify(box)}`);
 }
 
 const byV = (v) => rows.filter((r) => r.vertical === v);
 const fmt = (r) =>
   `  { id: "${r.id}", vertical: "${r.vertical}", crop: "${r.crop}", w: ${r.W}, h: ${r.H},\n` +
-  `    box: { x: ${r.box.x}, y: ${r.box.y}, w: ${r.box.w}, h: ${r.box.h} },\n` +
+  `    box: { x: ${r.box.x}, y: ${r.box.y}, w: ${r.box.w}, h: ${r.box.h} }, cx: ${r.cx},\n` +
   `    src: "${r.key}", label: "${r.label}" },`;
 
 const ts = `// ═══════════════════════════════════════════════════════════════════
@@ -79,6 +88,12 @@ export type GenModel = {
   h: number;
   /** Bbox del contenido visible, en fracción 0..1 del lienzo. */
   box: { x: number; y: number; w: number; h: number };
+  /**
+   * Centro de masa horizontal (0..1). Difiere del centro del bbox en poses
+   * asimétricas: un brazo extendido ensancha el bbox pero apenas mueve el
+   * centroide, que sigue al torso — que es lo que el ojo lee como "la persona".
+   */
+  cx: number;
   /** Ruta relativa dentro del bucket R2. */
   src: string;
   label: string;
@@ -171,11 +186,9 @@ export type LineupOpts = {
  * Si la fila no cabe, baja la altura de todos por igual — nunca deforma ni
  * recorta a nadie, y nunca se sale de [from, to].
  *
- * LIMITACIÓN conocida: centra por el bbox, y en poses asimétricas (un brazo
- * extendido, una falda volando) el centro del bbox NO es el centro del cuerpo,
- * así que el torso queda descentrado en su hueco y el reparto se ve irregular.
- * Se nota en la #82. Para filas limpias, tira de poses compactas y simétricas
- * (de pie, brazos cruzados) y deja las dinámicas para protagonista suelto.
+ * Ancla cada persona por su CENTRO DE MASA, no por el centro de su bbox: con
+ * un brazo extendido el bbox se descuadra y el torso quedaba descentrado en su
+ * hueco, dejando huecos muertos en la fila.
  *
  *   lineup(["a","b","c"], { height: 380, y: 900, from: 60, to: 1020 })
  */
@@ -200,9 +213,14 @@ export function lineup(ids: string[], { height, y, from, to, maxOverlap = 0.12 }
 
   let cursor = from;
   return ids.map((id, i) => {
-    const centerX = cursor + anchos[i] / 2;
+    const m = genModel(id);
+    const medio = cursor + anchos[i] / 2;
     cursor += anchos[i] + hueco;
-    return { id, ...placeModel(id, { height: h, centerX, bottomY: y }) };
+    // placeModel centra el BBOX; aquí queremos el TORSO en medio del hueco, así
+    // que compensamos la diferencia entre centro de bbox y centro de masa.
+    const escala = h / (m.h * m.box.h);
+    const ajuste = (m.box.x + m.box.w / 2 - m.cx) * m.w * escala;
+    return { id, ...placeModel(id, { height: h, centerX: medio + ajuste, bottomY: y }) };
   });
 }
 `;
