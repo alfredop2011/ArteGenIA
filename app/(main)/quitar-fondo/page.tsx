@@ -765,40 +765,43 @@ export default function QuitarFondoPage() {
           </div>
 
           {/* ─── CTA FINAL ──────────────────────────────────────────────── */}
-          <div className="mt-10 md:mt-20 mb-8 relative overflow-hidden rounded-3xl bg-gradient-to-br from-purple-900/40 via-purple-950/30 to-[#0a0a14] border border-purple-500/40 p-8 md:p-10">
+          {/* En movil esto era una torre: cohete de 128px, titulo, subtitulo,
+              boton y bullets, cada uno en su fila (~450px). Ahora el cohete va
+              AL LADO del texto y los bullets en linea; el bloque baja a ~200px
+              sin tocar el diseño de escritorio. */}
+          <div className="mt-10 md:mt-20 mb-8 relative overflow-hidden rounded-3xl bg-gradient-to-br from-purple-900/40 via-purple-950/30 to-[#0a0a14] border border-purple-500/40 p-5 md:p-10">
             {/* Glow decorativo */}
             <div className="absolute -bottom-20 -right-20 w-80 h-80 rounded-full bg-purple-600/30 blur-[100px] pointer-events-none" />
             <div className="absolute -top-20 -left-20 w-60 h-60 rounded-full bg-pink-500/20 blur-[80px] pointer-events-none" />
 
-            <div className="relative grid md:grid-cols-[200px_1fr_auto] gap-6 items-center">
-              {/* Cohete ilustración */}
-              <div className="flex items-center justify-center">
-                <div className="w-32 h-32 rounded-full bg-gradient-to-br from-purple-500/30 to-pink-500/20 flex items-center justify-center text-[64px]">
+            <div className="relative grid md:grid-cols-[200px_1fr_auto] gap-3 md:gap-6 items-center">
+              {/* Cohete + copy: en fila en movil, columnas separadas en md */}
+              <div className="flex md:contents items-center gap-3">
+                <div className="w-14 h-14 md:w-32 md:h-32 shrink-0 md:mx-auto rounded-full bg-gradient-to-br from-purple-500/30 to-pink-500/20 flex items-center justify-center text-[28px] md:text-[64px]">
                   🚀
                 </div>
-              </div>
 
-              {/* Copy */}
-              <div className="text-center md:text-left">
-                <h3 className="text-[22px] md:text-[28px] font-black mb-2">¿Listo para crear sin límites?</h3>
-                <p className="text-[13px] text-gray-300 mb-4">
-                  Sube tu imagen ahora y obtén tu PNG transparente en 5 segundos.
-                </p>
+                <div className="text-left">
+                  <h3 className="text-[17px] md:text-[28px] font-black leading-tight mb-0.5 md:mb-2">¿Listo para crear sin límites?</h3>
+                  <p className="text-[12px] md:text-[13px] text-gray-300 md:mb-4">
+                    Tu PNG transparente en 5 segundos.
+                  </p>
+                </div>
               </div>
 
               {/* CTA + bullets */}
               <div className="text-center md:text-right">
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl bg-gradient-to-r from-purple-500 via-pink-500 to-amber-500 text-white font-bold text-[14px] shadow-xl shadow-purple-500/40 hover:opacity-90 transition-opacity"
+                  className="inline-flex items-center gap-2 px-5 py-3 md:px-6 md:py-3.5 rounded-xl bg-gradient-to-r from-purple-500 via-pink-500 to-amber-500 text-white font-bold text-[14px] shadow-xl shadow-purple-500/40 hover:opacity-90 transition-opacity"
                 >
                   <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
                   </svg>
                   Subir mi imagen ahora
                 </button>
-                <p className="text-[10.5px] text-gray-400 mt-3">
-                  Gratis para empezar · Sin tarjeta · Resultados al instante
+                <p className="text-[10.5px] text-gray-400 mt-2 md:mt-3">
+                  Gratis · Sin tarjeta · Al instante
                 </p>
               </div>
             </div>
