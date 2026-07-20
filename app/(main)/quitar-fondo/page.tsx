@@ -686,13 +686,15 @@ export default function QuitarFondoPage() {
           {/* PERFECTO PARA CREAR */}
           <div className="text-center">
             <h3 className="text-[20px] md:text-[24px] font-black mb-4 md:mb-7">Perfecto para crear</h3>
-            <div className="flex flex-wrap justify-center gap-2 md:gap-3">
-              <UseCaseChip iconPath="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6 M16 13H8 M16 17H8 M10 9H8" text="Flyers de eventos"/>
-              <UseCaseChip iconPath="M9 22a1 1 0 1 0 0-2 1 1 0 0 0 0 2zM20 22a1 1 0 1 0 0-2 1 1 0 0 0 0 2z M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" text="Fotos de producto"/>
-              <UseCaseChip iconPath="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" text="Posts y stories"/>
-              <UseCaseChip iconPath="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z" text="Logos y marcas"/>
-              <UseCaseChip iconPath="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2zM22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" text="Catálogos"/>
-              <UseCaseChip iconPath="M2 3h20v14H2z M8 21h8 M12 17v4" text="Presentaciones"/>
+            {/* Movil: rejilla de 3 columnas (2 filas). Sueltos con flex-wrap
+                quedaban 3 filas irregulares de 2 chips centrados. */}
+            <div className="grid grid-cols-3 md:flex md:flex-wrap md:justify-center gap-2 md:gap-3">
+              <UseCaseChip iconPath="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6 M16 13H8 M16 17H8 M10 9H8" text="Flyers de eventos" short="Flyers"/>
+              <UseCaseChip iconPath="M9 22a1 1 0 1 0 0-2 1 1 0 0 0 0 2zM20 22a1 1 0 1 0 0-2 1 1 0 0 0 0 2z M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" text="Fotos de producto" short="Producto"/>
+              <UseCaseChip iconPath="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" text="Posts y stories" short="Stories"/>
+              <UseCaseChip iconPath="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z" text="Logos y marcas" short="Logos"/>
+              <UseCaseChip iconPath="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2zM22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" text="Catálogos" short="Catálogos"/>
+              <UseCaseChip iconPath="M2 3h20v14H2z M8 21h8 M12 17v4" text="Presentaciones" short="Slides"/>
             </div>
           </div>
 
@@ -764,7 +766,10 @@ export default function QuitarFondoPage() {
             <div className="text-center mb-10">
               <h3 className="text-[20px] md:text-[26px] font-black">Miles de creadores ya confían en ArteGenIA</h3>
             </div>
-            <div className="grid md:grid-cols-2 lg:grid-cols-6 gap-3">
+            {/* Movil: carrusel horizontal con snap. Apilados, los 3 testimonios
+                sumaban 441px de scroll para tres frases; en fila ocupan 139px y
+                se pasan con el dedo. Escritorio conserva la rejilla de 6. */}
+            <div className="flex md:grid overflow-x-auto snap-x snap-mandatory md:overflow-visible md:grid-cols-2 lg:grid-cols-6 gap-3 -mx-5 px-5 md:mx-0 md:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {/* 3 testimonios — placeholders, reemplazar con reales */}
               <Testimonial
                 lgCols="lg:col-span-2"
@@ -787,7 +792,10 @@ export default function QuitarFondoPage() {
                 role="Diseñador gráfico"
                 gradient="from-emerald-500 to-teal-600"
               />
-              {/* 3 stats */}
+            </div>
+            {/* Las 3 cifras SIEMPRE en fila: apiladas gastaban 300px de alto
+                para tres numeros de dos caracteres. */}
+            <div className="grid grid-cols-3 gap-2 md:gap-3 mt-3">
               <Stat number="50k+" label="Imágenes procesadas"/>
               <Stat number="98%" label="Satisfacción de usuarios"/>
               <Stat number="5s" label="Tiempo promedio"/>
@@ -1139,18 +1147,21 @@ function Step({ num, iconPath, title, desc }: { num: number; iconPath: string; t
   );
 }
 
-/** Chip con icono SVG + label, usado en "Perfecto para crear". */
-function UseCaseChip({ iconPath, text }: { iconPath: string; text: string }) {
+/** Chip con icono SVG + label, usado en "Perfecto para crear".
+ *  `short` es la etiqueta de movil: en una rejilla de 3 columnas (~106px) los
+ *  textos largos se partian en tres lineas y dejaban la fila desalineada. */
+function UseCaseChip({ iconPath, text, short }: { iconPath: string; text: string; short: string }) {
   return (
-    // En movil cada chip ocupaba una fila entera (6 filas de alto). Con menos
-    // padding, icono mas pequeno y texto de 11px entran dos por fila.
-    <div className="inline-flex items-center gap-1.5 md:gap-2 px-2.5 py-1.5 md:px-4 md:py-2.5 rounded-xl md:rounded-2xl bg-white/[0.03] border border-white/[0.08] hover:bg-white/[0.06] transition-colors">
+    // Movil: celda de rejilla (w-full) en 3 columnas, no chip suelto que
+    // envuelve. Escritorio: chip inline que fluye como antes.
+    <div className="w-full md:w-auto flex md:inline-flex items-center justify-center gap-1.5 md:gap-2 px-2 py-2 md:px-4 md:py-2.5 rounded-xl md:rounded-2xl bg-white/[0.03] border border-white/[0.08] hover:bg-white/[0.06] transition-colors">
       <div className="w-5 h-5 md:w-6 md:h-6 rounded-md md:rounded-lg bg-purple-500/15 border border-purple-500/30 flex items-center justify-center text-purple-300 shrink-0">
         <svg className="w-3 h-3 md:w-3.5 md:h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d={iconPath}/>
         </svg>
       </div>
-      <span className="text-[11px] md:text-[12px] font-semibold text-gray-200">{text}</span>
+      <span className="md:hidden text-[10.5px] font-semibold text-gray-200 leading-tight">{short}</span>
+      <span className="hidden md:inline text-[12px] font-semibold text-gray-200">{text}</span>
     </div>
   );
 }
@@ -1277,7 +1288,9 @@ function Testimonial({
   quote: string; name: string; role: string; gradient: string; lgCols: string;
 }) {
   return (
-    <div className={`${lgCols} p-5 rounded-2xl bg-white/[0.025] border border-white/[0.06] flex gap-3`}>
+    // w-[78%] + snap-start: en movil se ve la card entera y asoma la siguiente,
+    // que es lo que le dice al usuario que puede deslizar.
+    <div className={`${lgCols} w-[78%] shrink-0 snap-start md:w-auto md:shrink p-4 md:p-5 rounded-2xl bg-white/[0.025] border border-white/[0.06] flex gap-3`}>
       {/* Avatar: círculo con gradiente + icono persona */}
       <div className={`shrink-0 w-12 h-12 rounded-full bg-gradient-to-br ${gradient} flex items-center justify-center text-white border-2 border-white/10`}>
         <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -1301,11 +1314,11 @@ function Testimonial({
 /** Stat card: número grande gradient + label. */
 function Stat({ number, label }: { number: string; label: string }) {
   return (
-    <div className="p-5 rounded-2xl bg-white/[0.025] border border-white/[0.06] text-center flex flex-col justify-center">
-      <p className="text-[32px] md:text-[36px] font-black bg-gradient-to-br from-purple-400 to-pink-400 bg-clip-text text-transparent leading-none mb-1">
+    <div className="p-3 md:p-5 rounded-2xl bg-white/[0.025] border border-white/[0.06] text-center flex flex-col justify-center">
+      <p className="text-[26px] md:text-[36px] font-black bg-gradient-to-br from-purple-400 to-pink-400 bg-clip-text text-transparent leading-none mb-1">
         {number}
       </p>
-      <p className="text-[10.5px] text-gray-400 leading-snug">{label}</p>
+      <p className="text-[10px] md:text-[10.5px] text-gray-400 leading-snug">{label}</p>
     </div>
   );
 }
