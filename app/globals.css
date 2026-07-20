@@ -450,3 +450,13 @@ select:focus-visible {
 }
 .animate-blob-delay-2 { animation-delay: -2s; }
 .animate-blob-delay-4 { animation-delay: -4s; }
+
+/* Oculta la barra de scroll en las tiras horizontales (filtros, formatos,
+   carruseles). Se usaba en 13 sitios pero nunca llego a definirse, asi que
+   en cualquier navegador con barras clasicas aparecia una linea gris bajo
+   cada tira. El contenido sigue siendo scrolleable con dedo/rueda. */
+.scrollbar-hide {
+  scrollbar-width: none;         /* Firefox */
+  -ms-overflow-style: none;      /* Edge antiguo */
+}
+.scrollbar-hide::-webkit-scrollbar { display: none; }  /* Safari / Chrome */

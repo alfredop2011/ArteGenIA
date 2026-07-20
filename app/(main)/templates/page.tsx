@@ -9,7 +9,7 @@ import {
   Sparkles, Crown, ChevronDown, ChevronRight,
   PartyPopper, Mic2, Star, Footprints, BriefcaseBusiness,
   Megaphone, Ticket, Rocket, GraduationCap,
-  Music, Maximize2, Upload, FolderOpen, Palette, Type,
+  Music, Maximize2, Upload, FolderOpen, Palette, Type, SlidersHorizontal,
   Home as HomeIcon, FileText, Users, History as HistoryIcon,
   type LucideIcon,
 } from "lucide-react";
@@ -498,7 +498,7 @@ export default function TemplatesPage() {
         <div className="min-w-0 space-y-4">
 
           {/* HERO: saludo + CTA */}
-          <section className="relative rounded-2xl overflow-hidden p-4 sm:p-5"
+          <section className="relative rounded-2xl overflow-hidden p-3 sm:p-5"
                    style={{
                      background: "linear-gradient(135deg, rgba(168,85,247,0.08), rgba(124,58,237,0.04))",
                      border: "1px solid var(--home-card-border)",
@@ -513,7 +513,9 @@ export default function TemplatesPage() {
                 <h1 className="text-xl sm:text-2xl font-black flex items-center gap-2">
                   {greeting} <span className="inline-block">👋</span>
                 </h1>
-                <p className="text-xs sm:text-sm mt-1" style={{ color: "var(--home-text-muted)" }}>
+                {/* En movil ocupaba dos lineas para repetir lo que ya dice el
+                    titulo de una pagina en la que el usuario YA esta. */}
+                <p className="hidden sm:block text-xs sm:text-sm mt-1" style={{ color: "var(--home-text-muted)" }}>
                   {t("templates.tagline")}
                 </p>
               </div>
@@ -526,7 +528,7 @@ export default function TemplatesPage() {
             </div>
 
             {/* BANNER PUBLICAR EN */}
-            <div className="relative mt-4 rounded-xl p-3"
+            <div className="relative mt-3 sm:mt-4 rounded-xl p-2 sm:p-3"
                  style={{ background: "var(--home-card-bg)", border: "1px solid var(--home-card-border)" }}>
               <div className="flex items-center gap-3">
                 <div className="hidden sm:block shrink-0 max-w-[140px]">
@@ -553,11 +555,15 @@ export default function TemplatesPage() {
             </div>
           </section>
 
-          {/* SECCION: ¿PARA QUÉ LO NECESITAS? */}
-          <section className="rounded-xl p-3"
+          {/* SECCION: ¿PARA QUÉ LO NECESITAS?
+              En movil el rotulo ocupaba una fila entera el solo (flex-wrap lo
+              empujaba encima de los chips) y el boton "Filtros" vivia en OTRA
+              fila mas abajo. Aqui el rotulo se oculta y "Filtros" entra en la
+              misma tira: una sola fila horizontal con todo el control. */}
+          <section className="rounded-xl p-2 sm:p-3"
                    style={{ background: "var(--home-bg-soft)", border: "1px solid var(--home-card-border)" }}>
-            <div className="flex items-center gap-3 flex-wrap">
-              <div className="shrink-0 min-w-0">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="hidden sm:block shrink-0 min-w-0">
                 <div className="text-[9px] font-black tracking-widest uppercase" style={{ color: "var(--home-text)" }}>
                   {t("templates.useCase.title")}
                 </div>
@@ -565,6 +571,18 @@ export default function TemplatesPage() {
                   {t("templates.useCase.sub")}
                 </div>
               </div>
+              {/* Filtros: primer elemento de la tira en movil, fijo (no scrollea
+                  con los chips) para que siempre este a mano. */}
+              <button onClick={() => setShowSidebarMobile(true)}
+                      className="lg:hidden shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold"
+                      style={{
+                        background: "var(--home-card-bg)",
+                        border: "1px solid var(--home-card-border)",
+                        color: "var(--home-text)",
+                      }}>
+                <SlidersHorizontal size={13} strokeWidth={2} />
+                {t("templates.sidebar.filters")}
+              </button>
               <div className="flex-1 min-w-0 flex items-center gap-1.5 overflow-x-auto scrollbar-hide pb-1">
                 {USE_CASES.map(uc => {
                   const Icon = uc.icon;
@@ -590,29 +608,22 @@ export default function TemplatesPage() {
             </div>
           </section>
 
-          {/* HEADER GRID: titulo + conteo + sort + view toggle */}
-          <div className="flex items-center justify-between gap-3 flex-wrap">
-            <div className="flex items-center gap-2">
-              {/* Boton Filtros mobile */}
-              <button onClick={() => setShowSidebarMobile(true)}
-                      className="lg:hidden flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold"
-                      style={{
-                        background: "var(--home-card-bg)",
-                        border: "1px solid var(--home-card-border)",
-                        color: "var(--home-text)",
-                      }}>
-                <LayoutGrid size={13} strokeWidth={2} />
-                {t("templates.sidebar.filters")}
-              </button>
-              <h2 className="text-base sm:text-lg font-black inline-flex items-center gap-2">
+          {/* HEADER GRID: titulo + conteo + sort + view toggle.
+              Sin flex-wrap: en movil "Filtros + titulo + conteo" no cabia con
+              el desplegable de orden y se partia en dos filas. El boton
+              Filtros se ha movido a la tira de arriba y el titulo se encoge,
+              asi que ahora entra todo en una linea. */}
+          <div className="flex items-center justify-between gap-2 sm:gap-3">
+            <div className="flex items-baseline gap-2 min-w-0">
+              <h2 className="text-sm sm:text-lg font-black inline-flex items-center gap-1.5 shrink-0">
                 {t("templates.grid.title")}
-                <Sparkles size={14} strokeWidth={2.4} className="text-amber-400" fill="currentColor" />
+                <Sparkles size={13} strokeWidth={2.4} className="text-amber-400" fill="currentColor" />
               </h2>
-              <span className="text-xs" style={{ color: "var(--home-text-soft)" }}>
+              <span className="text-[11px] sm:text-xs truncate" style={{ color: "var(--home-text-soft)" }}>
                 +{t("templates.grid.count").replace("{n}", String(totalCount))}
               </span>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 shrink-0">
               <span className="hidden sm:inline text-[11px]" style={{ color: "var(--home-text-soft)" }}>
                 {t("templates.grid.sort")}:
               </span>
