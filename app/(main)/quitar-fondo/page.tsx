@@ -503,28 +503,17 @@ export default function QuitarFondoPage() {
                 <FeatureChip icon="🖼️" text="PNG transparente"/>
               </div>
 
-              {/* MOVIL — antes/despues arriba del todo.
-                  La pagina contaba lo que hace pero no lo ENSEÑABA: el unico
-                  antes/despues estaba muy abajo, despues del dropzone. Aqui el
-                  visitante ve el resultado antes de que le pidamos su foto, que
-                  es lo que realmente vende esta herramienta. Arrastrable. */}
+              {/* Antes/despues arriba del todo, rotando entre los 3 ejemplos.
+                  La pagina contaba lo que hace pero no lo ENSEÑABA: los
+                  ejemplos vivian al final y casi nadie llegaba. Aqui el
+                  visitante ve el resultado antes de que le pidamos su foto,
+                  que es lo que realmente vende esta herramienta. */}
               {/* Estrecha y centrada a proposito: en movil TODOS los bloques
                   median lo mismo (335px de ancho util) y la pagina se veia en
                   ladrillos. Al dejarla a 250px hay ritmo — la tarjeta respira y
                   el dropzone ancho de debajo gana peso por contraste. */}
-              <div className="md:hidden mt-1 mx-auto w-[250px]">
-                <BeforeAfterCard
-                  compact
-                  category=""
-                  desc=""
-                  imgUrl="https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/06_isabela_alejandro_pareja.png"
-                  bgGradient="from-rose-500 via-pink-600 to-purple-700"
-                  accentColor="rose"
-                  iconPath="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2 M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"
-                />
-                <p className="mt-2 text-center text-[11px] text-gray-500">
-                  Arrastra el círculo ↔
-                </p>
+              <div className="mt-1 md:mt-6 mx-auto md:mx-0 w-[250px] md:w-[320px]">
+                <BeforeAfterRotator/>
               </div>
             </div>
 
@@ -698,39 +687,9 @@ export default function QuitarFondoPage() {
             </div>
           </div>
 
-          {/* ─── ANTES Y DESPUÉS — 3 ejemplos del nicho real ────────────── */}
-          <div className="mt-10 md:mt-20">
-            <div className="text-center mb-10">
-              <h3 className="text-[24px] md:text-[30px] font-black mb-2">Antes y después</h3>
-              <p className="text-[12.5px] text-gray-400">Resultados reales en segundos.</p>
-            </div>
-            <div className="grid md:grid-cols-3 gap-5">
-              <BeforeAfterCard
-                category="Pareja de baile"
-                desc="Salsa, bachata, tango, kizomba."
-                imgUrl="https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/06_isabela_alejandro_pareja.png"
-                bgGradient="from-rose-500 via-pink-600 to-purple-700"
-                accentColor="rose"
-                iconPath="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2 M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"
-              />
-              <BeforeAfterCard
-                category="Artistas / DJ"
-                desc="Fotos para flyers de conciertos."
-                imgUrl="https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dj/Dj-1.png"
-                bgGradient="from-amber-500 via-orange-600 to-red-700"
-                accentColor="amber"
-                iconPath="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z M19 10v2a7 7 0 0 1-14 0v-2 M12 19v4 M8 23h8"
-              />
-              <BeforeAfterCard
-                category="Solistas y artistas"
-                desc="Bailarines, cantantes, presentadores."
-                imgUrl="https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/03_nia_batista_perfil.png"
-                bgGradient="from-emerald-500 via-teal-600 to-blue-700"
-                accentColor="emerald"
-                iconPath="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2 M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"
-              />
-            </div>
-          </div>
+          {/* Los 3 ejemplos "Antes y despues" ya no van aqui: estaban a 1200px
+              de scroll y casi nadie llegaba a verlos. Ahora rotan en el hero
+              (BeforeAfterRotator), que es donde tienen que convencer. */}
 
           {/* ─── POR QUÉ ELEGIR ARTEGENIA — 4 features cards ────────────── */}
           <div className="mt-10 md:mt-20">
@@ -1174,6 +1133,112 @@ const CHECKERBOARD: React.CSSProperties = {
   backgroundPosition: "0 0, 0 8px, 8px -8px, -8px 0px",
   backgroundColor: "#1a1a24",
 };
+
+/** Los 3 ejemplos del nicho que se enseñan en el hero. */
+const EJEMPLOS_ANTES_DESPUES = [
+  {
+    category: "Pareja de baile",
+    desc: "Salsa, bachata, tango, kizomba.",
+    imgUrl: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/06_isabela_alejandro_pareja.png",
+    bgGradient: "from-rose-500 via-pink-600 to-purple-700",
+    accentColor: "rose",
+    iconPath: "M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2 M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z",
+  },
+  {
+    category: "Artistas / DJ",
+    desc: "Fotos para flyers de conciertos.",
+    imgUrl: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dj/Dj-1.png",
+    bgGradient: "from-amber-500 via-orange-600 to-red-700",
+    accentColor: "amber",
+    iconPath: "M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z M19 10v2a7 7 0 0 1-14 0v-2 M12 19v4 M8 23h8",
+  },
+  {
+    category: "Solistas y artistas",
+    desc: "Bailarines, cantantes, presentadores.",
+    imgUrl: "https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/03_nia_batista_perfil.png",
+    bgGradient: "from-emerald-500 via-teal-600 to-blue-700",
+    accentColor: "emerald",
+    iconPath: "M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2 M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z",
+  },
+] as const;
+
+/** Antes/después del hero: rota entre los 3 ejemplos cada 5 s.
+ *
+ *  Se para en cuanto el visitante toca la tarjeta o pulsa un punto, y ya no
+ *  vuelve a arrancar: quitarle de las manos el ejemplo que está arrastrando
+ *  es justo lo contrario de lo que buscamos. También respeta
+ *  prefers-reduced-motion (hay gente a la que el movimiento automático le
+ *  produce mareo). Los tres se montan superpuestos con opacidad para que el
+ *  cambio sea un fundido y no un salto. */
+function BeforeAfterRotator() {
+  const [activo, setActivo] = useState(0);
+  const [parado, setParado] = useState(false);
+
+  useEffect(() => {
+    if (parado) return;
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+    const t = setInterval(
+      () => setActivo((n) => (n + 1) % EJEMPLOS_ANTES_DESPUES.length),
+      5000,
+    );
+    return () => clearInterval(t);
+  }, [parado]);
+
+  const actual = EJEMPLOS_ANTES_DESPUES[activo];
+
+  return (
+    <div>
+      {/* onPointerDownCapture: para el carrusel ANTES de que el drag del
+          slider consuma el evento. */}
+      <div className="relative" onPointerDownCapture={() => setParado(true)}>
+        {EJEMPLOS_ANTES_DESPUES.map((e, n) => (
+          <div
+            key={e.category}
+            aria-hidden={n !== activo}
+            className={
+              n === activo
+                ? "transition-opacity duration-500 opacity-100"
+                : "transition-opacity duration-500 opacity-0 absolute inset-0 pointer-events-none"
+            }
+          >
+            {/* compact oculta el pie: category/desc se pintan una sola vez
+                debajo del carrusel, no dentro de cada tarjeta. */}
+            <BeforeAfterCard compact {...e}/>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-2 flex items-center justify-center gap-2">
+        {EJEMPLOS_ANTES_DESPUES.map((e, n) => (
+          <button
+            key={e.category}
+            type="button"
+            onClick={() => { setParado(true); setActivo(n); }}
+            aria-label={`Ver ejemplo: ${e.category}`}
+            aria-current={n === activo}
+            // Area tactil de 24px aunque el punto se vea de 6px.
+            className="p-2 -m-1 group"
+          >
+            <span
+              className={`block w-1.5 h-1.5 rounded-full transition-colors ${
+                n === activo ? "bg-purple-400" : "bg-white/25 group-hover:bg-white/50"
+              }`}
+            />
+          </button>
+        ))}
+      </div>
+
+      {/* min-h de dos lineas: "Solistas y artistas · Bailarines, cantantes,
+          presentadores." envuelve y las otras no, asi que sin reserva de alto
+          la pagina daba un salto cada 5 s. */}
+      <p className="text-center text-[11px] leading-tight min-h-[27px]">
+        <span className="font-bold text-gray-200">{actual.category}</span>
+        <span className="text-gray-500"> · {actual.desc}</span>
+      </p>
+      <p className="mt-1 text-center text-[11px] text-gray-500">Arrastra el círculo ↔</p>
+    </div>
+  );
+}
 
 /** Card "Antes y después" — foto REAL de nicho recortada (PNG transparente).
  *  La misma foto se muestra sobre un gradiente ("Antes", como si tuviera fondo)
