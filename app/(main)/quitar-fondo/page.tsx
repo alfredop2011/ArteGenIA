@@ -562,15 +562,20 @@ export default function QuitarFondoPage() {
                   }}
                 />
                 {/* Icono upload con gradiente purple→pink */}
-                {/* Icono e interlineado mas compactos en movil: el dropzone
-                    ocupaba 321px cuando la mitad era aire. */}
-                <div className="inline-flex w-14 h-14 md:w-20 md:h-20 mx-auto mb-3 md:mb-6 rounded-2xl md:rounded-3xl bg-gradient-to-br from-purple-500 to-pink-500 items-center justify-center shadow-lg shadow-purple-500/40">
-                  <svg className="w-7 h-7 md:w-9 md:h-9 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
-                  </svg>
+                {/* Movil: icono y texto EN FILA. Apilados y centrados el icono
+                    se comia ~70px de alto el solo. En escritorio sigue siendo
+                    la pila centrada de siempre. */}
+                <div className="flex md:block items-center justify-center gap-3 md:gap-0 mb-3 md:mb-0">
+                  <div className="inline-flex w-11 h-11 md:w-20 md:h-20 shrink-0 md:mx-auto md:mb-6 rounded-xl md:rounded-3xl bg-gradient-to-br from-purple-500 to-pink-500 items-center justify-center shadow-lg shadow-purple-500/40">
+                    <svg className="w-6 h-6 md:w-9 md:h-9 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+                    </svg>
+                  </div>
+                  <div className="text-left md:text-center">
+                    <p className="text-[15px] md:text-[18px] font-bold mb-0 md:mb-1">Arrastra tu foto aquí</p>
+                    <p className="text-[11px] md:text-[12px] text-gray-400 md:mb-5">o pulsa para elegir un archivo</p>
+                  </div>
                 </div>
-                <p className="text-[16px] md:text-[18px] font-bold mb-0.5 md:mb-1">Arrastra tu foto aquí</p>
-                <p className="text-[11px] md:text-[12px] text-gray-400 mb-2.5 md:mb-5">o pulsa para elegir un archivo</p>
                 <span className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold text-[13px] shadow-lg shadow-purple-500/30">
                   <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
@@ -614,13 +619,13 @@ export default function QuitarFondoPage() {
           )}
 
           {/* CÓMO FUNCIONA + TESTIMONIAL (3 columnas, 2+1) */}
-          <div className="grid md:grid-cols-3 gap-5 mb-14">
-            <div className="md:col-span-2 p-5 md:p-7 rounded-3xl bg-white/[0.025] border border-white/[0.06]">
-              <h3 className="text-[14px] font-black mb-4 md:mb-6 border-b-2 border-purple-500/40 pb-2 inline-block">
+          <div className="grid md:grid-cols-3 gap-4 md:gap-5 mb-8 md:mb-14">
+            <div className="md:col-span-2 p-4 md:p-7 rounded-3xl bg-white/[0.025] border border-white/[0.06]">
+              <h3 className="text-[13px] md:text-[14px] font-black mb-3 md:mb-6 border-b-2 border-purple-500/40 pb-1.5 md:pb-2 inline-block">
                 Cómo funciona
               </h3>
-              {/* Movil: 1 columna (3 filas compactas). Escritorio: 3 columnas. */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-2 items-start relative">
+              {/* Siempre 3 columnas: en movil los pasos van sin descripcion. */}
+              <div className="grid grid-cols-3 gap-2 items-start relative">
                 <Step
                   num={1}
                   iconPath="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"
@@ -656,19 +661,24 @@ export default function QuitarFondoPage() {
             </div>
 
             {/* Testimonial */}
-            <div className="p-6 rounded-3xl bg-white/[0.025] border border-white/[0.06] flex flex-col">
-              <div className="text-purple-400/60 text-[36px] leading-none mb-2 font-serif">"</div>
-              <p className="text-[13px] text-gray-200 leading-relaxed mb-4 flex-1">
+            {/* Movil: la comilla decorativa, el bloque de estrellas y la firma en
+                tres lineas ocupaban ~280px para una sola frase. Aquí van en dos
+                lineas; escritorio conserva la tarjeta completa. */}
+            <div className="p-4 md:p-6 rounded-2xl md:rounded-3xl bg-white/[0.025] border border-white/[0.06] flex flex-col">
+              <div className="hidden md:block text-purple-400/60 text-[36px] leading-none mb-2 font-serif">"</div>
+              <p className="text-[12px] md:text-[13px] text-gray-200 leading-relaxed mb-1.5 md:mb-4 flex-1">
                 "Increíble! En segundos tengo imágenes listas para mis diseños."
               </p>
-              <div className="flex gap-0.5 mb-3">
-                {[1,2,3,4,5].map(i => (
-                  <span key={i} className="text-amber-400 text-[14px]">★</span>
-                ))}
-              </div>
-              <div>
-                <p className="text-[12px] font-bold">María G.</p>
-                <p className="text-[10.5px] text-gray-400">Diseñadora gráfica</p>
+              <div className="flex md:block items-center gap-2">
+                <div className="flex gap-0.5 md:mb-3">
+                  {[1,2,3,4,5].map(i => (
+                    <span key={i} className="text-amber-400 text-[12px] md:text-[14px]">★</span>
+                  ))}
+                </div>
+                <div className="flex md:block items-baseline gap-1.5 min-w-0">
+                  <p className="text-[11px] md:text-[12px] font-bold">María G.</p>
+                  <p className="text-[10.5px] text-gray-400 truncate">Diseñadora gráfica</p>
+                </div>
               </div>
             </div>
           </div>
@@ -1111,18 +1121,19 @@ function ExampleThumb({ gradient, emoji, imgUrl }: { gradient: string; emoji?: s
 /** Paso numerado del "Cómo funciona" — icono circular gradient + título + desc. */
 function Step({ num, iconPath, title, desc }: { num: number; iconPath: string; title: string; desc: string }) {
   return (
-    // Movil: fila horizontal (icono izquierda, texto derecha). En 3 columnas
-    // de ~90px los titulos y descripciones se partian en 3 lineas cada uno y
-    // el bloque se disparaba de alto. Escritorio mantiene la columna centrada.
-    <div className="flex md:block items-center gap-3 md:gap-0 text-left md:text-center px-0 md:px-2">
-      <div className="inline-flex w-10 h-10 md:w-14 md:h-14 md:mb-3 shrink-0 rounded-full bg-gradient-to-br from-purple-500/30 to-pink-500/20 border border-purple-500/30 items-center justify-center text-purple-300">
-        <svg className="w-5 h-5 md:w-6 md:h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    // Movil: los 3 pasos en UNA fila (columna estrecha centrada, sin descripcion).
+    // Apilados en 3 filas la seccion medía ~230px y empujaba todo fuera de
+    // pantalla; aquí caben en ~85px. La descripcion solo aparece en escritorio,
+    // donde hay ancho de sobra para leerla.
+    <div className="text-center px-0 md:px-2">
+      <div className="inline-flex w-9 h-9 md:w-14 md:h-14 mb-1.5 md:mb-3 shrink-0 rounded-full bg-gradient-to-br from-purple-500/30 to-pink-500/20 border border-purple-500/30 items-center justify-center text-purple-300">
+        <svg className="w-4.5 h-4.5 md:w-6 md:h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
           <path d={iconPath}/>
         </svg>
       </div>
       <div className="min-w-0">
-        <p className="text-[13px] md:text-[12.5px] font-bold mb-0.5 md:mb-1">{`${num}. ${title}`}</p>
-        <p className="text-[11px] md:text-[10.5px] text-gray-400 leading-snug">{desc}</p>
+        <p className="text-[11px] md:text-[12.5px] font-bold leading-tight md:mb-1">{`${num}. ${title}`}</p>
+        <p className="hidden md:block text-[10.5px] text-gray-400 leading-snug">{desc}</p>
       </div>
     </div>
   );
