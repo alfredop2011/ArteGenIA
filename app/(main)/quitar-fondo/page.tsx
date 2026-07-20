@@ -696,7 +696,10 @@ export default function QuitarFondoPage() {
             <div className="text-center mb-10">
               <h3 className="text-[24px] md:text-[30px] font-black">Por qué elegir ArteGenIA</h3>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {/* Mismo carrusel que los testimonios: en movil los 4 motivos en
+                rejilla 2x2 ocupaban ~330px. En fila deslizable ocupan la
+                altura de una card. Escritorio sigue en 4 columnas. */}
+            <div className="flex md:grid overflow-x-auto snap-x snap-mandatory md:overflow-visible md:grid-cols-4 gap-3 -mx-5 px-5 md:mx-0 md:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               <WhyCard
                 iconPath="M13 2L3 14h9l-1 8 10-12h-9z"
                 title="Ultrarrápido"
@@ -1337,8 +1340,10 @@ function BeforeAfterCard({
 /** Card de feature en "Por qué elegir ArteGenIA". */
 function WhyCard({ iconPath, title, desc }: { iconPath: string; title: string; desc: string }) {
   return (
-    <div className="p-5 rounded-2xl bg-white/[0.025] border border-white/[0.06]">
-      <div className="w-10 h-10 mb-3 rounded-xl bg-purple-500/15 border border-purple-500/30 flex items-center justify-center text-purple-300">
+    // w-[66%] deja asomar la siguiente card: es lo que le dice al dedo que
+    // esto se desliza. En md vuelve a ser una celda normal de la rejilla.
+    <div className="w-[66%] shrink-0 snap-start md:w-auto md:shrink p-4 md:p-5 rounded-2xl bg-white/[0.025] border border-white/[0.06]">
+      <div className="w-10 h-10 mb-2 md:mb-3 rounded-xl bg-purple-500/15 border border-purple-500/30 flex items-center justify-center text-purple-300">
         <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d={iconPath}/>
         </svg>
