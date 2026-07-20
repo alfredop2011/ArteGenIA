@@ -441,8 +441,9 @@ export default function QuitarFondoPage() {
         />
       )}
 
-      {/* Hero + cuota */}
-      <div className="border-b border-white/[0.06] py-6 px-5">
+      {/* Hero + cuota. Oculto entero en movil: era una franja de 72px que solo
+          repetia el titulo de la pagina. En escritorio se mantiene. */}
+      <div className="hidden md:block border-b border-white/[0.06] py-6 px-5">
         <div className="max-w-4xl mx-auto flex items-center justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-3">
             {/* Oculto en movil: en trafico de ads este link solo invita a
@@ -469,7 +470,8 @@ export default function QuitarFondoPage() {
           <div className="grid md:grid-cols-2 gap-5 md:gap-14 items-center mb-10 md:mb-16">
             {/* LEFT — texto y chips */}
             <div>
-              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-purple-500/10 border border-purple-500/30 mb-6">
+              {/* Badge decorativo: 31px que en movil no convencen a nadie. */}
+              <div className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-purple-500/10 border border-purple-500/30 mb-6">
                 <span className="text-purple-300 text-[11px]">✨</span>
                 <span className="text-[10px] uppercase tracking-widest font-bold text-purple-300">IA Avanzada</span>
               </div>
@@ -481,7 +483,9 @@ export default function QuitarFondoPage() {
               {/* Movil: H1 mas pequeno (4 lineas -> 3) y menos margen. En
                   escritorio no cambia nada. */}
               <h1 className="text-[31px] md:text-[56px] font-black leading-[1.05] md:leading-[1.02] mb-3 md:mb-5 tracking-tight text-balance">
-                Quita el fondo de cualquier foto gratis{" "}
+                {/* "de cualquier foto gratis" sigue en el DOM (SEO/lectores)
+                    pero se oculta en movil: asi el H1 baja de 3 lineas a 2. */}
+                Quita el fondo <span className="hidden md:inline">de cualquier foto gratis </span>
                 <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-amber-400 bg-clip-text text-transparent">
                   con IA en 5 segundos
                 </span>
@@ -497,6 +501,30 @@ export default function QuitarFondoPage() {
                 <FeatureChip icon="⚡" text="Resultados en 5s"/>
                 <FeatureChip icon="🛡️" text="Sin pérdida de calidad"/>
                 <FeatureChip icon="🖼️" text="PNG transparente"/>
+              </div>
+
+              {/* MOVIL — antes/despues arriba del todo.
+                  La pagina contaba lo que hace pero no lo ENSEÑABA: el unico
+                  antes/despues estaba muy abajo, despues del dropzone. Aqui el
+                  visitante ve el resultado antes de que le pidamos su foto, que
+                  es lo que realmente vende esta herramienta. Arrastrable. */}
+              {/* Estrecha y centrada a proposito: en movil TODOS los bloques
+                  median lo mismo (335px de ancho util) y la pagina se veia en
+                  ladrillos. Al dejarla a 250px hay ritmo — la tarjeta respira y
+                  el dropzone ancho de debajo gana peso por contraste. */}
+              <div className="md:hidden mt-1 mx-auto w-[250px]">
+                <BeforeAfterCard
+                  compact
+                  category=""
+                  desc=""
+                  imgUrl="https://pub-9dafc090b0534d8fabaaf9ccc21936a0.r2.dev/models/Dance/06_isabela_alejandro_pareja.png"
+                  bgGradient="from-rose-500 via-pink-600 to-purple-700"
+                  accentColor="rose"
+                  iconPath="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2 M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"
+                />
+                <p className="mt-2 text-center text-[11px] text-gray-500">
+                  Arrastra el círculo ↔
+                </p>
               </div>
             </div>
 
@@ -521,7 +549,7 @@ export default function QuitarFondoPage() {
                   const f = e.dataTransfer.files?.[0];
                   if (f) void handleFile(f);
                 }}
-                className="relative cursor-pointer rounded-3xl border-2 border-dashed border-purple-500/40 bg-purple-500/[0.03] hover:bg-purple-500/[0.06] hover:border-purple-500/60 transition-all p-8 md:p-12 text-center"
+                className="relative cursor-pointer rounded-3xl border-2 border-dashed border-purple-500/40 bg-purple-500/[0.03] hover:bg-purple-500/[0.06] hover:border-purple-500/60 transition-all p-5 md:p-12 text-center"
               >
                 <input
                   ref={fileInputRef}
@@ -534,13 +562,15 @@ export default function QuitarFondoPage() {
                   }}
                 />
                 {/* Icono upload con gradiente purple→pink */}
-                <div className="inline-flex w-20 h-20 mx-auto mb-6 rounded-3xl bg-gradient-to-br from-purple-500 to-pink-500 items-center justify-center shadow-lg shadow-purple-500/40">
-                  <svg className="w-9 h-9 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                {/* Icono e interlineado mas compactos en movil: el dropzone
+                    ocupaba 321px cuando la mitad era aire. */}
+                <div className="inline-flex w-14 h-14 md:w-20 md:h-20 mx-auto mb-3 md:mb-6 rounded-2xl md:rounded-3xl bg-gradient-to-br from-purple-500 to-pink-500 items-center justify-center shadow-lg shadow-purple-500/40">
+                  <svg className="w-7 h-7 md:w-9 md:h-9 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
                   </svg>
                 </div>
-                <p className="text-[18px] font-bold mb-1">Arrastra tu foto aquí</p>
-                <p className="text-[12px] text-gray-400 mb-5">o pulsa para elegir un archivo</p>
+                <p className="text-[16px] md:text-[18px] font-bold mb-0.5 md:mb-1">Arrastra tu foto aquí</p>
+                <p className="text-[11px] md:text-[12px] text-gray-400 mb-2.5 md:mb-5">o pulsa para elegir un archivo</p>
                 <span className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold text-[13px] shadow-lg shadow-purple-500/30">
                   <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
@@ -549,7 +579,7 @@ export default function QuitarFondoPage() {
                   </svg>
                   Elegir imagen
                 </span>
-                <p className="text-[11px] text-gray-500 mt-5">JPG o PNG · Máx. 10 MB</p>
+                <p className="text-[10px] md:text-[11px] text-gray-500 mt-2.5 md:mt-5">JPG o PNG · Máx. 10 MB</p>
               </div>
 
               {/* Thumbnails de ejemplos: persona, zapato, perfume, coche */}
@@ -585,11 +615,12 @@ export default function QuitarFondoPage() {
 
           {/* CÓMO FUNCIONA + TESTIMONIAL (3 columnas, 2+1) */}
           <div className="grid md:grid-cols-3 gap-5 mb-14">
-            <div className="md:col-span-2 p-7 rounded-3xl bg-white/[0.025] border border-white/[0.06]">
-              <h3 className="text-[14px] font-black mb-6 border-b-2 border-purple-500/40 pb-2 inline-block">
+            <div className="md:col-span-2 p-5 md:p-7 rounded-3xl bg-white/[0.025] border border-white/[0.06]">
+              <h3 className="text-[14px] font-black mb-4 md:mb-6 border-b-2 border-purple-500/40 pb-2 inline-block">
                 Cómo funciona
               </h3>
-              <div className="grid grid-cols-3 gap-2 items-start relative">
+              {/* Movil: 1 columna (3 filas compactas). Escritorio: 3 columnas. */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-2 items-start relative">
                 <Step
                   num={1}
                   iconPath="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"
@@ -644,19 +675,19 @@ export default function QuitarFondoPage() {
 
           {/* PERFECTO PARA CREAR */}
           <div className="text-center">
-            <h3 className="text-[20px] md:text-[24px] font-black mb-7">Perfecto para crear</h3>
-            <div className="flex flex-wrap justify-center gap-3">
+            <h3 className="text-[20px] md:text-[24px] font-black mb-4 md:mb-7">Perfecto para crear</h3>
+            <div className="flex flex-wrap justify-center gap-2 md:gap-3">
               <UseCaseChip iconPath="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6 M16 13H8 M16 17H8 M10 9H8" text="Flyers de eventos"/>
-              <UseCaseChip iconPath="M9 22a1 1 0 1 0 0-2 1 1 0 0 0 0 2zM20 22a1 1 0 1 0 0-2 1 1 0 0 0 0 2z M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" text="Fotos de producto (e-commerce)"/>
-              <UseCaseChip iconPath="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" text="Posts y stories de Instagram"/>
+              <UseCaseChip iconPath="M9 22a1 1 0 1 0 0-2 1 1 0 0 0 0 2zM20 22a1 1 0 1 0 0-2 1 1 0 0 0 0 2z M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" text="Fotos de producto"/>
+              <UseCaseChip iconPath="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" text="Posts y stories"/>
               <UseCaseChip iconPath="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z" text="Logos y marcas"/>
-              <UseCaseChip iconPath="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2zM22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" text="Catálogos de producto"/>
+              <UseCaseChip iconPath="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2zM22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" text="Catálogos"/>
               <UseCaseChip iconPath="M2 3h20v14H2z M8 21h8 M12 17v4" text="Presentaciones"/>
             </div>
           </div>
 
           {/* ─── ANTES Y DESPUÉS — 3 ejemplos del nicho real ────────────── */}
-          <div className="mt-20">
+          <div className="mt-10 md:mt-20">
             <div className="text-center mb-10">
               <h3 className="text-[24px] md:text-[30px] font-black mb-2">Antes y después</h3>
               <p className="text-[12.5px] text-gray-400">Resultados reales en segundos.</p>
@@ -690,7 +721,7 @@ export default function QuitarFondoPage() {
           </div>
 
           {/* ─── POR QUÉ ELEGIR ARTEGENIA — 4 features cards ────────────── */}
-          <div className="mt-20">
+          <div className="mt-10 md:mt-20">
             <div className="text-center mb-10">
               <h3 className="text-[24px] md:text-[30px] font-black">Por qué elegir ArteGenIA</h3>
             </div>
@@ -719,7 +750,7 @@ export default function QuitarFondoPage() {
           </div>
 
           {/* ─── TESTIMONIOS + STATS ────────────────────────────────────── */}
-          <div className="mt-20">
+          <div className="mt-10 md:mt-20">
             <div className="text-center mb-10">
               <h3 className="text-[20px] md:text-[26px] font-black">Miles de creadores ya confían en ArteGenIA</h3>
             </div>
@@ -757,7 +788,7 @@ export default function QuitarFondoPage() {
           </div>
 
           {/* ─── CTA FINAL ──────────────────────────────────────────────── */}
-          <div className="mt-20 mb-8 relative overflow-hidden rounded-3xl bg-gradient-to-br from-purple-900/40 via-purple-950/30 to-[#0a0a14] border border-purple-500/40 p-8 md:p-10">
+          <div className="mt-10 md:mt-20 mb-8 relative overflow-hidden rounded-3xl bg-gradient-to-br from-purple-900/40 via-purple-950/30 to-[#0a0a14] border border-purple-500/40 p-8 md:p-10">
             {/* Glow decorativo */}
             <div className="absolute -bottom-20 -right-20 w-80 h-80 rounded-full bg-purple-600/30 blur-[100px] pointer-events-none" />
             <div className="absolute -top-20 -left-20 w-60 h-60 rounded-full bg-pink-500/20 blur-[80px] pointer-events-none" />
@@ -1080,14 +1111,19 @@ function ExampleThumb({ gradient, emoji, imgUrl }: { gradient: string; emoji?: s
 /** Paso numerado del "Cómo funciona" — icono circular gradient + título + desc. */
 function Step({ num, iconPath, title, desc }: { num: number; iconPath: string; title: string; desc: string }) {
   return (
-    <div className="text-center px-2">
-      <div className="inline-flex w-14 h-14 mb-3 rounded-full bg-gradient-to-br from-purple-500/30 to-pink-500/20 border border-purple-500/30 items-center justify-center text-purple-300">
-        <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    // Movil: fila horizontal (icono izquierda, texto derecha). En 3 columnas
+    // de ~90px los titulos y descripciones se partian en 3 lineas cada uno y
+    // el bloque se disparaba de alto. Escritorio mantiene la columna centrada.
+    <div className="flex md:block items-center gap-3 md:gap-0 text-left md:text-center px-0 md:px-2">
+      <div className="inline-flex w-10 h-10 md:w-14 md:h-14 md:mb-3 shrink-0 rounded-full bg-gradient-to-br from-purple-500/30 to-pink-500/20 border border-purple-500/30 items-center justify-center text-purple-300">
+        <svg className="w-5 h-5 md:w-6 md:h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
           <path d={iconPath}/>
         </svg>
       </div>
-      <p className="text-[12.5px] font-bold mb-1">{`${num}. ${title}`}</p>
-      <p className="text-[10.5px] text-gray-400 leading-snug">{desc}</p>
+      <div className="min-w-0">
+        <p className="text-[13px] md:text-[12.5px] font-bold mb-0.5 md:mb-1">{`${num}. ${title}`}</p>
+        <p className="text-[11px] md:text-[10.5px] text-gray-400 leading-snug">{desc}</p>
+      </div>
     </div>
   );
 }
@@ -1095,13 +1131,15 @@ function Step({ num, iconPath, title, desc }: { num: number; iconPath: string; t
 /** Chip con icono SVG + label, usado en "Perfecto para crear". */
 function UseCaseChip({ iconPath, text }: { iconPath: string; text: string }) {
   return (
-    <div className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white/[0.03] border border-white/[0.08] hover:bg-white/[0.06] transition-colors">
-      <div className="w-6 h-6 rounded-lg bg-purple-500/15 border border-purple-500/30 flex items-center justify-center text-purple-300">
-        <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    // En movil cada chip ocupaba una fila entera (6 filas de alto). Con menos
+    // padding, icono mas pequeno y texto de 11px entran dos por fila.
+    <div className="inline-flex items-center gap-1.5 md:gap-2 px-2.5 py-1.5 md:px-4 md:py-2.5 rounded-xl md:rounded-2xl bg-white/[0.03] border border-white/[0.08] hover:bg-white/[0.06] transition-colors">
+      <div className="w-5 h-5 md:w-6 md:h-6 rounded-md md:rounded-lg bg-purple-500/15 border border-purple-500/30 flex items-center justify-center text-purple-300 shrink-0">
+        <svg className="w-3 h-3 md:w-3.5 md:h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d={iconPath}/>
         </svg>
       </div>
-      <span className="text-[12px] font-semibold text-gray-200">{text}</span>
+      <span className="text-[11px] md:text-[12px] font-semibold text-gray-200">{text}</span>
     </div>
   );
 }
@@ -1120,11 +1158,15 @@ const CHECKERBOARD: React.CSSProperties = {
  *  y sobre el checkerboard ("Después", fondo ya quitado). Si no hay imgUrl, cae
  *  a un emoji de placeholder. */
 function BeforeAfterCard({
-  category, desc, emoji, imgUrl, bgGradient, accentColor, iconPath,
+  category, desc, emoji, imgUrl, bgGradient, accentColor, iconPath, compact,
 }: {
   category: string; desc: string; emoji?: string; imgUrl?: string;
   bgGradient: string; accentColor: "rose"|"amber"|"emerald";
   iconPath: string;
+  /** Sin pie (icono + titulo + desc). Para el hero movil, donde la tarjeta
+   *  solo tiene que ENSEÑAR el resultado: las etiquetas ANTES/DESPUES ya
+   *  explican el gesto y el pie solo añadia altura y ruido. */
+  compact?: boolean;
 }) {
   const accent = {
     rose: "from-rose-500 to-pink-500",
@@ -1187,7 +1229,7 @@ function BeforeAfterCard({
         </div>
       </div>
       {/* Footer con icono + título + desc */}
-      <div className="p-4 flex items-center gap-3">
+      <div className={`${compact ? "hidden" : ""} p-4 flex items-center gap-3`}>
         <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${accent} flex items-center justify-center text-white shrink-0`}>
           <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d={iconPath}/>
