@@ -445,8 +445,10 @@ export default function QuitarFondoPage() {
       <div className="border-b border-white/[0.06] py-6 px-5">
         <div className="max-w-4xl mx-auto flex items-center justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-3">
-            <Link href="/" className="text-[12px] text-gray-400 hover:text-white">← Inicio</Link>
-            <span className="text-gray-700">·</span>
+            {/* Oculto en movil: en trafico de ads este link solo invita a
+                irse, y su fila roba ~70px de la primera pantalla. */}
+            <Link href="/" className="hidden md:inline text-[12px] text-gray-400 hover:text-white">← Inicio</Link>
+            <span className="hidden md:inline text-gray-700">·</span>
             <span className="text-[15px] font-black">Quitar fondo IA</span>
           </div>
           {!authLoading && user && quota && (
@@ -461,9 +463,10 @@ export default function QuitarFondoPage() {
 
       {/* ─── ESTADO: UPLOAD (diseño hero 2 columnas) ─────────────────────── */}
       {state === "upload" && (
-        <div className="max-w-6xl mx-auto px-5 py-10 md:py-16">
-          {/* HERO grid 2 columnas */}
-          <div className="grid md:grid-cols-2 gap-10 md:gap-14 items-center mb-16">
+        <div className="max-w-6xl mx-auto px-5 py-5 md:py-16">
+          {/* HERO grid 2 columnas. En movil el gap de 10 separaba texto y
+              dropzone otros 40px de mas. */}
+          <div className="grid md:grid-cols-2 gap-5 md:gap-14 items-center mb-10 md:mb-16">
             {/* LEFT — texto y chips */}
             <div>
               <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-purple-500/10 border border-purple-500/30 mb-6">
@@ -475,16 +478,22 @@ export default function QuitarFondoPage() {
                   textContent JS) en "fondode..." sin espacios. Uso
                   text-balance para que el wrap visual sea limpio sin
                   romper el texto lógico. */}
-              <h1 className="text-[40px] md:text-[56px] font-black leading-[1.02] mb-5 tracking-tight text-balance">
+              {/* Movil: H1 mas pequeno (4 lineas -> 3) y menos margen. En
+                  escritorio no cambia nada. */}
+              <h1 className="text-[31px] md:text-[56px] font-black leading-[1.05] md:leading-[1.02] mb-3 md:mb-5 tracking-tight text-balance">
                 Quita el fondo de cualquier foto gratis{" "}
                 <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-amber-400 bg-clip-text text-transparent">
                   con IA en 5 segundos
                 </span>
               </h1>
-              <p className="text-[14px] md:text-[16px] text-gray-400 leading-relaxed mb-7 max-w-md">
-                Sube tu imagen y la IA elimina el fondo en segundos. <strong>Gratis, sin marca de agua, sin instalar nada.</strong> Resultado PNG transparente listo para flyers, redes sociales o imprenta.
+              <p className="text-[14px] md:text-[16px] text-gray-400 leading-relaxed mb-4 md:mb-7 max-w-md">
+                Sube tu imagen y la IA elimina el fondo en segundos. <strong>Gratis, sin marca de agua, sin instalar nada.</strong>{" "}
+                <span className="hidden md:inline">Resultado PNG transparente listo para flyers, redes sociales o imprenta.</span>
               </p>
-              <div className="flex flex-wrap gap-3">
+              {/* Los chips se apilaban en 3 filas en movil (~300px) y empujaban
+                  la zona de subida fuera de pantalla. Lo mismo se cuenta abajo
+                  en "Como funciona", asi que en movil no se pierde nada. */}
+              <div className="hidden md:flex flex-wrap gap-3">
                 <FeatureChip icon="⚡" text="Resultados en 5s"/>
                 <FeatureChip icon="🛡️" text="Sin pérdida de calidad"/>
                 <FeatureChip icon="🖼️" text="PNG transparente"/>
