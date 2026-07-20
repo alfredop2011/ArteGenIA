@@ -396,6 +396,21 @@ export default function TemplatesPage() {
             </div>
           </div>
 
+          {/* Formato — solo en el cajon movil (en escritorio esta la tira
+              "Publicar en" del hero, que ahi si cabe sin estorbar). */}
+          <div className="lg:hidden">
+            <h3 className="text-[10px] font-bold tracking-widest mb-2.5 uppercase"
+                style={{ color: "var(--home-text-soft)" }}>{t("templates.publishIn")}</h3>
+            <div className="grid grid-cols-2 gap-1.5">
+              {PUBLISH_NETWORKS.map(net => (
+                <NetworkCard key={net.key} net={net}
+                             active={activeNetwork === net.key}
+                             label={t(net.i18nKey)}
+                             onClick={() => { handleNetworkClick(net); setShowSidebarMobile(false); }} />
+              ))}
+            </div>
+          </div>
+
           {/* Categorias */}
           <div>
             <button onClick={() => setShowAllCategories(v => !v)}
@@ -527,8 +542,12 @@ export default function TemplatesPage() {
               </Link>
             </div>
 
-            {/* BANNER PUBLICAR EN */}
-            <div className="relative mt-3 sm:mt-4 rounded-xl p-2 sm:p-3"
+            {/* BANNER PUBLICAR EN — solo escritorio.
+                En movil se llevaba ~70px del alto para elegir formato, que es
+                UN FILTRO MAS: ahora vive dentro del cajon de Filtros, junto a
+                categorias y publico. Asi la cabecera movil se queda en el
+                titulo + CTA. */}
+            <div className="hidden sm:block relative mt-3 sm:mt-4 rounded-xl p-2 sm:p-3"
                  style={{ background: "var(--home-card-bg)", border: "1px solid var(--home-card-border)" }}>
               <div className="flex items-center gap-3">
                 <div className="hidden sm:block shrink-0 max-w-[140px]">
