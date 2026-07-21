@@ -36,11 +36,25 @@ import { FLYERS_SHOWCASE } from "@/data/flyerShowcase";
 // para que quien solo quiere buscar plantillas lo cruce pronto.
 const VH_POR_FLYER = { movil: 12, escritorio: 16 };
 
-// El "paso" entre tarjetas define la diagonal por la que se surfea.
+// Altura de la barra de navegación (header sticky de 56px). La escena se
+// coloca DEBAJO para que el menú del sitio siga visible y clicable mientras
+// se surfea, y para que el rótulo no quede tapado por él.
+const CABECERA = 56;
+
+// El "paso" entre tarjetas define la diagonal por la que se surfea. Los pasos
+// van a 0,8× el ancho de la tarjeta: es lo que da el solape del original.
+// `origen` = perspective-origin. En escritorio va arriba a la izquierda (como
+// el original) porque hay sitio de sobra; en movil los flyers se marchaban a
+// la esquina inferior derecha y media pantalla quedaba vacia, asi que el punto
+// de fuga se centra.
 const GEOMETRIA = {
-  movil:       { ancho: 168, alto: 210, x: 138, y: -48, z: -166, perspectiva: 1200 },
-  escritorio:  { ancho: 288, alto: 360, x: 240, y: -84, z: -288, perspectiva: 2000 },
+  movil:       { ancho: 200, alto: 250, x: 160, y: -56, z: -192, perspectiva: 1200, origen: "50% 40%" },
+  escritorio:  { ancho: 340, alto: 425, x: 272, y: -95, z: -326, perspectiva: 2000, origen: "10% 10%" },
 };
+
+// Alto de la barra de navegacion inferior de movil (nav fixed de 65px). El CTA
+// tiene que quedar por encima o no se puede pulsar.
+const NAV_MOVIL = 65;
 
 /** true mientras el usuario tenga activado "reducir movimiento" en su sistema. */
 function useMenosMovimiento() {
@@ -119,16 +133,23 @@ export default function FlyerSurfer() {
       style={{ height: `${100 + flyers.length * vhPorFlyer}vh` }}
     >
       <div
-        className="sticky top-0 h-screen overflow-hidden bg-[#07070d]"
+        className="sticky overflow-hidden bg-[#07070d]"
+        style={{ top: CABECERA, height: `calc(100vh - ${CABECERA}px)` }}
         onMouseMove={(e) => { ratonX.set(e.clientX); ratonY.set(e.clientY); }}
         onMouseLeave={() => { ratonX.set(-10000); ratonY.set(-10000); }}
       >
         {/* Rótulo. mix-blend-difference para que se lea sobre cualquier flyer. */}
-        <div className="absolute top-[6vh] left-[6vw] z-30 pointer-events-none mix-blend-difference max-w-[88vw]">
+        <div className="absolute top-6 left-5 sm:top-8 sm:left-[4vw] z-30 pointer-events-none mix-blend-difference max-w-[90vw]">
           <Cabecera total={flyers.length} />
         </div>
 
-        <div className="absolute bottom-[4vh] left-0 right-0 z-30 flex flex-col items-center gap-3 px-5">
+        {/* Abajo a la IZQUIERDA en escritorio: alineado con el rótulo y lejos
+            tanto del flyer central como de la burbuja de chat, que vive en la
+            esquina inferior derecha. En movil, centrado (donde llega el pulgar). */}
+        <div
+          className="absolute left-0 right-0 sm:right-auto sm:left-[4vw] z-30 flex flex-col items-center sm:items-start gap-2 px-5 sm:px-0"
+          style={{ bottom: esMovil ? NAV_MOVIL + 16 : 24 }}
+        >
           <Link
             href="/templates"
             className="pointer-events-auto inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-purple-500 via-pink-500 to-amber-500 text-white font-bold text-[14px] shadow-xl shadow-purple-500/40"
@@ -143,7 +164,7 @@ export default function FlyerSurfer() {
         {/* Escena 3D */}
         <div
           className="absolute inset-0 flex items-center justify-center"
-          style={{ perspective: `${geo.perspectiva}px`, perspectiveOrigin: "10% 10%" }}
+          style={{ perspective: `${geo.perspectiva}px`, perspectiveOrigin: geo.origen }}
         >
           <motion.div className="relative w-0 h-0" style={{ x, y, z, transformStyle: "preserve-3d" }}>
             {flyers.map((f, i) => (
@@ -168,15 +189,21 @@ export default function FlyerSurfer() {
 function Cabecera({ total }: { total: number }) {
   return (
     <>
-      <h2 className="font-black text-[clamp(1.8rem,6vw,4.5rem)] leading-[0.92] tracking-tighter text-white">
-        FLYERS HECHOS
+      <h2 className="font-black text-[clamp(1.9rem,6vw,4.5rem)] leading-[0.92] tracking-tighter text-white">
+        PLANTILLAS DE FLYER
       </h2>
-      <h2 className="font-black text-[clamp(1.8rem,6vw,4.5rem)] leading-[0.92] tracking-tighter text-white">
-        EN ARTEGENIA
-        <span className="text-[0.32em] align-top relative top-[0.7em] ml-2 font-mono tabular-nums">
+      <h2 className="font-black text-[clamp(1.9rem,6vw,4.5rem)] leading-[0.92] tracking-tighter text-white">
+        PARA TU EVENTO
+        <span className="text-[0.3em] align-top relative top-[0.7em] ml-2 font-mono tabular-nums">
           ({String(total).padStart(2, "0")})
         </span>
       </h2>
+      {/* Qué es la herramienta: el rótulo de arriba dice QUÉ hay, esta línea
+          dice QUÉ ES esto. Sin ella el bloque es una galería sin contexto. */}
+      <p className="mt-3 max-w-md text-[13px] sm:text-[15px] leading-snug text-white/70">
+        Editor con IA para fiestas, clases de baile y conciertos. Cambia
+        textos, fotos y colores — y lo descargas listo para Instagram.
+      </p>
     </>
   );
 }
