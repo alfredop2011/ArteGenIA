@@ -20,6 +20,12 @@ import type { FormatId } from "@/data/formats";
 import { useLocale } from "@/hooks/useLocale";
 import type { TranslationKey } from "@/lib/translations";
 import HomeVsCanva from "@/components/home/HomeVsCanva";
+// Carga diferida: arrastra framer-motion y 12 imagenes; no debe entrar en el
+// first-load JS del home, que es la pagina que mas visitas recibe.
+// Sin `ssr:false`: con esa opcion el limite de Suspense se quedaba en
+// BAILOUT_TO_CLIENT_SIDE_RENDERING y el bloque no llegaba a montarse nunca.
+// El componente ya protege todo lo que toca `window` dentro de useEffect.
+const FlyerSurfer = dynamic(() => import("@/components/home/FlyerSurfer"));
 
 // Lazy-load: TemplateFabricThumbnail arrastra Fabric.js (~320 KB). En la home
 // son thumbnails decorativos, así que se cargan en un chunk aparte (ssr:false)
@@ -307,6 +313,19 @@ export default function Home() {
             )}
           </div>
         </section>
+
+        {/* ═════ CARRUSEL 3D DE FLYERS REALES ═════
+            Va aquí, entre el hero y el buscador: es la prueba de lo que sale
+            del producto y quien viene a buscar plantillas lo cruza pronto.
+            Rompe el ancho del contenedor a proposito (-mx) porque es sticky a
+            pantalla completa. Cambiarlo de sitio es mover este bloque. */}
+        {/* w-screen + left-1/2 -translate-x-1/2: el home vive dentro de un
+            max-w-6xl centrado, y esta seccion tiene que ir de borde a borde.
+            Con margenes negativos solo se recuperaba el padding, no el ancho
+            maximo del contenedor. */}
+        <div className="relative left-1/2 -translate-x-1/2 w-screen max-w-[100vw] my-6">
+          <FlyerSurfer />
+        </div>
 
         {/* ═════ SEARCH + FILTROS ═════ */}
         <section className="mb-2 animate-home-fade delay-400">
