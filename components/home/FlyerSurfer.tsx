@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import {
   motion,
@@ -82,7 +82,14 @@ function useEsMovil() {
   return esMovil;
 }
 
-export default function FlyerSurfer() {
+export default function FlyerSurfer({ titulo, subtitulo, acciones }: {
+  /** El <h1> real de la home (con la palabra rotatoria). Se inyecta desde la
+   *  página para que el titular y sus CTAs vivan DENTRO de la escena en vez
+   *  de en un hero aparte encima. */
+  titulo: ReactNode;
+  subtitulo: ReactNode;
+  acciones: ReactNode;
+}) {
   const flyers = FLYERS_SHOWCASE;
   const seccionRef = useRef<HTMLElement>(null);
   const esMovil = useEsMovil();
@@ -112,8 +119,12 @@ export default function FlyerSurfer() {
   // Con "reducir movimiento" no hay 3D ni scroll secuestrado: rejilla y fuera.
   if (menosMovimiento) {
     return (
-      <section className="px-5 py-16">
-        <Cabecera total={flyers.length} />
+      <section className="px-5 py-12 bg-[#07070d] text-white">
+        <div className="max-w-3xl">
+          {titulo}
+          {subtitulo}
+          <div className="mt-4">{acciones}</div>
+        </div>
         <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-3 max-w-5xl mx-auto">
           {flyers.slice(0, 8).map((f) => (
             <Link key={f.id} href={`/editor/${f.id}?format=portrait`} className="block rounded-xl overflow-hidden border border-white/10">
@@ -138,27 +149,26 @@ export default function FlyerSurfer() {
         onMouseMove={(e) => { ratonX.set(e.clientX); ratonY.set(e.clientY); }}
         onMouseLeave={() => { ratonX.set(-10000); ratonY.set(-10000); }}
       >
-        {/* Rótulo. mix-blend-difference para que se lea sobre cualquier flyer. */}
-        <div className="absolute top-6 left-5 sm:top-8 sm:left-[4vw] z-30 pointer-events-none mix-blend-difference max-w-[90vw]">
-          <Cabecera total={flyers.length} />
-        </div>
-
-        {/* Abajo a la IZQUIERDA en escritorio: alineado con el rótulo y lejos
-            tanto del flyer central como de la burbuja de chat, que vive en la
-            esquina inferior derecha. En movil, centrado (donde llega el pulgar). */}
+        {/* Velo oscuro a la izquierda: los flyers pasan por detrás del texto y
+            sin él el titular se vuelve ilegible cuando cruza uno claro. Nada
+            de mix-blend-difference aquí — invertiría el degradado de marca de
+            la palabra rotatoria. */}
         <div
-          className="absolute left-0 right-0 sm:right-auto sm:left-[4vw] z-30 flex flex-col items-center sm:items-start gap-2 px-5 sm:px-0"
-          style={{ bottom: esMovil ? NAV_MOVIL + 16 : 24 }}
-        >
-          <Link
-            href="/templates"
-            className="pointer-events-auto inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-purple-500 via-pink-500 to-amber-500 text-white font-bold text-[14px] shadow-xl shadow-purple-500/40"
-          >
-            Ver las {flyers.length > 12 ? flyers.length : "80"} plantillas
-          </Link>
-          <span className="font-mono text-[10px] tracking-widest uppercase text-white/50">
-            desliza para surfear
-          </span>
+          className="absolute inset-0 z-20 pointer-events-none"
+          style={{
+            background:
+              "linear-gradient(105deg, rgba(7,7,13,0.96) 0%, rgba(7,7,13,0.88) 30%, rgba(7,7,13,0.45) 55%, rgba(7,7,13,0) 75%)",
+          }}
+        />
+
+        {/* Titular real de la home (h1 + subtítulo + CTAs), dentro de la escena. */}
+        <div className="absolute top-6 left-5 sm:top-1/2 sm:-translate-y-1/2 sm:left-[5vw] z-30 max-w-[90vw] sm:max-w-[46ch]">
+          {titulo}
+          {subtitulo}
+          <div className="mt-4">{acciones}</div>
+          <p className="mt-5 font-mono text-[10px] tracking-widest uppercase text-white/40">
+            Desliza para ver los {flyers.length} flyers
+          </p>
         </div>
 
         {/* Escena 3D */}
@@ -186,27 +196,6 @@ export default function FlyerSurfer() {
   );
 }
 
-function Cabecera({ total }: { total: number }) {
-  return (
-    <>
-      <h2 className="font-black text-[clamp(1.9rem,6vw,4.5rem)] leading-[0.92] tracking-tighter text-white">
-        PLANTILLAS DE FLYER
-      </h2>
-      <h2 className="font-black text-[clamp(1.9rem,6vw,4.5rem)] leading-[0.92] tracking-tighter text-white">
-        PARA TU EVENTO
-        <span className="text-[0.3em] align-top relative top-[0.7em] ml-2 font-mono tabular-nums">
-          ({String(total).padStart(2, "0")})
-        </span>
-      </h2>
-      {/* Qué es la herramienta: el rótulo de arriba dice QUÉ hay, esta línea
-          dice QUÉ ES esto. Sin ella el bloque es una galería sin contexto. */}
-      <p className="mt-3 max-w-md text-[13px] sm:text-[15px] leading-snug text-white/70">
-        Editor con IA para fiestas, clases de baile y conciertos. Cambia
-        textos, fotos y colores — y lo descargas listo para Instagram.
-      </p>
-    </>
-  );
-}
 
 function Tarjeta({
   flyer, i, geo, ratonX, ratonY, progreso, prioritaria,
