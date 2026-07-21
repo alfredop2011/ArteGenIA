@@ -20,6 +20,8 @@ import type { FormatId } from "@/data/formats";
 import { useLocale } from "@/hooks/useLocale";
 import type { TranslationKey } from "@/lib/translations";
 import HomeVsCanva from "@/components/home/HomeVsCanva";
+// Compartida con FlyerSurfer: la usan el h1 del hero y el rotulo del carrusel.
+import RotatingHighlight from "@/components/home/RotatingHighlight";
 // Carga diferida: arrastra framer-motion y 12 imagenes; no debe entrar en el
 // first-load JS del home, que es la pagina que mas visitas recibe.
 // Sin `ssr:false`: con esa opcion el limite de Suspense se quedaba en
@@ -69,45 +71,6 @@ function FacebookIcon({ size = 12, className = "" }: SocialIconProps) {
     <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" className={className}>
       <path d="M22 12a10 10 0 1 0-11.56 9.88V14.9H7.9V12h2.54V9.8c0-2.5 1.49-3.89 3.78-3.89 1.09 0 2.24.2 2.24.2v2.46h-1.26c-1.24 0-1.63.77-1.63 1.56V12h2.77l-.44 2.9h-2.33v6.98A10 10 0 0 0 22 12z" />
     </svg>
-  );
-}
-
-// ─── ROTATING HIGHLIGHT ─────────────────────────────────────────────────
-// Palabra final del titulo del hero ("...para tu evento") que va cambiando
-// aleatoriamente entre tipos de evento, manteniendo el mismo gradiente.
-// El cambio usa un cross-fade vertical corto; el ancho se autoajusta (es el
-// ultimo elemento de la linea, asi que no provoca saltos de layout molestos).
-function RotatingHighlight({ words }: { words: string[] }) {
-  const [idx, setIdx] = useState(0);
-  const [visible, setVisible] = useState(true);
-
-  useEffect(() => {
-    if (words.length <= 1) return;
-    const interval = setInterval(() => {
-      setVisible(false);
-      // Tras el fade-out (300ms) elegir una palabra DISTINTA al azar y fade-in.
-      setTimeout(() => {
-        setIdx(prev => {
-          let next = prev;
-          while (next === prev) next = Math.floor(Math.random() * words.length);
-          return next;
-        });
-        setVisible(true);
-      }, 300);
-    }, 2200);
-    return () => clearInterval(interval);
-  }, [words.length]);
-
-  return (
-    <span
-      className="bg-gradient-to-r from-purple-400 via-pink-400 to-amber-300 bg-clip-text text-transparent inline-block transition-all duration-300 ease-out"
-      style={{
-        opacity: visible ? 1 : 0,
-        transform: visible ? "translateY(0)" : "translateY(0.25em)",
-      }}
-    >
-      {words[idx] ?? ""}
-    </span>
   );
 }
 
@@ -246,49 +209,85 @@ export default function Home() {
     <div style={{ background: "var(--home-bg)", color: "var(--home-text)" }}>
       <div className="max-w-6xl mx-auto px-3 sm:px-6 lg:px-8 pt-3 sm:pt-4 pb-4">
 
-        {/* ═════ HERO = CARRUSEL 3D DE FLYERS REALES ═════
-            El titular (h1 con la palabra rotatoria), el subtitulo y los CTAs
-            viven DENTRO de la escena; ya no hay un hero aparte encima. El h1
-            sigue siendo el mismo y se renderiza en servidor, asi que el SEO no
-            cambia — solo cambia donde se pinta.
+        {/* ═════ HERO: titulo izq + stack 3 flyers dcha (animacion entrada) ═════ */}
+        <section className="grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] gap-4 lg:gap-6 items-center mb-3 sm:mb-4">
+          {/* Left: titulo + CTA con fade-in escalonado */}
+          <div>
+            <h1 className="font-black leading-[1.05] tracking-tight animate-home-fade"
+                style={{ fontSize: "clamp(1.7rem, 4.2vw, 3rem)" }}>
+              {t("home.hero.title.line1")} {t("home.hero.title.line2")}{" "}
+              <RotatingHighlight words={rotatingWords} />
+            </h1>
+            <p className="text-xs sm:text-sm mt-2 max-w-md animate-home-fade delay-100"
+               style={{ color: "var(--home-text-muted)" }}>
+              {t("home.hero.subtitle")}
+            </p>
+            {/* CTA principal + secundario. El secundario reusa el mismo
+                destino (/templates) — actua como entry visual alternativa
+                "ver categorias" para usuarios que prefieren explorar grid. */}
+            <div className="flex flex-wrap items-center gap-2 mt-3 animate-home-fade delay-200">
+              <Link
+                href="/templates"
+                className="inline-flex items-center gap-1.5 px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl font-bold text-xs sm:text-sm text-white transition-transform hover:scale-[1.03]"
+                style={{ background: "linear-gradient(135deg,#7c3aed,#a855f7)", boxShadow: "0 0 22px rgba(168,85,247,0.4)" }}
+              >
+                <Sparkles size={14} strokeWidth={2.2} />
+                {t("home.hero.cta")}
+              </Link>
+              <Link
+                href="/templates"
+                className="inline-flex items-center gap-1.5 px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-colors"
+                style={{
+                  background: "var(--home-card-bg)",
+                  border: "1px solid var(--home-card-border)",
+                  color: "var(--home-text)",
+                }}
+              >
+                <LayoutGrid size={14} strokeWidth={2.2} />
+                {t("home.hero.cta2")}
+              </Link>
+            </div>
+          </div>
 
-            w-screen + left-1/2 -translate-x-1/2: el home vive dentro de un
-            max-w-6xl centrado y esta seccion va de borde a borde. Con margenes
-            negativos solo se recuperaba el padding, no el ancho maximo. */}
-        <div className="relative left-1/2 -translate-x-1/2 w-screen max-w-[100vw] mb-6">
-          <FlyerSurfer
-            titulo={
-              <h1 className="font-black leading-[1.02] tracking-tight text-white"
-                  style={{ fontSize: "clamp(1.8rem, 4.4vw, 3.4rem)" }}>
-                {t("home.hero.title.line1")} {t("home.hero.title.line2")}{" "}
-                <RotatingHighlight words={rotatingWords} />
-              </h1>
-            }
-            subtitulo={
-              <p className="text-[13px] sm:text-[15px] mt-3 leading-snug text-white/70">
-                {t("home.hero.subtitle")}
-              </p>
-            }
-            acciones={
-              <div className="flex flex-wrap items-center gap-2">
-                <Link
-                  href="/templates"
-                  className="inline-flex items-center gap-1.5 px-4 sm:px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm text-white transition-transform hover:scale-[1.03]"
-                  style={{ background: "linear-gradient(135deg,#7c3aed,#a855f7)", boxShadow: "0 0 22px rgba(168,85,247,0.4)" }}
-                >
-                  <Sparkles size={14} strokeWidth={2.2} />
-                  {t("home.hero.cta")}
-                </Link>
-                <Link
-                  href="/templates"
-                  className="inline-flex items-center gap-1.5 px-4 sm:px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm text-white transition-colors bg-white/[0.07] border border-white/15 hover:bg-white/[0.12]"
-                >
-                  <LayoutGrid size={14} strokeWidth={2.2} />
-                  {t("home.hero.cta2")}
-                </Link>
-              </div>
-            }
-          />
+          {/* Right: STACK 3 flyers (lateral izq rotado, centro grande, lateral
+              dcha rotado). Cada uno con animacion home-card-in escalonada. */}
+          <div className="relative h-[260px] sm:h-[300px] lg:h-[320px] flex items-center justify-center">
+            {heroStack[1] && (
+              <HeroStackCard
+                template={heroStack[1]}
+                position="left"
+                animDelay={300}
+              />
+            )}
+            {heroStack[0] && (
+              <HeroStackCard
+                template={heroStack[0]}
+                position="center"
+                animDelay={100}
+                featuredLabel={t("home.hero.featured")}
+              />
+            )}
+            {heroStack[2] && (
+              <HeroStackCard
+                template={heroStack[2]}
+                position="right"
+                animDelay={500}
+              />
+            )}
+          </div>
+        </section>
+
+        {/* ═════ CARRUSEL 3D DE FLYERS REALES ═════
+            Va aquí, entre el hero y el buscador: es la prueba de lo que sale
+            del producto y quien viene a buscar plantillas lo cruza pronto.
+            Rompe el ancho del contenedor a proposito (-mx) porque es sticky a
+            pantalla completa. Cambiarlo de sitio es mover este bloque. */}
+        {/* w-screen + left-1/2 -translate-x-1/2: el home vive dentro de un
+            max-w-6xl centrado, y esta seccion tiene que ir de borde a borde.
+            Con margenes negativos solo se recuperaba el padding, no el ancho
+            maximo del contenedor. */}
+        <div className="relative left-1/2 -translate-x-1/2 w-screen max-w-[100vw] my-6">
+          <FlyerSurfer palabras={rotatingWords} />
         </div>
 
         {/* ═════ SEARCH + FILTROS ═════ */}
@@ -741,6 +740,84 @@ function PillButton({
     >
       {children}
     </button>
+  );
+}
+
+/** Card del stack del hero. 3 posiciones (left/center/right) con rotacion
+ *  + escala distinta. La central destaca; las laterales son visuales. */
+function HeroStackCard({
+  template,
+  position,
+  animDelay,
+  featuredLabel,
+}: {
+  template: TemplateMeta;
+  position: "left" | "center" | "right";
+  animDelay: number;
+  featuredLabel?: string;
+}) {
+  const variantSquare = template.variants.find(v => v.format === "square");
+  const formatId: FormatId = variantSquare?.format ?? template.variants[0].format;
+
+  // Estilos por posicion. La rotacion final se aplica via CSS var consumida
+  // por la animacion home-card-in (asi la rotacion sobrevive al fin del anim).
+  const styles: React.CSSProperties =
+    position === "center"
+      ? {
+          ["--home-card-rot" as never]: "0deg",
+          zIndex: 3,
+          width: "min(60%, 220px)",
+          aspectRatio: "1 / 1",
+          boxShadow: "0 0 40px rgba(168,85,247,0.45), 0 25px 50px rgba(0,0,0,0.55)",
+          border: "1.5px solid rgba(168,85,247,0.55)",
+        }
+      : position === "left"
+      ? {
+          ["--home-card-rot" as never]: "-12deg",
+          zIndex: 2,
+          width: "min(45%, 165px)",
+          aspectRatio: "1 / 1",
+          left: 0,
+          top: "10%",
+          boxShadow: "0 18px 35px rgba(0,0,0,0.45)",
+          border: "1px solid var(--home-card-border)",
+        }
+      : {
+          ["--home-card-rot" as never]: "12deg",
+          zIndex: 2,
+          width: "min(45%, 165px)",
+          aspectRatio: "1 / 1",
+          right: 0,
+          top: "10%",
+          boxShadow: "0 18px 35px rgba(0,0,0,0.45)",
+          border: "1px solid var(--home-card-border)",
+        };
+
+  const isCenter = position === "center";
+
+  return (
+    <Link
+      href={`/editor/${template.id}?format=${formatId}`}
+      className={`absolute rounded-2xl overflow-hidden block group animate-home-card ${
+        isCenter ? "hover:scale-[1.03]" : "hover:scale-[1.05]"
+      } transition-transform`}
+      style={{ ...styles, animationDelay: `${animDelay}ms` }}
+    >
+      <TemplateFabricThumbnail
+        template={template}
+        formatId={formatId}
+        className="absolute inset-0 h-full w-full"
+      />
+      {isCenter && featuredLabel && (
+        <div className="absolute top-2 left-2 z-10">
+          <span className="inline-flex items-center gap-1 text-[9px] font-black tracking-widest px-2 py-0.5 rounded-full text-black"
+                style={{ background: "linear-gradient(135deg,#facc15,#f59e0b)", boxShadow: "0 3px 12px rgba(250,204,21,0.4)" }}>
+            <Star size={9} strokeWidth={2.5} fill="currentColor" />
+            {featuredLabel}
+          </span>
+        </div>
+      )}
+    </Link>
   );
 }
 
