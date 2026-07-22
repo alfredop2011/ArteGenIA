@@ -171,10 +171,21 @@ export default function FlyerSurfer({ palabras }: {
           </span>
         </div>
 
-        {/* Escena 3D */}
+        {/* Escena 3D.
+            En movil, el titulo ocupa arriba y los flyers, centrados en un
+            viewport alto, quedaban en el tercio inferior con un hueco negro
+            enorme entre medias. Anclamos la escena mas ARRIBA subiendo su
+            borde inferior (bottom) ~28vh: como `items-center` centra dentro de
+            [top, bottom], el cluster sube ~14vh y se pega mas al titulo. Se
+            hace con posicion (no transform) para no aplanar la perspectiva 3D. */}
         <div
-          className="absolute inset-0 flex items-center justify-center"
-          style={{ perspective: `${geo.perspectiva}px`, perspectiveOrigin: geo.origen }}
+          className="absolute left-0 right-0 flex items-center justify-center"
+          style={{
+            top: 0,
+            bottom: esMovil ? "28vh" : 0,
+            perspective: `${geo.perspectiva}px`,
+            perspectiveOrigin: geo.origen,
+          }}
         >
           <motion.div className="relative w-0 h-0" style={{ x, y, z, transformStyle: "preserve-3d" }}>
             {flyers.map((f, i) => (
